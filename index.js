@@ -154,13 +154,15 @@ client.on('interactionCreate', async interaction => {
 
       const slot = teams.length + 1;
 
-      teams.push({
+      const team = {
         slot,
         teamName,
         player1,
         player2,
         player3
-      });
+      };
+
+      teams.push(team);
 
       saveTeams();
 
@@ -168,6 +170,25 @@ client.on('interactionCreate', async interaction => {
         content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**`,
         ephemeral: true
       });
+
+      if (teams.length === MAX_TEAMS) {
+
+        const channel = interaction.channel;
+
+        let message = "🏆 **RØDA CUP - TEAM REGISTRATI**\n\n";
+
+        teams.forEach(t => {
+
+          message += `🎯 SLOT ${t.slot} - **${t.teamName}**\n`;
+          message += `${t.player1}\n`;
+          message += `${t.player2}\n`;
+          message += `${t.player3}\n\n`;
+
+        });
+
+        channel.send(message);
+
+      }
 
     }
 
