@@ -8,7 +8,10 @@ ModalBuilder,
 TextInputBuilder,
 TextInputStyle,
 ChannelType,
-Events
+Events,
+SlashCommandBuilder,
+REST,
+Routes
 } = require("discord.js")
 
 const fs = require("fs")
@@ -21,12 +24,16 @@ GatewayIntentBits.MessageContent
 ]
 })
 
-/* CONFIGURAZIONE */
+/* CONFIG */
 
 const MAX_TEAMS = 16
 const STAFF_CHANNEL = "1483201939712774145"
 const RESULT_CHANNEL = "1478305525111193725"
 const VOICE_CATEGORY = "1478303649586348165"
+
+const CLIENT_ID = process.env.CLIENT_ID
+const GUILD_ID = process.env.GUILD_ID
+const TOKEN = process.env.TOKEN
 
 /* DATABASE */
 
@@ -42,19 +49,63 @@ function saveTeams(data){
 fs.writeFileSync("./teams.json", JSON.stringify(data,null,2))
 }
 
-/* BOT ONLINE */
+/* SLASH COMMANDS */
+
+const commands = [
+
+new SlashCommandBuilder()
+.setName("setup")
+.setDescription("Crea pannello registrazione"),
+
+new SlashCommandBuilder()
+.setName("crea_stanze")
+.setDescription("Crea stanze vocali dei team"),
+
+new SlashCommandBuilder()
+.setName("lobby")
+.setDescription("Invia codice lobby ai team")
+.addStringOption(option =>
+option.setName("codice")
+.setDescription("Codice lobby")
+.setRequired(true)
+),
+
+new SlashCommandBuilder()
+.setName("pannello")
+.setDescription("Crea pannello risultati")
+
+].map(command => command.toJSON())
+
+const rest = new REST({ version: '10' }).setToken(TOKEN)
+
+async function deployCommands(){
+try{
+await rest.put(
+Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+{ body: commands }
+)
+console.log("Slash commands registrati")
+}catch(error){
+console.error(error)
+}
+}
+
+/* READY */
 
 client.once("ready",()=>{
 console.log(`BOT ONLINE COME ${client.user.tag}`)
+deployCommands()
 })
 
-/* SETUP REGISTRAZIONE */
+/* INTERAZIONI */
 
-client.on("messageCreate", async message=>{
+client.on(Events.InteractionCreate, async interaction => {
 
-if(message.author.bot) return
+if(interaction.isChatInputCommand()){
 
-if(message.content === "!setup"){
+/* SETUP */
+
+if(interaction.commandName === "setup"){
 
 const row = new ActionRowBuilder().addComponents(
 new ButtonBuilder()
@@ -63,20 +114,113 @@ new ButtonBuilder()
 .setStyle(ButtonStyle.Success)
 )
 
-message.channel.send({
+interaction.reply({
 content:"**Iscrizione RØDA CUP**",
 components:[row]
 })
 
 }
 
+/* CREA STANZE */
+
+if(interaction.commandName === "crea_stanze"){
+
+let teams = loadTeams()
+
+if(teams.length === 0){
+interaction.reply("❌ Nessun team registrato.")
+return
+}
+
+await interaction.reply("🏗️ Creazione stanze...")
+
+for(let t of teams){
+
+let name = `🏆・${t.slot} ${t.team}`
+
+try{
+
+await interaction.guild.channels.create({
+name:name,
+type:ChannelType.GuildVoice,
+parent:VOICE_CATEGORY
 })
 
-/* CLICK REGISTRA */
+}catch(err){
+console.log(err)
+}
 
-client.on(Events.InteractionCreate, async interaction=>{
+}
 
-if(!interaction.isButton()) return
+interaction.followUp("✅ Stanze vocali create.")
+
+}
+
+/* LOBBY */
+
+if(interaction.commandName === "lobby"){
+
+let code = interaction.options.getString("codice")
+
+let teams = loadTeams()
+
+for(let t of teams){
+
+let channelName = `🏆・${t.slot} ${t.team}`
+
+let channel = interaction.guild.channels.cache.find(
+c => c.name === channelName
+)
+
+if(channel){
+
+try{
+await channel.send(`🎮 **CODICE LOBBY:** ${code}`)
+}catch(err){
+console.log(err)
+}
+
+}
+
+}
+
+interaction.reply("✅ Codice lobby inviato.")
+
+}
+
+/* PANNELLO RISULTATI */
+
+if(interaction.commandName === "pannello"){
+
+if(interaction.channel.id !== RESULT_CHANNEL){
+interaction.reply({
+content:"❌ Usa questo comando nel canale calcolo.",
+ephemeral:true
+})
+return
+}
+
+const row = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("result_button")
+.setLabel("🏆 INVIA RISULTATO MATCH")
+.setStyle(ButtonStyle.Primary)
+)
+
+interaction.reply({
+content:"**RØDA CUP — Invio Risultato Match**",
+components:[row]
+})
+
+}
+
+}
+
+/* CLICK BOTTONI */
+
+if(interaction.isButton()){
+
+/* REGISTRA TEAM */
 
 if(interaction.customId === "register_team"){
 
@@ -84,7 +228,7 @@ let teams = loadTeams()
 
 if(teams.length >= MAX_TEAMS){
 interaction.reply({
-content:"❌ Gli slot del torneo sono pieni.",
+content:"❌ Slot torneo pieni.",
 ephemeral:true
 })
 return
@@ -125,151 +269,7 @@ interaction.showModal(modal)
 
 }
 
-})
-
-/* SALVATAGGIO TEAM */
-
-client.on(Events.InteractionCreate, async interaction=>{
-
-if(!interaction.isModalSubmit()) return
-
-if(interaction.customId === "team_modal"){
-
-let teams = loadTeams()
-
-const teamName = interaction.fields.getTextInputValue("team")
-const p1 = interaction.fields.getTextInputValue("p1")
-const p2 = interaction.fields.getTextInputValue("p2")
-const p3 = interaction.fields.getTextInputValue("p3")
-
-let slot = teams.length + 1
-
-teams.push({
-slot:slot,
-team:teamName,
-players:[p1,p2,p3]
-})
-
-saveTeams(teams)
-
-interaction.reply({
-content:`✅ Team registrato con successo.\nSlot assegnato: **${slot}**`,
-ephemeral:true
-})
-
-}
-
-})
-
-/* CREAZIONE STANZE VOCALI */
-
-client.on("messageCreate", async message=>{
-
-if(message.author.bot) return
-
-if(message.content === "!crea_stanze"){
-
-let teams = loadTeams()
-
-if(teams.length === 0){
-message.reply("❌ Nessun team registrato.")
-return
-}
-
-await message.reply("🏗️ Creazione stanze in corso...")
-
-for(let t of teams){
-
-let name = `🏆・${t.slot} ${t.team}`
-
-try{
-
-await message.guild.channels.create({
-name:name,
-type:ChannelType.GuildVoice,
-parent:VOICE_CATEGORY
-})
-
-}catch(err){
-console.log("Errore creazione stanza:",err)
-}
-
-}
-
-message.channel.send("✅ Stanze vocali create.")
-
-}
-
-})
-
-/* INVIO CODICE LOBBY */
-
-client.on("messageCreate", async message=>{
-
-if(message.author.bot) return
-
-if(message.content.startsWith("!lobby")){
-
-let code = message.content.split(" ")[1]
-
-if(!code){
-message.reply("❌ Inserisci un codice lobby.")
-return
-}
-
-let teams = loadTeams()
-
-for(let t of teams){
-
-let name = `🏆・${t.slot} ${t.team}`
-
-let channel = message.guild.channels.cache.find(c=>c.name === name)
-
-if(channel){
-
-channel.send(`🎮 **CODICE LOBBY:** ${code}`)
-
-}
-
-}
-
-message.reply("✅ Codice lobby inviato a tutti i team.")
-
-}
-
-})
-
-/* CREAZIONE PANNELLO RISULTATI */
-
-client.on("messageCreate", async message=>{
-
-if(message.author.bot) return
-
-if(message.content === "!pannello"){
-
-if(message.channel.id !== RESULT_CHANNEL) return
-
-const row = new ActionRowBuilder().addComponents(
-new ButtonBuilder()
-.setCustomId("result_button")
-.setLabel("🏆 INVIA RISULTATO MATCH")
-.setStyle(ButtonStyle.Primary)
-)
-
-message.channel.send({
-content:"**RØDA CUP — Invio Risultato Match**",
-components:[row]
-})
-
-}
-
-})
-
-/* CLICK RISULTATO */
-
-client.on(Events.InteractionCreate, async interaction=>{
-
-if(!interaction.isButton()) return
+/* RISULTATO MATCH */
 
 if(interaction.customId === "result_button"){
 
@@ -308,13 +308,41 @@ interaction.showModal(modal)
 
 }
 
+}
+
+/* MODAL */
+
+if(interaction.isModalSubmit()){
+
+/* SALVA TEAM */
+
+if(interaction.customId === "team_modal"){
+
+let teams = loadTeams()
+
+const teamName = interaction.fields.getTextInputValue("team")
+const p1 = interaction.fields.getTextInputValue("p1")
+const p2 = interaction.fields.getTextInputValue("p2")
+const p3 = interaction.fields.getTextInputValue("p3")
+
+let slot = teams.length + 1
+
+teams.push({
+slot:slot,
+team:teamName,
+players:[p1,p2,p3]
 })
 
-/* INVIO RISULTATO + SCREENSHOT */
+saveTeams(teams)
 
-client.on(Events.InteractionCreate, async interaction=>{
+interaction.reply({
+content:`✅ Team registrato.\nSlot: ${slot}`,
+ephemeral:true
+})
 
-if(!interaction.isModalSubmit()) return
+}
+
+/* RISULTATI */
 
 if(interaction.customId === "result_modal"){
 
@@ -324,7 +352,7 @@ const k3 = interaction.fields.getTextInputValue("k3")
 const pos = interaction.fields.getTextInputValue("pos")
 
 await interaction.reply({
-content:"📸 Carica ora lo **screenshot della partita**.",
+content:"📸 Carica screenshot partita.",
 ephemeral:true
 })
 
@@ -338,21 +366,18 @@ time:60000
 
 collector.on("collect", async msg=>{
 
-if(msg.attachments.size === 0){
-msg.reply("❌ Devi caricare uno screenshot.")
-return
-}
+if(msg.attachments.size === 0) return
 
 let image = msg.attachments.first().url
 
 let staff = await client.channels.fetch(STAFF_CHANNEL)
 
 staff.send(`
-🏆 **NUOVO RISULTATO MATCH**
+🏆 NUOVO RISULTATO
 
-Kill Player1: ${k1}
-Kill Player2: ${k2}
-Kill Player3: ${k3}
+Kill1: ${k1}
+Kill2: ${k2}
+Kill3: ${k3}
 
 Posizione: ${pos}
 
@@ -366,6 +391,8 @@ await msg.delete()
 
 }
 
+}
+
 })
 
-client.login(process.env.TOKEN)
+client.login(TOKEN)
