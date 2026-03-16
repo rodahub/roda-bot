@@ -43,7 +43,16 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('create_rooms')
-    .setDescription('Crea le stanze vocali dei team')
+    .setDescription('Crea le stanze vocali dei team'),
+
+  new SlashCommandBuilder()
+    .setName('lobbycode')
+    .setDescription('Invia il codice lobby a tutti i team')
+    .addStringOption(option =>
+      option.setName('codice')
+      .setDescription('Codice lobby Warzone')
+      .setRequired(true)
+    )
 
 ].map(command => command.toJSON());
 
@@ -95,17 +104,6 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === "create_rooms") {
 
-      if (teams.length === 0) {
-
-        await interaction.reply({
-          content: "❌ Nessun team registrato.",
-          ephemeral: true
-        });
-
-        return;
-
-      }
-
       const guild = interaction.guild;
 
       for (const team of teams) {
@@ -123,6 +121,39 @@ client.on('interactionCreate', async interaction => {
 
       await interaction.reply({
         content: "✅ Stanze vocali create!",
+        ephemeral: true
+      });
+
+    }
+
+    if (interaction.commandName === "lobbycode") {
+
+      const code = interaction.options.getString("codice");
+
+      const guild = interaction.guild;
+
+      const category = guild.channels.cache.get(CATEGORY_ID);
+
+      const channels = guild.channels.cache.filter(
+        c => c.parentId === CATEGORY_ID && c.type === ChannelType.GuildVoice
+      );
+
+      for (const channel of channels.values()) {
+
+        await channel.send(
+`🏆 **RØDA CUP**
+
+🎮 **CODICE LOBBY**
+
+\`${code}\`
+
+Entrate subito nella partita.`
+        );
+
+      }
+
+      await interaction.reply({
+        content: "✅ Codice lobby inviato a tutti i team.",
         ephemeral: true
       });
 
