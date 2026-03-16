@@ -16,12 +16,21 @@ client.once('ready', async () => {
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
   try {
+
+    // registra il comando SOLO nel tuo server
     await rest.put(
       Routes.applicationGuildCommands(client.user.id, "1442509991109066765"),
       { body: commands },
     );
 
+    // cancella eventuali comandi globali duplicati
+    await rest.put(
+      Routes.applicationCommands(client.user.id),
+      { body: [] },
+    );
+
     console.log('Slash command registrato');
+
   } catch (error) {
     console.error(error);
   }
