@@ -12,14 +12,25 @@ TextInputBuilder,
 TextInputStyle
 } = require('discord.js');
 
+const fs = require("fs");
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-// lista team registrati
+const MAX_TEAMS = 16;
+
 let teams = [];
 
-const MAX_TEAMS = 16;
+function loadTeams() {
+  if (fs.existsSync("teams.json")) {
+    teams = JSON.parse(fs.readFileSync("teams.json"));
+  }
+}
+
+function saveTeams() {
+  fs.writeFileSync("teams.json", JSON.stringify(teams, null, 2));
+}
 
 const commands = [
   new SlashCommandBuilder()
@@ -30,6 +41,8 @@ const commands = [
 client.once('ready', async () => {
 
   console.log("RØDA BOT ONLINE");
+
+  loadTeams();
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
@@ -149,8 +162,10 @@ client.on('interactionCreate', async interaction => {
         player3
       });
 
+      saveTeams();
+
       await interaction.reply({
-        content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**\n\n👤 ${player1}\n👤 ${player2}\n👤 ${player3}`,
+        content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**`,
         ephemeral: true
       });
 
