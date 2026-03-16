@@ -78,25 +78,34 @@ new SlashCommandBuilder()
 
 const rest = new REST({ version: '10' }).setToken(TOKEN)
 
-async function registerCommands(){
+/* RESET COMPLETO COMANDI */
+
+async function resetCommands(){
 
 try{
 
-console.log("Pulizia vecchi slash commands...")
+console.log("ELIMINAZIONE COMANDI GLOBALI...")
+
+await rest.put(
+Routes.applicationCommands(CLIENT_ID),
+{ body: [] }
+)
+
+console.log("ELIMINAZIONE COMANDI SERVER...")
 
 await rest.put(
 Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
 { body: [] }
 )
 
-console.log("Registrazione nuovi slash commands...")
+console.log("REGISTRAZIONE NUOVI COMANDI...")
 
 await rest.put(
 Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
 { body: commands }
 )
 
-console.log("Slash commands aggiornati")
+console.log("RODA BOT VERSIONE NUOVA")
 
 }catch(error){
 console.error(error)
@@ -108,10 +117,9 @@ console.error(error)
 
 client.once("ready", async()=>{
 
-console.log("RODA BOT VERSIONE NUOVA")
 console.log(`BOT ONLINE COME ${client.user.tag}`)
 
-await registerCommands()
+await resetCommands()
 
 })
 
@@ -120,6 +128,8 @@ await registerCommands()
 client.on(Events.InteractionCreate, async interaction => {
 
 if(interaction.isChatInputCommand()){
+
+/* SETUP */
 
 if(interaction.commandName === "setup"){
 
@@ -137,6 +147,8 @@ components:[row]
 
 }
 
+/* CREA STANZE */
+
 if(interaction.commandName === "crea_stanze"){
 
 let teams = loadTeams()
@@ -152,23 +164,19 @@ for(let t of teams){
 
 let name = `🏆・${t.slot} ${t.team}`
 
-try{
-
 await interaction.guild.channels.create({
 name:name,
 type:ChannelType.GuildVoice,
 parent:VOICE_CATEGORY
 })
 
-}catch(err){
-console.log(err)
-}
-
 }
 
 interaction.followUp("✅ Stanze vocali create.")
 
 }
+
+/* LOBBY */
 
 if(interaction.commandName === "lobby"){
 
@@ -185,13 +193,7 @@ c => c.name === channelName
 )
 
 if(channel){
-
-try{
 await channel.send(`🎮 **CODICE LOBBY:** ${code}`)
-}catch(err){
-console.log(err)
-}
-
 }
 
 }
@@ -199,6 +201,8 @@ console.log(err)
 interaction.reply("✅ Codice lobby inviato.")
 
 }
+
+/* PANNELLO RISULTATI */
 
 if(interaction.commandName === "pannello"){
 
@@ -342,53 +346,6 @@ saveTeams(teams)
 interaction.reply({
 content:`✅ Team registrato.\nSlot: ${slot}`,
 ephemeral:true
-})
-
-}
-
-if(interaction.customId === "result_modal"){
-
-const k1 = interaction.fields.getTextInputValue("k1")
-const k2 = interaction.fields.getTextInputValue("k2")
-const k3 = interaction.fields.getTextInputValue("k3")
-const pos = interaction.fields.getTextInputValue("pos")
-
-await interaction.reply({
-content:"📸 Carica screenshot partita.",
-ephemeral:true
-})
-
-const filter = m => m.author.id === interaction.user.id
-
-const collector = interaction.channel.createMessageCollector({
-filter,
-max:1,
-time:60000
-})
-
-collector.on("collect", async msg=>{
-
-if(msg.attachments.size === 0) return
-
-let image = msg.attachments.first().url
-
-let staff = await client.channels.fetch(STAFF_CHANNEL)
-
-staff.send(`
-🏆 NUOVO RISULTATO
-
-Kill1: ${k1}
-Kill2: ${k2}
-Kill3: ${k3}
-
-Posizione: ${pos}
-
-Screenshot:
-${image}
-`)
-
-await msg.delete()
-
 })
 
 }
