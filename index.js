@@ -76,8 +76,6 @@ new SlashCommandBuilder()
 
 ].map(command => command.toJSON())
 
-/* REGISTRA COMANDI */
-
 const rest = new REST({ version: '10' }).setToken(TOKEN)
 
 async function registerCommands(){
@@ -110,6 +108,7 @@ console.error(error)
 
 client.once("ready", async()=>{
 
+console.log("RODA BOT VERSIONE NUOVA")
 console.log(`BOT ONLINE COME ${client.user.tag}`)
 
 await registerCommands()
@@ -121,8 +120,6 @@ await registerCommands()
 client.on(Events.InteractionCreate, async interaction => {
 
 if(interaction.isChatInputCommand()){
-
-/* SETUP */
 
 if(interaction.commandName === "setup"){
 
@@ -139,8 +136,6 @@ components:[row]
 })
 
 }
-
-/* CREA STANZE */
 
 if(interaction.commandName === "crea_stanze"){
 
@@ -175,8 +170,6 @@ interaction.followUp("✅ Stanze vocali create.")
 
 }
 
-/* LOBBY */
-
 if(interaction.commandName === "lobby"){
 
 let code = interaction.options.getString("codice")
@@ -206,8 +199,6 @@ console.log(err)
 interaction.reply("✅ Codice lobby inviato.")
 
 }
-
-/* PANNELLO RISULTATI */
 
 if(interaction.commandName === "pannello"){
 
