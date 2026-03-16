@@ -9,7 +9,8 @@ ButtonBuilder,
 ButtonStyle,
 ModalBuilder,
 TextInputBuilder,
-TextInputStyle
+TextInputStyle,
+ChannelType
 } = require('discord.js');
 
 const fs = require("fs");
@@ -19,6 +20,8 @@ const client = new Client({
 });
 
 const MAX_TEAMS = 16;
+
+const CATEGORY_ID = "1478303649586348165";
 
 let teams = [];
 
@@ -33,9 +36,15 @@ function saveTeams() {
 }
 
 const commands = [
+
   new SlashCommandBuilder()
     .setName('setup')
-    .setDescription('Crea il pannello registrazione RØDA CUP')
+    .setDescription('Crea il pannello registrazione RØDA CUP'),
+
+  new SlashCommandBuilder()
+    .setName('create_rooms')
+    .setDescription('Crea le stanze vocali dei team')
+
 ].map(command => command.toJSON());
 
 client.once('ready', async () => {
@@ -57,8 +66,6 @@ client.once('ready', async () => {
       Routes.applicationCommands(client.user.id),
       { body: [] },
     );
-
-    console.log("Slash command registrato");
 
   } catch (error) {
     console.error(error);
@@ -82,6 +89,41 @@ client.on('interactionCreate', async interaction => {
       await interaction.reply({
         content: "🏆 **RØDA CUP**\n\nPremi il bottone per registrare il tuo team.",
         components: [row]
+      });
+
+    }
+
+    if (interaction.commandName === "create_rooms") {
+
+      if (teams.length === 0) {
+
+        await interaction.reply({
+          content: "❌ Nessun team registrato.",
+          ephemeral: true
+        });
+
+        return;
+
+      }
+
+      const guild = interaction.guild;
+
+      for (const team of teams) {
+
+        const roomName = `🏆・${team.slot}・${team.teamName}`;
+
+        await guild.channels.create({
+          name: roomName,
+          type: ChannelType.GuildVoice,
+          parent: CATEGORY_ID,
+          userLimit: 3
+        });
+
+      }
+
+      await interaction.reply({
+        content: "✅ Stanze vocali create!",
+        ephemeral: true
       });
 
     }
@@ -170,25 +212,6 @@ client.on('interactionCreate', async interaction => {
         content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**`,
         ephemeral: true
       });
-
-      if (teams.length === MAX_TEAMS) {
-
-        const channel = interaction.channel;
-
-        let message = "🏆 **RØDA CUP - TEAM REGISTRATI**\n\n";
-
-        teams.forEach(t => {
-
-          message += `🎯 SLOT ${t.slot} - **${t.teamName}**\n`;
-          message += `${t.player1}\n`;
-          message += `${t.player2}\n`;
-          message += `${t.player3}\n\n`;
-
-        });
-
-        channel.send(message);
-
-      }
 
     }
 
