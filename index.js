@@ -76,25 +76,44 @@ new SlashCommandBuilder()
 
 ].map(command => command.toJSON())
 
+/* REGISTRA COMANDI */
+
 const rest = new REST({ version: '10' }).setToken(TOKEN)
 
-async function deployCommands(){
+async function registerCommands(){
+
 try{
+
+console.log("Pulizia vecchi slash commands...")
+
+await rest.put(
+Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+{ body: [] }
+)
+
+console.log("Registrazione nuovi slash commands...")
+
 await rest.put(
 Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
 { body: commands }
 )
-console.log("Slash commands registrati")
+
+console.log("Slash commands aggiornati")
+
 }catch(error){
 console.error(error)
 }
+
 }
 
 /* READY */
 
-client.once("ready",()=>{
+client.once("ready", async()=>{
+
 console.log(`BOT ONLINE COME ${client.user.tag}`)
-deployCommands()
+
+await registerCommands()
+
 })
 
 /* INTERAZIONI */
@@ -216,11 +235,9 @@ components:[row]
 
 }
 
-/* CLICK BOTTONI */
+/* BOTTONI */
 
 if(interaction.isButton()){
-
-/* REGISTRA TEAM */
 
 if(interaction.customId === "register_team"){
 
@@ -269,8 +286,6 @@ interaction.showModal(modal)
 
 }
 
-/* RISULTATO MATCH */
-
 if(interaction.customId === "result_button"){
 
 const modal = new ModalBuilder()
@@ -314,8 +329,6 @@ interaction.showModal(modal)
 
 if(interaction.isModalSubmit()){
 
-/* SALVA TEAM */
-
 if(interaction.customId === "team_modal"){
 
 let teams = loadTeams()
@@ -341,8 +354,6 @@ ephemeral:true
 })
 
 }
-
-/* RISULTATI */
 
 if(interaction.customId === "result_modal"){
 
