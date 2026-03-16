@@ -22,6 +22,8 @@ const client = new Client({
 const MAX_TEAMS = 16;
 
 const CATEGORY_ID = "1478303649586348165";
+const STAFF_CHANNEL = "1483201939712774145";
+const RESULT_CHANNEL = "1478305525111193725";
 
 let teams = [];
 
@@ -39,20 +41,15 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('setup')
-    .setDescription('Crea il pannello registrazione RØDA CUP'),
+    .setDescription('Crea il pannello registrazione'),
 
   new SlashCommandBuilder()
     .setName('create_rooms')
-    .setDescription('Crea le stanze vocali dei team'),
+    .setDescription('Crea le vocali team'),
 
   new SlashCommandBuilder()
-    .setName('lobbycode')
-    .setDescription('Invia il codice lobby a tutti i team')
-    .addStringOption(option =>
-      option.setName('codice')
-      .setDescription('Codice lobby Warzone')
-      .setRequired(true)
-    )
+    .setName('panel_results')
+    .setDescription('Crea pannello invio risultati'),
 
 ].map(command => command.toJSON());
 
@@ -64,189 +61,237 @@ client.once('ready', async () => {
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
-  try {
-
-    await rest.put(
-      Routes.applicationGuildCommands(client.user.id, "1442509991109066765"),
-      { body: commands },
-    );
-
-    await rest.put(
-      Routes.applicationCommands(client.user.id),
-      { body: [] },
-    );
-
-  } catch (error) {
-    console.error(error);
-  }
+  await rest.put(
+    Routes.applicationGuildCommands(client.user.id, "1442509991109066765"),
+    { body: commands },
+  );
 
 });
 
 client.on('interactionCreate', async interaction => {
 
-  if (interaction.isChatInputCommand()) {
+if (interaction.isChatInputCommand()) {
 
-    if (interaction.commandName === "setup") {
+if (interaction.commandName === "setup") {
 
-      const button = new ButtonBuilder()
-        .setCustomId("register_team")
-        .setLabel("REGISTRA TEAM")
-        .setStyle(ButtonStyle.Success);
+const button = new ButtonBuilder()
+.setCustomId("register_team")
+.setLabel("REGISTRA TEAM")
+.setStyle(ButtonStyle.Success);
 
-      const row = new ActionRowBuilder().addComponents(button);
+const row = new ActionRowBuilder().addComponents(button);
 
-      await interaction.reply({
-        content: "🏆 **RØDA CUP**\n\nPremi il bottone per registrare il tuo team.",
-        components: [row]
-      });
+await interaction.reply({
+content:"🏆 RØDA CUP\nPremi per registrare il team",
+components:[row]
+});
 
-    }
+}
 
-    if (interaction.commandName === "create_rooms") {
+if (interaction.commandName === "panel_results") {
 
-      const guild = interaction.guild;
+const button = new ButtonBuilder()
+.setCustomId("send_result")
+.setLabel("INVIA RISULTATO MATCH")
+.setStyle(ButtonStyle.Primary);
 
-      for (const team of teams) {
+const row = new ActionRowBuilder().addComponents(button);
 
-        const roomName = `🏆・${team.slot}・${team.teamName}`;
+const channel = await client.channels.fetch(RESULT_CHANNEL);
 
-        await guild.channels.create({
-          name: roomName,
-          type: ChannelType.GuildVoice,
-          parent: CATEGORY_ID,
-          userLimit: 3
-        });
+channel.send({
+content:"🏆 **INVIO RISULTATI MATCH**\nPremi il bottone sotto.",
+components:[row]
+});
 
-      }
+await interaction.reply({content:"Pannello creato.",ephemeral:true});
 
-      await interaction.reply({
-        content: "✅ Stanze vocali create!",
-        ephemeral: true
-      });
+}
 
-    }
+if (interaction.commandName === "create_rooms") {
 
-    if (interaction.commandName === "lobbycode") {
+const guild = interaction.guild;
 
-      const code = interaction.options.getString("codice");
+for (const team of teams) {
 
-      const guild = interaction.guild;
+const roomName = `🏆・${team.slot}・${team.teamName}`;
 
-      const category = guild.channels.cache.get(CATEGORY_ID);
+await guild.channels.create({
+name: roomName,
+type: ChannelType.GuildVoice,
+parent: CATEGORY_ID,
+userLimit:3
+});
 
-      const channels = guild.channels.cache.filter(
-        c => c.parentId === CATEGORY_ID && c.type === ChannelType.GuildVoice
-      );
+}
 
-      for (const channel of channels.values()) {
+await interaction.reply({content:"Stanze create",ephemeral:true});
 
-        await channel.send(
-`🏆 **RØDA CUP**
+}
 
-🎮 **CODICE LOBBY**
+}
 
-\`${code}\`
+if (interaction.isButton()) {
 
-Entrate subito nella partita.`
-        );
+if (interaction.customId === "register_team") {
 
-      }
+if (teams.length >= MAX_TEAMS) {
+return interaction.reply({content:"Slot pieni",ephemeral:true});
+}
 
-      await interaction.reply({
-        content: "✅ Codice lobby inviato a tutti i team.",
-        ephemeral: true
-      });
+const modal = new ModalBuilder()
+.setCustomId("team_reg")
+.setTitle("Registrazione Team");
 
-    }
+const team = new TextInputBuilder()
+.setCustomId("team")
+.setLabel("Nome Team")
+.setStyle(TextInputStyle.Short);
 
-  }
+const p1 = new TextInputBuilder()
+.setCustomId("p1")
+.setLabel("Player 1")
+.setStyle(TextInputStyle.Short);
 
-  if (interaction.isButton()) {
+const p2 = new TextInputBuilder()
+.setCustomId("p2")
+.setLabel("Player 2")
+.setStyle(TextInputStyle.Short);
 
-    if (interaction.customId === "register_team") {
+const p3 = new TextInputBuilder()
+.setCustomId("p3")
+.setLabel("Player 3")
+.setStyle(TextInputStyle.Short);
 
-      if (teams.length >= MAX_TEAMS) {
+modal.addComponents(
+new ActionRowBuilder().addComponents(team),
+new ActionRowBuilder().addComponents(p1),
+new ActionRowBuilder().addComponents(p2),
+new ActionRowBuilder().addComponents(p3)
+);
 
-        await interaction.reply({
-          content: "❌ Gli slot del torneo sono pieni.",
-          ephemeral: true
-        });
+interaction.showModal(modal);
 
-        return;
-      }
+}
 
-      const modal = new ModalBuilder()
-        .setCustomId("team_registration")
-        .setTitle("Registrazione Team");
+if (interaction.customId === "send_result") {
 
-      const teamName = new TextInputBuilder()
-        .setCustomId("team_name")
-        .setLabel("Nome Team")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+const modal = new ModalBuilder()
+.setCustomId("match_result")
+.setTitle("Invia Risultato");
 
-      const player1 = new TextInputBuilder()
-        .setCustomId("player1")
-        .setLabel("Player 1 (Capitano)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+const team = new TextInputBuilder()
+.setCustomId("team")
+.setLabel("Nome Team")
+.setStyle(TextInputStyle.Short);
 
-      const player2 = new TextInputBuilder()
-        .setCustomId("player2")
-        .setLabel("Player 2")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+const k1 = new TextInputBuilder()
+.setCustomId("k1")
+.setLabel("Kill Player1")
+.setStyle(TextInputStyle.Short);
 
-      const player3 = new TextInputBuilder()
-        .setCustomId("player3")
-        .setLabel("Player 3")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+const k2 = new TextInputBuilder()
+.setCustomId("k2")
+.setLabel("Kill Player2")
+.setStyle(TextInputStyle.Short);
 
-      const row1 = new ActionRowBuilder().addComponents(teamName);
-      const row2 = new ActionRowBuilder().addComponents(player1);
-      const row3 = new ActionRowBuilder().addComponents(player2);
-      const row4 = new ActionRowBuilder().addComponents(player3);
+const k3 = new TextInputBuilder()
+.setCustomId("k3")
+.setLabel("Kill Player3")
+.setStyle(TextInputStyle.Short);
 
-      modal.addComponents(row1,row2,row3,row4);
+const pos = new TextInputBuilder()
+.setCustomId("pos")
+.setLabel("Posizione")
+.setStyle(TextInputStyle.Short);
 
-      await interaction.showModal(modal);
+modal.addComponents(
+new ActionRowBuilder().addComponents(team),
+new ActionRowBuilder().addComponents(k1),
+new ActionRowBuilder().addComponents(k2),
+new ActionRowBuilder().addComponents(k3),
+new ActionRowBuilder().addComponents(pos)
+);
 
-    }
+interaction.showModal(modal);
 
-  }
+}
 
-  if (interaction.isModalSubmit()) {
+}
 
-    if (interaction.customId === "team_registration") {
+if (interaction.isModalSubmit()) {
 
-      const teamName = interaction.fields.getTextInputValue("team_name");
-      const player1 = interaction.fields.getTextInputValue("player1");
-      const player2 = interaction.fields.getTextInputValue("player2");
-      const player3 = interaction.fields.getTextInputValue("player3");
+if (interaction.customId === "team_reg") {
 
-      const slot = teams.length + 1;
+const team = interaction.fields.getTextInputValue("team");
+const p1 = interaction.fields.getTextInputValue("p1");
+const p2 = interaction.fields.getTextInputValue("p2");
+const p3 = interaction.fields.getTextInputValue("p3");
 
-      const team = {
-        slot,
-        teamName,
-        player1,
-        player2,
-        player3
-      };
+const slot = teams.length + 1;
 
-      teams.push(team);
+teams.push({slot,team,p1,p2,p3});
 
-      saveTeams();
+saveTeams();
 
-      await interaction.reply({
-        content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**`,
-        ephemeral: true
-      });
+interaction.reply({content:`Team registrato SLOT ${slot}`,ephemeral:true});
 
-    }
+}
 
-  }
+if (interaction.customId === "match_result") {
+
+const team = interaction.fields.getTextInputValue("team");
+const k1 = parseInt(interaction.fields.getTextInputValue("k1"));
+const k2 = parseInt(interaction.fields.getTextInputValue("k2"));
+const k3 = parseInt(interaction.fields.getTextInputValue("k3"));
+const pos = parseInt(interaction.fields.getTextInputValue("pos"));
+
+const kills = k1 + k2 + k3;
+
+const bonus = {
+1:10,
+2:6,
+3:5,
+4:4,
+5:3,
+6:2,
+7:1,
+8:1
+};
+
+const points = kills + (bonus[pos] || 0);
+
+const staff = await client.channels.fetch(STAFF_CHANNEL);
+
+const approve = new ButtonBuilder()
+.setCustomId("approve")
+.setLabel("APPROVA")
+.setStyle(ButtonStyle.Success);
+
+const reject = new ButtonBuilder()
+.setCustomId("reject")
+.setLabel("RIFIUTA")
+.setStyle(ButtonStyle.Danger);
+
+const row = new ActionRowBuilder().addComponents(approve,reject);
+
+staff.send({
+content:`📊 NUOVO RISULTATO
+
+Team: ${team}
+
+Kill Totali: ${kills}
+Posizione: ${pos}
+
+Punti Match: ${points}`,
+components:[row]
+});
+
+interaction.reply({content:"Risultato inviato allo staff",ephemeral:true});
+
+}
+
+}
 
 });
 
