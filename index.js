@@ -1,9 +1,6 @@
 const { 
 Client,
 GatewayIntentBits,
-SlashCommandBuilder,
-REST,
-Routes,
 ActionRowBuilder,
 ButtonBuilder,
 ButtonStyle,
@@ -11,288 +8,333 @@ ModalBuilder,
 TextInputBuilder,
 TextInputStyle,
 ChannelType
-} = require('discord.js');
+} = require("discord.js")
 
-const fs = require("fs");
+const fs = require("fs")
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+intents:[
+GatewayIntentBits.Guilds,
+GatewayIntentBits.GuildMessages,
+GatewayIntentBits.MessageContent
+]
+})
 
-const MAX_TEAMS = 16;
+/* CONFIG */
 
-const CATEGORY_ID = "1478303649586348165";
-const STAFF_CHANNEL = "1483201939712774145";
-const RESULT_CHANNEL = "1478305525111193725";
+const MAX_TEAMS = 16
 
-let teams = [];
+const STAFF_CHANNEL = "1483201939712774145"
+const RESULT_CHANNEL = "1478305525111193725"
+const VOICE_CATEGORY = "1478303649586348165"
 
-function loadTeams() {
-  if (fs.existsSync("teams.json")) {
-    teams = JSON.parse(fs.readFileSync("teams.json"));
-  }
+/* DATABASE */
+
+function loadTeams(){
+return JSON.parse(fs.readFileSync("./teams.json"))
 }
 
-function saveTeams() {
-  fs.writeFileSync("teams.json", JSON.stringify(teams, null, 2));
+function saveTeams(data){
+fs.writeFileSync("./teams.json", JSON.stringify(data,null,2))
 }
 
-const commands = [
+/* BOT READY */
 
-  new SlashCommandBuilder()
-    .setName('setup')
-    .setDescription('Crea il pannello registrazione'),
+client.once("ready",()=>{
+console.log("RØDA BOT ONLINE")
+})
 
-  new SlashCommandBuilder()
-    .setName('create_rooms')
-    .setDescription('Crea le vocali team'),
+/* SETUP REGISTRAZIONE */
 
-  new SlashCommandBuilder()
-    .setName('panel_results')
-    .setDescription('Crea pannello invio risultati'),
+client.on("messageCreate", async message=>{
 
-].map(command => command.toJSON());
+if(message.author.bot) return
 
-client.once('ready', async () => {
+if(message.content === "!setup"){
 
-  console.log("RØDA BOT ONLINE");
-
-  loadTeams();
-
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, "1442509991109066765"),
-    { body: commands },
-  );
-
-});
-
-client.on('interactionCreate', async interaction => {
-
-if (interaction.isChatInputCommand()) {
-
-if (interaction.commandName === "setup") {
-
-const button = new ButtonBuilder()
+const row = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
 .setCustomId("register_team")
-.setLabel("REGISTRA TEAM")
-.setStyle(ButtonStyle.Success);
+.setLabel("🏆 REGISTRA TEAM")
+.setStyle(ButtonStyle.Success)
+)
 
-const row = new ActionRowBuilder().addComponents(button);
-
-await interaction.reply({
-content:"🏆 RØDA CUP\nPremi per registrare il team",
+message.channel.send({
+content:"**Iscrizione RØDA CUP**",
 components:[row]
-});
+})
 
 }
 
-if (interaction.commandName === "panel_results") {
+})
 
-const button = new ButtonBuilder()
-.setCustomId("send_result")
-.setLabel("INVIA RISULTATO MATCH")
-.setStyle(ButtonStyle.Primary);
+/* CLICK REGISTRA */
 
-const row = new ActionRowBuilder().addComponents(button);
+client.on("interactionCreate", async interaction=>{
 
-const channel = await client.channels.fetch(RESULT_CHANNEL);
+if(!interaction.isButton()) return
 
-channel.send({
-content:"🏆 **INVIO RISULTATI MATCH**\nPremi il bottone sotto.",
-components:[row]
-});
+if(interaction.customId === "register_team"){
 
-await interaction.reply({content:"Pannello creato.",ephemeral:true});
+let teams = loadTeams()
 
-}
-
-if (interaction.commandName === "create_rooms") {
-
-const guild = interaction.guild;
-
-for (const team of teams) {
-
-const roomName = `🏆・${team.slot}・${team.teamName}`;
-
-await guild.channels.create({
-name: roomName,
-type: ChannelType.GuildVoice,
-parent: CATEGORY_ID,
-userLimit:3
-});
-
-}
-
-await interaction.reply({content:"Stanze create",ephemeral:true});
-
-}
-
-}
-
-if (interaction.isButton()) {
-
-if (interaction.customId === "register_team") {
-
-if (teams.length >= MAX_TEAMS) {
-return interaction.reply({content:"Slot pieni",ephemeral:true});
+if(teams.length >= MAX_TEAMS){
+interaction.reply({
+content:"❌ Slot torneo pieni",
+ephemeral:true
+})
+return
 }
 
 const modal = new ModalBuilder()
-.setCustomId("team_reg")
-.setTitle("Registrazione Team");
+.setCustomId("team_modal")
+.setTitle("Registrazione Team")
 
 const team = new TextInputBuilder()
 .setCustomId("team")
 .setLabel("Nome Team")
-.setStyle(TextInputStyle.Short);
+.setStyle(TextInputStyle.Short)
 
 const p1 = new TextInputBuilder()
 .setCustomId("p1")
-.setLabel("Player 1")
-.setStyle(TextInputStyle.Short);
+.setLabel("Player1 COD")
+.setStyle(TextInputStyle.Short)
 
 const p2 = new TextInputBuilder()
 .setCustomId("p2")
-.setLabel("Player 2")
-.setStyle(TextInputStyle.Short);
+.setLabel("Player2 COD")
+.setStyle(TextInputStyle.Short)
 
 const p3 = new TextInputBuilder()
 .setCustomId("p3")
-.setLabel("Player 3")
-.setStyle(TextInputStyle.Short);
+.setLabel("Player3 COD")
+.setStyle(TextInputStyle.Short)
 
 modal.addComponents(
 new ActionRowBuilder().addComponents(team),
 new ActionRowBuilder().addComponents(p1),
 new ActionRowBuilder().addComponents(p2),
 new ActionRowBuilder().addComponents(p3)
-);
+)
 
-interaction.showModal(modal);
+interaction.showModal(modal)
 
 }
 
-if (interaction.customId === "send_result") {
+})
+
+/* INVIO TEAM */
+
+client.on("interactionCreate", async interaction=>{
+
+if(!interaction.isModalSubmit()) return
+
+if(interaction.customId === "team_modal"){
+
+let teams = loadTeams()
+
+const teamName = interaction.fields.getTextInputValue("team")
+const p1 = interaction.fields.getTextInputValue("p1")
+const p2 = interaction.fields.getTextInputValue("p2")
+const p3 = interaction.fields.getTextInputValue("p3")
+
+let slot = teams.length + 1
+
+teams.push({
+slot:slot,
+team:teamName,
+players:[p1,p2,p3]
+})
+
+saveTeams(teams)
+
+interaction.reply({
+content:`✅ Team registrato. Slot ${slot}`,
+ephemeral:true
+})
+
+}
+
+})
+
+/* CREA VOCALI */
+
+client.on("messageCreate", async message=>{
+
+if(message.content === "!crea_stanze"){
+
+let teams = loadTeams()
+
+if(teams.length === 0){
+message.reply("Nessun team registrato")
+return
+}
+
+for(let t of teams){
+
+let name = `🏆・${t.slot} ${t.team}`
+
+await message.guild.channels.create({
+name:name,
+type:ChannelType.GuildVoice,
+parent:VOICE_CATEGORY
+})
+
+}
+
+message.reply("Stanze create")
+
+}
+
+})
+
+/* CODICE LOBBY */
+
+client.on("messageCreate", async message=>{
+
+if(message.content.startsWith("!lobby")){
+
+let code = message.content.split(" ")[1]
+
+let teams = loadTeams()
+
+for(let t of teams){
+
+let channelName = `🏆・${t.slot} ${t.team}`
+
+let channel = message.guild.channels.cache.find(c=>c.name === channelName)
+
+if(channel){
+channel.send(`🎮 CODICE LOBBY: ${code}`)
+}
+
+}
+
+}
+
+})
+
+/* PANNELLO RISULTATI */
+
+client.on("messageCreate", async message=>{
+
+if(message.content === "!pannello"){
+
+if(message.channel.id !== RESULT_CHANNEL) return
+
+const row = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId("result_button")
+.setLabel("🏆 INVIA RISULTATO MATCH")
+.setStyle(ButtonStyle.Primary)
+)
+
+message.channel.send({
+content:"**Invia risultato match**",
+components:[row]
+})
+
+}
+
+})
+
+/* CLICK RISULTATO */
+
+client.on("interactionCreate", async interaction=>{
+
+if(!interaction.isButton()) return
+
+if(interaction.customId === "result_button"){
 
 const modal = new ModalBuilder()
-.setCustomId("match_result")
-.setTitle("Invia Risultato");
-
-const team = new TextInputBuilder()
-.setCustomId("team")
-.setLabel("Nome Team")
-.setStyle(TextInputStyle.Short);
+.setCustomId("result_modal")
+.setTitle("Risultato Match")
 
 const k1 = new TextInputBuilder()
 .setCustomId("k1")
 .setLabel("Kill Player1")
-.setStyle(TextInputStyle.Short);
+.setStyle(TextInputStyle.Short)
 
 const k2 = new TextInputBuilder()
 .setCustomId("k2")
 .setLabel("Kill Player2")
-.setStyle(TextInputStyle.Short);
+.setStyle(TextInputStyle.Short)
 
 const k3 = new TextInputBuilder()
 .setCustomId("k3")
 .setLabel("Kill Player3")
-.setStyle(TextInputStyle.Short);
+.setStyle(TextInputStyle.Short)
 
 const pos = new TextInputBuilder()
 .setCustomId("pos")
 .setLabel("Posizione")
-.setStyle(TextInputStyle.Short);
+.setStyle(TextInputStyle.Short)
 
 modal.addComponents(
-new ActionRowBuilder().addComponents(team),
 new ActionRowBuilder().addComponents(k1),
 new ActionRowBuilder().addComponents(k2),
 new ActionRowBuilder().addComponents(k3),
 new ActionRowBuilder().addComponents(pos)
-);
+)
 
-interaction.showModal(modal);
-
-}
+interaction.showModal(modal)
 
 }
 
-if (interaction.isModalSubmit()) {
+})
 
-if (interaction.customId === "team_reg") {
+/* INVIO RISULTATO */
 
-const team = interaction.fields.getTextInputValue("team");
-const p1 = interaction.fields.getTextInputValue("p1");
-const p2 = interaction.fields.getTextInputValue("p2");
-const p3 = interaction.fields.getTextInputValue("p3");
+client.on("interactionCreate", async interaction=>{
 
-const slot = teams.length + 1;
+if(!interaction.isModalSubmit()) return
 
-teams.push({slot,team,p1,p2,p3});
+if(interaction.customId === "result_modal"){
 
-saveTeams();
+const k1 = interaction.fields.getTextInputValue("k1")
+const k2 = interaction.fields.getTextInputValue("k2")
+const k3 = interaction.fields.getTextInputValue("k3")
+const pos = interaction.fields.getTextInputValue("pos")
 
-interaction.reply({content:`Team registrato SLOT ${slot}`,ephemeral:true});
+interaction.reply({
+content:"📸 Carica lo screenshot ora",
+ephemeral:true
+})
 
-}
+const filter = m => m.author.id === interaction.user.id
 
-if (interaction.customId === "match_result") {
+const collector = interaction.channel.createMessageCollector({
+filter,
+max:1,
+time:60000
+})
 
-const team = interaction.fields.getTextInputValue("team");
-const k1 = parseInt(interaction.fields.getTextInputValue("k1"));
-const k2 = parseInt(interaction.fields.getTextInputValue("k2"));
-const k3 = parseInt(interaction.fields.getTextInputValue("k3"));
-const pos = parseInt(interaction.fields.getTextInputValue("pos"));
+collector.on("collect", async msg=>{
 
-const kills = k1 + k2 + k3;
+if(msg.attachments.size === 0) return
 
-const bonus = {
-1:10,
-2:6,
-3:5,
-4:4,
-5:3,
-6:2,
-7:1,
-8:1
-};
+let image = msg.attachments.first().url
 
-const points = kills + (bonus[pos] || 0);
+let staff = await client.channels.fetch(STAFF_CHANNEL)
 
-const staff = await client.channels.fetch(STAFF_CHANNEL);
+staff.send(`
+🏆 NUOVO RISULTATO
 
-const approve = new ButtonBuilder()
-.setCustomId("approve")
-.setLabel("APPROVA")
-.setStyle(ButtonStyle.Success);
+Kill1: ${k1}
+Kill2: ${k2}
+Kill3: ${k3}
 
-const reject = new ButtonBuilder()
-.setCustomId("reject")
-.setLabel("RIFIUTA")
-.setStyle(ButtonStyle.Danger);
-
-const row = new ActionRowBuilder().addComponents(approve,reject);
-
-staff.send({
-content:`📊 NUOVO RISULTATO
-
-Team: ${team}
-
-Kill Totali: ${kills}
 Posizione: ${pos}
 
-Punti Match: ${points}`,
-components:[row]
-});
+Screen: ${image}
+`)
 
-interaction.reply({content:"Risultato inviato allo staff",ephemeral:true});
+msg.delete()
+
+})
 
 }
 
-}
+})
 
-});
-
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN)
