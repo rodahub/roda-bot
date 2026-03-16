@@ -16,6 +16,11 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
+// lista team registrati
+let teams = [];
+
+const MAX_TEAMS = 16;
+
 const commands = [
   new SlashCommandBuilder()
     .setName('setup')
@@ -50,7 +55,6 @@ client.once('ready', async () => {
 
 client.on('interactionCreate', async interaction => {
 
-  // comando /setup
   if (interaction.isChatInputCommand()) {
 
     if (interaction.commandName === "setup") {
@@ -71,10 +75,19 @@ client.on('interactionCreate', async interaction => {
 
   }
 
-  // bottone
   if (interaction.isButton()) {
 
     if (interaction.customId === "register_team") {
+
+      if (teams.length >= MAX_TEAMS) {
+
+        await interaction.reply({
+          content: "❌ Gli slot del torneo sono pieni.",
+          ephemeral: true
+        });
+
+        return;
+      }
 
       const modal = new ModalBuilder()
         .setCustomId("team_registration")
@@ -109,7 +122,7 @@ client.on('interactionCreate', async interaction => {
       const row3 = new ActionRowBuilder().addComponents(player2);
       const row4 = new ActionRowBuilder().addComponents(player3);
 
-      modal.addComponents(row1, row2, row3, row4);
+      modal.addComponents(row1,row2,row3,row4);
 
       await interaction.showModal(modal);
 
@@ -117,7 +130,6 @@ client.on('interactionCreate', async interaction => {
 
   }
 
-  // invio modulo
   if (interaction.isModalSubmit()) {
 
     if (interaction.customId === "team_registration") {
@@ -127,8 +139,18 @@ client.on('interactionCreate', async interaction => {
       const player2 = interaction.fields.getTextInputValue("player2");
       const player3 = interaction.fields.getTextInputValue("player3");
 
+      const slot = teams.length + 1;
+
+      teams.push({
+        slot,
+        teamName,
+        player1,
+        player2,
+        player3
+      });
+
       await interaction.reply({
-        content: `✅ Team registrato!\n\nTeam: **${teamName}**\nPlayer 1: ${player1}\nPlayer 2: ${player2}\nPlayer 3: ${player3}`,
+        content: `✅ Team registrato!\n\n🏷 Team: **${teamName}**\n🎯 Slot: **${slot}**\n\n👤 ${player1}\n👤 ${player2}\n👤 ${player3}`,
         ephemeral: true
       });
 
