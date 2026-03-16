@@ -1,12 +1,15 @@
 const { 
-Client, 
-GatewayIntentBits, 
-SlashCommandBuilder, 
-REST, 
+Client,
+GatewayIntentBits,
+SlashCommandBuilder,
+REST,
 Routes,
 ActionRowBuilder,
 ButtonBuilder,
-ButtonStyle
+ButtonStyle,
+ModalBuilder,
+TextInputBuilder,
+TextInputStyle
 } = require('discord.js');
 
 const client = new Client({
@@ -16,12 +19,12 @@ const client = new Client({
 const commands = [
   new SlashCommandBuilder()
     .setName('setup')
-    .setDescription('Crea il pannello di registrazione RØDA CUP')
+    .setDescription('Crea il pannello registrazione RØDA CUP')
 ].map(command => command.toJSON());
 
 client.once('ready', async () => {
 
-  console.log('RØDA BOT ONLINE');
+  console.log("RØDA BOT ONLINE");
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
@@ -37,7 +40,7 @@ client.once('ready', async () => {
       { body: [] },
     );
 
-    console.log('Slash command registrato');
+    console.log("Slash command registrato");
 
   } catch (error) {
     console.error(error);
@@ -47,21 +50,20 @@ client.once('ready', async () => {
 
 client.on('interactionCreate', async interaction => {
 
-  // comando slash
+  // comando /setup
   if (interaction.isChatInputCommand()) {
 
-    if (interaction.commandName === 'setup') {
+    if (interaction.commandName === "setup") {
 
       const button = new ButtonBuilder()
-        .setCustomId('register_team')
-        .setLabel('REGISTRA TEAM')
-        .setStyle(ButtonStyle.Primary);
+        .setCustomId("register_team")
+        .setLabel("REGISTRA TEAM")
+        .setStyle(ButtonStyle.Success);
 
-      const row = new ActionRowBuilder()
-        .addComponents(button);
+      const row = new ActionRowBuilder().addComponents(button);
 
       await interaction.reply({
-        content: "🏆 **RØDA CUP**\n\nPremi il bottone qui sotto per registrare il tuo team.",
+        content: "🏆 **RØDA CUP**\n\nPremi il bottone per registrare il tuo team.",
         components: [row]
       });
 
@@ -69,13 +71,64 @@ client.on('interactionCreate', async interaction => {
 
   }
 
-  // bottone registrazione
+  // bottone
   if (interaction.isButton()) {
 
     if (interaction.customId === "register_team") {
 
+      const modal = new ModalBuilder()
+        .setCustomId("team_registration")
+        .setTitle("Registrazione Team");
+
+      const teamName = new TextInputBuilder()
+        .setCustomId("team_name")
+        .setLabel("Nome Team")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const player1 = new TextInputBuilder()
+        .setCustomId("player1")
+        .setLabel("Player 1 (Capitano)")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const player2 = new TextInputBuilder()
+        .setCustomId("player2")
+        .setLabel("Player 2")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const player3 = new TextInputBuilder()
+        .setCustomId("player3")
+        .setLabel("Player 3")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const row1 = new ActionRowBuilder().addComponents(teamName);
+      const row2 = new ActionRowBuilder().addComponents(player1);
+      const row3 = new ActionRowBuilder().addComponents(player2);
+      const row4 = new ActionRowBuilder().addComponents(player3);
+
+      modal.addComponents(row1, row2, row3, row4);
+
+      await interaction.showModal(modal);
+
+    }
+
+  }
+
+  // invio modulo
+  if (interaction.isModalSubmit()) {
+
+    if (interaction.customId === "team_registration") {
+
+      const teamName = interaction.fields.getTextInputValue("team_name");
+      const player1 = interaction.fields.getTextInputValue("player1");
+      const player2 = interaction.fields.getTextInputValue("player2");
+      const player3 = interaction.fields.getTextInputValue("player3");
+
       await interaction.reply({
-        content: "📋 Sistema registrazione in arrivo...",
+        content: `✅ Team registrato!\n\nTeam: **${teamName}**\nPlayer 1: ${player1}\nPlayer 2: ${player2}\nPlayer 3: ${player3}`,
         ephemeral: true
       });
 
