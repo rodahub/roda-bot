@@ -318,7 +318,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// SCREENSHOT
+// SCREENSHOT + EMBED COMPLETO
 client.on('messageCreate', async message => {
   if (!message.attachments.size) return;
 
@@ -332,10 +332,21 @@ client.on('messageCreate', async message => {
   delete data.tempSubmit[message.author.id];
   save();
 
+  const players = teams[temp.team].players;
+
   const embed = new EmbedBuilder()
-    .setTitle("NUOVO RISULTATO")
-    .setDescription(`${temp.team} | ${temp.total} kill | pos ${temp.pos}`)
-    .setImage(image);
+    .setTitle("📸 NUOVO RISULTATO")
+    .setDescription(
+      `🏷️ Team: ${temp.team}
+👤 ${players[0]}: ${temp.kills[0]} kill
+👤 ${players[1]}: ${temp.kills[1]} kill
+👤 ${players[2]}: ${temp.kills[2]} kill
+
+🔥 Totale: ${temp.total}
+🏆 Posizione: ${temp.pos}`
+    )
+    .setImage(image)
+    .setFooter({ text: "In attesa approvazione staff" });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(ButtonStyle.Success),
