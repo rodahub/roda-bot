@@ -1,4 +1,20 @@
-const { Client, GatewayIntentBits, Partials, REST, Routes, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  StringSelectMenuBuilder,
+  EmbedBuilder
+} = require('discord.js');
+
 const fs = require('fs');
 
 const client = new Client({
@@ -11,7 +27,7 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// CONFIG
+// ===== CONFIG =====
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = "1442509991109066765";
@@ -24,19 +40,14 @@ const CATEGORY_ID = "1478303649586348165";
 const MAX_TEAMS = 16;
 const MAX_MATCH = 3;
 
-// SAFE LOAD
+// ===== LOAD SAFE =====
 let teams = {};
 let data = {};
 
-try {
-  teams = JSON.parse(fs.readFileSync('./teams.json'));
-} catch { teams = {}; }
+try { teams = JSON.parse(fs.readFileSync('./teams.json')); } catch { teams = {}; }
+try { data = JSON.parse(fs.readFileSync('./data.json')); } catch { data = {}; }
 
-try {
-  data = JSON.parse(fs.readFileSync('./data.json'));
-} catch { data = {}; }
-
-// DEFAULTS
+// ===== DEFAULT =====
 data.currentMatch ??= 1;
 data.results ??= {};
 data.pending ??= {};
@@ -44,30 +55,36 @@ data.tempSubmit ??= {};
 data.scores ??= {};
 data.fragger ??= {};
 
-// SAVE
+// ===== SAVE =====
 function save() {
   fs.writeFileSync('./teams.json', JSON.stringify(teams, null, 2));
   fs.writeFileSync('./data.json', JSON.stringify(data, null, 2));
 }
 
-// POINTS
+// ===== PUNTI =====
 function calcPoints(pos, kills) {
   const table = {1:15,2:12,3:10,4:8,5:6,6:4,7:2};
   return (table[pos] || 0) + kills;
 }
 
-// LEADERBOARD
+// ===== CLASSIFICA =====
 async function updateLeaderboard() {
   try {
     const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
 
     const sorted = Object.entries(data.scores).sort((a,b)=>b[1]-a[1]);
-
     let desc = sorted.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("\n");
+
+    const frag = Object.entries(data.fragger)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(f=>`${f[0]} (${f[1]})`)
+      .join("\n");
 
     const embed = new EmbedBuilder()
       .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
-      .setDescription(desc || "Nessun dato");
+      .setDescription(desc || "Nessun dato")
+      .addFields({ name: "🔥 Top Fragger", value: frag || "Nessuno" });
 
     const msgs = await channel.messages.fetch({ limit: 5 });
     for (let m of msgs.values()) {
@@ -81,44 +98,59 @@ async function updateLeaderboard() {
   }
 }
 
-// COMMANDS
+// ===== COMMANDS =====
 const commands = [
-  new SlashCommandBuilder().setName('register_team').setDescription('Registra team')
-    .addStringOption(o=>o.setName('team').setRequired(true))
-    .addStringOption(o=>o.setName('p1').setRequired(true))
-    .addStringOption(o=>o.setName('p2').setRequired(true))
-    .addStringOption(o=>o.setName('p3').setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('register_team')
+    .setDescription('Registra un team')
+    .addStringOption(o=>o.setName('team').setDescription('Nome team').setRequired(true))
+    .addStringOption(o=>o.setName('p1').setDescription('Player 1').setRequired(true))
+    .addStringOption(o=>o.setName('p2').setDescription('Player 2').setRequired(true))
+    .addStringOption(o=>o.setName('p3').setDescription('Player 3').setRequired(true)),
 
-  new SlashCommandBuilder().setName('panel_results').setDescription('Invia risultato'),
+  new SlashCommandBuilder()
+    .setName('panel_results')
+    .setDescription('Invia risultato match'),
 
-  new SlashCommandBuilder().setName('crea_stanze').setDescription('Crea vocali'),
+  new SlashCommandBuilder()
+    .setName('crea_stanze')
+    .setDescription('Crea stanze vocali'),
 
-  new SlashCommandBuilder().setName('delete_rooms').setDescription('Elimina vocali'),
+  new SlashCommandBuilder()
+    .setName('delete_rooms')
+    .setDescription('Elimina solo le vocali create dal bot'),
 
-  new SlashCommandBuilder().setName('next_match').setDescription('Next match'),
+  new SlashCommandBuilder()
+    .setName('next_match')
+    .setDescription('Passa al prossimo match'),
 
-  new SlashCommandBuilder().setName('reset_storico').setDescription('Reset')
-].map(c=>c.toJSON());
+  new SlashCommandBuilder()
+    .setName('reset_storico')
+    .setDescription('Reset completo torneo')
+].map(c => c.toJSON());
 
-// REGISTER
+// ===== REGISTER =====
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 (async () => {
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+  await rest.put(
+    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+    { body: commands }
+  );
 })();
 
-// READY
+// ===== READY =====
 client.once('ready', () => {
   console.log(`ONLINE ${client.user.tag}`);
 });
 
-// UNICO HANDLER
+// ===== INTERACTIONS =====
 client.on('interactionCreate', async interaction => {
-
   try {
 
     // REGISTER TEAM
     if (interaction.isChatInputCommand() && interaction.commandName === 'register_team') {
       const team = interaction.options.getString('team');
+
       teams[team] = {
         players: [
           interaction.options.getString('p1'),
@@ -126,6 +158,7 @@ client.on('interactionCreate', async interaction => {
           interaction.options.getString('p3')
         ]
       };
+
       save();
       return interaction.reply({ content: "✅ Team registrato", ephemeral: true });
     }
@@ -144,13 +177,19 @@ client.on('interactionCreate', async interaction => {
       return interaction.reply("✅ Stanze create");
     }
 
-    // DELETE
+    // DELETE SOLO VOCALI
     if (interaction.commandName === 'delete_rooms') {
-      const channels = interaction.guild.channels.cache.filter(c => c.parentId === CATEGORY_ID && c.type === 2 && c.name.startsWith("🏆・"));
+      const channels = interaction.guild.channels.cache.filter(c =>
+        c.parentId === CATEGORY_ID &&
+        c.type === 2 &&
+        c.name.startsWith("🏆・")
+      );
+
       for (let ch of channels.values()) {
         try { await ch.delete(); } catch {}
       }
-      return interaction.reply("🗑️ Eliminato");
+
+      return interaction.reply("🗑️ Vocali eliminate");
     }
 
     // PANEL
@@ -170,6 +209,10 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isStringSelectMenu()) {
       const team = interaction.values[0];
 
+      if (data.results[team]?.[data.currentMatch]) {
+        return interaction.reply({ content: "❌ Già inviato", ephemeral: true });
+      }
+
       const modal = new ModalBuilder()
         .setCustomId(`modal_${team}`)
         .setTitle(`Risultato ${team}`);
@@ -187,14 +230,17 @@ client.on('interactionCreate', async interaction => {
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("pos").setLabel("Posizione").setStyle(TextInputStyle.Short)
+          new TextInputBuilder()
+            .setCustomId("pos")
+            .setLabel("Posizione")
+            .setStyle(TextInputStyle.Short)
         )
       );
 
       return interaction.showModal(modal);
     }
 
-    // SUBMIT
+    // MODAL SUBMIT
     if (interaction.isModalSubmit()) {
       const team = interaction.customId.split("_")[1];
 
@@ -212,7 +258,10 @@ client.on('interactionCreate', async interaction => {
       data.tempSubmit[interaction.user.id] = { team, kills, total, pos };
       save();
 
-      return interaction.reply({ content: "📸 Invia screenshot ora", ephemeral: true });
+      return interaction.reply({
+        content: "📸 Invia lo screenshot qui sotto",
+        ephemeral: true
+      });
     }
 
     // BUTTON
@@ -222,10 +271,27 @@ client.on('interactionCreate', async interaction => {
       if (!p) return;
 
       if (action === "ok") {
+
+        if (!data.results[p.team]) data.results[p.team] = {};
+        data.results[p.team][data.currentMatch] = p;
+
         data.scores[p.team] = (data.scores[p.team] || 0) + calcPoints(p.pos, p.total);
+
+        p.kills.forEach((k,i)=>{
+          const name = teams[p.team].players[i];
+          data.fragger[name] = (data.fragger[name] || 0) + k;
+        });
+
         delete data.pending[id];
+
+        const count = Object.values(data.results).filter(r => r[data.currentMatch]).length;
+        if (count >= MAX_TEAMS && data.currentMatch < MAX_MATCH) {
+          data.currentMatch++;
+        }
+
         save();
         await updateLeaderboard();
+
         return interaction.reply("✅ APPROVATO");
       }
 
@@ -236,13 +302,26 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
+    // NEXT MATCH
+    if (interaction.commandName === 'next_match') {
+      data.currentMatch++;
+      save();
+      return interaction.reply(`➡️ MATCH ${data.currentMatch}`);
+    }
+
+    // RESET
+    if (interaction.commandName === 'reset_storico') {
+      data = { currentMatch:1, results:{}, pending:{}, tempSubmit:{}, scores:{}, fragger:{} };
+      save();
+      return interaction.reply("♻️ RESET COMPLETO");
+    }
+
   } catch (err) {
     console.log("ERRORE:", err);
   }
-
 });
 
-// SCREENSHOT
+// ===== SCREENSHOT =====
 client.on('messageCreate', async message => {
   try {
     if (message.author.bot) return;
@@ -259,7 +338,7 @@ client.on('messageCreate', async message => {
     save();
 
     const embed = new EmbedBuilder()
-      .setTitle("📩 Risultato")
+      .setTitle("📩 Nuovo risultato")
       .setDescription(`Team: ${temp.team}\nKill: ${temp.total}\nPos: ${temp.pos}`)
       .setImage(image);
 
