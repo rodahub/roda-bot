@@ -108,7 +108,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('panel_results')
-    .setDescription('Invia risultati'),
+    .setDescription('Crea pannello risultati'),
 
   new SlashCommandBuilder()
     .setName('crea_stanze')
@@ -142,14 +142,13 @@ client.once('ready', () => {
 client.on('interactionCreate', async interaction => {
   try {
 
+    // ===== COMANDI =====
     if (interaction.isChatInputCommand()) {
-
-      await interaction.deferReply();
 
       if (interaction.commandName === 'panel_results') {
 
         if (Object.keys(teams).length === 0) {
-          return interaction.editReply("❌ Nessun team registrato");
+          return interaction.reply({ content: "❌ Nessun team registrato", ephemeral: true });
         }
 
         const menu = new StringSelectMenuBuilder()
@@ -162,11 +161,14 @@ client.on('interactionCreate', async interaction => {
             }))
           );
 
-        return interaction.editReply({
+        return interaction.reply({
           content: `📊 MATCH ${data.currentMatch}`,
           components: [new ActionRowBuilder().addComponents(menu)]
         });
       }
+
+      // ALTRI COMANDI (con defer)
+      await interaction.deferReply();
 
       if (interaction.commandName === 'register_team') {
         const team = interaction.options.getString('team');
@@ -223,6 +225,7 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
+    // ===== SELECT =====
     if (interaction.isStringSelectMenu()) {
       const team = interaction.values[0];
 
@@ -255,6 +258,7 @@ client.on('interactionCreate', async interaction => {
       return interaction.showModal(modal);
     }
 
+    // ===== MODAL =====
     if (interaction.isModalSubmit()) {
       const team = interaction.customId.split("_")[1];
 
