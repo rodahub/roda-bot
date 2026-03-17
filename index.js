@@ -67,28 +67,33 @@ function calcPoints(pos, kills) {
 
 // ===== CLASSIFICA =====
 async function updateLeaderboard() {
-  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  try {
+    const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
 
-  const sorted = Object.entries(data.scores).sort((a,b)=>b[1]-a[1]);
-  let desc = sorted.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("\n");
+    const sorted = Object.entries(data.scores).sort((a,b)=>b[1]-a[1]);
+    let desc = sorted.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("\n");
 
-  const frag = Object.entries(data.fragger)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,5)
-    .map(f=>`${f[0]} (${f[1]})`)
-    .join("\n");
+    const frag = Object.entries(data.fragger)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(f=>`${f[0]} (${f[1]})`)
+      .join("\n");
 
-  const embed = new EmbedBuilder()
-    .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
-    .setDescription(desc || "Nessun dato")
-    .addFields({ name: "🔥 Top Fragger", value: frag || "Nessuno" });
+    const embed = new EmbedBuilder()
+      .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
+      .setDescription(desc || "Nessun dato")
+      .addFields({ name: "🔥 Top Fragger", value: frag || "Nessuno" });
 
-  const msgs = await channel.messages.fetch({ limit: 5 });
-  for (let m of msgs.values()) {
-    try { await m.delete(); } catch {}
+    const msgs = await channel.messages.fetch({ limit: 5 });
+    for (let m of msgs.values()) {
+      try { await m.delete(); } catch {}
+    }
+
+    await channel.send({ embeds: [embed] });
+
+  } catch (e) {
+    console.log("Errore leaderboard:", e);
   }
-
-  await channel.send({ embeds: [embed] });
 }
 
 // ===== COMMANDS =====
@@ -111,7 +116,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('delete_rooms')
-    .setDescription('Elimina solo vocali'),
+    .setDescription('Elimina vocali'),
 
   new SlashCommandBuilder()
     .setName('next_match')
@@ -143,6 +148,8 @@ client.on('interactionCreate', async interaction => {
     // ===== COMANDI =====
     if (interaction.isChatInputCommand()) {
 
+      await interaction.deferReply();
+
       if (interaction.commandName === 'register_team') {
         const team = interaction.options.getString('team');
 
@@ -155,7 +162,7 @@ client.on('interactionCreate', async interaction => {
         };
 
         save();
-        return interaction.reply({ content: "✅ Team registrato", ephemeral: true });
+        return interaction.editReply("✅ Team registrato");
       }
 
       if (interaction.commandName === 'crea_stanze') {
@@ -168,7 +175,7 @@ client.on('interactionCreate', async interaction => {
           });
           i++;
         }
-        return interaction.reply("✅ Stanze create");
+        return interaction.editReply("✅ Stanze create");
       }
 
       if (interaction.commandName === 'delete_rooms') {
@@ -182,7 +189,7 @@ client.on('interactionCreate', async interaction => {
           try { await ch.delete(); } catch {}
         }
 
-        return interaction.reply("🗑️ Vocali eliminate");
+        return interaction.editReply("🗑️ Vocali eliminate");
       }
 
       if (interaction.commandName === 'panel_results') {
@@ -191,7 +198,7 @@ client.on('interactionCreate', async interaction => {
           .setPlaceholder('Scegli team')
           .addOptions(Object.keys(teams).map(t => ({ label: t, value: t })));
 
-        return interaction.reply({
+        return interaction.editReply({
           content: `📊 MATCH ${data.currentMatch}`,
           components: [new ActionRowBuilder().addComponents(menu)]
         });
@@ -200,13 +207,13 @@ client.on('interactionCreate', async interaction => {
       if (interaction.commandName === 'next_match') {
         data.currentMatch++;
         save();
-        return interaction.reply(`➡️ MATCH ${data.currentMatch}`);
+        return interaction.editReply(`➡️ MATCH ${data.currentMatch}`);
       }
 
       if (interaction.commandName === 'reset_storico') {
         data = { currentMatch:1, results:{}, pending:{}, tempSubmit:{}, scores:{}, fragger:{} };
         save();
-        return interaction.reply("♻️ RESET COMPLETO");
+        return interaction.editReply("♻️ RESET COMPLETO");
       }
     }
 
