@@ -35,6 +35,7 @@ const GUILD_ID = "1442509991109066765";
 const STAFF_CHANNEL = "1483201939712774145";
 const CLASSIFICA_CHANNEL = "1478304828592623777";
 const CATEGORY_ID = "1478303649586348165";
+const STORICO_CHANNEL = "1483594392819204126";
 
 // LOAD
 let teams = {};
@@ -48,6 +49,7 @@ data.pending ??= {};
 data.tempSubmit ??= {};
 data.scores ??= {};
 data.fragger ??= {};
+data.leaderboardMessageId ??= null;
 
 // SAVE
 function save() {
@@ -61,7 +63,7 @@ function calcPoints(pos, kills) {
   return (table[pos] || 0) + kills;
 }
 
-// CLASSIFICA
+// CLASSIFICA (NO SPAM)
 async function updateLeaderboard() {
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
 
@@ -79,7 +81,17 @@ async function updateLeaderboard() {
     .setDescription(desc)
     .addFields({ name: "🔥 Top Fragger", value: frag });
 
-  await channel.send({ embeds: [embed] });
+  if (data.leaderboardMessageId) {
+    try {
+      const msg = await channel.messages.fetch(data.leaderboardMessageId);
+      await msg.edit({ embeds: [embed] });
+      return;
+    } catch {}
+  }
+
+  const msg = await channel.send({ embeds: [embed] });
+  data.leaderboardMessageId = msg.id;
+  save();
 }
 
 // COMMANDS
@@ -201,7 +213,8 @@ client.on('interactionCreate', async interaction => {
           pending: {},
           tempSubmit: {},
           scores: {},
-          fragger: {}
+          fragger: {},
+          leaderboardMessageId: null
         };
         save();
         return interaction.reply("💥 RESET COMPLETO");
@@ -346,7 +359,7 @@ client.on('messageCreate', async message => {
 🏆 Posizione: ${temp.pos}`
     )
     .setImage(image)
-    .setFooter({ text: "In attesa approvazione staff" });
+    .setFooter({ text: "⏳ In attesa approvazione staff" });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(ButtonStyle.Success),
@@ -359,7 +372,7 @@ client.on('messageCreate', async message => {
   await message.delete().catch(()=>{});
 });
 
-// APPROVA
+// APPROVA / RIFIUTA + STORICO
 client.on('interactionCreate', async interaction => {
   if (!interaction.isButton()) return;
 
@@ -367,12 +380,14 @@ client.on('interactionCreate', async interaction => {
   const p = data.pending[id];
   if (!p) return;
 
+  const players = teams[p.team].players;
+
   if (action === "ok") {
 
     data.scores[p.team] = (data.scores[p.team] || 0) + calcPoints(p.pos, p.total);
 
     p.kills.forEach((k,i)=>{
-      const name = teams[p.team].players[i];
+      const name = players[i];
       data.fragger[name] = (data.fragger[name] || 0) + k;
     });
 
@@ -381,13 +396,25 @@ client.on('interactionCreate', async interaction => {
 
     await updateLeaderboard();
 
-    return interaction.reply("✅ APPROVATO");
+    const embed = EmbedBuilder.from(interaction.message.embeds[0])
+      .setFooter({ text: "✅ APPROVATO" });
+
+    await interaction.update({ embeds: [embed], components: [] });
+
+    const storico = await client.channels.fetch(STORICO_CHANNEL);
+    await storico.send({ embeds: [embed] });
+
+    return;
   }
 
   if (action === "no") {
     delete data.pending[id];
     save();
-    return interaction.reply("❌ RIFIUTATO");
+
+    const embed = EmbedBuilder.from(interaction.message.embeds[0])
+      .setFooter({ text: "❌ RIFIUTATO" });
+
+    await interaction.update({ embeds: [embed], components: [] });
   }
 });
 
