@@ -1,8 +1,8 @@
-const { Client, GatewayIntentBits, Partials, REST, Routes, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, REST, Routes, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+  intents: [GatewayIntentBits.Guilds],
   partials: [Partials.Channel]
 });
 
@@ -19,11 +19,12 @@ const CATEGORY_ID = "1478303649586348165";
 const MAX_TEAMS = 16;
 const MAX_MATCH = 3;
 
-// ===== DATABASE =====
+// ===== DB =====
 let teams = JSON.parse(fs.readFileSync('./teams.json', 'utf8'));
 let data = JSON.parse(fs.readFileSync('./data.json', 'utf8'));
 
 if (!data.currentMatch) data.currentMatch = 1;
+if (!data.pending) data.pending = {};
 if (!data.results) data.results = {};
 if (!data.scores) data.scores = {};
 if (!data.fragger) data.fragger = {};
@@ -44,24 +45,13 @@ const commands = [
 
   new SlashCommandBuilder().setName('next_match').setDescription('Forza match'),
 
-  new SlashCommandBuilder().setName('annulla_risultato')
-    .addStringOption(o=>o.setName('team').setRequired(true)),
-
-  new SlashCommandBuilder().setName('aggiungi_calcolo')
-    .addStringOption(o=>o.setName('team').setRequired(true))
-    .addIntegerOption(o=>o.setName('kills').setRequired(true))
-    .addIntegerOption(o=>o.setName('pos').setRequired(true)),
-
-  new SlashCommandBuilder().setName('reset_storico').setDescription('Reset totale')
+  new SlashCommandBuilder().setName('reset_storico').setDescription('Reset tutto')
 ].map(c=>c.toJSON());
 
-// ===== REGISTER COMMANDS =====
+// ===== REGISTER =====
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 (async () => {
-  await rest.put(
-    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-    { body: commands }
-  );
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
 })();
 
 // ===== UTILS =====
@@ -80,10 +70,10 @@ client.once('ready', () => {
   console.log(`ONLINE ${client.user.tag}`);
 });
 
-// ===== INTERACTIONS =====
+// ===== EVENTS =====
 client.on('interactionCreate', async interaction => {
 
-  // ===== REGISTER TEAM =====
+  // REGISTER
   if (interaction.isChatInputCommand() && interaction.commandName === 'register_team') {
     const team = interaction.options.getString('team');
     teams[team] = {
@@ -97,7 +87,7 @@ client.on('interactionCreate', async interaction => {
     return interaction.reply({ content: "✅ Team registrato", ephemeral: true });
   }
 
-  // ===== CREA STANZE =====
+  // CREA STANZE
   if (interaction.commandName === 'crea_stanze') {
     let i = 1;
     for (let t in teams) {
@@ -111,17 +101,17 @@ client.on('interactionCreate', async interaction => {
     return interaction.reply("✅ Stanze create");
   }
 
-  // ===== DELETE ROOMS =====
+  // DELETE ROOMS
   if (interaction.commandName === 'delete_rooms') {
     const channels = interaction.guild.channels.cache.filter(c => c.parentId === CATEGORY_ID && c.type === 2 && c.name.startsWith("🏆・"));
     for (let ch of channels.values()) await ch.delete();
     return interaction.reply("🗑️ Vocali eliminate");
   }
 
-  // ===== PANEL =====
+  // PANEL
   if (interaction.commandName === 'panel_results') {
     const menu = new StringSelectMenuBuilder()
-      .setCustomId('select_team')
+      .setCustomId('team_select')
       .setPlaceholder('Scegli team')
       .addOptions(Object.keys(teams).map(t => ({ label: t, value: t })));
 
@@ -131,13 +121,9 @@ client.on('interactionCreate', async interaction => {
     });
   }
 
-  // ===== SELECT TEAM =====
-  if (interaction.isStringSelectMenu() && interaction.customId === 'select_team') {
+  // SELECT TEAM
+  if (interaction.isStringSelectMenu()) {
     const team = interaction.values[0];
-
-    if (data.results[team]?.[data.currentMatch]) {
-      return interaction.reply({ content: "❌ Già inviato", ephemeral: true });
-    }
 
     const modal = new ModalBuilder()
       .setCustomId(`modal_${team}`)
@@ -157,13 +143,16 @@ client.on('interactionCreate', async interaction => {
     modal.addComponents(
       new ActionRowBuilder().addComponents(
         new TextInputBuilder().setCustomId("pos").setLabel("Posizione").setStyle(TextInputStyle.Short)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("screen").setLabel("Link Screenshot").setStyle(TextInputStyle.Short)
       )
     );
 
     return interaction.showModal(modal);
   }
 
-  // ===== SUBMIT RESULT =====
+  // SUBMIT
   if (interaction.isModalSubmit()) {
     const team = interaction.customId.split("_")[1];
 
@@ -174,46 +163,65 @@ client.on('interactionCreate', async interaction => {
       let k = parseInt(interaction.fields.getTextInputValue(`k${i}`));
       kills.push(k);
       total += k;
-      data.fragger[teams[team].players[i]] = (data.fragger[teams[team].players[i]] || 0) + k;
     }
 
     let pos = parseInt(interaction.fields.getTextInputValue("pos"));
+    let screen = interaction.fields.getTextInputValue("screen");
 
-    if (!data.results[team]) data.results[team] = {};
-    data.results[team][data.currentMatch] = { kills, pos };
+    const id = `${team}_${Date.now()}`;
 
-    let pts = calcPoints(pos, total);
-    data.scores[team] = (data.scores[team] || 0) + pts;
+    data.pending[id] = { team, kills, pos, total, screen };
 
     save();
 
-    // AUTO NEXT MATCH
-    const count = Object.values(data.results).filter(r => r[data.currentMatch]).length;
-    if (count >= MAX_TEAMS && data.currentMatch < MAX_MATCH) {
-      data.currentMatch++;
-      save();
-    }
+    const embed = new EmbedBuilder()
+      .setTitle(`📩 Nuovo risultato`)
+      .setDescription(`Team: ${team}\nKill: ${total}\nPos: ${pos}`)
+      .setImage(screen);
 
-    return interaction.reply({ content: "✅ Inviato allo staff", ephemeral: true });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`no_${id}`).setLabel("RIFIUTA").setStyle(ButtonStyle.Danger)
+    );
+
+    const staff = await client.channels.fetch(STAFF_CHANNEL);
+    await staff.send({ embeds: [embed], components: [row] });
+
+    await interaction.reply({ content: "📩 Inviato allo staff", ephemeral: true });
+
+    // PULISCE CANALE CALCOLO
+    const calc = await client.channels.fetch(CALCOLO_CHANNEL);
+    const msgs = await calc.messages.fetch({ limit: 10 });
+    msgs.forEach(m => m.delete());
+
   }
 
-  // ===== NEXT MATCH =====
-  if (interaction.commandName === 'next_match') {
-    if (data.currentMatch < MAX_MATCH) {
-      data.currentMatch++;
-      save();
-      return interaction.reply(`➡️ MATCH ${data.currentMatch}`);
-    }
-  }
+  // APPROVA / RIFIUTA
+  if (interaction.isButton()) {
+    const [action, id] = interaction.customId.split("_");
+    const p = data.pending[id];
 
-  // ===== RESET =====
-  if (interaction.commandName === 'reset_storico') {
-    data = { currentMatch:1, results:{}, scores:{}, fragger:{} };
-    save();
-    return interaction.reply("♻️ Reset fatto");
+    if (!p) return;
+
+    if (action === "ok") {
+      if (!data.results[p.team]) data.results[p.team] = {};
+      data.results[p.team][data.currentMatch] = p;
+
+      data.scores[p.team] = (data.scores[p.team] || 0) + calcPoints(p.pos, p.total);
+
+      delete data.pending[id];
+      save();
+
+      return interaction.reply("✅ APPROVATO");
+    }
+
+    if (action === "no") {
+      delete data.pending[id];
+      save();
+      return interaction.reply("❌ RIFIUTATO");
+    }
   }
 
 });
 
-// ===== LOGIN =====
 client.login(TOKEN);
