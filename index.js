@@ -82,7 +82,7 @@ async function updateLeaderboard() {
   await channel.send({ embeds: [embed] });
 }
 
-// COMMANDS (TUTTI)
+// COMMANDS
 const commands = [
   new SlashCommandBuilder().setName('panel_register').setDescription('Pannello registrazione'),
   new SlashCommandBuilder().setName('panel_results').setDescription('Pannello risultati'),
@@ -111,10 +111,8 @@ client.once('ready', () => console.log("ONLINE"));
 client.on('interactionCreate', async interaction => {
   try {
 
-    // ===== COMANDI =====
     if (interaction.isChatInputCommand()) {
 
-      // PANEL REGISTER
       if (interaction.commandName === 'panel_register') {
         const btn = new ButtonBuilder()
           .setCustomId("register_btn")
@@ -127,7 +125,6 @@ client.on('interactionCreate', async interaction => {
         });
       }
 
-      // PANEL RESULTS
       if (interaction.commandName === 'panel_results') {
 
         if (Object.keys(teams).length === 0) {
@@ -211,7 +208,7 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
-    // ===== BUTTON REGISTER =====
+    // REGISTER BUTTON
     if (interaction.isButton() && interaction.customId === "register_btn") {
 
       const modal = new ModalBuilder()
@@ -220,52 +217,60 @@ client.on('interactionCreate', async interaction => {
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("team").setLabel("Nome Team").setStyle(1)
+          new TextInputBuilder().setCustomId("team").setLabel("Nome Team").setStyle(TextInputStyle.Short)
         ),
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("p1").setLabel("Player 1").setStyle(1)
+          new TextInputBuilder().setCustomId("p1").setLabel("Player 1").setStyle(TextInputStyle.Short)
         ),
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("p2").setLabel("Player 2").setStyle(1)
+          new TextInputBuilder().setCustomId("p2").setLabel("Player 2").setStyle(TextInputStyle.Short)
         ),
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("p3").setLabel("Player 3").setStyle(1)
+          new TextInputBuilder().setCustomId("p3").setLabel("Player 3").setStyle(TextInputStyle.Short)
         )
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== SELECT TEAM =====
+    // SELECT TEAM
     if (interaction.isStringSelectMenu()) {
 
       const team = interaction.values[0];
+      const players = teams[team].players;
 
       const modal = new ModalBuilder()
         .setCustomId(`modal_${team}`)
         .setTitle(`Risultato ${team}`);
 
-      for (let i=0;i<3;i++) {
+      for (let i = 0; i < 3; i++) {
         modal.addComponents(
           new ActionRowBuilder().addComponents(
-            new TextInputBuilder().setCustomId(`k${i}`).setLabel(`Kill Player ${i+1}`).setStyle(1)
+            new TextInputBuilder()
+              .setCustomId(`k${i}`)
+              .setLabel(`Kill ${players[i]}`)
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
           )
         );
       }
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder().setCustomId("pos").setLabel("Posizione").setStyle(1)
+          new TextInputBuilder()
+            .setCustomId("pos")
+            .setLabel("Posizione")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
         )
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== MODAL =====
+    // MODAL
     if (interaction.isModalSubmit()) {
 
-      // REGISTER
       if (interaction.customId === "register_modal") {
 
         const team = interaction.fields.getTextInputValue("team");
@@ -283,7 +288,6 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply({ content: "✅ Team registrato", ephemeral: true });
       }
 
-      // RESULTS
       if (interaction.customId.startsWith("modal_")) {
 
         const team = interaction.customId.split("_")[1];
@@ -303,7 +307,7 @@ client.on('interactionCreate', async interaction => {
         save();
 
         return interaction.reply({
-          content: "📸 Invia lo screenshot qui",
+          content: "📸 Invia QUI sotto lo screenshot della partita (obbligatorio)",
           ephemeral: true
         });
       }
@@ -314,7 +318,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// ===== SCREENSHOT =====
+// SCREENSHOT
 client.on('messageCreate', async message => {
   if (!message.attachments.size) return;
 
@@ -334,8 +338,8 @@ client.on('messageCreate', async message => {
     .setImage(image);
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(3),
-    new ButtonBuilder().setCustomId(`no_${id}`).setLabel("RIFIUTA").setStyle(4)
+    new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`no_${id}`).setLabel("RIFIUTA").setStyle(ButtonStyle.Danger)
   );
 
   const staff = await client.channels.fetch(STAFF_CHANNEL);
@@ -344,7 +348,7 @@ client.on('messageCreate', async message => {
   await message.delete().catch(()=>{});
 });
 
-// ===== APPROVA =====
+// APPROVA
 client.on('interactionCreate', async interaction => {
   if (!interaction.isButton()) return;
 
