@@ -21,8 +21,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Channel]
 });
@@ -34,17 +33,13 @@ const GUILD_ID = "1442509991109066765";
 
 const STAFF_CHANNEL = "1483201939712774145";
 const CLASSIFICA_CHANNEL = "1478304828592623777";
-const CATEGORY_ID = "1478303649586348165";
-
-const MAX_TEAMS = 16;
-const MAX_MATCH = 3;
 
 // LOAD
 let teams = {};
 let data = {};
 
-try { teams = JSON.parse(fs.readFileSync('./teams.json')); } catch { teams = {}; }
-try { data = JSON.parse(fs.readFileSync('./data.json')); } catch { data = {}; }
+try { teams = JSON.parse(fs.readFileSync('./teams.json')); } catch {}
+try { data = JSON.parse(fs.readFileSync('./data.json')); } catch {}
 
 data.currentMatch ??= 1;
 data.results ??= {};
@@ -65,225 +60,233 @@ function calcPoints(pos, kills) {
   return (table[pos] || 0) + kills;
 }
 
-// LEADERBOARD
+// CLASSIFICA
 async function updateLeaderboard() {
-  try {
-    const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
 
-    const sorted = Object.entries(data.scores).sort((a,b)=>b[1]-a[1]);
-    let desc = sorted.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("\n");
+  const sorted = Object.entries(data.scores).sort((a,b)=>b[1]-a[1]);
+  const desc = sorted.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("\n");
 
-    const frag = Object.entries(data.fragger)
-      .sort((a,b)=>b[1]-a[1])
-      .slice(0,5)
-      .map(f=>`${f[0]} (${f[1]})`)
-      .join("\n");
+  const frag = Object.entries(data.fragger)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5)
+    .map(f=>`${f[0]} (${f[1]})`)
+    .join("\n");
 
-    const embed = new EmbedBuilder()
-      .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
-      .setDescription(desc || "Nessun dato")
-      .addFields({ name: "🔥 Top Fragger", value: frag || "Nessuno" });
+  const embed = new EmbedBuilder()
+    .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
+    .setDescription(desc || "Nessun dato")
+    .addFields({ name: "🔥 Top Fragger", value: frag || "Nessuno" });
 
-    const msgs = await channel.messages.fetch({ limit: 5 });
-    for (let m of msgs.values()) {
-      try { await m.delete(); } catch {}
-    }
-
-    await channel.send({ embeds: [embed] });
-
-  } catch (e) {
-    console.log(e);
-  }
+  await channel.send({ embeds: [embed] });
 }
 
 // COMMANDS
 const commands = [
-  new SlashCommandBuilder()
-    .setName('register_team')
-    .setDescription('Registra team')
-    .addStringOption(o=>o.setName('team').setDescription('Nome team').setRequired(true))
-    .addStringOption(o=>o.setName('p1').setDescription('Player 1').setRequired(true))
-    .addStringOption(o=>o.setName('p2').setDescription('Player 2').setRequired(true))
-    .addStringOption(o=>o.setName('p3').setDescription('Player 3').setRequired(true)),
-
-  new SlashCommandBuilder()
-    .setName('panel_results')
-    .setDescription('Crea pannello risultati'),
-
-  new SlashCommandBuilder()
-    .setName('crea_stanze')
-    .setDescription('Crea vocali'),
-
-  new SlashCommandBuilder()
-    .setName('delete_rooms')
-    .setDescription('Elimina vocali'),
-
-  new SlashCommandBuilder()
-    .setName('next_match')
-    .setDescription('Prossimo match'),
-
-  new SlashCommandBuilder()
-    .setName('reset_storico')
-    .setDescription('Reset torneo')
+  new SlashCommandBuilder().setName('panel_register').setDescription('Pannello registrazione'),
+  new SlashCommandBuilder().setName('panel_results').setDescription('Pannello risultati')
 ].map(c => c.toJSON());
 
-// REGISTER
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 (async () => {
   await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
 })();
 
 // READY
-client.once('ready', () => {
-  console.log(`ONLINE ${client.user.tag}`);
-});
+client.once('ready', () => console.log("ONLINE"));
 
 // INTERACTIONS
 client.on('interactionCreate', async interaction => {
   try {
 
-    // ===== COMANDI =====
-    if (interaction.isChatInputCommand()) {
+    // PANEL REGISTER
+    if (interaction.isChatInputCommand() && interaction.commandName === 'panel_register') {
 
-      if (interaction.commandName === 'panel_results') {
+      const btn = new ButtonBuilder()
+        .setCustomId("register_btn")
+        .setLabel("📥 REGISTRA TEAM")
+        .setStyle(ButtonStyle.Primary);
 
-        if (Object.keys(teams).length === 0) {
-          return interaction.reply({ content: "❌ Nessun team registrato", ephemeral: true });
-        }
-
-        const menu = new StringSelectMenuBuilder()
-          .setCustomId('team_select')
-          .setPlaceholder('Scegli team')
-          .addOptions(
-            Object.keys(teams).map(t => ({
-              label: t,
-              value: t
-            }))
-          );
-
-        return interaction.reply({
-          content: `📊 MATCH ${data.currentMatch}`,
-          components: [new ActionRowBuilder().addComponents(menu)]
-        });
-      }
-
-      // ALTRI COMANDI (con defer)
-      await interaction.deferReply();
-
-      if (interaction.commandName === 'register_team') {
-        const team = interaction.options.getString('team');
-
-        teams[team] = {
-          players: [
-            interaction.options.getString('p1'),
-            interaction.options.getString('p2'),
-            interaction.options.getString('p3')
-          ]
-        };
-
-        save();
-        return interaction.editReply("✅ Team registrato");
-      }
-
-      if (interaction.commandName === 'crea_stanze') {
-        let i = 1;
-        for (let t in teams) {
-          await interaction.guild.channels.create({
-            name: `🏆・${i} ${t}`,
-            type: 2,
-            parent: CATEGORY_ID
-          });
-          i++;
-        }
-        return interaction.editReply("✅ Stanze create");
-      }
-
-      if (interaction.commandName === 'delete_rooms') {
-        const channels = interaction.guild.channels.cache.filter(c =>
-          c.parentId === CATEGORY_ID &&
-          c.type === 2 &&
-          c.name.startsWith("🏆・")
-        );
-
-        for (let ch of channels.values()) {
-          try { await ch.delete(); } catch {}
-        }
-
-        return interaction.editReply("🗑️ Vocali eliminate");
-      }
-
-      if (interaction.commandName === 'next_match') {
-        data.currentMatch++;
-        save();
-        return interaction.editReply(`➡️ MATCH ${data.currentMatch}`);
-      }
-
-      if (interaction.commandName === 'reset_storico') {
-        data = { currentMatch:1, results:{}, pending:{}, tempSubmit:{}, scores:{}, fragger:{} };
-        save();
-        return interaction.editReply("♻️ RESET COMPLETO");
-      }
+      return interaction.reply({
+        content: "Clicca per registrarti",
+        components: [new ActionRowBuilder().addComponents(btn)]
+      });
     }
 
-    // ===== SELECT =====
+    // PANEL RESULTS
+    if (interaction.isChatInputCommand() && interaction.commandName === 'panel_results') {
+
+      if (Object.keys(teams).length === 0) {
+        return interaction.reply({ content: "❌ Nessun team", ephemeral: true });
+      }
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('team_select')
+        .setPlaceholder('Scegli team')
+        .addOptions(Object.keys(teams).map(t => ({ label: t, value: t })));
+
+      return interaction.reply({
+        content: `MATCH ${data.currentMatch}`,
+        components: [new ActionRowBuilder().addComponents(menu)]
+      });
+    }
+
+    // BUTTON REGISTER
+    if (interaction.isButton() && interaction.customId === "register_btn") {
+
+      const modal = new ModalBuilder()
+        .setCustomId("register_modal")
+        .setTitle("Registrazione Team");
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("team").setLabel("Nome Team").setStyle(1)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("p1").setLabel("Player 1").setStyle(1)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("p2").setLabel("Player 2").setStyle(1)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("p3").setLabel("Player 3").setStyle(1))
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // SELECT TEAM
     if (interaction.isStringSelectMenu()) {
       const team = interaction.values[0];
 
       const modal = new ModalBuilder()
         .setCustomId(`modal_${team}`)
-        .setTitle(`Risultato ${team}`);
+        .setTitle("Inserisci risultato");
 
-      teams[team].players.forEach((p,i)=>{
+      for (let i=0;i<3;i++) {
         modal.addComponents(
           new ActionRowBuilder().addComponents(
-            new TextInputBuilder()
-              .setCustomId(`k${i}`)
-              .setLabel(`${p} kills`)
-              .setStyle(TextInputStyle.Short)
-              .setRequired(true)
+            new TextInputBuilder().setCustomId(`k${i}`).setLabel(`Kill Player ${i+1}`).setStyle(1)
           )
         );
-      });
+      }
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("pos")
-            .setLabel("Posizione")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true)
+          new TextInputBuilder().setCustomId("pos").setLabel("Posizione").setStyle(1)
         )
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== MODAL =====
+    // MODAL
     if (interaction.isModalSubmit()) {
-      const team = interaction.customId.split("_")[1];
 
-      let kills = [];
-      let total = 0;
+      // REGISTER
+      if (interaction.customId === "register_modal") {
 
-      for (let i=0;i<3;i++) {
-        let k = parseInt(interaction.fields.getTextInputValue(`k${i}`)) || 0;
-        kills.push(k);
-        total += k;
+        const team = interaction.fields.getTextInputValue("team");
+
+        teams[team] = {
+          players: [
+            interaction.fields.getTextInputValue("p1"),
+            interaction.fields.getTextInputValue("p2"),
+            interaction.fields.getTextInputValue("p3")
+          ]
+        };
+
+        save();
+
+        return interaction.reply({ content: "✅ Registrato", ephemeral: true });
       }
 
-      let pos = parseInt(interaction.fields.getTextInputValue("pos")) || 0;
+      // RESULTS
+      if (interaction.customId.startsWith("modal_")) {
 
-      data.tempSubmit[interaction.user.id] = { team, kills, total, pos };
-      save();
+        const team = interaction.customId.split("_")[1];
 
-      return interaction.reply({
-        content: "📸 Invia lo screenshot",
-        ephemeral: true
-      });
+        let kills = [];
+        let total = 0;
+
+        for (let i=0;i<3;i++) {
+          let k = parseInt(interaction.fields.getTextInputValue(`k${i}`)) || 0;
+          kills.push(k);
+          total += k;
+        }
+
+        let pos = parseInt(interaction.fields.getTextInputValue("pos")) || 0;
+
+        data.tempSubmit[interaction.user.id] = { team, kills, total, pos };
+        save();
+
+        return interaction.reply({
+          content: "📸 Invia lo screenshot",
+          ephemeral: true
+        });
+      }
     }
 
-  } catch (err) {
-    console.log("ERRORE:", err);
+    // SCREENSHOT
+    if (interaction.isButton()) return;
+
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+// MESSAGE SCREENSHOT
+client.on('messageCreate', async message => {
+  if (!message.attachments.size) return;
+
+  const temp = data.tempSubmit[message.author.id];
+  if (!temp) return;
+
+  const image = message.attachments.first().url;
+  const id = Date.now();
+
+  data.pending[id] = { ...temp, image };
+  delete data.tempSubmit[message.author.id];
+  save();
+
+  const embed = new EmbedBuilder()
+    .setTitle("NUOVO RISULTATO")
+    .setDescription(`${temp.team} | Kill: ${temp.total} | Pos: ${temp.pos}`)
+    .setImage(image);
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`ok_${id}`).setLabel("APPROVA").setStyle(3),
+    new ButtonBuilder().setCustomId(`no_${id}`).setLabel("RIFIUTA").setStyle(4)
+  );
+
+  const staff = await client.channels.fetch(STAFF_CHANNEL);
+  await staff.send({ embeds: [embed], components: [row] });
+
+  await message.delete().catch(()=>{});
+});
+
+// APPROVA
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  const [action, id] = interaction.customId.split("_");
+  const p = data.pending[id];
+  if (!p) return;
+
+  if (action === "ok") {
+
+    data.scores[p.team] = (data.scores[p.team] || 0) + calcPoints(p.pos, p.total);
+
+    p.kills.forEach((k,i)=>{
+      const name = teams[p.team].players[i];
+      data.fragger[name] = (data.fragger[name] || 0) + k;
+    });
+
+    delete data.pending[id];
+    save();
+
+    await updateLeaderboard();
+
+    return interaction.reply("APPROVATO");
+  }
+
+  if (action === "no") {
+    delete data.pending[id];
+    save();
+    return interaction.reply("RIFIUTATO");
   }
 });
 
