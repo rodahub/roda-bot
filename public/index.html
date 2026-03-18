@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard Torneo</title>
+</head>
+<body style="font-family:sans-serif;background:#111;color:#fff">
+
+<h1>🏆 CLASSIFICA</h1>
+<div id="leaderboard"></div>
+
+<h1>📸 RISULTATI IN ATTESA</h1>
+<div id="pending"></div>
+
+<script>
+async function load() {
+
+  const lb = await fetch('/api/leaderboard').then(r=>r.json());
+  const p = await fetch('/api/pending').then(r=>r.json());
+
+  document.getElementById('leaderboard').innerHTML =
+    lb.scores.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("<br>");
+
+  document.getElementById('pending').innerHTML =
+    Object.entries(p).map(([id,r]) => `
+      <div style="border:1px solid #555;margin:10px;padding:10px">
+        <b>${r.team}</b><br>
+        Kill: ${r.total} | Pos: ${r.pos}<br>
+        <img src="${r.image}" width="200"><br>
+        <button onclick="approve('${id}')">✅</button>
+        <button onclick="reject('${id}')">❌</button>
+      </div>
+    `).join("");
+}
+
+async function approve(id){
+  await fetch('/api/approve/'+id,{method:'POST'});
+  load();
+}
+
+async function reject(id){
+  await fetch('/api/reject/'+id,{method:'POST'});
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>
