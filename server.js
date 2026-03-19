@@ -5,7 +5,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// ===== READ =====
 function getData() {
   try {
     return JSON.parse(fs.readFileSync('./data.json'));
@@ -22,12 +21,9 @@ function getTeams() {
   }
 }
 
-// ===== SAVE =====
 function saveData(data) {
   fs.writeFileSync('./data.json', JSON.stringify(data, null, 2));
 }
-
-// ===== API =====
 
 // CLASSIFICA
 app.get('/api/leaderboard', (req, res) => {
@@ -43,24 +39,24 @@ app.get('/api/leaderboard', (req, res) => {
   });
 });
 
-// RISULTATI IN ATTESA
+// PENDING
 app.get('/api/pending', (req, res) => {
   const data = getData();
   res.json(data.pending || {});
 });
 
-// APPROVA (SITO + SINCRONIZZATO)
+// APPROVA
 app.post('/api/approve/:id', (req, res) => {
   const data = getData();
   const teams = getTeams();
 
   const p = data.pending[req.params.id];
-  if (!p) return res.sendStatus(404);
 
-  // punti team
+  // 💥 BLOCCO doppia approvazione
+  if (!p) return res.json({ already: true });
+
   data.scores[p.team] = (data.scores[p.team] || 0) + (p.total + 10);
 
-  // fragger
   p.kills.forEach((k, i) => {
     const name = teams[p.team]?.players?.[i] || `Player${i+1}`;
     data.fragger[name] = (data.fragger[name] || 0) + k;
@@ -76,28 +72,14 @@ app.post('/api/approve/:id', (req, res) => {
 app.post('/api/reject/:id', (req, res) => {
   const data = getData();
 
+  if (!data.pending[req.params.id]) {
+    return res.json({ already: true });
+  }
+
   delete data.pending[req.params.id];
   saveData(data);
 
   res.json({ ok: true });
 });
 
-// TEAMS
-app.get('/api/teams', (req, res) => {
-  res.json(getTeams());
-});
-
-// RESET COMPLETO (se serve pulire)
-app.post('/api/reset', (req, res) => {
-  const empty = {
-    scores: {},
-    pending: {},
-    fragger: {},
-    currentMatch: 1
-  };
-  saveData(empty);
-  res.json({ ok: true });
-});
-
-// START SERVER
 app.listen(3000, () => console.log("🌐 DASHBOARD ONLINE"));
