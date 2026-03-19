@@ -18,36 +18,36 @@ async function load() {
   const lb = await fetch('/api/leaderboard').then(r=>r.json());
   const p = await fetch('/api/pending').then(r=>r.json());
 
-  // CLASSIFICA
   document.getElementById('leaderboard').innerHTML =
     lb.scores.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("<br>");
 
-  // PENDING
   document.getElementById('pending').innerHTML =
     Object.entries(p).map(([id,r]) => `
       <div style="border:1px solid #555;margin:10px;padding:10px">
         <b>${r.team}</b><br>
         Kill: ${r.total} | Pos: ${r.pos}<br>
         <img src="${r.image}" width="200"><br><br>
-        <button onclick="approve('${id}')">✅ Approva</button>
-        <button onclick="reject('${id}')">❌ Rifiuta</button>
+        <button onclick="approve('${id}')">✅</button>
+        <button onclick="reject('${id}')">❌</button>
       </div>
     `).join("");
 }
 
-// APPROVA
+// APPROVA (istantaneo)
 async function approve(id){
   await fetch('/api/approve/'+id,{method:'POST'});
+  await load(); // aggiorna subito
 }
 
 // RIFIUTA
 async function reject(id){
   await fetch('/api/reject/'+id,{method:'POST'});
+  await load(); // aggiorna subito
 }
 
-// AUTO REFRESH
+// refresh leggero ogni 5s (backup)
 load();
-setInterval(load, 3000);
+setInterval(load, 5000);
 </script>
 
 </body>
