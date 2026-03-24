@@ -62,8 +62,8 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:6px;
-      flex-wrap:wrap;
+      gap:0;
+      flex-wrap:nowrap;
     }
 
     .brand-logo{
@@ -73,6 +73,7 @@
       filter: drop-shadow(0 0 16px rgba(123,44,255,.55));
       border-radius:20px;
       flex-shrink:0;
+      margin-right:-14px;
     }
 
     .brand-text-wrap{
@@ -80,7 +81,8 @@
       flex-direction:column;
       justify-content:center;
       gap:0;
-      margin-left:-6px;
+      margin-left:0;
+      padding-left:0;
     }
 
     .brand-text{
@@ -428,16 +430,13 @@
 
       .brand{
         align-items:center;
-        gap:4px;
+        gap:0;
       }
 
       .brand-logo{
         width:58px;
         height:58px;
-      }
-
-      .brand-text-wrap{
-        margin-left:-6px;
+        margin-right:-10px;
       }
 
       .brand-text{
