@@ -62,13 +62,13 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:6px;
       flex-wrap:wrap;
     }
 
     .brand-logo{
-      width:74px;
-      height:74px;
+      width:76px;
+      height:76px;
       object-fit:contain;
       filter: drop-shadow(0 0 16px rgba(123,44,255,.55));
       border-radius:20px;
@@ -79,24 +79,28 @@
       display:flex;
       flex-direction:column;
       justify-content:center;
-      gap:2px;
-      margin-left:-2px;
+      gap:0;
+      margin-left:-6px;
     }
 
     .brand-text{
-      height:64px;
+      height:96px;
       width:auto;
+      max-width:none;
       object-fit:contain;
       display:block;
-      filter: drop-shadow(0 0 14px rgba(123,44,255,.42));
+      filter: drop-shadow(0 0 16px rgba(123,44,255,.46));
+      margin:0;
+      padding:0;
+      line-height:1;
     }
 
     .brand-sub{
       color:var(--muted);
       font-size:13px;
       letter-spacing:.35px;
-      margin-top:-6px;
-      margin-left:2px;
+      margin-top:-16px;
+      margin-left:6px;
     }
 
     .top-actions{
@@ -424,7 +428,7 @@
 
       .brand{
         align-items:center;
-        gap:8px;
+        gap:4px;
       }
 
       .brand-logo{
@@ -433,17 +437,17 @@
       }
 
       .brand-text-wrap{
-        gap:0;
-        margin-left:-2px;
+        margin-left:-6px;
       }
 
       .brand-text{
-        height:46px;
+        height:68px;
       }
 
       .brand-sub{
         font-size:12px;
-        margin-top:-4px;
+        margin-top:-12px;
+        margin-left:4px;
       }
 
       .stats{
