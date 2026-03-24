@@ -62,7 +62,7 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:16px;
+      gap:10px;
       flex-wrap:wrap;
     }
 
@@ -72,25 +72,31 @@
       object-fit:contain;
       filter: drop-shadow(0 0 16px rgba(123,44,255,.55));
       border-radius:20px;
+      flex-shrink:0;
     }
 
     .brand-text-wrap{
       display:flex;
       flex-direction:column;
-      gap:8px;
+      justify-content:center;
+      gap:2px;
+      margin-left:-2px;
     }
 
     .brand-text{
-      height:42px;
+      height:64px;
       width:auto;
       object-fit:contain;
-      filter: drop-shadow(0 0 12px rgba(123,44,255,.40));
+      display:block;
+      filter: drop-shadow(0 0 14px rgba(123,44,255,.42));
     }
 
     .brand-sub{
       color:var(--muted);
-      font-size:14px;
-      letter-spacing:.4px;
+      font-size:13px;
+      letter-spacing:.35px;
+      margin-top:-6px;
+      margin-left:2px;
     }
 
     .top-actions{
@@ -417,7 +423,8 @@
       }
 
       .brand{
-        align-items:flex-start;
+        align-items:center;
+        gap:8px;
       }
 
       .brand-logo{
@@ -425,8 +432,18 @@
         height:58px;
       }
 
+      .brand-text-wrap{
+        gap:0;
+        margin-left:-2px;
+      }
+
       .brand-text{
-        height:32px;
+        height:46px;
+      }
+
+      .brand-sub{
+        font-size:12px;
+        margin-top:-4px;
       }
 
       .stats{
