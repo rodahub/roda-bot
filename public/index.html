@@ -11,20 +11,18 @@
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
   <div>
     <h1 style="margin:0 0 6px 0">🏆 CLASSIFICA LIVE</h1>
-    <div id="staffInfo" style="color:#aaa;font-size:14px">Controllo sessione...</div>
+    <div id="staffInfo" style="color:#aaa;font-size:14px">Dashboard pronta</div>
   </div>
 
   <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button id="refreshBtn" onclick="manualRefresh()" style="padding:10px 14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer">
+    <button id="refreshBtn" style="padding:10px 14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer">
       Aggiorna
     </button>
-    <button onclick="logout()" style="padding:10px 14px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-weight:bold;cursor:pointer">
+    <button id="logoutBtn" style="padding:10px 14px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-weight:bold;cursor:pointer">
       Logout
     </button>
   </div>
 </div>
-
-<div id="statusBar" style="margin-top:10px;color:#aaa;font-size:14px"></div>
 
 <div id="leaderboard" style="margin-top:14px"></div>
 
@@ -32,9 +30,7 @@
 <div id="pending"></div>
 
 <script>
-let isLoading = false;
-let autoRefreshTimer = null;
-let lastSuccessfulLoad = null;
+let loading = false;
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -45,65 +41,30 @@ function escapeHtml(text) {
     .replaceAll("'", '&#039;');
 }
 
-function setStatus(text) {
-  document.getElementById('statusBar').innerText = text || '';
-}
+async function load() {
+  if (loading) return;
+  loading = true;
 
-async function fetchWithTimeout(url, options = {}, timeout = 10000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      credentials: 'same-origin',
-      signal: controller.signal
-    });
-    return response;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function checkSession() {
-  const res = await fetchWithTimeout('/api/session', {}, 8000);
-
-  if (res.status === 401) {
-    location.href = '/login';
-    return null;
-  }
-
-  const data = await res.json();
-
-  if (!data.ok) {
-    location.href = '/login';
-    return null;
-  }
-
-  document.getElementById('staffInfo').innerText = 'Connesso come ' + data.username;
-  return data;
-}
-
-async function load(force = false) {
-  if (isLoading && !force) return;
-
-  isLoading = true;
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
   refreshBtn.innerText = 'Aggiornamento...';
-  setStatus('Caricamento dati...');
 
   try {
-    const session = await checkSession();
-    if (!session) return;
+    const lbRes = await fetch('/api/leaderboard', {
+      credentials: 'same-origin'
+    });
 
-    const [lbRes, pRes] = await Promise.all([
-      fetchWithTimeout('/api/leaderboard', {}, 10000),
-      fetchWithTimeout('/api/pending', {}, 10000)
-    ]);
+    if (lbRes.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
 
-    if (lbRes.status === 401 || pRes.status === 401) {
-      location.href = '/login';
+    const pRes = await fetch('/api/pending', {
+      credentials: 'same-origin'
+    });
+
+    if (pRes.status === 401) {
+      window.location.href = '/login';
       return;
     }
 
@@ -125,88 +86,70 @@ async function load(force = false) {
             <div style="border:1px solid #555;margin:10px 0;padding:10px;border-radius:12px">
               <b>${escapeHtml(r.team || '-')}</b><br>
               Kill: ${Number(r.total || 0)} | Pos: ${Number(r.pos || 0)}<br>
-              ${(r.image ? `<img src="${escapeHtml(r.image)}" width="200" style="margin-top:10px;border-radius:10px" onerror="this.style.display='none'">` : '')}
+              ${r.image ? `<img src="${escapeHtml(r.image)}" width="200" style="margin-top:10px;border-radius:10px">` : ''}
               <br><br>
-              <button onclick="approve('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer">✅ APPROVA</button>
-              <button onclick="reject('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer">❌ RIFIUTA</button>
+              <button onclick="approveResult('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer">
+                ✅
+              </button>
+              <button onclick="rejectResult('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer">
+                ❌
+              </button>
             </div>
           `).join("")
         : `<div style="color:#aaa">Nessun risultato pending</div>`;
-
-    lastSuccessfulLoad = new Date();
-    setStatus('Ultimo aggiornamento: ' + lastSuccessfulLoad.toLocaleTimeString('it-IT'));
-  } catch (err) {
-    console.error('Errore dashboard:', err);
-    setStatus('Errore caricamento dashboard');
+  } catch (e) {
+    console.error('Errore dashboard:', e);
   } finally {
-    isLoading = false;
+    loading = false;
     refreshBtn.disabled = false;
     refreshBtn.innerText = 'Aggiorna';
   }
 }
 
-async function approve(id) {
-  try {
-    const res = await fetchWithTimeout('/api/approve/' + id, {
-      method: 'POST'
-    }, 10000);
+async function approveResult(id) {
+  const res = await fetch('/api/approve/' + id, {
+    method: 'POST',
+    credentials: 'same-origin'
+  });
 
-    if (res.status === 401) {
-      location.href = '/login';
-      return;
-    }
-
-    await load(true);
-  } catch (err) {
-    console.error('Errore approvazione:', err);
-    setStatus('Errore durante approvazione');
+  if (res.status === 401) {
+    window.location.href = '/login';
+    return;
   }
+
+  await load();
 }
 
-async function reject(id) {
-  try {
-    const res = await fetchWithTimeout('/api/reject/' + id, {
-      method: 'POST'
-    }, 10000);
+async function rejectResult(id) {
+  const res = await fetch('/api/reject/' + id, {
+    method: 'POST',
+    credentials: 'same-origin'
+  });
 
-    if (res.status === 401) {
-      location.href = '/login';
-      return;
-    }
-
-    await load(true);
-  } catch (err) {
-    console.error('Errore rifiuto:', err);
-    setStatus('Errore durante rifiuto');
+  if (res.status === 401) {
+    window.location.href = '/login';
+    return;
   }
+
+  await load();
 }
 
 async function logout() {
-  try {
-    await fetchWithTimeout('/api/logout', {
-      method: 'POST'
-    }, 8000);
-  } catch (err) {}
+  await fetch('/api/logout', {
+    method: 'POST',
+    credentials: 'same-origin'
+  });
 
-  location.href = '/login';
+  window.location.href = '/login';
 }
 
-function manualRefresh() {
-  load(true);
-}
+document.getElementById('refreshBtn').addEventListener('click', load);
+document.getElementById('logoutBtn').addEventListener('click', logout);
 
-function startAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+window.approveResult = approveResult;
+window.rejectResult = rejectResult;
 
-  autoRefreshTimer = setInterval(() => {
-    if (!isLoading) {
-      load(false);
-    }
-  }, 10000);
-}
-
-load(true);
-startAutoRefresh();
+load();
 </script>
 
 </body>
