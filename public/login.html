@@ -1,351 +1,62 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Tornei</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: #0f172a;
-      color: white;
-      padding: 20px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    .staff {
-      color: #cbd5e1;
-      font-size: 14px;
-      margin-top: 6px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .refresh-btn {
-      background: #2563eb;
-      color: white;
-    }
-
-    .logout-btn {
-      background: #dc2626;
-      color: white;
-    }
-
-    .section {
-      background: #111827;
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 18px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .section h2 {
-      margin-top: 0;
-      font-size: 20px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    .score-row,
-    .fragger-row,
-    .pending-card {
-      background: #0b1220;
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 10px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .score-row,
-    .fragger-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .pending-card img {
-      width: 100%;
-      max-height: 350px;
-      object-fit: cover;
-      border-radius: 12px;
-      margin-top: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .players {
-      margin-top: 10px;
-    }
-
-    .player {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 10px;
-      background: #111827;
-      border-radius: 10px;
-      margin-bottom: 8px;
-    }
-
-    .pending-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .approve-btn {
-      background: #16a34a;
-      color: white;
-    }
-
-    .reject-btn {
-      background: #ef4444;
-      color: white;
-    }
-
-    .muted {
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    @media (max-width: 900px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <title>RØDA Login</title>
 </head>
-<body>
-  <div class="topbar">
-    <div>
-      <h1>🏆 Dashboard Tornei</h1>
-      <div class="staff" id="staffInfo">Controllo sessione...</div>
-    </div>
+<body style="margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;background:#111;color:#fff;font-family:sans-serif;padding:20px">
+  <div style="width:100%;max-width:400px;background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:24px">
+    <h1 style="margin-top:0;text-align:center">🔐 Staff Login</h1>
 
-    <div class="actions">
-      <button class="refresh-btn" id="refreshBtn">Aggiorna</button>
-      <button class="logout-btn" id="logoutBtn">Logout</button>
-    </div>
-  </div>
+    <input id="username" type="text" placeholder="Username" style="width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #444;background:#222;color:#fff;box-sizing:border-box" />
+    <input id="password" type="password" placeholder="Password" style="width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #444;background:#222;color:#fff;box-sizing:border-box" />
 
-  <div class="grid">
-    <div class="section">
-      <h2>Classifica Team</h2>
-      <div class="muted" id="matchInfo">Match corrente: -</div>
-      <div id="leaderboard"></div>
-    </div>
+    <button id="loginBtn" style="width:100%;padding:12px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer">
+      Accedi
+    </button>
 
-    <div class="section">
-      <h2>Top Fragger</h2>
-      <div id="fragger"></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Risultati Pending</h2>
-    <div id="pending"></div>
+    <div id="msg" style="margin-top:12px;text-align:center;color:#fca5a5;min-height:20px"></div>
   </div>
 
   <script>
-    const leaderboardBox = document.getElementById('leaderboard');
-    const fraggerBox = document.getElementById('fragger');
-    const pendingBox = document.getElementById('pending');
-    const matchInfo = document.getElementById('matchInfo');
-    const staffInfo = document.getElementById('staffInfo');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const msg = document.getElementById('msg');
 
-    function escapeHtml(text) {
-      return String(text ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
+    loginBtn.onclick = async () => {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
 
-    async function api(url, options = {}) {
-      const res = await fetch(url, {
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        ...options
-      });
-
-      if (res.status === 401) {
-        window.location.href = '/login';
-        return null;
-      }
-
-      const data = await res.json();
-      return { res, data };
-    }
-
-    async function loadSession() {
-      const result = await api('/api/session');
-      if (!result) return;
-
-      if (!result.res.ok || !result.data.ok) {
-        window.location.href = '/login';
-        return;
-      }
-
-      staffInfo.textContent = `Connesso come ${result.data.username}`;
-    }
-
-    async function loadLeaderboard() {
-      const result = await api('/api/leaderboard');
-      if (!result) return;
-
-      const { data } = result;
-      matchInfo.textContent = `Match corrente: ${data.match || 1}`;
-
-      if (!data.scores || !data.scores.length) {
-        leaderboardBox.innerHTML = '<div class="muted">Nessun punteggio disponibile</div>';
-      } else {
-        leaderboardBox.innerHTML = data.scores.map((row, i) => `
-          <div class="score-row">
-            <div><strong>#${i + 1}</strong> ${escapeHtml(row[0])}</div>
-            <div><strong>${row[1]}</strong> pt</div>
-          </div>
-        `).join('');
-      }
-
-      const fraggerEntries = Object.entries(data.fragger || {}).sort((a, b) => b[1] - a[1]);
-
-      if (!fraggerEntries.length) {
-        fraggerBox.innerHTML = '<div class="muted">Nessun dato fragger</div>';
-      } else {
-        fraggerBox.innerHTML = fraggerEntries.map((row, i) => `
-          <div class="fragger-row">
-            <div><strong>#${i + 1}</strong> ${escapeHtml(row[0])}</div>
-            <div><strong>${row[1]}</strong> kill</div>
-          </div>
-        `).join('');
-      }
-    }
-
-    async function loadPending() {
-      const result = await api('/api/pending');
-      if (!result) return;
-
-      const pending = result.data || {};
-      const entries = Object.entries(pending);
-
-      if (!entries.length) {
-        pendingBox.innerHTML = '<div class="muted">Nessun risultato pending</div>';
-        return;
-      }
-
-      pendingBox.innerHTML = entries.map(([id, p]) => `
-        <div class="pending-card">
-          <div><strong>Team:</strong> ${escapeHtml(p.team || '-')}</div>
-          <div><strong>Posizione:</strong> ${Number(p.pos || 0)}</div>
-          <div><strong>Kill Totali:</strong> ${Number(p.total || 0)}</div>
-
-          <div class="players">
-            ${(p.kills || []).map((k, i) => `
-              <div class="player">
-                <span>${escapeHtml(p.players?.[i] || `Player ${i + 1}`)}</span>
-                <strong>${Number(k || 0)} kill</strong>
-              </div>
-            `).join('')}
-          </div>
-
-          ${p.image ? `<img src="${escapeHtml(p.image)}" alt="screenshot">` : ''}
-
-          <div class="pending-actions">
-            <button class="approve-btn" onclick="approvePending('${escapeHtml(id)}')">APPROVA</button>
-            <button class="reject-btn" onclick="rejectPending('${escapeHtml(id)}')">RIFIUTA</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    async function approvePending(id) {
-      if (!confirm('Confermi approvazione?')) return;
-
-      const result = await api(`/api/approve/${encodeURIComponent(id)}`, {
-        method: 'POST'
-      });
-
-      if (!result) return;
-
-      await loadAll();
-    }
-
-    async function rejectPending(id) {
-      if (!confirm('Confermi rifiuto?')) return;
-
-      const result = await api(`/api/reject/${encodeURIComponent(id)}`, {
-        method: 'POST'
-      });
-
-      if (!result) return;
-
-      await loadAll();
-    }
-
-    async function logout() {
-      await api('/api/logout', { method: 'POST' });
-      window.location.href = '/login';
-    }
-
-    async function loadAll() {
-      refreshBtn.disabled = true;
-      refreshBtn.textContent = 'Aggiornamento...';
+      msg.textContent = '';
+      loginBtn.disabled = true;
+      loginBtn.innerText = 'Accesso...';
 
       try {
-        await loadSession();
-        await loadLeaderboard();
-        await loadPending();
-      } finally {
-        refreshBtn.disabled = false;
-        refreshBtn.textContent = 'Aggiorna';
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          msg.textContent = data.message || 'Login fallito';
+          loginBtn.disabled = false;
+          loginBtn.innerText = 'Accedi';
+          return;
+        }
+
+        window.location.href = '/';
+      } catch (e) {
+        msg.textContent = 'Errore di connessione';
+        loginBtn.disabled = false;
+        loginBtn.innerText = 'Accedi';
       }
-    }
-
-    refreshBtn.addEventListener('click', loadAll);
-    logoutBtn.addEventListener('click', logout);
-
-    window.approvePending = approvePending;
-    window.rejectPending = rejectPending;
-
-    loadAll();
-    setInterval(loadAll, 10000);
+    };
   </script>
 </body>
 </html>
