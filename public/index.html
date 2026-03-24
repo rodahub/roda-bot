@@ -1,156 +1,743 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RØDA Dashboard</title>
+  <style>
+    :root{
+      --bg:#050507;
+      --bg-2:#0b0b12;
+      --panel:#10101a;
+      --panel-2:#141423;
+      --line:rgba(160,110,255,.18);
+      --text:#f7f4ff;
+      --muted:#aaa6c5;
+      --purple:#7b2cff;
+      --purple-2:#9c5cff;
+      --purple-3:#caa7ff;
+      --green:#18c964;
+      --red:#ff4d6d;
+      --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 30px rgba(123,44,255,.18);
+      --radius:22px;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    html,body{
+      margin:0;
+      padding:0;
+      font-family:Inter,Arial,sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(123,44,255,.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(123,44,255,.12), transparent 22%),
+        radial-gradient(circle at bottom center, rgba(123,44,255,.10), transparent 28%),
+        linear-gradient(180deg, #050507 0%, #08080d 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    body{
+      padding:24px;
+    }
+
+    .shell{
+      width:100%;
+      max-width:1500px;
+      margin:0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:22px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .brand-logo{
+      width:74px;
+      height:74px;
+      object-fit:contain;
+      filter: drop-shadow(0 0 16px rgba(123,44,255,.55));
+      border-radius:20px;
+    }
+
+    .brand-text-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .brand-text{
+      height:42px;
+      width:auto;
+      object-fit:contain;
+      filter: drop-shadow(0 0 12px rgba(123,44,255,.40));
+    }
+
+    .brand-sub{
+      color:var(--muted);
+      font-size:14px;
+      letter-spacing:.4px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .staff-pill{
+      padding:12px 16px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:#d9d4ef;
+      font-size:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:800;
+      font-size:14px;
+      transition:.18s ease;
+      color:#fff;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .btn-refresh{
+      background:linear-gradient(135deg, var(--purple), var(--purple-2));
+      box-shadow:0 0 20px rgba(123,44,255,.30);
+    }
+
+    .btn-logout{
+      background:linear-gradient(135deg, #2a1a3a, #4f235b);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:16px;
+      margin-bottom:22px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(18,18,31,.94), rgba(11,11,19,.98));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(123,44,255,.08), transparent 45%);
+      pointer-events:none;
+    }
+
+    .stat-label{
+      position:relative;
+      z-index:1;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .stat-value{
+      position:relative;
+      z-index:1;
+      font-size:32px;
+      font-weight:900;
+      line-height:1;
+    }
+
+    .main-grid{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:18px;
+      margin-bottom:22px;
+    }
+
+    .section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:16px;
+      position:relative;
+      z-index:1;
+    }
+
+    .section-title h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.3px;
+    }
+
+    .section-note{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .table{
+      width:100%;
+      border-collapse:collapse;
+      position:relative;
+      z-index:1;
+    }
+
+    .table th,
+    .table td{
+      text-align:left;
+      padding:12px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:14px;
+    }
+
+    .table th{
+      color:#d6c9ff;
+      font-size:12px;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+    }
+
+    .rank-badge{
+      width:32px;
+      height:32px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(169,120,255,.25);
+      color:#fff;
+      font-weight:900;
+      box-shadow:0 0 14px rgba(123,44,255,.18);
+    }
+
+    .pending-wrap{
+      display:grid;
+      gap:16px;
+    }
+
+    .pending-card{
+      background:linear-gradient(180deg, rgba(15,15,24,.98), rgba(10,10,17,.98));
+      border:1px solid rgba(171,126,255,.16);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .pending-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .team-name{
+      font-size:22px;
+      font-weight:900;
+      margin-bottom:6px;
+      letter-spacing:.3px;
+    }
+
+    .team-meta{
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .state-pill{
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(188,156,255,.22);
+      color:#efe7ff;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.6px;
+    }
+
+    .pending-stats{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .mini-stat{
+      padding:14px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+    }
+
+    .mini-stat span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      font-weight:700;
+    }
+
+    .mini-stat strong{
+      font-size:22px;
+      font-weight:900;
+    }
+
+    .players{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .player-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .player-name{
+      color:#f7f4ff;
+      font-weight:800;
+      font-size:14px;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .player-kills{
+      color:#d9cbff;
+      font-size:22px;
+      font-weight:900;
+    }
+
+    .shot-box{
+      margin-bottom:14px;
+      overflow:hidden;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.07);
+      background:#06060a;
+    }
+
+    .shot-box img{
+      display:block;
+      width:100%;
+      max-height:420px;
+      object-fit:cover;
+    }
+
+    .pending-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn-approve{
+      background:linear-gradient(135deg, #13b95a, #1ed760);
+      color:#08120c;
+      min-width:140px;
+    }
+
+    .btn-reject{
+      background:linear-gradient(135deg, #ff4d6d, #ff6b6b);
+      min-width:140px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:14px;
+      padding:20px 0 4px 0;
+    }
+
+    .footer-note{
+      margin-top:18px;
+      text-align:center;
+      color:#7f7a97;
+      font-size:13px;
+    }
+
+    @media (max-width: 1180px){
+      .stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .main-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 760px){
+      body{
+        padding:14px;
+      }
+
+      .brand{
+        align-items:flex-start;
+      }
+
+      .brand-logo{
+        width:58px;
+        height:58px;
+      }
+
+      .brand-text{
+        height:32px;
+      }
+
+      .stats{
+        grid-template-columns:1fr;
+      }
+
+      .pending-stats{
+        grid-template-columns:1fr;
+      }
+
+      .players{
+        grid-template-columns:1fr;
+      }
+
+      .table th,
+      .table td{
+        font-size:13px;
+        padding:10px 8px;
+      }
+
+      .team-name{
+        font-size:19px;
+      }
+
+      .stat-value{
+        font-size:28px;
+      }
+
+      .top-actions{
+        width:100%;
+      }
+
+      .staff-pill,
+      .btn{
+        width:100%;
+        text-align:center;
+      }
+    }
+  </style>
 </head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <img src="/assets/roda-logo.png" alt="RØDA Logo" class="brand-logo" />
+        <div class="brand-text-wrap">
+          <img src="/assets/roda-text.png" alt="RØDA" class="brand-text" />
+          <div class="brand-sub">Tournament dashboard • staff control panel</div>
+        </div>
+      </div>
 
-<body style="font-family:sans-serif;background:#111;color:#fff;margin:0;padding:20px">
+      <div class="top-actions">
+        <div class="staff-pill" id="staffInfo">Connesso alla dashboard</div>
+        <button class="btn btn-refresh" id="refreshBtn">Aggiorna</button>
+        <button class="btn btn-logout" id="logoutBtn">Logout</button>
+      </div>
+    </div>
 
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-  <div>
-    <h1 style="margin:0 0 6px 0">🏆 CLASSIFICA LIVE</h1>
-    <div id="staffInfo" style="color:#aaa;font-size:14px">Dashboard pronta</div>
+    <div class="stats">
+      <div class="card">
+        <div class="stat-label">Match corrente</div>
+        <div class="stat-value" id="matchValue">-</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Team in classifica</div>
+        <div class="stat-value" id="teamsValue">0</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Risultati pending</div>
+        <div class="stat-value" id="pendingValue">0</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Top fragger</div>
+        <div class="stat-value" id="topFraggerValue">-</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="section-title">
+          <h2>🏆 Classifica Live</h2>
+          <div class="section-note" id="leaderboardInfo">Dati aggiornati live</div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Team</th>
+                <th>Punti</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard">
+              <tr><td colspan="3" class="empty">Nessun punteggio disponibile</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h2>🎯 Top Fragger</h2>
+          <div class="section-note">Kill accumulate</div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Kill</th>
+              </tr>
+            </thead>
+            <tbody id="fragger">
+              <tr><td colspan="3" class="empty">Nessun dato fragger</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:14px">
+      <h2>📸 Risultati in attesa</h2>
+      <div class="section-note" id="pendingInfo">Controllo screenshot e approvazione staff</div>
+    </div>
+
+    <div id="pending" class="pending-wrap">
+      <div class="card"><div class="empty">Nessun risultato pending</div></div>
+    </div>
+
+    <div class="footer-note">RØDA dashboard panel</div>
   </div>
 
-  <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button id="refreshBtn" style="padding:10px 14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer">
-      Aggiorna
-    </button>
-    <button id="logoutBtn" style="padding:10px 14px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-weight:bold;cursor:pointer">
-      Logout
-    </button>
-  </div>
-</div>
+  <script>
+    let loading = false;
 
-<div id="leaderboard" style="margin-top:14px"></div>
-
-<h1>📸 RISULTATI IN ATTESA</h1>
-<div id="pending"></div>
-
-<script>
-let loading = false;
-
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-async function load() {
-  if (loading) return;
-  loading = true;
-
-  const refreshBtn = document.getElementById('refreshBtn');
-  refreshBtn.disabled = true;
-  refreshBtn.innerText = 'Aggiornamento...';
-
-  try {
-    const lbRes = await fetch('/api/leaderboard', {
-      credentials: 'same-origin'
-    });
-
-    if (lbRes.status === 401) {
-      window.location.href = '/login';
-      return;
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
-    const pRes = await fetch('/api/pending', {
-      credentials: 'same-origin'
-    });
+    async function load() {
+      if (loading) return;
+      loading = true;
 
-    if (pRes.status === 401) {
-      window.location.href = '/login';
-      return;
+      const refreshBtn = document.getElementById('refreshBtn');
+      refreshBtn.disabled = true;
+      refreshBtn.innerText = 'Aggiornamento...';
+
+      try {
+        const lbRes = await fetch('/api/leaderboard', {
+          credentials: 'same-origin'
+        });
+
+        if (lbRes.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const pRes = await fetch('/api/pending', {
+          credentials: 'same-origin'
+        });
+
+        if (pRes.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const lb = await lbRes.json();
+        const p = await pRes.json();
+
+        const scores = Array.isArray(lb.scores) ? lb.scores : [];
+        const fraggerEntries = Object.entries(lb.fragger || {}).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
+        const pendingEntries = Object.entries(p || {});
+        const topFragger = fraggerEntries.length ? `${fraggerEntries[0][0]} (${fraggerEntries[0][1]})` : '-';
+
+        document.getElementById('matchValue').innerText = lb.match || 1;
+        document.getElementById('teamsValue').innerText = scores.length;
+        document.getElementById('pendingValue').innerText = pendingEntries.length;
+        document.getElementById('topFraggerValue').innerText = topFragger;
+        document.getElementById('leaderboardInfo').innerText = 'Ultimo refresh: ' + new Date().toLocaleTimeString('it-IT');
+
+        document.getElementById('leaderboard').innerHTML =
+          scores.length
+            ? scores.map((t, i) => `
+                <tr>
+                  <td><span class="rank-badge">${i + 1}</span></td>
+                  <td>${escapeHtml(t[0])}</td>
+                  <td><strong>${Number(t[1] || 0)}</strong></td>
+                </tr>
+              `).join('')
+            : `<tr><td colspan="3" class="empty">Nessun punteggio disponibile</td></tr>`;
+
+        document.getElementById('fragger').innerHTML =
+          fraggerEntries.length
+            ? fraggerEntries.slice(0, 10).map((row, i) => `
+                <tr>
+                  <td><span class="rank-badge">${i + 1}</span></td>
+                  <td>${escapeHtml(row[0])}</td>
+                  <td><strong>${Number(row[1] || 0)}</strong></td>
+                </tr>
+              `).join('')
+            : `<tr><td colspan="3" class="empty">Nessun dato fragger</td></tr>`;
+
+        document.getElementById('pending').innerHTML =
+          pendingEntries.length
+            ? pendingEntries.map(([id, r]) => `
+                <div class="pending-card">
+                  <div class="pending-head">
+                    <div>
+                      <div class="team-name">${escapeHtml(r.team || '-')}</div>
+                      <div class="team-meta">Invio risultato in attesa di approvazione staff</div>
+                    </div>
+                    <div class="state-pill">PENDING</div>
+                  </div>
+
+                  <div class="pending-stats">
+                    <div class="mini-stat">
+                      <span>Kill totali</span>
+                      <strong>${Number(r.total || 0)}</strong>
+                    </div>
+                    <div class="mini-stat">
+                      <span>Posizione</span>
+                      <strong>${Number(r.pos || 0)}</strong>
+                    </div>
+                    <div class="mini-stat">
+                      <span>Result ID</span>
+                      <strong style="font-size:15px">${escapeHtml(id)}</strong>
+                    </div>
+                  </div>
+
+                  <div class="players">
+                    ${(Array.isArray(r.kills) ? r.kills : []).map((k, i) => `
+                      <div class="player-card">
+                        <div class="player-name">${escapeHtml((r.players && r.players[i]) ? r.players[i] : `Player ${i + 1}`)}</div>
+                        <div class="player-kills">${Number(k || 0)} kill</div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  ${r.image ? `
+                    <div class="shot-box">
+                      <img src="${escapeHtml(r.image)}" alt="Screenshot risultato" onerror="this.style.display='none'">
+                    </div>
+                  ` : ''}
+
+                  <div class="pending-actions">
+                    <button class="btn btn-approve" onclick="approveResult('${encodeURIComponent(id)}')">APPROVA</button>
+                    <button class="btn btn-reject" onclick="rejectResult('${encodeURIComponent(id)}')">RIFIUTA</button>
+                  </div>
+                </div>
+              `).join('')
+            : `<div class="card"><div class="empty">Nessun risultato pending</div></div>`;
+      } catch (e) {
+        console.error('Errore dashboard:', e);
+      } finally {
+        loading = false;
+        refreshBtn.disabled = false;
+        refreshBtn.innerText = 'Aggiorna';
+      }
     }
 
-    const lb = await lbRes.json();
-    const p = await pRes.json();
+    async function approveResult(id) {
+      const res = await fetch('/api/approve/' + id, {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
 
-    document.getElementById('leaderboard').innerHTML =
-      (lb.scores || []).length
-        ? lb.scores.map((t, i) => `
-            <div style="border:1px solid #555;margin:10px 0;padding:10px;border-radius:12px">
-              <b>#${i + 1} ${escapeHtml(t[0])}</b> - ${Number(t[1] || 0)} pts
-            </div>
-          `).join("")
-        : `<div style="color:#aaa">Nessun punteggio disponibile</div>`;
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
-    document.getElementById('pending').innerHTML =
-      Object.entries(p || {}).length
-        ? Object.entries(p).map(([id, r]) => `
-            <div style="border:1px solid #555;margin:10px 0;padding:10px;border-radius:12px">
-              <b>${escapeHtml(r.team || '-')}</b><br>
-              Kill: ${Number(r.total || 0)} | Pos: ${Number(r.pos || 0)}<br>
-              ${r.image ? `<img src="${escapeHtml(r.image)}" width="200" style="margin-top:10px;border-radius:10px">` : ''}
-              <br><br>
-              <button onclick="approveResult('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer">
-                ✅
-              </button>
-              <button onclick="rejectResult('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer">
-                ❌
-              </button>
-            </div>
-          `).join("")
-        : `<div style="color:#aaa">Nessun risultato pending</div>`;
-  } catch (e) {
-    console.error('Errore dashboard:', e);
-  } finally {
-    loading = false;
-    refreshBtn.disabled = false;
-    refreshBtn.innerText = 'Aggiorna';
-  }
-}
+      await load();
+    }
 
-async function approveResult(id) {
-  const res = await fetch('/api/approve/' + id, {
-    method: 'POST',
-    credentials: 'same-origin'
-  });
+    async function rejectResult(id) {
+      const res = await fetch('/api/reject/' + id, {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
 
-  if (res.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
-  await load();
-}
+      await load();
+    }
 
-async function rejectResult(id) {
-  const res = await fetch('/api/reject/' + id, {
-    method: 'POST',
-    credentials: 'same-origin'
-  });
+    async function logout() {
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
 
-  if (res.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
+      window.location.href = '/login';
+    }
 
-  await load();
-}
+    document.getElementById('refreshBtn').addEventListener('click', load);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
 
-async function logout() {
-  await fetch('/api/logout', {
-    method: 'POST',
-    credentials: 'same-origin'
-  });
+    window.approveResult = approveResult;
+    window.rejectResult = rejectResult;
 
-  window.location.href = '/login';
-}
-
-document.getElementById('refreshBtn').addEventListener('click', load);
-document.getElementById('logoutBtn').addEventListener('click', logout);
-
-window.approveResult = approveResult;
-window.rejectResult = rejectResult;
-
-load();
-</script>
-
+    load();
+    setInterval(() => {
+      if (!loading) load();
+    }, 10000);
+  </script>
 </body>
 </html>
