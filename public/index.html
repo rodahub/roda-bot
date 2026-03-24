@@ -1,53 +1,212 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RØDA Dashboard</title>
 </head>
 
-<body style="font-family:sans-serif;background:#111;color:#fff">
+<body style="font-family:sans-serif;background:#111;color:#fff;margin:0;padding:20px">
 
-<h1>🏆 CLASSIFICA LIVE</h1>
-<div id="leaderboard"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+  <div>
+    <h1 style="margin:0 0 6px 0">🏆 CLASSIFICA LIVE</h1>
+    <div id="staffInfo" style="color:#aaa;font-size:14px">Controllo sessione...</div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button id="refreshBtn" onclick="manualRefresh()" style="padding:10px 14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer">
+      Aggiorna
+    </button>
+    <button onclick="logout()" style="padding:10px 14px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-weight:bold;cursor:pointer">
+      Logout
+    </button>
+  </div>
+</div>
+
+<div id="statusBar" style="margin-top:10px;color:#aaa;font-size:14px"></div>
+
+<div id="leaderboard" style="margin-top:14px"></div>
 
 <h1>📸 RISULTATI IN ATTESA</h1>
 <div id="pending"></div>
 
 <script>
-async function load() {
+let isLoading = false;
+let autoRefreshTimer = null;
+let lastSuccessfulLoad = null;
 
-  const lb = await fetch('/api/leaderboard').then(r=>r.json());
-  const p = await fetch('/api/pending').then(r=>r.json());
-
-  document.getElementById('leaderboard').innerHTML =
-    lb.scores.map((t,i)=>`#${i+1} ${t[0]} - ${t[1]} pts`).join("<br>");
-
-  document.getElementById('pending').innerHTML =
-    Object.entries(p).map(([id,r]) => `
-      <div style="border:1px solid #555;margin:10px;padding:10px">
-        <b>${r.team}</b><br>
-        Kill: ${r.total} | Pos: ${r.pos}<br>
-        <img src="${r.image}" width="200"><br><br>
-        <button onclick="approve('${id}')">✅</button>
-        <button onclick="reject('${id}')">❌</button>
-      </div>
-    `).join("");
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
-// APPROVA (istantaneo)
-async function approve(id){
-  await fetch('/api/approve/'+id,{method:'POST'});
-  await load(); // aggiorna subito
+function setStatus(text) {
+  document.getElementById('statusBar').innerText = text || '';
 }
 
-// RIFIUTA
-async function reject(id){
-  await fetch('/api/reject/'+id,{method:'POST'});
-  await load(); // aggiorna subito
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      credentials: 'same-origin',
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-// refresh leggero ogni 5s (backup)
-load();
-setInterval(load, 5000);
+async function checkSession() {
+  const res = await fetchWithTimeout('/api/session', {}, 8000);
+
+  if (res.status === 401) {
+    location.href = '/login';
+    return null;
+  }
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    location.href = '/login';
+    return null;
+  }
+
+  document.getElementById('staffInfo').innerText = 'Connesso come ' + data.username;
+  return data;
+}
+
+async function load(force = false) {
+  if (isLoading && !force) return;
+
+  isLoading = true;
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.disabled = true;
+  refreshBtn.innerText = 'Aggiornamento...';
+  setStatus('Caricamento dati...');
+
+  try {
+    const session = await checkSession();
+    if (!session) return;
+
+    const [lbRes, pRes] = await Promise.all([
+      fetchWithTimeout('/api/leaderboard', {}, 10000),
+      fetchWithTimeout('/api/pending', {}, 10000)
+    ]);
+
+    if (lbRes.status === 401 || pRes.status === 401) {
+      location.href = '/login';
+      return;
+    }
+
+    const lb = await lbRes.json();
+    const p = await pRes.json();
+
+    document.getElementById('leaderboard').innerHTML =
+      (lb.scores || []).length
+        ? lb.scores.map((t, i) => `
+            <div style="border:1px solid #555;margin:10px 0;padding:10px;border-radius:12px">
+              <b>#${i + 1} ${escapeHtml(t[0])}</b> - ${Number(t[1] || 0)} pts
+            </div>
+          `).join("")
+        : `<div style="color:#aaa">Nessun punteggio disponibile</div>`;
+
+    document.getElementById('pending').innerHTML =
+      Object.entries(p || {}).length
+        ? Object.entries(p).map(([id, r]) => `
+            <div style="border:1px solid #555;margin:10px 0;padding:10px;border-radius:12px">
+              <b>${escapeHtml(r.team || '-')}</b><br>
+              Kill: ${Number(r.total || 0)} | Pos: ${Number(r.pos || 0)}<br>
+              ${(r.image ? `<img src="${escapeHtml(r.image)}" width="200" style="margin-top:10px;border-radius:10px" onerror="this.style.display='none'">` : '')}
+              <br><br>
+              <button onclick="approve('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer">✅ APPROVA</button>
+              <button onclick="reject('${encodeURIComponent(id)}')" style="padding:8px 12px;border:0;border-radius:8px;background:#dc2626;color:#fff;cursor:pointer">❌ RIFIUTA</button>
+            </div>
+          `).join("")
+        : `<div style="color:#aaa">Nessun risultato pending</div>`;
+
+    lastSuccessfulLoad = new Date();
+    setStatus('Ultimo aggiornamento: ' + lastSuccessfulLoad.toLocaleTimeString('it-IT'));
+  } catch (err) {
+    console.error('Errore dashboard:', err);
+    setStatus('Errore caricamento dashboard');
+  } finally {
+    isLoading = false;
+    refreshBtn.disabled = false;
+    refreshBtn.innerText = 'Aggiorna';
+  }
+}
+
+async function approve(id) {
+  try {
+    const res = await fetchWithTimeout('/api/approve/' + id, {
+      method: 'POST'
+    }, 10000);
+
+    if (res.status === 401) {
+      location.href = '/login';
+      return;
+    }
+
+    await load(true);
+  } catch (err) {
+    console.error('Errore approvazione:', err);
+    setStatus('Errore durante approvazione');
+  }
+}
+
+async function reject(id) {
+  try {
+    const res = await fetchWithTimeout('/api/reject/' + id, {
+      method: 'POST'
+    }, 10000);
+
+    if (res.status === 401) {
+      location.href = '/login';
+      return;
+    }
+
+    await load(true);
+  } catch (err) {
+    console.error('Errore rifiuto:', err);
+    setStatus('Errore durante rifiuto');
+  }
+}
+
+async function logout() {
+  try {
+    await fetchWithTimeout('/api/logout', {
+      method: 'POST'
+    }, 8000);
+  } catch (err) {}
+
+  location.href = '/login';
+}
+
+function manualRefresh() {
+  load(true);
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+  autoRefreshTimer = setInterval(() => {
+    if (!isLoading) {
+      load(false);
+    }
+  }, 10000);
+}
+
+load(true);
+startAutoRefresh();
 </script>
 
 </body>
