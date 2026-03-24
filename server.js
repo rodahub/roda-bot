@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
 const DATA_FILE = path.join(__dirname, 'data.json');
 const TEAMS_FILE = path.join(__dirname, 'teams.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -21,34 +23,6 @@ app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-function ensureFiles() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(
-      DATA_FILE,
-      JSON.stringify(
-        {
-          scores: {},
-          pending: {},
-          fragger: {},
-          currentMatch: 1
-        },
-        null,
-        2
-      )
-    );
-  }
-
-  if (!fs.existsSync(TEAMS_FILE)) {
-    fs.writeFileSync(TEAMS_FILE, JSON.stringify({}, null, 2));
-  }
-
-  if (!fs.existsSync(PUBLIC_DIR)) {
-    fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-  }
-}
-
-ensureFiles();
 
 function getData() {
   try {
@@ -74,22 +48,23 @@ function parseCookies(cookieHeader) {
   const out = {};
   if (!cookieHeader) return out;
 
-  const items = cookieHeader.split(';');
-  for (const item of items) {
-    const index = item.indexOf('=');
+  const parts = cookieHeader.split(';');
+  for (const part of parts) {
+    const index = part.indexOf('=');
     if (index === -1) continue;
-    const key = item.slice(0, index).trim();
-    const value = decodeURIComponent(item.slice(index + 1).trim());
+
+    const key = part.slice(0, index).trim();
+    const value = decodeURIComponent(part.slice(index + 1).trim());
     out[key] = value;
   }
 
   return out;
 }
 
-function sign(text) {
+function sign(value) {
   return crypto
     .createHmac('sha256', DASHBOARD_COOKIE_SECRET)
-    .update(text)
+    .update(value)
     .digest('hex');
 }
 
@@ -102,9 +77,9 @@ function toBase64Url(str) {
 }
 
 function fromBase64Url(str) {
-  str = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (str.length % 4) str += '=';
-  return Buffer.from(str, 'base64').toString('utf8');
+  let value = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (value.length % 4) value += '=';
+  return Buffer.from(value, 'base64').toString('utf8');
 }
 
 function createToken(username) {
@@ -115,21 +90,24 @@ function createToken(username) {
 
   const encoded = toBase64Url(JSON.stringify(payload));
   const signature = sign(encoded);
+
   return `${encoded}.${signature}`;
 }
 
 function verifyToken(token) {
   try {
     if (!token || typeof token !== 'string') return null;
+
     const parts = token.split('.');
     if (parts.length !== 2) return null;
 
-    const [encoded, signature] = parts;
-    const validSignature = sign(encoded);
+    const encoded = parts[0];
+    const signature = parts[1];
 
-    if (signature !== validSignature) return null;
+    if (sign(encoded) !== signature) return null;
 
     const payload = JSON.parse(fromBase64Url(encoded));
+
     if (!payload.username || !payload.exp) return null;
     if (Date.now() > payload.exp) return null;
 
@@ -140,7 +118,7 @@ function verifyToken(token) {
 }
 
 function buildCookie(token) {
-  const cookieParts = [
+  const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(token)}`,
     'Path=/',
     'HttpOnly',
@@ -149,14 +127,14 @@ function buildCookie(token) {
   ];
 
   if (process.env.NODE_ENV === 'production') {
-    cookieParts.push('Secure');
+    parts.push('Secure');
   }
 
-  return cookieParts.join('; ');
+  return parts.join('; ');
 }
 
 function clearCookie() {
-  const cookieParts = [
+  const parts = [
     `${COOKIE_NAME}=`,
     'Path=/',
     'HttpOnly',
@@ -165,10 +143,10 @@ function clearCookie() {
   ];
 
   if (process.env.NODE_ENV === 'production') {
-    cookieParts.push('Secure');
+    parts.push('Secure');
   }
 
-  return cookieParts.join('; ');
+  return parts.join('; ');
 }
 
 function authRequired(req, res, next) {
@@ -177,9 +155,10 @@ function authRequired(req, res, next) {
   const session = verifyToken(token);
 
   if (!session) {
-    if (req.path.startsWith('/api/')) {
+    if (req.originalUrl.startsWith('/api/')) {
       return res.status(401).json({ ok: false, message: 'Non autorizzato' });
     }
+
     return res.redirect('/login');
   }
 
@@ -187,62 +166,7 @@ function authRequired(req, res, next) {
   next();
 }
 
-const loginAttempts = new Map();
-
-function getAttemptKey(req, username) {
-  const ip =
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    req.ip ||
-    'unknown';
-
-  return `${ip}:${String(username || '').toLowerCase()}`;
-}
-
-function isBlocked(req, username) {
-  const key = getAttemptKey(req, username);
-  const record = loginAttempts.get(key);
-
-  if (!record) return { blocked: false };
-
-  if (record.blockUntil && record.blockUntil > Date.now()) {
-    return {
-      blocked: true,
-      retryAfter: Math.ceil((record.blockUntil - Date.now()) / 1000)
-    };
-  }
-
-  return { blocked: false };
-}
-
-function registerFailedAttempt(req, username) {
-  const key = getAttemptKey(req, username);
-  const now = Date.now();
-  const current = loginAttempts.get(key) || {
-    count: 0,
-    first: now,
-    blockUntil: 0
-  };
-
-  if (now - current.first > 15 * 60 * 1000) {
-    current.count = 0;
-    current.first = now;
-    current.blockUntil = 0;
-  }
-
-  current.count += 1;
-
-  if (current.count >= 5) {
-    current.blockUntil = now + 15 * 60 * 1000;
-  }
-
-  loginAttempts.set(key, current);
-}
-
-function clearFailedAttempts(req, username) {
-  const key = getAttemptKey(req, username);
-  loginAttempts.delete(key);
-}
+/* -------------------- LOGIN -------------------- */
 
 app.get('/login', (req, res) => {
   const cookies = parseCookies(req.headers.cookie || '');
@@ -260,23 +184,12 @@ app.post('/api/login', (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
 
-  const blocked = isBlocked(req, username);
-  if (blocked.blocked) {
-    return res.status(429).json({
-      ok: false,
-      message: `Troppi tentativi. Riprova tra ${blocked.retryAfter} secondi`
-    });
-  }
-
   if (username !== DASHBOARD_USERNAME || password !== DASHBOARD_PASSWORD) {
-    registerFailedAttempt(req, username);
     return res.status(401).json({
       ok: false,
       message: 'Credenziali non valide'
     });
   }
-
-  clearFailedAttempts(req, username);
 
   const token = createToken(username);
   res.setHeader('Set-Cookie', buildCookie(token));
@@ -311,19 +224,20 @@ app.post('/api/logout', (req, res) => {
   return res.json({ ok: true });
 });
 
-app.use('/login.html', express.static(path.join(PUBLIC_DIR, 'login.html')));
-app.use('/styles.css', express.static(path.join(PUBLIC_DIR, 'styles.css')));
-app.use('/script.js', express.static(path.join(PUBLIC_DIR, 'script.js')));
+/* -------------------- STATIC FILES SICURI -------------------- */
 
 app.get('/', authRequired, (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
+
+/* -------------------- API PROTETTE -------------------- */
 
 // CLASSIFICA
 app.get('/api/leaderboard', authRequired, (req, res) => {
   const data = getData();
 
-  const sorted = Object.entries(data.scores || {}).sort((a, b) => b[1] - a[1]);
+  const sorted = Object.entries(data.scores || {})
+    .sort((a, b) => b[1] - a[1]);
 
   res.json({
     match: data.currentMatch,
@@ -345,14 +259,15 @@ app.post('/api/approve/:id', authRequired, (req, res) => {
 
   const p = data.pending[req.params.id];
 
-  // BLOCCO doppia approvazione
-  if (!p) return res.json({ already: true });
+  if (!p) {
+    return res.json({ already: true });
+  }
 
   data.scores[p.team] = (data.scores[p.team] || 0) + (p.total + 10);
 
-  p.kills.forEach((k, i) => {
+  (p.kills || []).forEach((k, i) => {
     const name = teams[p.team]?.players?.[i] || `Player${i + 1}`;
-    data.fragger[name] = (data.fragger[name] || 0) + k;
+    data.fragger[name] = (data.fragger[name] || 0) + Number(k || 0);
   });
 
   delete data.pending[req.params.id];
@@ -375,10 +290,6 @@ app.post('/api/reject/:id', authRequired, (req, res) => {
   res.json({ ok: true });
 });
 
-app.use((req, res) => {
-  res.status(404).json({ ok: false, message: 'Rotta non trovata' });
-});
-
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, HOST, () => {
   console.log(`🌐 DASHBOARD ONLINE su porta ${PORT}`);
 });
