@@ -166,8 +166,10 @@ function authRequired(req, res, next) {
   next();
 }
 
-/* -------------------- LOGIN -------------------- */
+/* FILE STATICI */
+app.use(express.static(PUBLIC_DIR));
 
+/* LOGIN */
 app.get('/login', (req, res) => {
   const cookies = parseCookies(req.headers.cookie || '');
   const token = cookies[COOKIE_NAME];
@@ -224,13 +226,11 @@ app.post('/api/logout', (req, res) => {
   return res.json({ ok: true });
 });
 
-/* -------------------- STATIC FILES SICURI -------------------- */
-
 app.get('/', authRequired, (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-/* -------------------- API PROTETTE -------------------- */
+/* API PROTETTE */
 
 // CLASSIFICA
 app.get('/api/leaderboard', authRequired, (req, res) => {
