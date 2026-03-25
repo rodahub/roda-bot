@@ -1,17 +1,19 @@
 const express = require('express');
 const path = require('path');
-const crypto = require('crypto');
-const multer = require('multer');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const {
+  initializeFiles,
   loadData,
-  saveData,
   loadTeams,
+  saveData,
   saveTeams,
   saveAll,
-  resetData
-} = require('./store');
+  getDefaultData
+} = require('./storage');
+
+initializeFiles();
 
 const bot = require('./index');
 
@@ -34,23 +36,9 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(PUBLIC_DIR));
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname || '.png') || '.png';
-      cb(null, `${Date.now()}-${crypto.randomUUID()}${ext}`);
-    }
-  }),
-  limits: {
-    fileSize: 10 * 1024 * 1024
-  }
-});
 
 function parseCookies(cookieHeader) {
   const out = {};
@@ -69,7 +57,10 @@ function parseCookies(cookieHeader) {
 }
 
 function sign(value) {
-  return crypto.createHmac('sha256', DASHBOARD_COOKIE_SECRET).update(value).digest('hex');
+  return crypto
+    .createHmac('sha256', DASHBOARD_COOKIE_SECRET)
+    .update(value)
+    .digest('hex');
 }
 
 function toBase64Url(str) {
@@ -87,7 +78,11 @@ function fromBase64Url(str) {
 }
 
 function createToken(username) {
-  const payload = { username, exp: Date.now() + COOKIE_DURATION_MS };
+  const payload = {
+    username,
+    exp: Date.now() + COOKIE_DURATION_MS
+  };
+
   const encoded = toBase64Url(JSON.stringify(payload));
   const signature = sign(encoded);
   return `${encoded}.${signature}`;
@@ -99,7 +94,8 @@ function verifyToken(token) {
     const parts = token.split('.');
     if (parts.length !== 2) return null;
 
-    const [encoded, signature] = parts;
+    const encoded = parts[0];
+    const signature = parts[1];
     if (sign(encoded) !== signature) return null;
 
     const payload = JSON.parse(fromBase64Url(encoded));
@@ -192,8 +188,26 @@ function buildPending(pending, teams) {
     pos: Number(p.pos || 0),
     kills: Array.isArray(p.kills) ? p.kills.map(v => Number(v || 0)) : [],
     players: teams[p.team]?.players || [],
-    image: p.image || ''
+    image: p.image || '',
+    submittedBy: p.submittedBy || '',
+    staffMessageId: p.staffMessageId || null
   }));
+}
+
+function saveBase64Image(imageData) {
+  const match = String(imageData || '').match(/^data:(image\/png|image\/jpeg|image\/jpg|image\/webp);base64,(.+)$/);
+  if (!match) {
+    throw new Error('Formato immagine non valido');
+  }
+
+  const mime = match[1];
+  const base64 = match[2];
+  const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const filePath = path.join(UPLOADS_DIR, fileName);
+  fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+
+  return `/uploads/${fileName}`;
 }
 
 app.get('/login', (req, res) => {
@@ -215,6 +229,7 @@ app.post('/api/login', (req, res) => {
 
   const token = createToken(username);
   res.setHeader('Set-Cookie', buildCookie(token));
+
   return res.json({ ok: true, username });
 });
 
@@ -247,6 +262,9 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   const data = loadData();
   const teams = loadTeams();
 
+  bot.setDataState(data);
+  bot.setTeamsState(teams);
+
   return res.json({
     ok: true,
     currentMatch: Number(data.currentMatch || 1),
@@ -256,7 +274,7 @@ app.get('/api/dashboard', authRequired, (req, res) => {
     teams,
     scores: data.scores || {},
     fragger: data.fragger || {},
-    history: Array.isArray(data.resultHistory) ? data.resultHistory.slice(0, 100) : [],
+    botConfig: bot.getBotConfig(),
     stats: {
       teamCount: Object.keys(teams).length,
       pendingCount: Object.keys(data.pending || {}).length,
@@ -265,77 +283,6 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   });
 });
 
-/* BOT ACTIONS */
-app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
-  try {
-    const result = await bot.spawnRegisterPanel();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
-  try {
-    const result = await bot.spawnResultsPanel();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
-  try {
-    const result = await bot.createRooms();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
-  try {
-    const result = await bot.deleteRooms();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
-  try {
-    const result = await bot.updateLeaderboard();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-/* MATCH */
-app.post('/api/match/set', authRequired, async (req, res) => {
-  const data = loadData();
-  const match = Number(req.body.match || 1);
-
-  if (!Number.isInteger(match) || match < 1) {
-    return res.status(400).json({ ok: false, message: 'Match non valido' });
-  }
-
-  data.currentMatch = match;
-  saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
-  return res.json({ ok: true, currentMatch: match });
-});
-
-app.post('/api/match/next', authRequired, async (req, res) => {
-  try {
-    const result = await bot.nextMatchAndSync();
-    return res.json(result);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
-  }
-});
-
-/* TEAMS */
 app.post('/api/teams/save', authRequired, (req, res) => {
   const teams = loadTeams();
   const data = loadData();
@@ -347,25 +294,27 @@ app.post('/api/teams/save', authRequired, (req, res) => {
   const p3 = sanitizeText(req.body.p3);
 
   if (!teamName || !p1 || !p2 || !p3) {
-    return res.status(400).json({ ok: false, message: 'Compila tutti i campi' });
+    return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/player' });
   }
 
   if (oldTeamName && oldTeamName !== teamName && teams[teamName]) {
     return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome' });
   }
 
-  if (oldTeamName && oldTeamName !== teamName && teams[oldTeamName]) {
-    teams[teamName] = { players: [p1, p2, p3] };
-    delete teams[oldTeamName];
+  if (oldTeamName && oldTeamName !== teamName) {
+    if (teams[oldTeamName]) {
+      teams[teamName] = { players: [p1, p2, p3] };
+      delete teams[oldTeamName];
 
-    if (typeof data.scores[oldTeamName] !== 'undefined') {
-      data.scores[teamName] = data.scores[oldTeamName];
-      delete data.scores[oldTeamName];
-    }
+      if (typeof data.scores[oldTeamName] !== 'undefined') {
+        data.scores[teamName] = data.scores[oldTeamName];
+        delete data.scores[oldTeamName];
+      }
 
-    for (const id of Object.keys(data.pending || {})) {
-      if (data.pending[id]?.team === oldTeamName) {
-        data.pending[id].team = teamName;
+      for (const id of Object.keys(data.pending || {})) {
+        if (data.pending[id]?.team === oldTeamName) {
+          data.pending[id].team = teamName;
+        }
       }
     }
   } else {
@@ -373,6 +322,9 @@ app.post('/api/teams/save', authRequired, (req, res) => {
   }
 
   saveAll(data, teams);
+  bot.setDataState(data);
+  bot.setTeamsState(teams);
+
   return res.json({ ok: true });
 });
 
@@ -395,26 +347,53 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
   }
 
   saveAll(data, teams);
+  bot.setDataState(data);
+  bot.setTeamsState(teams);
+
   return res.json({ ok: true });
 });
 
-/* SCORES */
-app.post('/api/scores/add', authRequired, async (req, res) => {
+app.post('/api/match/set', authRequired, async (req, res) => {
+  const match = Number(req.body.match || 1);
+
+  if (!Number.isInteger(match) || match < 1) {
+    return res.status(400).json({ ok: false, message: 'Match non valido' });
+  }
+
+  const data = loadData();
+  data.currentMatch = match;
+  saveData(data);
+  bot.setDataState(data);
+
+  return res.json({ ok: true, currentMatch: match });
+});
+
+app.post('/api/match/next', authRequired, (req, res) => {
+  const data = loadData();
+  data.currentMatch = Number(data.currentMatch || 1) + 1;
+  saveData(data);
+  bot.setDataState(data);
+
+  return res.json({ ok: true, currentMatch: data.currentMatch });
+});
+
+app.post('/api/scores/add', authRequired, (req, res) => {
   const data = loadData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
 
   if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({ ok: false, message: 'Dati non validi' });
+    return res.status(400).json({ ok: false, message: 'Dati punti non validi' });
   }
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
   saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
+  bot.setDataState(data);
+
   return res.json({ ok: true, score: data.scores[team] });
 });
 
-app.post('/api/scores/set', authRequired, async (req, res) => {
+app.post('/api/scores/set', authRequired, (req, res) => {
   const data = loadData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
@@ -425,11 +404,12 @@ app.post('/api/scores/set', authRequired, async (req, res) => {
 
   data.scores[team] = points;
   saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
+  bot.setDataState(data);
+
   return res.json({ ok: true, score: data.scores[team] });
 });
 
-app.post('/api/scores/reset-team', authRequired, async (req, res) => {
+app.post('/api/scores/reset-team', authRequired, (req, res) => {
   const data = loadData();
   const team = sanitizeText(req.body.team);
 
@@ -439,12 +419,12 @@ app.post('/api/scores/reset-team', authRequired, async (req, res) => {
 
   data.scores[team] = 0;
   saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
+  bot.setDataState(data);
+
   return res.json({ ok: true });
 });
 
-/* FRAGGER */
-app.post('/api/fragger/set', authRequired, async (req, res) => {
+app.post('/api/fragger/set', authRequired, (req, res) => {
   const data = loadData();
   const player = sanitizeText(req.body.player);
   const kills = Number(req.body.kills || 0);
@@ -455,11 +435,12 @@ app.post('/api/fragger/set', authRequired, async (req, res) => {
 
   data.fragger[player] = kills;
   saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
+  bot.setDataState(data);
+
   return res.json({ ok: true, kills });
 });
 
-app.post('/api/fragger/delete', authRequired, async (req, res) => {
+app.post('/api/fragger/delete', authRequired, (req, res) => {
   const data = loadData();
   const player = sanitizeText(req.body.player);
 
@@ -469,68 +450,120 @@ app.post('/api/fragger/delete', authRequired, async (req, res) => {
 
   delete data.fragger[player];
   saveData(data);
-  await bot.updateLeaderboard().catch(() => {});
+  bot.setDataState(data);
+
   return res.json({ ok: true });
 });
 
-/* PENDING */
-app.post('/api/pending/approve', authRequired, async (req, res) => {
+app.post('/api/approve/:id', authRequired, async (req, res) => {
   try {
-    const pendingId = sanitizeText(req.body.id);
-    const result = await bot.approvePending(pendingId, 'dashboard');
+    const result = await bot.approvePending(req.params.id);
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: error.message || 'Errore approvazione' });
   }
 });
 
-app.post('/api/pending/reject', authRequired, async (req, res) => {
+app.post('/api/reject/:id', authRequired, async (req, res) => {
   try {
-    const pendingId = sanitizeText(req.body.id);
-    const result = await bot.rejectPending(pendingId, 'dashboard');
+    const result = await bot.rejectPending(req.params.id);
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: error.message || 'Errore rifiuto' });
   }
 });
 
-/* WEB RESULT + SCREENSHOT */
-app.post('/api/results/submit', authRequired, upload.single('screenshot'), async (req, res) => {
+app.post('/api/reset-all', authRequired, (req, res) => {
+  const data = getDefaultData();
+  saveData(data);
+  bot.resetAllState();
+  return res.json({ ok: true });
+});
+
+app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
+  try {
+    const channelId = sanitizeText(req.body.channelId);
+    if (!channelId) return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+
+    await bot.spawnRegisterPanel(channelId);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore spawn pannello register' });
+  }
+});
+
+app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
+  try {
+    const channelId = sanitizeText(req.body.channelId);
+    if (!channelId) return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+
+    await bot.spawnResultsPanel(channelId);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore spawn pannello risultati' });
+  }
+});
+
+app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
+  try {
+    await bot.createTeamRooms();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore creazione stanze' });
+  }
+});
+
+app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
+  try {
+    await bot.deleteTeamRooms();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore eliminazione stanze' });
+  }
+});
+
+app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
+  try {
+    await bot.updateLeaderboard();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore update leaderboard' });
+  }
+});
+
+app.post('/api/web-submit-result', authRequired, async (req, res) => {
   try {
     const team = sanitizeText(req.body.team);
     const k1 = Number(req.body.k1 || 0);
     const k2 = Number(req.body.k2 || 0);
     const k3 = Number(req.body.k3 || 0);
     const pos = Number(req.body.pos || 0);
+    const imageData = req.body.imageData;
 
-    if (!team) {
-      return res.status(400).json({ ok: false, message: 'Team mancante' });
+    if (!team || !Number.isFinite(k1) || !Number.isFinite(k2) || !Number.isFinite(k3) || !Number.isFinite(pos)) {
+      return res.status(400).json({ ok: false, message: 'Dati risultato non validi' });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ ok: false, message: 'Screenshot mancante' });
+    if (!imageData) {
+      return res.status(400).json({ ok: false, message: 'Screenshot obbligatorio' });
     }
 
-    const image = `/uploads/${req.file.filename}`;
+    const image = saveBase64Image(imageData);
 
-    const result = await bot.createPendingFromWeb({
+    await bot.submitWebResult({
       team,
-      kills: [k1, k2, k3],
+      k1,
+      k2,
+      k3,
       pos,
-      image
+      image,
+      submittedBy: req.staffUser
     });
 
-    return res.json(result);
+    return res.json({ ok: true });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: error.message || 'Errore invio risultato web' });
   }
-});
-
-/* RESET */
-app.post('/api/reset-all', authRequired, async (req, res) => {
-  resetData();
-  await bot.updateLeaderboard().catch(() => {});
-  return res.json({ ok: true });
 });
 
 app.listen(PORT, HOST, () => {
