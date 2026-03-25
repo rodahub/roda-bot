@@ -186,6 +186,7 @@
     .stat-value{
       font-size:32px;
       font-weight:900;
+      word-break:break-word;
     }
 
     .grid-2{
@@ -347,6 +348,11 @@
       font-size:14px;
     }
 
+    input[type="file"]{
+      padding:10px 14px;
+      height:auto;
+    }
+
     .field{
       display:grid;
       gap:8px;
@@ -402,6 +408,7 @@
 
       .subtitle{
         margin-top:-2px;
+        white-space:normal;
       }
     }
   </style>
@@ -571,6 +578,56 @@
       </div>
     </div>
 
+    <div class="grid-2">
+      <div class="card">
+        <h3>🤖 Azioni Bot Discord</h3>
+        <div class="field">
+          <label>Channel ID pannello registrazione</label>
+          <input type="text" id="registerPanelChannel" />
+        </div>
+        <div class="field">
+          <label>Channel ID pannello risultati</label>
+          <input type="text" id="resultsPanelChannel" />
+        </div>
+        <div class="row">
+          <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
+          <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
+          <button class="btn btn-green" onclick="createRooms()">Crea Stanze</button>
+          <button class="btn btn-red" onclick="deleteRooms()">Elimina Stanze</button>
+          <button class="btn btn-yellow" onclick="forceLeaderboard()">Force Leaderboard</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📤 Invia Risultato dal Sito</h3>
+        <div class="field">
+          <label>Team</label>
+          <select id="webResultTeam"></select>
+        </div>
+        <div class="field">
+          <label>Kill Player 1</label>
+          <input type="number" id="webK1" />
+        </div>
+        <div class="field">
+          <label>Kill Player 2</label>
+          <input type="number" id="webK2" />
+        </div>
+        <div class="field">
+          <label>Kill Player 3</label>
+          <input type="number" id="webK3" />
+        </div>
+        <div class="field">
+          <label>Posizione</label>
+          <input type="number" id="webPos" />
+        </div>
+        <div class="field">
+          <label>Screenshot</label>
+          <input type="file" id="webScreenshot" accept="image/*" />
+        </div>
+        <button class="btn btn-green" onclick="submitWebResult()">Invia Risultato Web</button>
+      </div>
+    </div>
+
     <div class="card" style="margin-bottom:18px">
       <h3>📸 Pending Risultati</h3>
       <div id="pendingList" class="list">
@@ -596,6 +653,15 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+    }
+
+    async function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     async function api(url, options = {}) {
@@ -660,6 +726,7 @@
       const fraggers = dashboard.fraggers || [];
       const pending = dashboard.pending || [];
       const teams = dashboard.teams || {};
+      const botConfig = dashboard.botConfig || {};
 
       document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
       document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
@@ -667,6 +734,8 @@
       document.getElementById('statFragger').textContent = fraggers.length ? fraggers[0].name : '-';
 
       document.getElementById('matchInput').value = dashboard.currentMatch || 1;
+      document.getElementById('registerPanelChannel').value = botConfig.classificaChannel || '';
+      document.getElementById('resultsPanelChannel').value = botConfig.classificaChannel || '';
 
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = leaderboard.length
@@ -693,6 +762,7 @@
       const teamNames = Object.keys(teams).sort((a, b) => a.localeCompare(b, 'it'));
       const teamSelect = document.getElementById('teamSelect');
       const scoreTeam = document.getElementById('scoreTeam');
+      const webResultTeam = document.getElementById('webResultTeam');
 
       const teamOptions = [
         `<option value="">Seleziona team</option>`,
@@ -701,6 +771,7 @@
 
       teamSelect.innerHTML = teamOptions;
       scoreTeam.innerHTML = teamOptions;
+      webResultTeam.innerHTML = teamOptions;
 
       const fraggerSelect = document.getElementById('fraggerSelect');
       const fraggerEntries = Object.keys(dashboard.fragger || {}).sort((a, b) => a.localeCompare(b, 'it'));
@@ -716,7 +787,7 @@
               <div class="pending-top">
                 <div>
                   <div class="pending-team">${escapeHtml(item.team)}</div>
-                  <div class="muted">In attesa di approvazione staff</div>
+                  <div class="muted">In attesa di approvazione staff • ${escapeHtml(item.submittedBy || '-')}</div>
                 </div>
                 <div class="pill">PENDING</div>
               </div>
@@ -998,6 +1069,112 @@
       await refreshDashboard();
     }
 
+    async function spawnRegisterPanel() {
+      const channelId = document.getElementById('registerPanelChannel').value.trim();
+      const result = await api('/api/bot/spawn-register-panel', {
+        method: 'POST',
+        body: JSON.stringify({ channelId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore spawn register panel');
+        return;
+      }
+
+      setStatus('Pannello registrazione inviato');
+    }
+
+    async function spawnResultsPanel() {
+      const channelId = document.getElementById('resultsPanelChannel').value.trim();
+      const result = await api('/api/bot/spawn-results-panel', {
+        method: 'POST',
+        body: JSON.stringify({ channelId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore spawn results panel');
+        return;
+      }
+
+      setStatus('Pannello risultati inviato');
+    }
+
+    async function createRooms() {
+      const result = await api('/api/bot/create-rooms', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore creazione stanze');
+        return;
+      }
+
+      setStatus('Stanze create');
+    }
+
+    async function deleteRooms() {
+      const result = await api('/api/bot/delete-rooms', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione stanze');
+        return;
+      }
+
+      setStatus('Stanze eliminate');
+    }
+
+    async function forceLeaderboard() {
+      const result = await api('/api/bot/update-leaderboard', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore update leaderboard');
+        return;
+      }
+
+      setStatus('Leaderboard Discord aggiornata');
+    }
+
+    async function submitWebResult() {
+      const team = document.getElementById('webResultTeam').value;
+      const k1 = Number(document.getElementById('webK1').value || 0);
+      const k2 = Number(document.getElementById('webK2').value || 0);
+      const k3 = Number(document.getElementById('webK3').value || 0);
+      const pos = Number(document.getElementById('webPos').value || 0);
+      const file = document.getElementById('webScreenshot').files[0];
+
+      if (!team) {
+        alert('Seleziona un team');
+        return;
+      }
+
+      if (!file) {
+        alert('Seleziona uno screenshot');
+        return;
+      }
+
+      const imageData = await fileToBase64(file);
+
+      const result = await api('/api/web-submit-result', {
+        method: 'POST',
+        body: JSON.stringify({ team, k1, k2, k3, pos, imageData })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore invio risultato web');
+        return;
+      }
+
+      document.getElementById('webK1').value = '';
+      document.getElementById('webK2').value = '';
+      document.getElementById('webK3').value = '';
+      document.getElementById('webPos').value = '';
+      document.getElementById('webScreenshot').value = '';
+
+      await refreshDashboard();
+      setStatus('Risultato web inviato allo staff');
+    }
+
     async function logout() {
       await api('/api/logout', { method: 'POST' });
       location.href = '/login';
@@ -1021,6 +1198,12 @@
     window.approvePending = approvePending;
     window.rejectPending = rejectPending;
     window.resetAll = resetAll;
+    window.spawnRegisterPanel = spawnRegisterPanel;
+    window.spawnResultsPanel = spawnResultsPanel;
+    window.createRooms = createRooms;
+    window.deleteRooms = deleteRooms;
+    window.forceLeaderboard = forceLeaderboard;
+    window.submitWebResult = submitWebResult;
 
     refreshDashboard();
     setInterval(() => {
