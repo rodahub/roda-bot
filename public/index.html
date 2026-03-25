@@ -64,16 +64,19 @@
       align-items:center;
       gap:0;
       flex-wrap:nowrap;
+      min-width:0;
     }
 
     .brand-logo{
       width:76px;
       height:76px;
       object-fit:contain;
-      filter: drop-shadow(0 0 16px rgba(123,44,255,.55));
+      filter:drop-shadow(0 0 16px rgba(123,44,255,.55));
       border-radius:20px;
       flex-shrink:0;
-      margin-right:-14px;
+      margin-right:-8px;
+      position:relative;
+      z-index:2;
     }
 
     .brand-text-wrap{
@@ -81,8 +84,17 @@
       flex-direction:column;
       justify-content:center;
       gap:0;
+      min-width:0;
       margin-left:0;
       padding-left:0;
+    }
+
+    .brand-text-holder{
+      height:96px;
+      display:flex;
+      align-items:center;
+      overflow:visible;
+      margin-left:-34px;
     }
 
     .brand-text{
@@ -91,7 +103,9 @@
       max-width:none;
       object-fit:contain;
       display:block;
-      filter: drop-shadow(0 0 16px rgba(123,44,255,.46));
+      filter:drop-shadow(0 0 16px rgba(123,44,255,.46));
+      transform:translateX(-26px);
+      transform-origin:left center;
       margin:0;
       padding:0;
       line-height:1;
@@ -102,7 +116,7 @@
       font-size:13px;
       letter-spacing:.35px;
       margin-top:-16px;
-      margin-left:6px;
+      margin-left:-2px;
     }
 
     .top-actions{
@@ -436,17 +450,23 @@
       .brand-logo{
         width:58px;
         height:58px;
-        margin-right:-10px;
+        margin-right:-6px;
+      }
+
+      .brand-text-holder{
+        height:68px;
+        margin-left:-26px;
       }
 
       .brand-text{
         height:68px;
+        transform:translateX(-18px);
       }
 
       .brand-sub{
         font-size:12px;
-        margin-top:-12px;
-        margin-left:4px;
+        margin-top:-10px;
+        margin-left:-2px;
       }
 
       .stats{
@@ -493,7 +513,9 @@
       <div class="brand">
         <img src="/roda-logo.png" alt="RØDA Logo" class="brand-logo" />
         <div class="brand-text-wrap">
-          <img src="/roda-text.png" alt="RØDA" class="brand-text" />
+          <div class="brand-text-holder">
+            <img src="/roda-text.png" alt="RØDA" class="brand-text" />
+          </div>
           <div class="brand-sub">Tournament dashboard • staff control panel</div>
         </div>
       </div>
