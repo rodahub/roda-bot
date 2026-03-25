@@ -353,6 +353,12 @@
       height:auto;
     }
 
+    select,
+    option{
+      color:#fff;
+      background:#11111a;
+    }
+
     .field{
       display:grid;
       gap:8px;
@@ -521,9 +527,12 @@
       </div>
 
       <div class="card danger-zone">
-        <h3>💥 Reset Totale</h3>
-        <div class="muted" style="margin-bottom:12px">Resetta punteggi, fragger, pending e match corrente.</div>
-        <button class="btn btn-red" onclick="resetAll()">RESET ALL</button>
+        <h3>🧹 Reset Separati</h3>
+        <div class="muted" style="margin-bottom:12px">Reset team registrati separato da classifica, fragger e match.</div>
+        <div class="row">
+          <button class="btn btn-red" onclick="resetTeams()">RESET TEAM</button>
+          <button class="btn btn-yellow" onclick="resetData()">RESET CLASSIFICA / FRAGGER</button>
+        </div>
       </div>
     </div>
 
@@ -621,7 +630,7 @@
           <input type="number" id="webPos" />
         </div>
         <div class="field">
-          <label>Screenshot</label>
+          <label>Screenshot opzionale</label>
           <input type="file" id="webScreenshot" accept="image/*" />
         </div>
         <button class="btn btn-green" onclick="submitWebResult()">Invia Risultato Web</button>
@@ -1053,20 +1062,35 @@
       await refreshDashboard();
     }
 
-    async function resetAll() {
-      if (!confirm('Confermi RESET TOTALE?')) return;
+    async function resetTeams() {
+      if (!confirm('Confermi RESET TEAM registrati?')) return;
 
-      const result = await api('/api/reset-all', { method: 'POST' });
+      const result = await api('/api/reset-teams', { method: 'POST' });
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore reset totale');
+        alert(result.data.message || 'Errore reset team');
         return;
       }
 
       newTeamForm();
+      await refreshDashboard();
+      setStatus('Team registrati resettati');
+    }
+
+    async function resetData() {
+      if (!confirm('Confermi RESET classifica / fragger / match?')) return;
+
+      const result = await api('/api/reset-data', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore reset dati');
+        return;
+      }
+
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
       await refreshDashboard();
+      setStatus('Classifica e fragger resettati');
     }
 
     async function spawnRegisterPanel() {
@@ -1147,12 +1171,10 @@
         return;
       }
 
-      if (!file) {
-        alert('Seleziona uno screenshot');
-        return;
+      let imageData = '';
+      if (file) {
+        imageData = await fileToBase64(file);
       }
-
-      const imageData = await fileToBase64(file);
 
       const result = await api('/api/web-submit-result', {
         method: 'POST',
@@ -1197,7 +1219,8 @@
     window.resetTeamScore = resetTeamScore;
     window.approvePending = approvePending;
     window.rejectPending = rejectPending;
-    window.resetAll = resetAll;
+    window.resetTeams = resetTeams;
+    window.resetData = resetData;
     window.spawnRegisterPanel = spawnRegisterPanel;
     window.spawnResultsPanel = spawnResultsPanel;
     window.createRooms = createRooms;
