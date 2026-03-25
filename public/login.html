@@ -6,8 +6,6 @@
   <title>RØDA Staff Login</title>
   <style>
     :root{
-      --bg:#050507;
-      --panel:#10101a;
       --line:rgba(160,110,255,.18);
       --text:#f7f4ff;
       --muted:#aaa6c5;
@@ -48,23 +46,13 @@
       border-radius:28px;
       padding:28px;
       box-shadow:var(--shadow);
-      position:relative;
       overflow:hidden;
     }
 
-    .login-box::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(135deg, rgba(123,44,255,.09), transparent 48%);
-      pointer-events:none;
-    }
-
     .head{
-      position:relative;
-      z-index:1;
       display:flex;
       align-items:center;
+      justify-content:center;
       flex-direction:column;
       text-align:center;
       margin-bottom:22px;
@@ -75,15 +63,15 @@
       height:86px;
       object-fit:contain;
       filter: drop-shadow(0 0 18px rgba(123,44,255,.55));
-      margin-bottom:14px;
+      margin-bottom:10px;
     }
 
     .text-logo{
-      height:38px;
+      height:42px;
       width:auto;
       object-fit:contain;
       filter: drop-shadow(0 0 12px rgba(123,44,255,.38));
-      margin-bottom:10px;
+      margin-bottom:8px;
     }
 
     .subtitle{
@@ -92,8 +80,6 @@
     }
 
     .field{
-      position:relative;
-      z-index:1;
       margin-bottom:14px;
     }
 
@@ -115,17 +101,9 @@
       padding:0 14px;
       font-size:15px;
       outline:none;
-      transition:.18s ease;
-    }
-
-    .field input:focus{
-      border-color:rgba(156,92,255,.85);
-      box-shadow:0 0 0 3px rgba(123,44,255,.18), 0 0 20px rgba(123,44,255,.16);
     }
 
     .login-btn{
-      position:relative;
-      z-index:1;
       width:100%;
       height:54px;
       border:0;
@@ -136,43 +114,19 @@
       font-weight:900;
       cursor:pointer;
       box-shadow:0 0 24px rgba(123,44,255,.28);
-      transition:.18s ease;
-    }
-
-    .login-btn:hover{
-      transform:translateY(-1px);
     }
 
     .login-btn:disabled{
       opacity:.65;
       cursor:not-allowed;
-      transform:none;
     }
 
     .msg{
-      position:relative;
-      z-index:1;
       min-height:22px;
       margin-top:14px;
       text-align:center;
       font-size:14px;
       color:#ff97aa;
-    }
-
-    @media (max-width: 520px){
-      .login-box{
-        padding:22px;
-        border-radius:24px;
-      }
-
-      .logo{
-        width:72px;
-        height:72px;
-      }
-
-      .text-logo{
-        height:32px;
-      }
     }
   </style>
 </head>
