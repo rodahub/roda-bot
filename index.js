@@ -58,6 +58,8 @@ const readyPromise = new Promise(resolve => {
   readyResolver = resolve;
 });
 
+let registrationStatusUpdateQueue = Promise.resolve();
+
 function sanitizeText(value) {
   return String(value || '').trim();
 }
@@ -80,23 +82,28 @@ function setTeamsState(newTeams) {
   teams = newTeams;
 }
 
+function getRegistrationLimit() {
+  const limit = Number(data.registrationMaxTeams || 16);
+  return Number.isInteger(limit) && limit > 0 ? limit : 16;
+}
+
 function getSortedTeamEntries() {
   return Object.entries(teams).sort((a, b) => {
-    const slotA = Number(a[1]?.slot || 999);
-    const slotB = Number(b[1]?.slot || 999);
+    const slotA = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
 }
 
-function getNextAvailableSlot() {
+function getNextAvailableSlot(limit = getRegistrationLimit()) {
   const used = new Set(
     Object.values(teams)
       .map(team => Number(team?.slot))
-      .filter(slot => Number.isInteger(slot) && slot >= 1 && slot <= 16)
+      .filter(slot => Number.isInteger(slot) && slot >= 1)
   );
 
-  for (let i = 1; i <= 16; i++) {
+  for (let i = 1; i <= limit; i++) {
     if (!used.has(i)) return i;
   }
 
@@ -104,7 +111,7 @@ function getNextAvailableSlot() {
 }
 
 function isTournamentFull() {
-  return Object.keys(teams).length >= 16;
+  return Object.keys(teams).length >= getRegistrationLimit();
 }
 
 async function maybeAnnounceTournamentFull() {
@@ -123,7 +130,7 @@ async function maybeAnnounceTournamentFull() {
     const embed = new EmbedBuilder()
       .setTitle('🚫 Registrazioni chiuse')
       .setDescription(
-        'Il torneo ha raggiunto il limite massimo di **16 team registrati**.\n\n' +
+        `Il torneo ha raggiunto il limite massimo di **${getRegistrationLimit()} team registrati**.\n\n` +
         'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
       );
 
@@ -135,38 +142,55 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-async function updateRegistrationStatusMessage() {
-  await waitReady();
+function queueRegistrationStatusUpdate() {
+  registrationStatusUpdateQueue = registrationStatusUpdateQueue
+    .then(async () => {
+      await waitReady();
 
-  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-  const sortedTeams = getSortedTeamEntries();
+      const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
+      const sortedTeams = getSortedTeamEntries();
 
-  const description = sortedTeams.length
-    ? sortedTeams
-        .map(([teamName, teamData]) => `**#${teamData.slot || '-'}** • ${teamName}`)
-        .join('\n')
-    : 'Nessun team registrato.';
+      const lines = sortedTeams.length
+        ? sortedTeams.map(([teamName, teamData]) => `**#${teamData.slot || '-'}** • ${teamName}`)
+        : ['Nessun team registrato.'];
 
-  const embed = new EmbedBuilder()
-    .setTitle('📋 Slot Team Registrati')
-    .setDescription(description)
-    .addFields(
-      { name: '👥 Team registrati', value: `${sortedTeams.length}/16`, inline: true },
-      { name: '✅ Stato', value: sortedTeams.length >= 16 ? 'Torneo pieno' : 'Posti disponibili', inline: true }
-    );
+      const title = sanitizeText(data.registrationStatusTitle) || '📋 Slot Team Registrati';
+      const intro = sanitizeText(data.registrationStatusText);
 
-  if (data.registrationStatusMessageId) {
-    try {
-      const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-      await msg.edit({ embeds: [embed] });
+      const description = intro
+        ? `${intro}\n\n${lines.join('\n')}`
+        : lines.join('\n');
+
+      const embed = new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .addFields(
+          { name: '👥 Team registrati', value: `${sortedTeams.length}/${getRegistrationLimit()}`, inline: true },
+          { name: '✅ Stato', value: sortedTeams.length >= getRegistrationLimit() ? 'Torneo pieno' : 'Posti disponibili', inline: true }
+        );
+
+      if (data.registrationStatusMessageId) {
+        try {
+          const msg = await channel.messages.fetch(data.registrationStatusMessageId);
+          await msg.edit({ embeds: [embed] });
+          return true;
+        } catch {}
+      }
+
+      const msg = await channel.send({ embeds: [embed] });
+      data.registrationStatusMessageId = msg.id;
+      saveState();
       return true;
-    } catch {}
-  }
+    })
+    .catch(error => {
+      console.error('Errore update messaggio slot team:', error);
+    });
 
-  const msg = await channel.send({ embeds: [embed] });
-  data.registrationStatusMessageId = msg.id;
-  saveState();
-  return true;
+  return registrationStatusUpdateQueue;
+}
+
+async function updateRegistrationStatusMessage() {
+  return queueRegistrationStatusUpdate();
 }
 
 async function handleRegistrationStateChange() {
@@ -496,7 +520,7 @@ client.on('interactionCreate', async interaction => {
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
         return interaction.reply({
-          content: '🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto 16 team.',
+          content: `🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto ${getRegistrationLimit()} team.`,
           ephemeral: true
         });
       }
@@ -573,7 +597,7 @@ client.on('interactionCreate', async interaction => {
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
         return interaction.reply({
-          content: '🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto 16 team.',
+          content: `🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto ${getRegistrationLimit()} team.`,
           ephemeral: true
         });
       }
