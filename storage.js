@@ -21,7 +21,8 @@ function getDefaultData() {
     tempSubmit: {},
     scores: {},
     fragger: {},
-    leaderboardMessageId: null
+    leaderboardMessageId: null,
+    registrationClosedAnnounced: false
   };
 }
 
@@ -46,27 +47,61 @@ function normalizeData(data) {
   base.scores = isObject(safe.scores) ? safe.scores : {};
   base.fragger = isObject(safe.fragger) ? safe.fragger : {};
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
+  base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
   return base;
 }
 
 function normalizeTeams(teams) {
   const safe = isObject(teams) ? teams : {};
-  const output = {};
+  const temp = {};
+  const usedSlots = new Set();
+  const needsSlot = [];
 
   for (const [teamName, teamData] of Object.entries(safe)) {
     if (!teamName || !isObject(teamData)) continue;
+
     const players = Array.isArray(teamData.players) ? teamData.players : [];
-    output[teamName] = {
+    const slotValue = Number(teamData.slot);
+    let slot = null;
+
+    if (
+      Number.isInteger(slotValue) &&
+      slotValue >= 1 &&
+      slotValue <= 16 &&
+      !usedSlots.has(slotValue)
+    ) {
+      slot = slotValue;
+      usedSlots.add(slotValue);
+    }
+
+    temp[teamName] = {
+      slot,
       players: [
         String(players[0] || '').trim(),
         String(players[1] || '').trim(),
         String(players[2] || '').trim()
       ]
     };
+
+    if (!slot) needsSlot.push(teamName);
   }
 
-  return output;
+  const sortedNeeding = needsSlot.sort((a, b) => a.localeCompare(b, 'it'));
+
+  for (const teamName of sortedNeeding) {
+    let assigned = null;
+    for (let i = 1; i <= 16; i++) {
+      if (!usedSlots.has(i)) {
+        assigned = i;
+        usedSlots.add(i);
+        break;
+      }
+    }
+    temp[teamName].slot = assigned;
+  }
+
+  return temp;
 }
 
 function readJsonSafe(filePath) {
