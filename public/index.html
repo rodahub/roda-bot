@@ -336,16 +336,24 @@
       flex-wrap:wrap;
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
-      height:46px;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
       background:rgba(255,255,255,.03);
       color:#fff;
-      padding:0 14px;
+      padding:12px 14px;
       outline:none;
       font-size:14px;
+    }
+
+    input, select{
+      height:46px;
+    }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
     }
 
     input[type="file"]{
@@ -593,6 +601,26 @@
 
     <div class="grid-2">
       <div class="card">
+        <h3>📝 Messaggio Slot Team Discord</h3>
+        <div class="field">
+          <label>Titolo messaggio</label>
+          <input type="text" id="registrationStatusTitle" />
+        </div>
+        <div class="field">
+          <label>Testo sopra la lista</label>
+          <textarea id="registrationStatusText"></textarea>
+        </div>
+        <div class="field">
+          <label>Numero massimo team</label>
+          <input type="number" id="registrationMaxTeams" min="1" />
+        </div>
+        <div class="row">
+          <button class="btn btn-purple" onclick="saveRegistrationSettings()">Salva Messaggio Slot</button>
+          <button class="btn btn-yellow" onclick="forceRegistrationMessage()">Aggiorna Messaggio Ora</button>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>🤖 Azioni Bot Discord</h3>
         <div class="field">
           <label>Channel ID pannello registrazione</label>
@@ -610,7 +638,9 @@
           <button class="btn btn-yellow" onclick="forceLeaderboard()">Force Leaderboard</button>
         </div>
       </div>
+    </div>
 
+    <div class="grid-2">
       <div class="card">
         <h3>📤 Invia Risultato dal Sito</h3>
         <div class="field">
@@ -639,12 +669,12 @@
         </div>
         <button class="btn btn-green" onclick="submitWebResult()">Invia Risultato Web</button>
       </div>
-    </div>
 
-    <div class="card" style="margin-bottom:18px">
-      <h3>📸 Pending Risultati</h3>
-      <div id="pendingList" class="list">
-        <div class="empty">Nessun risultato pending</div>
+      <div class="card">
+        <h3>📸 Pending Risultati</h3>
+        <div id="pendingList" class="list">
+          <div class="empty">Nessun risultato pending</div>
+        </div>
       </div>
     </div>
 
@@ -740,6 +770,7 @@
       const pending = dashboard.pending || [];
       const sortedTeams = dashboard.sortedTeams || [];
       const botConfig = dashboard.botConfig || {};
+      const registrationSettings = dashboard.registrationSettings || {};
 
       document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
       document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
@@ -749,6 +780,10 @@
       document.getElementById('matchInput').value = dashboard.currentMatch || 1;
       document.getElementById('registerPanelChannel').value = botConfig.classificaChannel || '';
       document.getElementById('resultsPanelChannel').value = botConfig.classificaChannel || '';
+
+      document.getElementById('registrationStatusTitle').value = registrationSettings.title || '';
+      document.getElementById('registrationStatusText').value = registrationSettings.text || '';
+      document.getElementById('registrationMaxTeams').value = registrationSettings.maxTeams || 16;
 
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = leaderboard.length
@@ -1094,6 +1129,40 @@
       setStatus('Classifica e fragger resettati');
     }
 
+    async function saveRegistrationSettings() {
+      const title = document.getElementById('registrationStatusTitle').value.trim();
+      const text = document.getElementById('registrationStatusText').value.trim();
+      const maxTeams = Number(document.getElementById('registrationMaxTeams').value || 16);
+
+      const result = await api('/api/registration-settings/save', {
+        method: 'POST',
+        body: JSON.stringify({ title, text, maxTeams })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio messaggio slot');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Messaggio slot aggiornato');
+    }
+
+    async function forceRegistrationMessage() {
+      const result = await api('/api/registration-settings/refresh', {
+        method: 'POST'
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiornamento messaggio slot');
+        return;
+      }
+
+      setStatus('Messaggio slot aggiornato su Discord');
+    }
+
     async function spawnRegisterPanel() {
       const channelId = document.getElementById('registerPanelChannel').value.trim();
       const result = await api('/api/bot/spawn-register-panel', {
@@ -1222,6 +1291,8 @@
     window.rejectPending = rejectPending;
     window.resetTeams = resetTeams;
     window.resetData = resetData;
+    window.saveRegistrationSettings = saveRegistrationSettings;
+    window.forceRegistrationMessage = forceRegistrationMessage;
     window.spawnRegisterPanel = spawnRegisterPanel;
     window.spawnResultsPanel = spawnResultsPanel;
     window.createRooms = createRooms;
