@@ -298,7 +298,7 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   });
 });
 
-app.post('/api/teams/save', authRequired, (req, res) => {
+app.post('/api/teams/save', authRequired, async (req, res) => {
   const teams = loadTeams();
   const data = loadData();
 
@@ -356,11 +356,12 @@ app.post('/api/teams/save', authRequired, (req, res) => {
   saveAll(data, teams);
   bot.setDataState(data);
   bot.setTeamsState(teams);
+  await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
 });
 
-app.post('/api/teams/delete', authRequired, (req, res) => {
+app.post('/api/teams/delete', authRequired, async (req, res) => {
   const teamName = sanitizeText(req.body.teamName);
   if (!teamName) {
     return res.status(400).json({ ok: false, message: 'Team non valido' });
@@ -385,6 +386,7 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
   saveAll(data, teams);
   bot.setDataState(data);
   bot.setTeamsState(teams);
+  await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
 });
@@ -520,7 +522,7 @@ app.post('/api/reset-data', authRequired, (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post('/api/reset-teams', authRequired, (req, res) => {
+app.post('/api/reset-teams', authRequired, async (req, res) => {
   const data = loadData();
   const emptyTeams = {};
 
@@ -531,17 +533,19 @@ app.post('/api/reset-teams', authRequired, (req, res) => {
   saveAll(data, emptyTeams);
   bot.setDataState(data);
   bot.setTeamsState(emptyTeams);
+  await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
 });
 
-app.post('/api/reset-all', authRequired, (req, res) => {
+app.post('/api/reset-all', authRequired, async (req, res) => {
   const data = getDefaultData();
   const emptyTeams = {};
 
   saveAll(data, emptyTeams);
   bot.setDataState(data);
   bot.setTeamsState(emptyTeams);
+  await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
 });
