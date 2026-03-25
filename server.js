@@ -160,6 +160,15 @@ function sanitizeText(value) {
   return String(value || '').trim();
 }
 
+function sortTeamsWithSlot(teams) {
+  return Object.entries(teams || {}).sort((a, b) => {
+    const slotA = Number(a[1]?.slot || 999);
+    const slotB = Number(b[1]?.slot || 999);
+    if (slotA !== slotB) return slotA - slotB;
+    return a[0].localeCompare(b[0], 'it');
+  });
+}
+
 function buildLeaderboard(scores) {
   return Object.entries(scores || {})
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
@@ -184,6 +193,7 @@ function buildPending(pending, teams) {
   return Object.entries(pending || {}).map(([id, p]) => ({
     id,
     team: p.team,
+    slot: teams[p.team]?.slot || null,
     total: Number(p.total || 0),
     pos: Number(p.pos || 0),
     kills: Array.isArray(p.kills) ? p.kills.map(v => Number(v || 0)) : [],
@@ -262,6 +272,9 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   const data = loadData();
   const teams = loadTeams();
 
+  bot.setDataState(data);
+  bot.setTeamsState(teams);
+
   return res.json({
     ok: true,
     currentMatch: Number(data.currentMatch || 1),
@@ -269,6 +282,11 @@ app.get('/api/dashboard', authRequired, (req, res) => {
     fraggers: buildFraggers(data.fragger),
     pending: buildPending(data.pending, teams),
     teams,
+    sortedTeams: sortTeamsWithSlot(teams).map(([teamName, teamData]) => ({
+      team: teamName,
+      slot: teamData.slot || null,
+      players: teamData.players || []
+    })),
     scores: data.scores || {},
     fragger: data.fragger || {},
     botConfig: bot.getBotConfig(),
@@ -298,9 +316,18 @@ app.post('/api/teams/save', authRequired, (req, res) => {
     return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome' });
   }
 
+  const isNewTeam = !oldTeamName || !teams[oldTeamName];
+
+  if (isNewTeam && Object.keys(teams).length >= 16) {
+    return res.status(400).json({ ok: false, message: 'Limite massimo di 16 team raggiunto' });
+  }
+
   if (oldTeamName && oldTeamName !== teamName) {
     if (teams[oldTeamName]) {
-      teams[teamName] = { players: [p1, p2, p3] };
+      teams[teamName] = {
+        slot: teams[oldTeamName].slot,
+        players: [p1, p2, p3]
+      };
       delete teams[oldTeamName];
 
       if (typeof data.scores[oldTeamName] !== 'undefined') {
@@ -315,7 +342,15 @@ app.post('/api/teams/save', authRequired, (req, res) => {
       }
     }
   } else {
-    teams[teamName] = { players: [p1, p2, p3] };
+    const existingSlot = teams[teamName]?.slot || null;
+    teams[teamName] = {
+      slot: existingSlot,
+      players: [p1, p2, p3]
+    };
+  }
+
+  if (Object.keys(teams).length < 16) {
+    data.registrationClosedAnnounced = false;
   }
 
   saveAll(data, teams);
@@ -341,6 +376,10 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
     if (data.pending[id]?.team === teamName) {
       delete data.pending[id];
     }
+  }
+
+  if (Object.keys(teams).length < 16) {
+    data.registrationClosedAnnounced = false;
   }
 
   saveAll(data, teams);
@@ -482,8 +521,15 @@ app.post('/api/reset-data', authRequired, (req, res) => {
 });
 
 app.post('/api/reset-teams', authRequired, (req, res) => {
+  const data = loadData();
   const emptyTeams = {};
-  saveTeams(emptyTeams);
+
+  data.pending = {};
+  data.tempSubmit = {};
+  data.registrationClosedAnnounced = false;
+
+  saveAll(data, emptyTeams);
+  bot.setDataState(data);
   bot.setTeamsState(emptyTeams);
 
   return res.json({ ok: true });
