@@ -1,16 +1,26 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const multer = require('multer');
+const fs = require('fs');
+
+const {
+  loadData,
+  saveData,
+  loadTeams,
+  saveTeams,
+  saveAll,
+  resetData
+} = require('./store');
+
+const bot = require('./index');
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
-
-const DATA_FILE = path.join(__dirname, 'data.json');
-const TEAMS_FILE = path.join(__dirname, 'teams.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 const DASHBOARD_USERNAME = process.env.DASHBOARD_USERNAME || 'admin';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
@@ -18,74 +28,29 @@ const DASHBOARD_COOKIE_SECRET = process.env.DASHBOARD_COOKIE_SECRET || 'change-t
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(PUBLIC_DIR));
 
-function ensureFiles() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({
-      currentMatch: 1,
-      pending: {},
-      tempSubmit: {},
-      scores: {},
-      fragger: {},
-      leaderboardMessageId: null
-    }, null, 2));
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname || '.png') || '.png';
+      cb(null, `${Date.now()}-${crypto.randomUUID()}${ext}`);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024
   }
-
-  if (!fs.existsSync(TEAMS_FILE)) {
-    fs.writeFileSync(TEAMS_FILE, JSON.stringify({}, null, 2));
-  }
-}
-
-ensureFiles();
-
-function getData() {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    parsed.currentMatch ??= 1;
-    parsed.pending ??= {};
-    parsed.tempSubmit ??= {};
-    parsed.scores ??= {};
-    parsed.fragger ??= {};
-    parsed.leaderboardMessageId ??= null;
-    return parsed;
-  } catch {
-    return {
-      currentMatch: 1,
-      pending: {},
-      tempSubmit: {},
-      scores: {},
-      fragger: {},
-      leaderboardMessageId: null
-    };
-  }
-}
-
-function getTeams() {
-  try {
-    return JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function saveTeams(teams) {
-  fs.writeFileSync(TEAMS_FILE, JSON.stringify(teams, null, 2));
-}
-
-function saveAll(data, teams) {
-  saveData(data);
-  saveTeams(teams);
-}
+});
 
 function parseCookies(cookieHeader) {
   const out = {};
@@ -104,10 +69,7 @@ function parseCookies(cookieHeader) {
 }
 
 function sign(value) {
-  return crypto
-    .createHmac('sha256', DASHBOARD_COOKIE_SECRET)
-    .update(value)
-    .digest('hex');
+  return crypto.createHmac('sha256', DASHBOARD_COOKIE_SECRET).update(value).digest('hex');
 }
 
 function toBase64Url(str) {
@@ -125,11 +87,7 @@ function fromBase64Url(str) {
 }
 
 function createToken(username) {
-  const payload = {
-    username,
-    exp: Date.now() + COOKIE_DURATION_MS
-  };
-
+  const payload = { username, exp: Date.now() + COOKIE_DURATION_MS };
   const encoded = toBase64Url(JSON.stringify(payload));
   const signature = sign(encoded);
   return `${encoded}.${signature}`;
@@ -138,13 +96,10 @@ function createToken(username) {
 function verifyToken(token) {
   try {
     if (!token || typeof token !== 'string') return null;
-
     const parts = token.split('.');
     if (parts.length !== 2) return null;
 
-    const encoded = parts[0];
-    const signature = parts[1];
-
+    const [encoded, signature] = parts;
     if (sign(encoded) !== signature) return null;
 
     const payload = JSON.parse(fromBase64Url(encoded));
@@ -209,16 +164,6 @@ function sanitizeText(value) {
   return String(value || '').trim();
 }
 
-function buildTopFraggers(fragger) {
-  return Object.entries(fragger || {})
-    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
-    .map(([name, kills], index) => ({
-      rank: index + 1,
-      name,
-      kills: Number(kills || 0)
-    }));
-}
-
 function buildLeaderboard(scores) {
   return Object.entries(scores || {})
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
@@ -229,19 +174,26 @@ function buildLeaderboard(scores) {
     }));
 }
 
-function buildPendingView(pending, teams) {
-  return Object.entries(pending || {}).map(([id, p]) => {
-    const players = teams[p.team]?.players || [];
-    return {
-      id,
-      team: p.team,
-      total: Number(p.total || 0),
-      pos: Number(p.pos || 0),
-      kills: Array.isArray(p.kills) ? p.kills.map(v => Number(v || 0)) : [],
-      players,
-      image: p.image || ''
-    };
-  });
+function buildFraggers(fragger) {
+  return Object.entries(fragger || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .map(([name, kills], index) => ({
+      rank: index + 1,
+      name,
+      kills: Number(kills || 0)
+    }));
+}
+
+function buildPending(pending, teams) {
+  return Object.entries(pending || {}).map(([id, p]) => ({
+    id,
+    team: p.team,
+    total: Number(p.total || 0),
+    pos: Number(p.pos || 0),
+    kills: Array.isArray(p.kills) ? p.kills.map(v => Number(v || 0)) : [],
+    players: teams[p.team]?.players || [],
+    image: p.image || ''
+  }));
 }
 
 app.get('/login', (req, res) => {
@@ -254,23 +206,16 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const username = String(req.body.username || '').trim();
+  const username = sanitizeText(req.body.username);
   const password = String(req.body.password || '');
 
   if (username !== DASHBOARD_USERNAME || password !== DASHBOARD_PASSWORD) {
-    return res.status(401).json({
-      ok: false,
-      message: 'Credenziali non valide'
-    });
+    return res.status(401).json({ ok: false, message: 'Credenziali non valide' });
   }
 
   const token = createToken(username);
   res.setHeader('Set-Cookie', buildCookie(token));
-
-  return res.json({
-    ok: true,
-    username
-  });
+  return res.json({ ok: true, username });
 });
 
 app.get('/api/session', (req, res) => {
@@ -279,10 +224,7 @@ app.get('/api/session', (req, res) => {
   const session = verifyToken(token);
 
   if (!session) {
-    return res.status(401).json({
-      ok: false,
-      authenticated: false
-    });
+    return res.status(401).json({ ok: false, authenticated: false });
   }
 
   return res.json({
@@ -301,24 +243,20 @@ app.get('/', authRequired, (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-/* DASHBOARD DATA */
 app.get('/api/dashboard', authRequired, (req, res) => {
-  const data = getData();
-  const teams = getTeams();
-
-  const leaderboard = buildLeaderboard(data.scores);
-  const fraggers = buildTopFraggers(data.fragger);
-  const pending = buildPendingView(data.pending, teams);
+  const data = loadData();
+  const teams = loadTeams();
 
   return res.json({
     ok: true,
     currentMatch: Number(data.currentMatch || 1),
-    leaderboard,
-    fraggers,
-    pending,
+    leaderboard: buildLeaderboard(data.scores),
+    fraggers: buildFraggers(data.fragger),
+    pending: buildPending(data.pending, teams),
     teams,
     scores: data.scores || {},
     fragger: data.fragger || {},
+    history: Array.isArray(data.resultHistory) ? data.resultHistory.slice(0, 100) : [],
     stats: {
       teamCount: Object.keys(teams).length,
       pendingCount: Object.keys(data.pending || {}).length,
@@ -327,61 +265,81 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   });
 });
 
-/* COMPATIBILITÀ VECCHIE API */
-app.get('/api/leaderboard', authRequired, (req, res) => {
-  const data = getData();
-
-  const sorted = Object.entries(data.scores || {})
-    .sort((a, b) => b[1] - a[1]);
-
-  res.json({
-    match: data.currentMatch,
-    scores: sorted,
-    fragger: data.fragger || {}
-  });
+/* BOT ACTIONS */
+app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
+  try {
+    const result = await bot.spawnRegisterPanel();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
 });
 
-app.get('/api/pending', authRequired, (req, res) => {
-  const data = getData();
-  res.json(data.pending || {});
+app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
+  try {
+    const result = await bot.spawnResultsPanel();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
 });
 
-app.post('/api/approve/:id', authRequired, (req, res) => {
-  const data = getData();
-  const teams = getTeams();
-  const p = data.pending[req.params.id];
-
-  if (!p) return res.json({ already: true });
-
-  data.scores[p.team] = (data.scores[p.team] || 0) + (Number(p.total || 0) + 10);
-
-  (p.kills || []).forEach((k, i) => {
-    const name = teams[p.team]?.players?.[i] || `Player${i + 1}`;
-    data.fragger[name] = (data.fragger[name] || 0) + Number(k || 0);
-  });
-
-  delete data.pending[req.params.id];
-  saveData(data);
-
-  return res.json({ ok: true });
+app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
+  try {
+    const result = await bot.createRooms();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
 });
 
-app.post('/api/reject/:id', authRequired, (req, res) => {
-  const data = getData();
+app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
+  try {
+    const result = await bot.deleteRooms();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
 
-  if (!data.pending[req.params.id]) {
-    return res.json({ already: true });
+app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
+  try {
+    const result = await bot.updateLeaderboard();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+/* MATCH */
+app.post('/api/match/set', authRequired, async (req, res) => {
+  const data = loadData();
+  const match = Number(req.body.match || 1);
+
+  if (!Number.isInteger(match) || match < 1) {
+    return res.status(400).json({ ok: false, message: 'Match non valido' });
   }
 
-  delete data.pending[req.params.id];
+  data.currentMatch = match;
   saveData(data);
-
-  return res.json({ ok: true });
+  await bot.updateLeaderboard().catch(() => {});
+  return res.json({ ok: true, currentMatch: match });
 });
 
-/* TEAM CRUD */
+app.post('/api/match/next', authRequired, async (req, res) => {
+  try {
+    const result = await bot.nextMatchAndSync();
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+/* TEAMS */
 app.post('/api/teams/save', authRequired, (req, res) => {
-  const teams = getTeams();
+  const teams = loadTeams();
+  const data = loadData();
+
   const oldTeamName = sanitizeText(req.body.oldTeamName);
   const teamName = sanitizeText(req.body.teamName);
   const p1 = sanitizeText(req.body.p1);
@@ -389,29 +347,25 @@ app.post('/api/teams/save', authRequired, (req, res) => {
   const p3 = sanitizeText(req.body.p3);
 
   if (!teamName || !p1 || !p2 || !p3) {
-    return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/player' });
+    return res.status(400).json({ ok: false, message: 'Compila tutti i campi' });
   }
 
   if (oldTeamName && oldTeamName !== teamName && teams[teamName]) {
     return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome' });
   }
 
-  const data = getData();
+  if (oldTeamName && oldTeamName !== teamName && teams[oldTeamName]) {
+    teams[teamName] = { players: [p1, p2, p3] };
+    delete teams[oldTeamName];
 
-  if (oldTeamName && oldTeamName !== teamName) {
-    if (teams[oldTeamName]) {
-      teams[teamName] = { players: [p1, p2, p3] };
-      delete teams[oldTeamName];
+    if (typeof data.scores[oldTeamName] !== 'undefined') {
+      data.scores[teamName] = data.scores[oldTeamName];
+      delete data.scores[oldTeamName];
+    }
 
-      if (typeof data.scores[oldTeamName] !== 'undefined') {
-        data.scores[teamName] = data.scores[oldTeamName];
-        delete data.scores[oldTeamName];
-      }
-
-      for (const id of Object.keys(data.pending || {})) {
-        if (data.pending[id]?.team === oldTeamName) {
-          data.pending[id].team = teamName;
-        }
+    for (const id of Object.keys(data.pending || {})) {
+      if (data.pending[id]?.team === oldTeamName) {
+        data.pending[id].team = teamName;
       }
     }
   } else {
@@ -428,8 +382,8 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
     return res.status(400).json({ ok: false, message: 'Team non valido' });
   }
 
-  const teams = getTeams();
-  const data = getData();
+  const teams = loadTeams();
+  const data = loadData();
 
   delete teams[teamName];
   delete data.scores[teamName];
@@ -444,45 +398,24 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
   return res.json({ ok: true });
 });
 
-/* MATCH */
-app.post('/api/match/set', authRequired, (req, res) => {
-  const data = getData();
-  const match = Number(req.body.match || 1);
-
-  if (!Number.isInteger(match) || match < 1) {
-    return res.status(400).json({ ok: false, message: 'Match non valido' });
-  }
-
-  data.currentMatch = match;
-  saveData(data);
-  return res.json({ ok: true, currentMatch: match });
-});
-
-app.post('/api/match/next', authRequired, (req, res) => {
-  const data = getData();
-  data.currentMatch = Number(data.currentMatch || 1) + 1;
-  saveData(data);
-  return res.json({ ok: true, currentMatch: data.currentMatch });
-});
-
-/* PUNTI */
-app.post('/api/scores/add', authRequired, (req, res) => {
-  const data = getData();
+/* SCORES */
+app.post('/api/scores/add', authRequired, async (req, res) => {
+  const data = loadData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
 
   if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({ ok: false, message: 'Dati punti non validi' });
+    return res.status(400).json({ ok: false, message: 'Dati non validi' });
   }
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
   saveData(data);
-
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true, score: data.scores[team] });
 });
 
-app.post('/api/scores/set', authRequired, (req, res) => {
-  const data = getData();
+app.post('/api/scores/set', authRequired, async (req, res) => {
+  const data = loadData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
 
@@ -492,12 +425,12 @@ app.post('/api/scores/set', authRequired, (req, res) => {
 
   data.scores[team] = points;
   saveData(data);
-
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true, score: data.scores[team] });
 });
 
-app.post('/api/scores/reset-team', authRequired, (req, res) => {
-  const data = getData();
+app.post('/api/scores/reset-team', authRequired, async (req, res) => {
+  const data = loadData();
   const team = sanitizeText(req.body.team);
 
   if (!team) {
@@ -506,13 +439,13 @@ app.post('/api/scores/reset-team', authRequired, (req, res) => {
 
   data.scores[team] = 0;
   saveData(data);
-
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true });
 });
 
 /* FRAGGER */
-app.post('/api/fragger/set', authRequired, (req, res) => {
-  const data = getData();
+app.post('/api/fragger/set', authRequired, async (req, res) => {
+  const data = loadData();
   const player = sanitizeText(req.body.player);
   const kills = Number(req.body.kills || 0);
 
@@ -522,12 +455,12 @@ app.post('/api/fragger/set', authRequired, (req, res) => {
 
   data.fragger[player] = kills;
   saveData(data);
-
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true, kills });
 });
 
-app.post('/api/fragger/delete', authRequired, (req, res) => {
-  const data = getData();
+app.post('/api/fragger/delete', authRequired, async (req, res) => {
+  const data = loadData();
   const player = sanitizeText(req.body.player);
 
   if (!player) {
@@ -536,22 +469,67 @@ app.post('/api/fragger/delete', authRequired, (req, res) => {
 
   delete data.fragger[player];
   saveData(data);
-
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true });
 });
 
-/* RESET */
-app.post('/api/reset-all', authRequired, (req, res) => {
-  const data = {
-    currentMatch: 1,
-    pending: {},
-    tempSubmit: {},
-    scores: {},
-    fragger: {},
-    leaderboardMessageId: null
-  };
+/* PENDING */
+app.post('/api/pending/approve', authRequired, async (req, res) => {
+  try {
+    const pendingId = sanitizeText(req.body.id);
+    const result = await bot.approvePending(pendingId, 'dashboard');
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
 
-  saveData(data);
+app.post('/api/pending/reject', authRequired, async (req, res) => {
+  try {
+    const pendingId = sanitizeText(req.body.id);
+    const result = await bot.rejectPending(pendingId, 'dashboard');
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+/* WEB RESULT + SCREENSHOT */
+app.post('/api/results/submit', authRequired, upload.single('screenshot'), async (req, res) => {
+  try {
+    const team = sanitizeText(req.body.team);
+    const k1 = Number(req.body.k1 || 0);
+    const k2 = Number(req.body.k2 || 0);
+    const k3 = Number(req.body.k3 || 0);
+    const pos = Number(req.body.pos || 0);
+
+    if (!team) {
+      return res.status(400).json({ ok: false, message: 'Team mancante' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'Screenshot mancante' });
+    }
+
+    const image = `/uploads/${req.file.filename}`;
+
+    const result = await bot.createPendingFromWeb({
+      team,
+      kills: [k1, k2, k3],
+      pos,
+      image
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+/* RESET */
+app.post('/api/reset-all', authRequired, async (req, res) => {
+  resetData();
+  await bot.updateLeaderboard().catch(() => {});
   return res.json({ ok: true });
 });
 
