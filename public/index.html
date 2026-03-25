@@ -353,10 +353,14 @@
       height:auto;
     }
 
-    select,
-    option{
+    select{
       color:#fff;
       background:#11111a;
+    }
+
+    option{
+      color:#111;
+      background:#fff;
     }
 
     .field{
@@ -734,7 +738,7 @@
       const leaderboard = dashboard.leaderboard || [];
       const fraggers = dashboard.fraggers || [];
       const pending = dashboard.pending || [];
-      const teams = dashboard.teams || {};
+      const sortedTeams = dashboard.sortedTeams || [];
       const botConfig = dashboard.botConfig || {};
 
       document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
@@ -768,19 +772,16 @@
           `).join('')
         : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
 
-      const teamNames = Object.keys(teams).sort((a, b) => a.localeCompare(b, 'it'));
-      const teamSelect = document.getElementById('teamSelect');
-      const scoreTeam = document.getElementById('scoreTeam');
-      const webResultTeam = document.getElementById('webResultTeam');
-
-      const teamOptions = [
-        `<option value="">Seleziona team</option>`,
-        ...teamNames.map(team => `<option value="${escapeHtml(team)}">${escapeHtml(team)}</option>`)
+      const optionMarkup = [
+        `<option value="">Seleziona</option>`,
+        ...sortedTeams.map(team => `
+          <option value="${escapeHtml(team.team)}">#${team.slot || '-'} • ${escapeHtml(team.team)}</option>
+        `)
       ].join('');
 
-      teamSelect.innerHTML = teamOptions;
-      scoreTeam.innerHTML = teamOptions;
-      webResultTeam.innerHTML = teamOptions;
+      document.getElementById('teamSelect').innerHTML = optionMarkup;
+      document.getElementById('scoreTeam').innerHTML = optionMarkup;
+      document.getElementById('webResultTeam').innerHTML = optionMarkup;
 
       const fraggerSelect = document.getElementById('fraggerSelect');
       const fraggerEntries = Object.keys(dashboard.fragger || {}).sort((a, b) => a.localeCompare(b, 'it'));
@@ -795,7 +796,7 @@
             <div class="pending-card">
               <div class="pending-top">
                 <div>
-                  <div class="pending-team">${escapeHtml(item.team)}</div>
+                  <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
                   <div class="muted">In attesa di approvazione staff • ${escapeHtml(item.submittedBy || '-')}</div>
                 </div>
                 <div class="pill">PENDING</div>
