@@ -22,6 +22,7 @@ function getDefaultData() {
     scores: {},
     fragger: {},
     leaderboardMessageId: null,
+    registrationStatusMessageId: null,
     registrationClosedAnnounced: false
   };
 }
@@ -47,6 +48,7 @@ function normalizeData(data) {
   base.scores = isObject(safe.scores) ? safe.scores : {};
   base.fragger = isObject(safe.fragger) ? safe.fragger : {};
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
+  base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
   return base;
