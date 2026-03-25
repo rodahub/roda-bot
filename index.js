@@ -13,6 +13,9 @@ const {
   ChannelType
 } = require('discord.js');
 
+const fs = require('fs');
+const path = require('path');
+
 const {
   loadData,
   loadTeams,
@@ -38,17 +41,28 @@ const STAFF_CHANNEL = process.env.STAFF_CHANNEL || '1483201939712774145';
 const CLASSIFICA_CHANNEL = process.env.CLASSIFICA_CHANNEL || '1478304828592623777';
 const CATEGORY_ID = process.env.CATEGORY_ID || '1478303649586348165';
 const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
+const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
+
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 let teams = loadTeams();
 let data = loadData();
+
 let readyResolver;
 const readyPromise = new Promise(resolve => {
   readyResolver = resolve;
 });
 
+function sanitizeText(value) {
+  return String(value || '').trim();
+}
+
 function saveState() {
   data = saveData(data);
-  teams = saveTeams(teams);
 }
 
 function saveEverything() {
@@ -57,8 +71,67 @@ function saveEverything() {
   teams = saved.teams;
 }
 
-function sanitizeText(value) {
-  return String(value || '').trim();
+function setDataState(newData) {
+  data = newData;
+}
+
+function setTeamsState(newTeams) {
+  teams = newTeams;
+}
+
+function getSortedTeamEntries() {
+  return Object.entries(teams).sort((a, b) => {
+    const slotA = Number(a[1]?.slot || 999);
+    const slotB = Number(b[1]?.slot || 999);
+    if (slotA !== slotB) return slotA - slotB;
+    return a[0].localeCompare(b[0], 'it');
+  });
+}
+
+function getNextAvailableSlot() {
+  const used = new Set(
+    Object.values(teams)
+      .map(team => Number(team?.slot))
+      .filter(slot => Number.isInteger(slot) && slot >= 1 && slot <= 16)
+  );
+
+  for (let i = 1; i <= 16; i++) {
+    if (!used.has(i)) return i;
+  }
+
+  return null;
+}
+
+function isTournamentFull() {
+  return Object.keys(teams).length >= 16;
+}
+
+async function maybeAnnounceTournamentFull() {
+  if (!isTournamentFull()) {
+    if (data.registrationClosedAnnounced) {
+      data.registrationClosedAnnounced = false;
+      saveState();
+    }
+    return;
+  }
+
+  if (data.registrationClosedAnnounced) return;
+
+  try {
+    const channel = await client.channels.fetch(TOURNAMENT_FULL_CHANNEL);
+    const embed = new EmbedBuilder()
+      .setTitle('🚫 Registrazioni chiuse')
+      .setDescription(
+        'Il torneo ha raggiunto il limite massimo di **16 team registrati**.\n\n' +
+        'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
+      );
+
+    await channel.send({ embeds: [embed] });
+    data.registrationClosedAnnounced = true;
+    saveState();
+  } catch (error) {
+    console.error('Errore annuncio torneo pieno:', error);
+  }
 }
 
 function calcPoints(pos, kills) {
@@ -71,27 +144,29 @@ async function waitReady() {
   return client;
 }
 
-async function fetchChannel(channelId) {
-  await waitReady();
-  return client.channels.fetch(channelId);
-}
-
 function createResultEmbed(entry, footerText) {
   const players = teams[entry.team]?.players || ['Player 1', 'Player 2', 'Player 3'];
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle('📸 NUOVO RISULTATO')
     .setDescription(
       `🏷️ Team: ${entry.team}
+🎯 Slot: ${teams[entry.team]?.slot || '-'}
 👤 ${players[0] || 'Player 1'}: ${Number(entry.kills?.[0] || 0)} kill
 👤 ${players[1] || 'Player 2'}: ${Number(entry.kills?.[1] || 0)} kill
 👤 ${players[2] || 'Player 3'}: ${Number(entry.kills?.[2] || 0)} kill
 
 🔥 Totale: ${Number(entry.total || 0)}
-🏆 Posizione: ${Number(entry.pos || 0)}`
+🏆 Posizione: ${Number(entry.pos || 0)}
+🧾 Inviato da: ${entry.submittedBy || 'Sconosciuto'}`
     )
-    .setImage(entry.image || null)
     .setFooter({ text: footerText || '⏳ In attesa approvazione staff' });
+
+  if (entry.image) {
+    embed.setImage(entry.image);
+  }
+
+  return embed;
 }
 
 function createStaffActionRow(id) {
@@ -143,7 +218,8 @@ async function sendResultToStorico(embed) {
 }
 
 async function editStaffMessage(entry, approved) {
-  if (!entry.staffMessageId) return;
+  if (!entry.staffMessageId) return null;
+
   try {
     const staff = await client.channels.fetch(STAFF_CHANNEL);
     const msg = await staff.messages.fetch(entry.staffMessageId);
@@ -253,6 +329,7 @@ async function spawnRegisterPanel(channelId) {
 
 async function spawnResultsPanel(channelId) {
   await waitReady();
+
   if (Object.keys(teams).length === 0) {
     throw new Error('Nessun team registrato');
   }
@@ -263,9 +340,9 @@ async function spawnResultsPanel(channelId) {
     .setCustomId('team_select')
     .setPlaceholder('Scegli team')
     .addOptions(
-      Object.keys(teams).map(t => ({
-        label: t,
-        value: t
+      getSortedTeamEntries().map(([teamName, teamData]) => ({
+        label: `#${teamData.slot || '-'} ${teamName}`.slice(0, 100),
+        value: teamName
       }))
     );
 
@@ -280,15 +357,13 @@ async function spawnResultsPanel(channelId) {
 async function createTeamRooms() {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
-  let i = 1;
 
-  for (const teamName of Object.keys(teams)) {
+  for (const [teamName, teamData] of getSortedTeamEntries()) {
     await guild.channels.create({
-      name: `🏆・${i} ${teamName}`,
+      name: `🏆・${teamData.slot || '-'} ${teamName}`,
       type: ChannelType.GuildVoice,
       parent: CATEGORY_ID
     });
-    i++;
   }
 
   return true;
@@ -310,6 +385,37 @@ async function deleteTeamRooms() {
   return true;
 }
 
+async function saveDiscordAttachmentLocally(attachment) {
+  const tryUrls = [attachment.url, attachment.proxyURL].filter(Boolean);
+
+  for (const target of tryUrls) {
+    try {
+      const response = await fetch(target);
+      if (!response.ok) continue;
+
+      const contentType = response.headers.get('content-type') || '';
+      let ext = 'jpg';
+
+      if (contentType.includes('png')) ext = 'png';
+      else if (contentType.includes('webp')) ext = 'webp';
+      else if (contentType.includes('gif')) ext = 'gif';
+      else if (contentType.includes('jpeg') || contentType.includes('jpg')) ext = 'jpg';
+      else if (attachment.name && attachment.name.includes('.')) {
+        ext = attachment.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      }
+
+      const fileName = `discord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+      const filePath = path.join(UPLOADS_DIR, fileName);
+      const arrayBuffer = await response.arrayBuffer();
+
+      fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
+      return `/uploads/${fileName}`;
+    } catch {}
+  }
+
+  return attachment.url;
+}
+
 function setCurrentMatch(match) {
   data.currentMatch = Number(match || 1);
   saveState();
@@ -319,16 +425,6 @@ function nextMatch() {
   data.currentMatch = Number(data.currentMatch || 1) + 1;
   saveState();
   return data.currentMatch;
-}
-
-function setTeamsState(newTeams) {
-  teams = newTeams;
-  saveEverything();
-}
-
-function setDataState(newData) {
-  data = newData;
-  saveEverything();
 }
 
 function resetAllState() {
@@ -342,18 +438,28 @@ function getBotConfig() {
     staffChannel: STAFF_CHANNEL,
     classificaChannel: CLASSIFICA_CHANNEL,
     categoryId: CATEGORY_ID,
-    storicoChannel: STORICO_CHANNEL
+    storicoChannel: STORICO_CHANNEL,
+    tournamentFullChannel: TOURNAMENT_FULL_CHANNEL
   };
 }
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log('ONLINE');
   if (readyResolver) readyResolver(client);
+  await maybeAnnounceTournamentFull();
 });
 
 client.on('interactionCreate', async interaction => {
   try {
     if (interaction.isButton() && interaction.customId === 'register_btn') {
+      if (isTournamentFull()) {
+        await maybeAnnounceTournamentFull();
+        return interaction.reply({
+          content: '🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto 16 team.',
+          ephemeral: true
+        });
+      }
+
       const modal = new ModalBuilder()
         .setCustomId('register_modal')
         .setTitle('Registrazione Team');
@@ -415,10 +521,46 @@ client.on('interactionCreate', async interaction => {
       const p2 = sanitizeText(interaction.fields.getTextInputValue('p2'));
       const p3 = sanitizeText(interaction.fields.getTextInputValue('p3'));
 
-      teams[team] = { players: [p1, p2, p3] };
+      if (!team || !p1 || !p2 || !p3) {
+        return interaction.reply({ content: '❌ Compila tutti i campi', ephemeral: true });
+      }
+
+      if (teams[team]) {
+        return interaction.reply({ content: '❌ Esiste già un team con questo nome', ephemeral: true });
+      }
+
+      if (isTournamentFull()) {
+        await maybeAnnounceTournamentFull();
+        return interaction.reply({
+          content: '🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto 16 team.',
+          ephemeral: true
+        });
+      }
+
+      const slot = getNextAvailableSlot();
+      if (!slot) {
+        await maybeAnnounceTournamentFull();
+        return interaction.reply({
+          content: '🚫 Nessuno slot disponibile. Registrazioni chiuse.',
+          ephemeral: true
+        });
+      }
+
+      teams[team] = {
+        slot,
+        players: [p1, p2, p3]
+      };
+
       saveEverything();
 
-      return interaction.reply({ content: '✅ Team registrato', ephemeral: true });
+      if (isTournamentFull()) {
+        await maybeAnnounceTournamentFull();
+      }
+
+      return interaction.reply({
+        content: `✅ Team registrato con successo nello **slot #${slot}**`,
+        ephemeral: true
+      });
     }
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_')) {
@@ -487,7 +629,9 @@ client.on('messageCreate', async message => {
     const temp = data.tempSubmit[message.author.id];
     if (!temp) return;
 
-    const image = message.attachments.first().url;
+    const attachment = message.attachments.first();
+    const image = await saveDiscordAttachmentLocally(attachment);
+
     delete data.tempSubmit[message.author.id];
     saveState();
 
