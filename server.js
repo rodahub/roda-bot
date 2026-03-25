@@ -262,9 +262,6 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   const data = loadData();
   const teams = loadTeams();
 
-  bot.setDataState(data);
-  bot.setTeamsState(teams);
-
   return res.json({
     ok: true,
     currentMatch: Number(data.currentMatch || 1),
@@ -353,7 +350,7 @@ app.post('/api/teams/delete', authRequired, (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post('/api/match/set', authRequired, async (req, res) => {
+app.post('/api/match/set', authRequired, (req, res) => {
   const match = Number(req.body.match || 1);
 
   if (!Number.isInteger(match) || match < 1) {
@@ -473,10 +470,33 @@ app.post('/api/reject/:id', authRequired, async (req, res) => {
   }
 });
 
+app.post('/api/reset-data', authRequired, (req, res) => {
+  const currentTeams = loadTeams();
+  const data = getDefaultData();
+
+  saveData(data);
+  bot.setDataState(data);
+  bot.setTeamsState(currentTeams);
+
+  return res.json({ ok: true });
+});
+
+app.post('/api/reset-teams', authRequired, (req, res) => {
+  const emptyTeams = {};
+  saveTeams(emptyTeams);
+  bot.setTeamsState(emptyTeams);
+
+  return res.json({ ok: true });
+});
+
 app.post('/api/reset-all', authRequired, (req, res) => {
   const data = getDefaultData();
-  saveData(data);
-  bot.resetAllState();
+  const emptyTeams = {};
+
+  saveAll(data, emptyTeams);
+  bot.setDataState(data);
+  bot.setTeamsState(emptyTeams);
+
   return res.json({ ok: true });
 });
 
@@ -544,11 +564,10 @@ app.post('/api/web-submit-result', authRequired, async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Dati risultato non validi' });
     }
 
-    if (!imageData) {
-      return res.status(400).json({ ok: false, message: 'Screenshot obbligatorio' });
+    let image = '';
+    if (imageData) {
+      image = saveBase64Image(imageData);
     }
-
-    const image = saveBase64Image(imageData);
 
     await bot.submitWebResult({
       team,
