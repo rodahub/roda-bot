@@ -42,6 +42,7 @@ const CLASSIFICA_CHANNEL = process.env.CLASSIFICA_CHANNEL || '147830482859262377
 const CATEGORY_ID = process.env.CATEGORY_ID || '1478303649586348165';
 const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
 const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
+const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '1482050564375318579';
 
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
@@ -132,6 +133,45 @@ async function maybeAnnounceTournamentFull() {
   } catch (error) {
     console.error('Errore annuncio torneo pieno:', error);
   }
+}
+
+async function updateRegistrationStatusMessage() {
+  await waitReady();
+
+  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
+  const sortedTeams = getSortedTeamEntries();
+
+  const description = sortedTeams.length
+    ? sortedTeams
+        .map(([teamName, teamData]) => `**#${teamData.slot || '-'}** • ${teamName}`)
+        .join('\n')
+    : 'Nessun team registrato.';
+
+  const embed = new EmbedBuilder()
+    .setTitle('📋 Slot Team Registrati')
+    .setDescription(description)
+    .addFields(
+      { name: '👥 Team registrati', value: `${sortedTeams.length}/16`, inline: true },
+      { name: '✅ Stato', value: sortedTeams.length >= 16 ? 'Torneo pieno' : 'Posti disponibili', inline: true }
+    );
+
+  if (data.registrationStatusMessageId) {
+    try {
+      const msg = await channel.messages.fetch(data.registrationStatusMessageId);
+      await msg.edit({ embeds: [embed] });
+      return true;
+    } catch {}
+  }
+
+  const msg = await channel.send({ embeds: [embed] });
+  data.registrationStatusMessageId = msg.id;
+  saveState();
+  return true;
+}
+
+async function handleRegistrationStateChange() {
+  await updateRegistrationStatusMessage();
+  await maybeAnnounceTournamentFull();
 }
 
 function calcPoints(pos, kills) {
@@ -439,14 +479,15 @@ function getBotConfig() {
     classificaChannel: CLASSIFICA_CHANNEL,
     categoryId: CATEGORY_ID,
     storicoChannel: STORICO_CHANNEL,
-    tournamentFullChannel: TOURNAMENT_FULL_CHANNEL
+    tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
+    registrationStatusChannel: REGISTRATION_STATUS_CHANNEL
   };
 }
 
 client.once('ready', async () => {
   console.log('ONLINE');
   if (readyResolver) readyResolver(client);
-  await maybeAnnounceTournamentFull();
+  await handleRegistrationStateChange();
 });
 
 client.on('interactionCreate', async interaction => {
@@ -552,10 +593,7 @@ client.on('interactionCreate', async interaction => {
       };
 
       saveEverything();
-
-      if (isTournamentFull()) {
-        await maybeAnnounceTournamentFull();
-      }
+      await handleRegistrationStateChange();
 
       return interaction.reply({
         content: `✅ Team registrato con successo nello **slot #${slot}**`,
@@ -660,6 +698,8 @@ module.exports = {
   saveState,
   saveEverything,
   updateLeaderboard,
+  updateRegistrationStatusMessage,
+  handleRegistrationStateChange,
   approvePending,
   rejectPending,
   spawnRegisterPanel,
