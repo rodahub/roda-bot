@@ -7,15 +7,12 @@
   <style>
     :root{
       --bg:#050507;
-      --bg-2:#0b0b12;
       --panel:#10101a;
-      --panel-2:#141423;
       --line:rgba(160,110,255,.18);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
       --purple-2:#9c5cff;
-      --purple-3:#caa7ff;
       --green:#18c964;
       --red:#ff4d6d;
       --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 30px rgba(123,44,255,.18);
@@ -74,7 +71,6 @@
       filter:drop-shadow(0 0 16px rgba(123,44,255,.55));
       border-radius:20px;
       flex-shrink:0;
-      margin-right:-8px;
       position:relative;
       z-index:2;
     }
@@ -83,32 +79,27 @@
       display:flex;
       flex-direction:column;
       justify-content:center;
-      gap:0;
       min-width:0;
-      margin-left:0;
-      padding-left:0;
+      margin-left:-6px;
     }
 
-    .brand-text-holder{
+    .brand-text-box{
+      position:relative;
+      width:270px;
       height:96px;
-      display:flex;
-      align-items:center;
       overflow:visible;
-      margin-left:-34px;
     }
 
     .brand-text{
+      position:absolute;
+      top:0;
+      left:-95px;
       height:96px;
       width:auto;
       max-width:none;
       object-fit:contain;
       display:block;
       filter:drop-shadow(0 0 16px rgba(123,44,255,.46));
-      transform:translateX(-26px);
-      transform-origin:left center;
-      margin:0;
-      padding:0;
-      line-height:1;
     }
 
     .brand-sub{
@@ -116,7 +107,7 @@
       font-size:13px;
       letter-spacing:.35px;
       margin-top:-16px;
-      margin-left:-2px;
+      margin-left:0;
     }
 
     .top-actions{
@@ -442,31 +433,24 @@
         padding:14px;
       }
 
-      .brand{
-        align-items:center;
-        gap:0;
-      }
-
       .brand-logo{
         width:58px;
         height:58px;
-        margin-right:-6px;
       }
 
-      .brand-text-holder{
+      .brand-text-box{
+        width:180px;
         height:68px;
-        margin-left:-26px;
       }
 
       .brand-text{
         height:68px;
-        transform:translateX(-18px);
+        left:-62px;
       }
 
       .brand-sub{
         font-size:12px;
         margin-top:-10px;
-        margin-left:-2px;
       }
 
       .stats{
@@ -513,7 +497,7 @@
       <div class="brand">
         <img src="/roda-logo.png" alt="RØDA Logo" class="brand-logo" />
         <div class="brand-text-wrap">
-          <div class="brand-text-holder">
+          <div class="brand-text-box">
             <img src="/roda-text.png" alt="RØDA" class="brand-text" />
           </div>
           <div class="brand-sub">Tournament dashboard • staff control panel</div>
