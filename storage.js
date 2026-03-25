@@ -23,7 +23,10 @@ function getDefaultData() {
     fragger: {},
     leaderboardMessageId: null,
     registrationStatusMessageId: null,
-    registrationClosedAnnounced: false
+    registrationClosedAnnounced: false,
+    registrationMaxTeams: 16,
+    registrationStatusTitle: '📋 Slot Team Registrati',
+    registrationStatusText: 'Lista team attualmente registrati nel torneo.'
   };
 }
 
@@ -51,6 +54,12 @@ function normalizeData(data) {
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
+  const maxTeams = Number(safe.registrationMaxTeams);
+  base.registrationMaxTeams = Number.isInteger(maxTeams) && maxTeams > 0 ? maxTeams : 16;
+
+  base.registrationStatusTitle = String(safe.registrationStatusTitle || base.registrationStatusTitle).trim() || base.registrationStatusTitle;
+  base.registrationStatusText = String(safe.registrationStatusText || '').trim();
+
   return base;
 }
 
@@ -70,7 +79,7 @@ function normalizeTeams(teams) {
     if (
       Number.isInteger(slotValue) &&
       slotValue >= 1 &&
-      slotValue <= 16 &&
+      slotValue <= 9999 &&
       !usedSlots.has(slotValue)
     ) {
       slot = slotValue;
@@ -93,7 +102,7 @@ function normalizeTeams(teams) {
 
   for (const teamName of sortedNeeding) {
     let assigned = null;
-    for (let i = 1; i <= 16; i++) {
+    for (let i = 1; i <= 9999; i++) {
       if (!usedSlots.has(i)) {
         assigned = i;
         usedSlots.add(i);
