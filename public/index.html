@@ -3,18 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RØDA Dashboard</title>
+  <title>RØDA Dashboard Admin</title>
   <style>
     :root{
       --bg:#050507;
       --panel:#10101a;
+      --panel2:#151525;
       --line:rgba(160,110,255,.18);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
-      --purple-2:#9c5cff;
+      --purple2:#9c5cff;
       --green:#18c964;
       --red:#ff4d6d;
+      --yellow:#ffd166;
       --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 30px rgba(123,44,255,.18);
       --radius:22px;
     }
@@ -27,6 +29,7 @@
     html,body{
       margin:0;
       padding:0;
+      min-height:100vh;
       font-family:Inter,Arial,sans-serif;
       background:
         radial-gradient(circle at top left, rgba(123,44,255,.16), transparent 28%),
@@ -34,96 +37,77 @@
         radial-gradient(circle at bottom center, rgba(123,44,255,.10), transparent 28%),
         linear-gradient(180deg, #050507 0%, #08080d 100%);
       color:var(--text);
-      min-height:100vh;
     }
 
     body{
-      padding:24px;
+      padding:20px;
     }
 
-    .shell{
-      width:100%;
+    .wrap{
       max-width:1500px;
       margin:0 auto;
     }
 
     .topbar{
       display:flex;
-      align-items:center;
       justify-content:space-between;
-      gap:18px;
-      margin-bottom:22px;
+      align-items:center;
+      gap:14px;
       flex-wrap:wrap;
+      margin-bottom:18px;
     }
 
     .brand{
       display:flex;
       align-items:center;
-      flex-wrap:nowrap;
-      gap:0;
+      gap:8px;
       min-width:0;
     }
 
-    .brand-logo{
-      width:76px;
-      height:76px;
+    .brand img.logo{
+      width:70px;
+      height:70px;
       object-fit:contain;
-      filter:drop-shadow(0 0 16px rgba(123,44,255,.55));
-      border-radius:20px;
+      border-radius:18px;
       flex-shrink:0;
-      margin-right:0;
+      filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
     }
 
-    .brand-text-wrap{
+    .brand-right{
       display:flex;
       flex-direction:column;
       justify-content:center;
       min-width:0;
-      flex-shrink:1;
-      margin-left:6px;
-    }
-
-    .brand-text-row{
-      display:flex;
-      align-items:center;
-      height:86px;
-      overflow:hidden;
-      margin-left:-2px;
-      margin-top:4px;
     }
 
     .brand-text{
-      display:block;
-      height:86px;
+      height:78px;
       width:auto;
-      max-width:none;
       object-fit:contain;
-      filter:drop-shadow(0 0 16px rgba(123,44,255,.46));
-      flex-shrink:0;
+      margin-left:-6px;
+      margin-top:4px;
+      filter:drop-shadow(0 0 14px rgba(123,44,255,.35));
     }
 
-    .brand-sub{
+    .subtitle{
       color:var(--muted);
       font-size:13px;
-      letter-spacing:.35px;
-      margin-top:-4px;
-      margin-left:0;
-      white-space:nowrap;
+      margin-top:-6px;
     }
 
-    .top-actions{
+    .actions{
       display:flex;
-      align-items:center;
-      gap:10px;
       flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
     }
 
-    .staff-pill{
-      padding:12px 16px;
+    .pill{
       background:rgba(255,255,255,.03);
       border:1px solid var(--line);
+      color:#ddd7f2;
       border-radius:999px;
-      color:#d9d4ef;
+      padding:11px 16px;
       font-size:14px;
       box-shadow:var(--shadow);
     }
@@ -135,8 +119,8 @@
       padding:12px 16px;
       font-weight:800;
       font-size:14px;
-      transition:.18s ease;
       color:#fff;
+      transition:.18s ease;
     }
 
     .btn:hover{
@@ -149,402 +133,286 @@
       transform:none;
     }
 
-    .btn-refresh{
-      background:linear-gradient(135deg, var(--purple), var(--purple-2));
-      box-shadow:0 0 20px rgba(123,44,255,.30);
-    }
-
-    .btn-logout{
-      background:linear-gradient(135deg, #2a1a3a, #4f235b);
-      border:1px solid rgba(255,255,255,.08);
-    }
+    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple2)); }
+    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
+    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
+    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
 
     .stats{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:16px;
-      margin-bottom:22px;
+      gap:14px;
+      margin-bottom:18px;
     }
 
     .card{
-      background:linear-gradient(180deg, rgba(18,18,31,.94), rgba(11,11,19,.98));
+      background:linear-gradient(180deg, rgba(18,18,31,.95), rgba(11,11,19,.98));
       border:1px solid var(--line);
       border-radius:var(--radius);
       padding:18px;
       box-shadow:var(--shadow);
-      position:relative;
       overflow:hidden;
     }
 
-    .card::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(135deg, rgba(123,44,255,.08), transparent 45%);
-      pointer-events:none;
+    .card h3{
+      margin:0 0 12px 0;
+      font-size:18px;
     }
 
     .stat-label{
-      position:relative;
-      z-index:1;
       color:var(--muted);
-      font-size:13px;
-      margin-bottom:12px;
-      font-weight:700;
+      font-size:12px;
       text-transform:uppercase;
-      letter-spacing:.6px;
+      letter-spacing:.7px;
+      margin-bottom:10px;
+      font-weight:700;
     }
 
     .stat-value{
-      position:relative;
-      z-index:1;
       font-size:32px;
       font-weight:900;
-      line-height:1;
-      word-break:break-word;
     }
 
-    .main-grid{
+    .grid-2{
       display:grid;
-      grid-template-columns:1.1fr .9fr;
+      grid-template-columns:1fr 1fr;
       gap:18px;
-      margin-bottom:22px;
+      margin-bottom:18px;
     }
 
-    .section-title{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:16px;
-      position:relative;
-      z-index:1;
-      flex-wrap:wrap;
+    .grid-3{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
     }
 
-    .section-title h2{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.3px;
+    .table-wrap{
+      overflow:auto;
     }
 
-    .section-note{
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .table{
+    table{
       width:100%;
       border-collapse:collapse;
-      position:relative;
-      z-index:1;
     }
 
-    .table th,
-    .table td{
+    th,td{
       text-align:left;
-      padding:12px 10px;
+      padding:11px 10px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
+      vertical-align:top;
     }
 
-    .table th{
+    th{
       color:#d6c9ff;
       font-size:12px;
-      letter-spacing:.7px;
       text-transform:uppercase;
+      letter-spacing:.7px;
     }
 
-    .rank-badge{
-      width:32px;
-      height:32px;
+    .rank{
+      width:30px;
+      height:30px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       border-radius:999px;
       background:rgba(123,44,255,.14);
       border:1px solid rgba(169,120,255,.25);
-      color:#fff;
       font-weight:900;
-      box-shadow:0 0 14px rgba(123,44,255,.18);
     }
 
-    .pending-wrap{
+    .list{
       display:grid;
-      gap:16px;
+      gap:12px;
     }
 
     .pending-card{
-      background:linear-gradient(180deg, rgba(15,15,24,.98), rgba(10,10,17,.98));
-      border:1px solid rgba(171,126,255,.16);
-      border-radius:24px;
-      padding:18px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px;
     }
 
-    .pending-head{
+    .pending-top{
       display:flex;
       justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
+      gap:10px;
       flex-wrap:wrap;
-      margin-bottom:14px;
+      margin-bottom:12px;
     }
 
-    .team-name{
-      font-size:22px;
+    .pending-team{
+      font-size:20px;
       font-weight:900;
-      margin-bottom:6px;
-      letter-spacing:.3px;
-      word-break:break-word;
     }
 
-    .team-meta{
+    .muted{
       color:var(--muted);
-      font-size:14px;
+      font-size:13px;
     }
 
-    .state-pill{
-      padding:10px 14px;
-      border-radius:999px;
-      background:rgba(123,44,255,.14);
-      border:1px solid rgba(188,156,255,.22);
-      color:#efe7ff;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.6px;
-    }
-
-    .pending-stats{
+    .pending-grid{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
-      margin-bottom:14px;
+      gap:10px;
+      margin-bottom:12px;
     }
 
-    .mini-stat{
-      padding:14px;
-      background:rgba(255,255,255,.025);
+    .box{
+      background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
+      border-radius:14px;
+      padding:12px;
     }
 
-    .mini-stat span{
+    .box span{
       display:block;
-      color:var(--muted);
       font-size:12px;
-      margin-bottom:8px;
+      color:var(--muted);
+      margin-bottom:6px;
       text-transform:uppercase;
       letter-spacing:.6px;
-      font-weight:700;
     }
 
-    .mini-stat strong{
-      font-size:22px;
-      font-weight:900;
-      word-break:break-word;
+    .box strong{
+      font-size:20px;
     }
 
     .players{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
-      margin-bottom:14px;
+      gap:10px;
+      margin-bottom:12px;
     }
 
     .player-card{
       background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
-      padding:14px;
+      border-radius:14px;
+      padding:12px;
     }
 
-    .player-name{
-      color:#f7f4ff;
-      font-weight:800;
-      font-size:14px;
-      margin-bottom:8px;
-      word-break:break-word;
-    }
-
-    .player-kills{
-      color:#d9cbff;
-      font-size:22px;
-      font-weight:900;
-    }
-
-    .shot-box{
-      margin-bottom:14px;
-      overflow:hidden;
-      border-radius:20px;
-      border:1px solid rgba(255,255,255,.07);
-      background:#06060a;
-    }
-
-    .shot-box img{
+    .player-card b{
       display:block;
-      width:100%;
-      max-height:420px;
-      object-fit:cover;
+      margin-bottom:8px;
     }
 
-    .pending-actions{
+    .img-box{
+      margin-bottom:12px;
+      overflow:hidden;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:#09090d;
+    }
+
+    .img-box img{
+      width:100%;
+      max-height:340px;
+      object-fit:cover;
+      display:block;
+    }
+
+    .row{
       display:flex;
-      gap:12px;
+      gap:10px;
       flex-wrap:wrap;
     }
 
-    .btn-approve{
-      background:linear-gradient(135deg, #13b95a, #1ed760);
-      color:#08120c;
-      min-width:140px;
+    input, select{
+      width:100%;
+      height:46px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:0 14px;
+      outline:none;
+      font-size:14px;
     }
 
-    .btn-reject{
-      background:linear-gradient(135deg, #ff4d6d, #ff6b6b);
-      min-width:140px;
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
     }
 
     .empty{
       color:var(--muted);
       font-size:14px;
-      padding:20px 0 4px 0;
+      padding:10px 0 0 0;
     }
 
-    .footer-note{
-      margin-top:18px;
-      text-align:center;
-      color:#7f7a97;
-      font-size:13px;
+    .danger-zone{
+      border-color:rgba(255,77,109,.22);
+      box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 26px rgba(255,77,109,.08);
     }
 
-    @media (max-width: 1180px){
-      .stats{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-      }
-
-      .main-grid{
-        grid-template-columns:1fr;
-      }
+    @media (max-width: 1200px){
+      .stats{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .grid-2, .grid-3{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
-      body{
-        padding:14px;
-      }
-
-      .brand-logo{
-        width:58px;
-        height:58px;
-      }
-
-      .brand-text-wrap{
-        margin-left:4px;
-      }
-
-      .brand-text-row{
-        height:64px;
-        margin-left:-2px;
-        margin-top:2px;
-      }
-
-      .brand-text{
-        height:64px;
-      }
-
-      .brand-sub{
-        font-size:12px;
-        margin-top:-4px;
-        margin-left:0;
-      }
-
-      .stats{
-        grid-template-columns:1fr;
-      }
-
-      .pending-stats{
-        grid-template-columns:1fr;
-      }
-
-      .players{
-        grid-template-columns:1fr;
-      }
-
-      .table th,
-      .table td{
-        font-size:13px;
-        padding:10px 8px;
-      }
-
-      .team-name{
-        font-size:19px;
-      }
-
-      .stat-value{
-        font-size:28px;
-      }
-
-      .top-actions{
-        width:100%;
-      }
-
-      .staff-pill,
-      .btn{
-        width:100%;
-        text-align:center;
-      }
+      body{ padding:14px; }
+      .stats{ grid-template-columns:1fr; }
+      .pending-grid, .players{ grid-template-columns:1fr; }
+      .actions, .pill, .btn{ width:100%; }
+      .brand img.logo{ width:56px; height:56px; }
+      .brand-text{ height:58px; margin-left:-2px; }
+      .subtitle{ margin-top:-3px; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
+  <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <img src="/roda-logo.png" alt="RØDA Logo" class="brand-logo" />
-        <div class="brand-text-wrap">
-          <div class="brand-text-row">
-            <img src="/roda-text.png" alt="RØDA" class="brand-text" />
-          </div>
-          <div class="brand-sub">Tournament dashboard • staff control panel</div>
+        <img src="/roda-logo.png" alt="RØDA Logo" class="logo" />
+        <div class="brand-right">
+          <img src="/roda-text.png" alt="RØDA" class="brand-text" />
+          <div class="subtitle">Dashboard admin completa • controllo bot dal web</div>
         </div>
       </div>
 
-      <div class="top-actions">
-        <div class="staff-pill" id="staffInfo">Connesso alla dashboard</div>
-        <button class="btn btn-refresh" id="refreshBtn">Aggiorna</button>
-        <button class="btn btn-logout" id="logoutBtn">Logout</button>
+      <div class="actions">
+        <div class="pill" id="staffInfo">Connesso</div>
+        <button class="btn btn-purple" id="refreshBtn">Aggiorna</button>
+        <button class="btn btn-red" id="logoutBtn">Logout</button>
       </div>
     </div>
 
     <div class="stats">
       <div class="card">
         <div class="stat-label">Match corrente</div>
-        <div class="stat-value" id="matchValue">-</div>
+        <div class="stat-value" id="statMatch">1</div>
       </div>
       <div class="card">
-        <div class="stat-label">Team in classifica</div>
-        <div class="stat-value" id="teamsValue">0</div>
+        <div class="stat-label">Team registrati</div>
+        <div class="stat-value" id="statTeams">0</div>
       </div>
       <div class="card">
-        <div class="stat-label">Risultati pending</div>
-        <div class="stat-value" id="pendingValue">0</div>
+        <div class="stat-label">Pending risultati</div>
+        <div class="stat-value" id="statPending">0</div>
       </div>
       <div class="card">
         <div class="stat-label">Top fragger</div>
-        <div class="stat-value" id="topFraggerValue">-</div>
+        <div class="stat-value" id="statFragger">-</div>
       </div>
     </div>
 
-    <div class="main-grid">
+    <div class="grid-2">
       <div class="card">
-        <div class="section-title">
-          <h2>🏆 Classifica Live</h2>
-          <div class="section-note" id="leaderboardInfo">Dati aggiornati live</div>
-        </div>
-
-        <div style="overflow-x:auto">
-          <table class="table">
+        <h3>🏆 Classifica Live</h3>
+        <div class="table-wrap">
+          <table>
             <thead>
               <tr>
                 <th>#</th>
@@ -552,21 +420,17 @@
                 <th>Punti</th>
               </tr>
             </thead>
-            <tbody id="leaderboard">
-              <tr><td colspan="3" class="empty">Nessun punteggio disponibile</td></tr>
+            <tbody id="leaderboardBody">
+              <tr><td colspan="3" class="empty">Nessun dato</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
       <div class="card">
-        <div class="section-title">
-          <h2>🎯 Top Fragger</h2>
-          <div class="section-note">Kill accumulate</div>
-        </div>
-
-        <div style="overflow-x:auto">
-          <table class="table">
+        <h3>🔥 Top Fragger</h3>
+        <div class="table-wrap">
+          <table>
             <thead>
               <tr>
                 <th>#</th>
@@ -574,28 +438,119 @@
                 <th>Kill</th>
               </tr>
             </thead>
-            <tbody id="fragger">
-              <tr><td colspan="3" class="empty">Nessun dato fragger</td></tr>
+            <tbody id="fraggerBody">
+              <tr><td colspan="3" class="empty">Nessun dato</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <div class="section-title" style="margin-bottom:14px">
-      <h2>📸 Risultati in attesa</h2>
-      <div class="section-note" id="pendingInfo">Controllo screenshot e approvazione staff</div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>🎮 Gestione Match</h3>
+        <div class="field">
+          <label>Match corrente</label>
+          <input type="number" id="matchInput" min="1" />
+        </div>
+        <div class="row">
+          <button class="btn btn-purple" onclick="setMatch()">Salva Match</button>
+          <button class="btn btn-green" onclick="nextMatch()">Next Match</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>➕ Punti Manuali</h3>
+        <div class="field">
+          <label>Team</label>
+          <select id="scoreTeam"></select>
+        </div>
+        <div class="field">
+          <label>Punti</label>
+          <input type="number" id="scorePoints" />
+        </div>
+        <div class="row">
+          <button class="btn btn-green" onclick="addPoints()">Aggiungi</button>
+          <button class="btn btn-yellow" onclick="setPoints()">Imposta</button>
+          <button class="btn btn-red" onclick="resetTeamScore()">Reset Team</button>
+        </div>
+      </div>
+
+      <div class="card danger-zone">
+        <h3>💥 Reset Totale</h3>
+        <div class="muted" style="margin-bottom:12px">Resetta punteggi, fragger, pending e match corrente.</div>
+        <button class="btn btn-red" onclick="resetAll()">RESET ALL</button>
+      </div>
     </div>
 
-    <div id="pending" class="pending-wrap">
-      <div class="card"><div class="empty">Nessun risultato pending</div></div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>👥 Gestione Team</h3>
+        <div class="field">
+          <label>Seleziona team esistente</label>
+          <select id="teamSelect" onchange="loadSelectedTeam()"></select>
+        </div>
+        <div class="field">
+          <label>Nome team</label>
+          <input type="text" id="teamName" />
+        </div>
+        <div class="field">
+          <label>Player 1</label>
+          <input type="text" id="teamP1" />
+        </div>
+        <div class="field">
+          <label>Player 2</label>
+          <input type="text" id="teamP2" />
+        </div>
+        <div class="field">
+          <label>Player 3</label>
+          <input type="text" id="teamP3" />
+        </div>
+        <div class="row">
+          <button class="btn btn-green" onclick="saveTeam()">Salva Team</button>
+          <button class="btn btn-red" onclick="deleteTeam()">Elimina Team</button>
+          <button class="btn btn-purple" onclick="newTeamForm()">Nuovo Team</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🎯 Modifica Fragger</h3>
+        <div class="field">
+          <label>Player</label>
+          <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
+        </div>
+        <div class="field">
+          <label>Nome player</label>
+          <input type="text" id="fraggerName" />
+        </div>
+        <div class="field">
+          <label>Kill</label>
+          <input type="number" id="fraggerKills" />
+        </div>
+        <div class="row">
+          <button class="btn btn-green" onclick="saveFragger()">Salva Fragger</button>
+          <button class="btn btn-red" onclick="deleteFragger()">Elimina Fragger</button>
+        </div>
+      </div>
     </div>
 
-    <div class="footer-note">RØDA dashboard panel</div>
+    <div class="card" style="margin-bottom:18px">
+      <h3>📸 Pending Risultati</h3>
+      <div id="pendingList" class="list">
+        <div class="empty">Nessun risultato pending</div>
+      </div>
+    </div>
+
+    <div class="pill" id="statusBar">Dashboard pronta</div>
   </div>
 
   <script>
+    let dashboard = null;
     let loading = false;
+
+    function setStatus(text) {
+      document.getElementById('statusBar').textContent = text;
+    }
 
     function escapeHtml(text) {
       return String(text ?? '')
@@ -606,173 +561,433 @@
         .replaceAll("'", '&#039;');
     }
 
-    async function load() {
+    async function api(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        ...options
+      });
+
+      if (response.status === 401) {
+        location.href = '/login';
+        return null;
+      }
+
+      const data = await response.json();
+      return { response, data };
+    }
+
+    async function refreshDashboard() {
       if (loading) return;
       loading = true;
-
-      const refreshBtn = document.getElementById('refreshBtn');
-      refreshBtn.disabled = true;
-      refreshBtn.innerText = 'Aggiornamento...';
+      document.getElementById('refreshBtn').disabled = true;
+      document.getElementById('refreshBtn').textContent = 'Aggiornamento...';
+      setStatus('Caricamento dati...');
 
       try {
-        const lbRes = await fetch('/api/leaderboard', {
-          credentials: 'same-origin'
-        });
+        const sessionResult = await api('/api/session');
+        if (!sessionResult) return;
 
-        if (lbRes.status === 401) {
-          window.location.href = '/login';
+        if (!sessionResult.response.ok || !sessionResult.data.ok) {
+          location.href = '/login';
           return;
         }
 
-        const pRes = await fetch('/api/pending', {
-          credentials: 'same-origin'
-        });
+        document.getElementById('staffInfo').textContent = 'Connesso come ' + sessionResult.data.username;
 
-        if (pRes.status === 401) {
-          window.location.href = '/login';
+        const result = await api('/api/dashboard');
+        if (!result) return;
+
+        if (!result.response.ok || !result.data.ok) {
+          setStatus(result.data.message || 'Errore caricamento dashboard');
           return;
         }
 
-        const lb = await lbRes.json();
-        const p = await pRes.json();
-
-        const scores = Array.isArray(lb.scores) ? lb.scores : [];
-        const fraggerEntries = Object.entries(lb.fragger || {}).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
-        const pendingEntries = Object.entries(p || {});
-        const topFragger = fraggerEntries.length ? `${fraggerEntries[0][0]} (${fraggerEntries[0][1]})` : '-';
-
-        document.getElementById('matchValue').innerText = lb.match || 1;
-        document.getElementById('teamsValue').innerText = scores.length;
-        document.getElementById('pendingValue').innerText = pendingEntries.length;
-        document.getElementById('topFraggerValue').innerText = topFragger;
-        document.getElementById('leaderboardInfo').innerText = 'Ultimo refresh: ' + new Date().toLocaleTimeString('it-IT');
-
-        document.getElementById('leaderboard').innerHTML =
-          scores.length
-            ? scores.map((t, i) => `
-                <tr>
-                  <td><span class="rank-badge">${i + 1}</span></td>
-                  <td>${escapeHtml(t[0])}</td>
-                  <td><strong>${Number(t[1] || 0)}</strong></td>
-                </tr>
-              `).join('')
-            : `<tr><td colspan="3" class="empty">Nessun punteggio disponibile</td></tr>`;
-
-        document.getElementById('fragger').innerHTML =
-          fraggerEntries.length
-            ? fraggerEntries.slice(0, 10).map((row, i) => `
-                <tr>
-                  <td><span class="rank-badge">${i + 1}</span></td>
-                  <td>${escapeHtml(row[0])}</td>
-                  <td><strong>${Number(row[1] || 0)}</strong></td>
-                </tr>
-              `).join('')
-            : `<tr><td colspan="3" class="empty">Nessun dato fragger</td></tr>`;
-
-        document.getElementById('pending').innerHTML =
-          pendingEntries.length
-            ? pendingEntries.map(([id, r]) => `
-                <div class="pending-card">
-                  <div class="pending-head">
-                    <div>
-                      <div class="team-name">${escapeHtml(r.team || '-')}</div>
-                      <div class="team-meta">Invio risultato in attesa di approvazione staff</div>
-                    </div>
-                    <div class="state-pill">PENDING</div>
-                  </div>
-
-                  <div class="pending-stats">
-                    <div class="mini-stat">
-                      <span>Kill totali</span>
-                      <strong>${Number(r.total || 0)}</strong>
-                    </div>
-                    <div class="mini-stat">
-                      <span>Posizione</span>
-                      <strong>${Number(r.pos || 0)}</strong>
-                    </div>
-                    <div class="mini-stat">
-                      <span>Result ID</span>
-                      <strong style="font-size:15px">${escapeHtml(id)}</strong>
-                    </div>
-                  </div>
-
-                  <div class="players">
-                    ${(Array.isArray(r.kills) ? r.kills : []).map((k, i) => `
-                      <div class="player-card">
-                        <div class="player-name">${escapeHtml((r.players && r.players[i]) ? r.players[i] : `Player ${i + 1}`)}</div>
-                        <div class="player-kills">${Number(k || 0)} kill</div>
-                      </div>
-                    `).join('')}
-                  </div>
-
-                  ${r.image ? `
-                    <div class="shot-box">
-                      <img src="${escapeHtml(r.image)}" alt="Screenshot risultato" onerror="this.style.display='none'">
-                    </div>
-                  ` : ''}
-
-                  <div class="pending-actions">
-                    <button class="btn btn-approve" onclick="approveResult('${encodeURIComponent(id)}')">APPROVA</button>
-                    <button class="btn btn-reject" onclick="rejectResult('${encodeURIComponent(id)}')">RIFIUTA</button>
-                  </div>
-                </div>
-              `).join('')
-            : `<div class="card"><div class="empty">Nessun risultato pending</div></div>`;
-      } catch (e) {
-        console.error('Errore dashboard:', e);
+        dashboard = result.data;
+        renderDashboard();
+        setStatus('Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT'));
+      } catch (error) {
+        console.error(error);
+        setStatus('Errore di connessione');
       } finally {
         loading = false;
-        refreshBtn.disabled = false;
-        refreshBtn.innerText = 'Aggiorna';
+        document.getElementById('refreshBtn').disabled = false;
+        document.getElementById('refreshBtn').textContent = 'Aggiorna';
       }
     }
 
-    async function approveResult(id) {
-      const res = await fetch('/api/approve/' + id, {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
+    function renderDashboard() {
+      const leaderboard = dashboard.leaderboard || [];
+      const fraggers = dashboard.fraggers || [];
+      const pending = dashboard.pending || [];
+      const teams = dashboard.teams || {};
 
-      if (res.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
+      document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
+      document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
+      document.getElementById('statPending').textContent = dashboard.stats?.pendingCount || 0;
+      document.getElementById('statFragger').textContent = fraggers.length ? fraggers[0].name : '-';
 
-      await load();
+      document.getElementById('matchInput').value = dashboard.currentMatch || 1;
+
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = leaderboard.length
+        ? leaderboard.map(row => `
+            <tr>
+              <td><span class="rank">${row.rank}</span></td>
+              <td>${escapeHtml(row.team)}</td>
+              <td><strong>${row.points}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+
+      const fraggerBody = document.getElementById('fraggerBody');
+      fraggerBody.innerHTML = fraggers.length
+        ? fraggers.slice(0, 15).map(row => `
+            <tr>
+              <td><span class="rank">${row.rank}</span></td>
+              <td>${escapeHtml(row.name)}</td>
+              <td><strong>${row.kills}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+
+      const teamNames = Object.keys(teams).sort((a, b) => a.localeCompare(b, 'it'));
+      const teamSelect = document.getElementById('teamSelect');
+      const scoreTeam = document.getElementById('scoreTeam');
+
+      const teamOptions = [
+        `<option value="">Seleziona team</option>`,
+        ...teamNames.map(team => `<option value="${escapeHtml(team)}">${escapeHtml(team)}</option>`)
+      ].join('');
+
+      teamSelect.innerHTML = teamOptions;
+      scoreTeam.innerHTML = teamOptions;
+
+      const fraggerSelect = document.getElementById('fraggerSelect');
+      const fraggerEntries = Object.keys(dashboard.fragger || {}).sort((a, b) => a.localeCompare(b, 'it'));
+      fraggerSelect.innerHTML = [
+        `<option value="">Seleziona player</option>`,
+        ...fraggerEntries.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+      ].join('');
+
+      const pendingList = document.getElementById('pendingList');
+      pendingList.innerHTML = pending.length
+        ? pending.map(item => `
+            <div class="pending-card">
+              <div class="pending-top">
+                <div>
+                  <div class="pending-team">${escapeHtml(item.team)}</div>
+                  <div class="muted">In attesa di approvazione staff</div>
+                </div>
+                <div class="pill">PENDING</div>
+              </div>
+
+              <div class="pending-grid">
+                <div class="box">
+                  <span>Kill totali</span>
+                  <strong>${item.total}</strong>
+                </div>
+                <div class="box">
+                  <span>Posizione</span>
+                  <strong>${item.pos}</strong>
+                </div>
+                <div class="box">
+                  <span>Result ID</span>
+                  <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
+                </div>
+              </div>
+
+              <div class="players">
+                ${(item.kills || []).map((k, i) => `
+                  <div class="player-card">
+                    <b>${escapeHtml(item.players?.[i] || `Player ${i + 1}`)}</b>
+                    <div>${Number(k || 0)} kill</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              ${item.image ? `
+                <div class="img-box">
+                  <img src="${escapeHtml(item.image)}" alt="screenshot">
+                </div>
+              ` : ''}
+
+              <div class="row">
+                <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">APPROVA</button>
+                <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">RIFIUTA</button>
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun risultato pending</div>`;
     }
 
-    async function rejectResult(id) {
-      const res = await fetch('/api/reject/' + id, {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
+    function loadSelectedTeam() {
+      if (!dashboard) return;
+      const selected = document.getElementById('teamSelect').value;
+      const team = dashboard.teams?.[selected];
 
-      if (res.status === 401) {
-        window.location.href = '/login';
+      if (!team) {
+        newTeamForm();
         return;
       }
 
-      await load();
+      document.getElementById('teamName').value = selected;
+      document.getElementById('teamP1').value = team.players?.[0] || '';
+      document.getElementById('teamP2').value = team.players?.[1] || '';
+      document.getElementById('teamP3').value = team.players?.[2] || '';
+    }
+
+    function newTeamForm() {
+      document.getElementById('teamSelect').value = '';
+      document.getElementById('teamName').value = '';
+      document.getElementById('teamP1').value = '';
+      document.getElementById('teamP2').value = '';
+      document.getElementById('teamP3').value = '';
+    }
+
+    async function saveTeam() {
+      const oldTeamName = document.getElementById('teamSelect').value;
+      const teamName = document.getElementById('teamName').value.trim();
+      const p1 = document.getElementById('teamP1').value.trim();
+      const p2 = document.getElementById('teamP2').value.trim();
+      const p3 = document.getElementById('teamP3').value.trim();
+
+      const result = await api('/api/teams/save', {
+        method: 'POST',
+        body: JSON.stringify({ oldTeamName, teamName, p1, p2, p3 })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio team');
+        return;
+      }
+
+      await refreshDashboard();
+      document.getElementById('teamSelect').value = teamName;
+      loadSelectedTeam();
+    }
+
+    async function deleteTeam() {
+      const teamName = document.getElementById('teamSelect').value || document.getElementById('teamName').value.trim();
+      if (!teamName) {
+        alert('Seleziona un team');
+        return;
+      }
+
+      if (!confirm('Confermi eliminazione team?')) return;
+
+      const result = await api('/api/teams/delete', {
+        method: 'POST',
+        body: JSON.stringify({ teamName })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione team');
+        return;
+      }
+
+      newTeamForm();
+      await refreshDashboard();
+    }
+
+    function loadSelectedFragger() {
+      if (!dashboard) return;
+      const name = document.getElementById('fraggerSelect').value;
+      document.getElementById('fraggerName').value = name || '';
+      document.getElementById('fraggerKills').value = name ? Number(dashboard.fragger?.[name] || 0) : '';
+    }
+
+    async function saveFragger() {
+      const player = document.getElementById('fraggerName').value.trim();
+      const kills = Number(document.getElementById('fraggerKills').value || 0);
+
+      const result = await api('/api/fragger/set', {
+        method: 'POST',
+        body: JSON.stringify({ player, kills })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio fragger');
+        return;
+      }
+
+      await refreshDashboard();
+      document.getElementById('fraggerSelect').value = player;
+      loadSelectedFragger();
+    }
+
+    async function deleteFragger() {
+      const player = document.getElementById('fraggerSelect').value || document.getElementById('fraggerName').value.trim();
+      if (!player) {
+        alert('Seleziona un player');
+        return;
+      }
+
+      if (!confirm('Confermi eliminazione fragger?')) return;
+
+      const result = await api('/api/fragger/delete', {
+        method: 'POST',
+        body: JSON.stringify({ player })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione fragger');
+        return;
+      }
+
+      document.getElementById('fraggerName').value = '';
+      document.getElementById('fraggerKills').value = '';
+      await refreshDashboard();
+    }
+
+    async function setMatch() {
+      const match = Number(document.getElementById('matchInput').value || 1);
+
+      const result = await api('/api/match/set', {
+        method: 'POST',
+        body: JSON.stringify({ match })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore set match');
+        return;
+      }
+
+      await refreshDashboard();
+    }
+
+    async function nextMatch() {
+      const result = await api('/api/match/next', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore next match');
+        return;
+      }
+
+      await refreshDashboard();
+    }
+
+    async function addPoints() {
+      const team = document.getElementById('scoreTeam').value;
+      const points = Number(document.getElementById('scorePoints').value || 0);
+
+      const result = await api('/api/scores/add', {
+        method: 'POST',
+        body: JSON.stringify({ team, points })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiunta punti');
+        return;
+      }
+
+      await refreshDashboard();
+    }
+
+    async function setPoints() {
+      const team = document.getElementById('scoreTeam').value;
+      const points = Number(document.getElementById('scorePoints').value || 0);
+
+      const result = await api('/api/scores/set', {
+        method: 'POST',
+        body: JSON.stringify({ team, points })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore set punti');
+        return;
+      }
+
+      await refreshDashboard();
+    }
+
+    async function resetTeamScore() {
+      const team = document.getElementById('scoreTeam').value;
+      if (!team) {
+        alert('Seleziona un team');
+        return;
+      }
+
+      if (!confirm('Confermi reset punti team?')) return;
+
+      const result = await api('/api/scores/reset-team', {
+        method: 'POST',
+        body: JSON.stringify({ team })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore reset team');
+        return;
+      }
+
+      await refreshDashboard();
+    }
+
+    async function approvePending(id) {
+      const result = await api('/api/approve/' + id, { method: 'POST' });
+      if (!result) return;
+      await refreshDashboard();
+    }
+
+    async function rejectPending(id) {
+      const result = await api('/api/reject/' + id, { method: 'POST' });
+      if (!result) return;
+      await refreshDashboard();
+    }
+
+    async function resetAll() {
+      if (!confirm('Confermi RESET TOTALE?')) return;
+
+      const result = await api('/api/reset-all', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore reset totale');
+        return;
+      }
+
+      newTeamForm();
+      document.getElementById('fraggerName').value = '';
+      document.getElementById('fraggerKills').value = '';
+      await refreshDashboard();
     }
 
     async function logout() {
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
-
-      window.location.href = '/login';
+      await api('/api/logout', { method: 'POST' });
+      location.href = '/login';
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', load);
+    document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    window.approveResult = approveResult;
-    window.rejectResult = rejectResult;
+    window.saveTeam = saveTeam;
+    window.deleteTeam = deleteTeam;
+    window.newTeamForm = newTeamForm;
+    window.loadSelectedTeam = loadSelectedTeam;
+    window.loadSelectedFragger = loadSelectedFragger;
+    window.saveFragger = saveFragger;
+    window.deleteFragger = deleteFragger;
+    window.setMatch = setMatch;
+    window.nextMatch = nextMatch;
+    window.addPoints = addPoints;
+    window.setPoints = setPoints;
+    window.resetTeamScore = resetTeamScore;
+    window.approvePending = approvePending;
+    window.rejectPending = rejectPending;
+    window.resetAll = resetAll;
 
-    load();
+    refreshDashboard();
     setInterval(() => {
-      if (!loading) load();
+      if (!loading) refreshDashboard();
     }, 10000);
   </script>
 </body>
