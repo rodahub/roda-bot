@@ -60,8 +60,9 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:0;
       min-width:0;
+      flex-wrap:nowrap;
     }
 
     .brand img.logo{
@@ -71,6 +72,7 @@
       border-radius:18px;
       flex-shrink:0;
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
+      margin-right:0;
     }
 
     .brand-right{
@@ -78,21 +80,34 @@
       flex-direction:column;
       justify-content:center;
       min-width:0;
+      margin-left:6px;
+    }
+
+    .brand-text-row{
+      display:flex;
+      align-items:center;
+      height:82px;
+      overflow:hidden;
+      margin-left:-2px;
+      margin-top:4px;
     }
 
     .brand-text{
-      height:78px;
+      display:block;
+      height:82px;
       width:auto;
+      max-width:none;
       object-fit:contain;
-      margin-left:-6px;
-      margin-top:4px;
       filter:drop-shadow(0 0 14px rgba(123,44,255,.35));
+      flex-shrink:0;
     }
 
     .subtitle{
       color:var(--muted);
       font-size:13px;
-      margin-top:-6px;
+      margin-top:-4px;
+      margin-left:0;
+      white-space:nowrap;
     }
 
     .actions{
@@ -365,9 +380,29 @@
       .stats{ grid-template-columns:1fr; }
       .pending-grid, .players{ grid-template-columns:1fr; }
       .actions, .pill, .btn{ width:100%; }
-      .brand img.logo{ width:56px; height:56px; }
-      .brand-text{ height:58px; margin-left:-2px; }
-      .subtitle{ margin-top:-3px; }
+
+      .brand img.logo{
+        width:56px;
+        height:56px;
+      }
+
+      .brand-right{
+        margin-left:4px;
+      }
+
+      .brand-text-row{
+        height:64px;
+        margin-left:-1px;
+        margin-top:2px;
+      }
+
+      .brand-text{
+        height:64px;
+      }
+
+      .subtitle{
+        margin-top:-2px;
+      }
     }
   </style>
 </head>
@@ -377,7 +412,9 @@
       <div class="brand">
         <img src="/roda-logo.png" alt="RØDA Logo" class="logo" />
         <div class="brand-right">
-          <img src="/roda-text.png" alt="RØDA" class="brand-text" />
+          <div class="brand-text-row">
+            <img src="/roda-text.png" alt="RØDA" class="brand-text" />
+          </div>
           <div class="subtitle">Dashboard admin completa • controllo bot dal web</div>
         </div>
       </div>
