@@ -26,7 +26,12 @@ function getDefaultData() {
     registrationClosedAnnounced: false,
     registrationMaxTeams: 16,
     registrationStatusTitle: '📋 Slot Team Registrati',
-    registrationStatusText: 'Lista team attualmente registrati nel torneo.'
+    registrationStatusText: 'Lista team attualmente registrati nel torneo.',
+    registerPanelMessageId: null,
+    registerPanelChannelId: '',
+    resultsPanelMessageId: null,
+    resultsPanelChannelId: '',
+    roomsCategoryId: ''
   };
 }
 
@@ -59,6 +64,12 @@ function normalizeData(data) {
 
   base.registrationStatusTitle = String(safe.registrationStatusTitle || base.registrationStatusTitle).trim() || base.registrationStatusTitle;
   base.registrationStatusText = String(safe.registrationStatusText || '').trim();
+
+  base.registerPanelMessageId = safe.registerPanelMessageId || null;
+  base.registerPanelChannelId = String(safe.registerPanelChannelId || '').trim();
+  base.resultsPanelMessageId = safe.resultsPanelMessageId || null;
+  base.resultsPanelChannelId = String(safe.resultsPanelChannelId || '').trim();
+  base.roomsCategoryId = String(safe.roomsCategoryId || '').trim();
 
   return base;
 }
