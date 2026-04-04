@@ -10,6 +10,7 @@
       --panel:#10101a;
       --panel2:#151525;
       --line:rgba(160,110,255,.18);
+      --line-strong:rgba(180,130,255,.30);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
@@ -17,13 +18,31 @@
       --green:#18c964;
       --red:#ff4d6d;
       --yellow:#ffd166;
+      --blue:#57b7ff;
       --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 30px rgba(123,44,255,.18);
       --radius:22px;
+      --radius-sm:16px;
     }
 
     *{
       box-sizing:border-box;
       -webkit-tap-highlight-color:transparent;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(160,110,255,.35) transparent;
+    }
+
+    *::-webkit-scrollbar{
+      width:9px;
+      height:9px;
+    }
+
+    *::-webkit-scrollbar-thumb{
+      background:rgba(160,110,255,.35);
+      border-radius:999px;
+    }
+
+    *::-webkit-scrollbar-track{
+      background:transparent;
     }
 
     html,body{
@@ -44,7 +63,7 @@
     }
 
     .wrap{
-      max-width:1500px;
+      max-width:1600px;
       margin:0 auto;
     }
 
@@ -136,6 +155,7 @@
       font-size:14px;
       color:#fff;
       transition:.18s ease;
+      min-height:46px;
     }
 
     .btn:hover{
@@ -152,6 +172,7 @@
     .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
     .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
     .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
+    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
 
     .stats{
       display:grid;
@@ -167,11 +188,37 @@
       padding:18px;
       box-shadow:var(--shadow);
       overflow:hidden;
+      min-width:0;
+    }
+
+    .section-card{
+      margin-bottom:18px;
+    }
+
+    .card-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .card-header-left{
+      min-width:0;
+      flex:1;
     }
 
     .card h3{
-      margin:0 0 12px 0;
-      font-size:18px;
+      margin:0 0 6px 0;
+      font-size:19px;
+      line-height:1.2;
+    }
+
+    .section-note{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
     }
 
     .stat-label{
@@ -205,6 +252,9 @@
 
     .table-wrap{
       overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.02);
     }
 
     table{
@@ -214,7 +264,7 @@
 
     th,td{
       text-align:left;
-      padding:11px 10px;
+      padding:12px 12px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
       vertical-align:top;
@@ -225,6 +275,14 @@
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.7px;
+      background:rgba(255,255,255,.02);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tbody tr:hover{
+      background:rgba(255,255,255,.02);
     }
 
     .rank{
@@ -237,6 +295,38 @@
       background:rgba(123,44,255,.14);
       border:1px solid rgba(169,120,255,.25);
       font-weight:900;
+    }
+
+    .slot-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:42px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:900;
+      background:rgba(87,183,255,.12);
+      border:1px solid rgba(87,183,255,.26);
+      color:#dff3ff;
+    }
+
+    .team-players-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .mini-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e9e4fb;
     }
 
     .list{
@@ -336,6 +426,14 @@
       flex-wrap:wrap;
     }
 
+    .row > *{
+      flex:1 1 auto;
+    }
+
+    .compact-actions .btn{
+      flex:0 0 auto;
+    }
+
     input, select, textarea{
       width:100%;
       border-radius:14px;
@@ -374,7 +472,7 @@
     .field{
       display:grid;
       gap:8px;
-      margin-bottom:10px;
+      margin-bottom:12px;
     }
 
     .field label{
@@ -386,12 +484,111 @@
     .empty{
       color:var(--muted);
       font-size:14px;
-      padding:10px 0 0 0;
+      padding:12px;
     }
 
     .danger-zone{
       border-color:rgba(255,77,109,.22);
       box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 26px rgba(255,77,109,.08);
+    }
+
+    .registered-layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.3fr) minmax(340px,.7fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    .registered-summary{
+      display:grid;
+      gap:12px;
+    }
+
+    .summary-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .summary-box h4{
+      margin:0 0 10px 0;
+      font-size:15px;
+    }
+
+    .summary-stats{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .summary-mini{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .summary-mini span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .summary-mini strong{
+      font-size:22px;
+    }
+
+    .slot-preview{
+      display:grid;
+      gap:10px;
+      max-height:520px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .slot-card{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .slot-card-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .slot-card-title{
+      font-size:16px;
+      font-weight:900;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .slot-card-players{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .section-divider{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(160,110,255,.22), transparent);
+      margin:6px 0 18px 0;
+    }
+
+    @media (max-width: 1280px){
+      .registered-layout{
+        grid-template-columns:1fr;
+      }
     }
 
     @media (max-width: 1200px){
@@ -402,7 +599,7 @@
     @media (max-width: 760px){
       body{ padding:14px; }
       .stats{ grid-template-columns:1fr; }
-      .pending-grid, .players{ grid-template-columns:1fr; }
+      .pending-grid, .players, .summary-stats{ grid-template-columns:1fr; }
       .actions, .pill, .btn{ width:100%; }
 
       .brand img.logo{
@@ -427,6 +624,14 @@
       .subtitle{
         margin-top:-2px;
         white-space:normal;
+      }
+
+      .slot-card{
+        flex-direction:column;
+      }
+
+      .row > *{
+        width:100%;
       }
     }
   </style>
@@ -470,10 +675,74 @@
       </div>
     </div>
 
+    <div class="card section-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h3>📋 Team Registrati / Slot Assegnati</h3>
+          <div class="section-note">
+            Qui vedi direttamente nella dashboard la stessa situazione slot che hai su Discord, con elenco team ordinato per slot assegnato.
+          </div>
+        </div>
+        <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
+      </div>
+
+      <div class="registered-layout">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Slot</th>
+                <th>Team</th>
+                <th>Players</th>
+              </tr>
+            </thead>
+            <tbody id="registeredTeamsBody">
+              <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="registered-summary">
+          <div class="summary-box">
+            <h4>📊 Stato Registrazioni</h4>
+            <div class="summary-stats">
+              <div class="summary-mini">
+                <span>Registrati</span>
+                <strong id="registeredTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Disponibili</span>
+                <strong id="availableTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Massimo team</span>
+                <strong id="maxTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Stato</span>
+                <strong id="registrationStateText">APERTO</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h4>🏷️ Anteprima Slot</h4>
+            <div class="slot-preview" id="slotPreviewList">
+              <div class="empty">Nessun team registrato</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="card">
-        <h3>🏆 Classifica Live</h3>
-        <div class="muted" style="margin-bottom:12px">I punti e i fragger si aggiornano nei dati in automatico. La classifica su Discord parte solo quando premi il bottone manuale.</div>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🏆 Classifica Live</h3>
+            <div class="section-note">I punti e i fragger si aggiornano nei dati in automatico. La classifica su Discord parte solo quando premi il bottone manuale.</div>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -491,7 +760,12 @@
       </div>
 
       <div class="card">
-        <h3>🔥 Top Fragger</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🔥 Top Fragger</h3>
+            <div class="section-note">Classifica fragger live aggiornata dai dati salvati nel sistema.</div>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -511,19 +785,29 @@
 
     <div class="grid-3">
       <div class="card">
-        <h3>🎮 Gestione Match</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🎮 Gestione Match</h3>
+            <div class="section-note">Modifica il match corrente oppure passa al successivo.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Match corrente</label>
           <input type="number" id="matchInput" min="1" />
         </div>
-        <div class="row">
+        <div class="row compact-actions">
           <button class="btn btn-purple" onclick="setMatch()">Salva Match</button>
           <button class="btn btn-green" onclick="nextMatch()">Next Match</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>➕ Punti Manuali</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>➕ Punti Manuali</h3>
+            <div class="section-note">Aggiungi, imposta o resetta i punti del team selezionato.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Team</label>
           <select id="scoreTeam"></select>
@@ -540,8 +824,12 @@
       </div>
 
       <div class="card danger-zone">
-        <h3>🧹 Reset Separati</h3>
-        <div class="muted" style="margin-bottom:12px">Reset team registrati separato da classifica, fragger e match.</div>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🧹 Reset Separati</h3>
+            <div class="section-note">Reset team registrati separato da classifica, fragger e match.</div>
+          </div>
+        </div>
         <div class="row">
           <button class="btn btn-red" onclick="resetTeams()">RESET TEAM</button>
           <button class="btn btn-yellow" onclick="resetData()">RESET CLASSIFICA / FRAGGER</button>
@@ -549,9 +837,16 @@
       </div>
     </div>
 
+    <div class="section-divider"></div>
+
     <div class="grid-2">
       <div class="card">
-        <h3>👥 Gestione Team</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>👥 Gestione Team</h3>
+            <div class="section-note">Crea, modifica o elimina team mantenendo la compatibilità con slot e dati esistenti.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Seleziona team esistente</label>
           <select id="teamSelect" onchange="loadSelectedTeam()"></select>
@@ -580,7 +875,12 @@
       </div>
 
       <div class="card">
-        <h3>🎯 Modifica Fragger</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🎯 Modifica Fragger</h3>
+            <div class="section-note">Correggi o rimuovi manualmente le kill di un player.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Player</label>
           <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
@@ -602,7 +902,12 @@
 
     <div class="grid-2">
       <div class="card">
-        <h3>📝 Messaggio Slot Team Discord</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>📝 Messaggio Slot Team Discord</h3>
+            <div class="section-note">Configura titolo, testo e numero massimo team del messaggio slot su Discord.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Titolo messaggio</label>
           <input type="text" id="registrationStatusTitle" />
@@ -622,7 +927,12 @@
       </div>
 
       <div class="card">
-        <h3>🤖 Azioni Bot Discord</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🤖 Azioni Bot Discord</h3>
+            <div class="section-note">La classifica Discord viene inviata solo manualmente da qui, quando decidi tu.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Channel ID pannello registrazione</label>
           <input type="text" id="registerPanelChannel" />
@@ -631,7 +941,6 @@
           <label>Channel ID pannello risultati</label>
           <input type="text" id="resultsPanelChannel" />
         </div>
-        <div class="muted" style="margin-bottom:12px">La classifica Discord viene inviata solo manualmente da qui, quando decidi tu.</div>
         <div class="row">
           <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
           <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
@@ -644,7 +953,12 @@
 
     <div class="grid-2">
       <div class="card">
-        <h3>📤 Invia Risultato dal Sito</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>📤 Invia Risultato dal Sito</h3>
+            <div class="section-note">Invia manualmente un risultato alla coda pending staff, con screenshot opzionale.</div>
+          </div>
+        </div>
         <div class="field">
           <label>Team</label>
           <select id="webResultTeam"></select>
@@ -673,7 +987,12 @@
       </div>
 
       <div class="card">
-        <h3>📸 Pending Risultati</h3>
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>📸 Pending Risultati</h3>
+            <div class="section-note">Risultati in attesa di approvazione o rifiuto staff.</div>
+          </div>
+        </div>
         <div id="pendingList" class="list">
           <div class="empty">Nessun risultato pending</div>
         </div>
@@ -774,18 +1093,64 @@
       const botConfig = dashboard.botConfig || {};
       const registrationSettings = dashboard.registrationSettings || {};
 
+      const registeredCount = sortedTeams.length;
+      const maxTeams = Number(registrationSettings.maxTeams || 16);
+      const availableCount = Math.max(maxTeams - registeredCount, 0);
+      const registrationClosed = registeredCount >= maxTeams;
+
       document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
       document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
       document.getElementById('statPending').textContent = dashboard.stats?.pendingCount || 0;
       document.getElementById('statFragger').textContent = fraggers.length ? fraggers[0].name : '-';
 
       document.getElementById('matchInput').value = dashboard.currentMatch || 1;
-      document.getElementById('registerPanelChannel').value = botConfig.classificaChannel || '';
-      document.getElementById('resultsPanelChannel').value = botConfig.classificaChannel || '';
+
+      document.getElementById('registerPanelChannel').value = '';
+      document.getElementById('resultsPanelChannel').value = '';
 
       document.getElementById('registrationStatusTitle').value = registrationSettings.title || '';
       document.getElementById('registrationStatusText').value = registrationSettings.text || '';
       document.getElementById('registrationMaxTeams').value = registrationSettings.maxTeams || 16;
+
+      document.getElementById('registeredTeamsSummaryPill').textContent = `${registeredCount} / ${maxTeams} team`;
+      document.getElementById('registeredTeamsCount').textContent = String(registeredCount);
+      document.getElementById('availableTeamsCount').textContent = String(availableCount);
+      document.getElementById('maxTeamsCount').textContent = String(maxTeams);
+      document.getElementById('registrationStateText').textContent = registrationClosed ? 'PIENO' : 'APERTO';
+
+      const registeredTeamsBody = document.getElementById('registeredTeamsBody');
+      registeredTeamsBody.innerHTML = sortedTeams.length
+        ? sortedTeams.map(team => `
+            <tr>
+              <td><span class="slot-badge">#${team.slot || '-'}</span></td>
+              <td><strong>${escapeHtml(team.team)}</strong></td>
+              <td>
+                <div class="team-players-list">
+                  ${(team.players || []).map(player => `
+                    <span class="mini-chip">${escapeHtml(player || '-')}</span>
+                  `).join('') || '<span class="mini-chip">Nessun player</span>'}
+                </div>
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
+
+      const slotPreviewList = document.getElementById('slotPreviewList');
+      slotPreviewList.innerHTML = sortedTeams.length
+        ? sortedTeams.map(team => `
+            <div class="slot-card">
+              <div class="slot-card-left">
+                <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
+                <div class="slot-card-players">
+                  ${(team.players || []).map(player => `
+                    <span class="mini-chip">${escapeHtml(player || '-')}</span>
+                  `).join('') || '<span class="mini-chip">Nessun player</span>'}
+                </div>
+              </div>
+              <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun team registrato</div>`;
 
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = leaderboard.length
