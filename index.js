@@ -169,6 +169,43 @@ function buildTeamVoiceChannelName(slot, teamName) {
   return `🏆・#${safeSlot} ${cleanTeam}`;
 }
 
+function getSavedRoomsCategoryId() {
+  return sanitizeText(data.roomsCategoryId) || CATEGORY_ID;
+}
+
+function createRegisterPanelPayload() {
+  const btn = new ButtonBuilder()
+    .setCustomId('register_btn')
+    .setLabel('📥 REGISTRA TEAM')
+    .setStyle(ButtonStyle.Primary);
+
+  return {
+    content: 'Clicca per registrare il team',
+    components: [new ActionRowBuilder().addComponents(btn)]
+  };
+}
+
+function createResultsPanelPayload() {
+  if (Object.keys(teams).length === 0) {
+    throw new Error('Nessun team registrato');
+  }
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId('team_select')
+    .setPlaceholder('Scegli team')
+    .addOptions(
+      getSortedTeamEntries().map(([teamName, teamData]) => ({
+        label: `#${teamData.slot || '-'} ${teamName}`.slice(0, 100),
+        value: teamName
+      }))
+    );
+
+  return {
+    content: `📊 MATCH ${data.currentMatch}`,
+    components: [new ActionRowBuilder().addComponents(menu)]
+  };
+}
+
 async function maybeAnnounceTournamentFull() {
   if (!isTournamentFull()) {
     if (data.registrationClosedAnnounced) {
@@ -340,14 +377,14 @@ async function updateLeaderboard() {
     try {
       const msg = await channel.messages.fetch(data.leaderboardMessageId);
       await msg.edit({ embeds: [embed] });
-      return true;
+      return { ok: true, updated: true };
     } catch {}
   }
 
   const msg = await channel.send({ embeds: [embed] });
   data.leaderboardMessageId = msg.id;
   saveState();
-  return true;
+  return { ok: true, created: true };
 }
 
 async function sendResultToStorico(embed) {
@@ -453,51 +490,75 @@ async function submitWebResult(payload) {
 
 async function spawnRegisterPanel(channelId) {
   await waitReady();
-  const channel = await client.channels.fetch(channelId);
-  const btn = new ButtonBuilder()
-    .setCustomId('register_btn')
-    .setLabel('📥 REGISTRA TEAM')
-    .setStyle(ButtonStyle.Primary);
+  const targetChannelId = sanitizeText(channelId) || sanitizeText(data.registerPanelChannelId);
+  if (!targetChannelId) {
+    throw new Error('Channel ID pannello registrazione non valido');
+  }
 
-  await channel.send({
-    content: 'Clicca per registrare il team',
-    components: [new ActionRowBuilder().addComponents(btn)]
-  });
+  const channel = await client.channels.fetch(targetChannelId);
+  const payload = createRegisterPanelPayload();
 
-  return true;
+  let created = false;
+  let updated = false;
+
+  if (data.registerPanelMessageId && data.registerPanelChannelId === targetChannelId) {
+    try {
+      const msg = await channel.messages.fetch(data.registerPanelMessageId);
+      await msg.edit(payload);
+      updated = true;
+    } catch {}
+  }
+
+  if (!updated) {
+    const msg = await channel.send(payload);
+    data.registerPanelMessageId = msg.id;
+    created = true;
+  }
+
+  data.registerPanelChannelId = targetChannelId;
+  saveState();
+
+  return { ok: true, created, updated };
 }
 
 async function spawnResultsPanel(channelId) {
   await waitReady();
 
-  if (Object.keys(teams).length === 0) {
-    throw new Error('Nessun team registrato');
+  const targetChannelId = sanitizeText(channelId) || sanitizeText(data.resultsPanelChannelId);
+  if (!targetChannelId) {
+    throw new Error('Channel ID pannello risultati non valido');
   }
 
-  const channel = await client.channels.fetch(channelId);
+  const channel = await client.channels.fetch(targetChannelId);
+  const payload = createResultsPanelPayload();
 
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId('team_select')
-    .setPlaceholder('Scegli team')
-    .addOptions(
-      getSortedTeamEntries().map(([teamName, teamData]) => ({
-        label: `#${teamData.slot || '-'} ${teamName}`.slice(0, 100),
-        value: teamName
-      }))
-    );
+  let created = false;
+  let updated = false;
 
-  await channel.send({
-    content: `📊 MATCH ${data.currentMatch}`,
-    components: [new ActionRowBuilder().addComponents(menu)]
-  });
+  if (data.resultsPanelMessageId && data.resultsPanelChannelId === targetChannelId) {
+    try {
+      const msg = await channel.messages.fetch(data.resultsPanelMessageId);
+      await msg.edit(payload);
+      updated = true;
+    } catch {}
+  }
 
-  return true;
+  if (!updated) {
+    const msg = await channel.send(payload);
+    data.resultsPanelMessageId = msg.id;
+    created = true;
+  }
+
+  data.resultsPanelChannelId = targetChannelId;
+  saveState();
+
+  return { ok: true, created, updated };
 }
 
 async function createTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
-  const categoryIdToUse = sanitizeText(customCategoryId) || CATEGORY_ID;
+  const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
   if (!categoryIdToUse) {
     throw new Error('Categoria non valida');
@@ -517,23 +578,43 @@ async function createTeamRooms(customCategoryId) {
     throw new Error('Nessun team registrato');
   }
 
+  const existingNames = new Set(
+    guild.channels.cache
+      .filter(c => c.parentId === categoryIdToUse && c.type === ChannelType.GuildVoice)
+      .map(c => c.name)
+  );
+
+  let created = 0;
+  let skipped = 0;
+
   for (const [teamName, teamData] of sortedTeams) {
     const channelName = buildTeamVoiceChannelName(teamData.slot, teamName);
+
+    if (existingNames.has(channelName)) {
+      skipped++;
+      continue;
+    }
 
     await guild.channels.create({
       name: channelName,
       type: ChannelType.GuildVoice,
       parent: categoryIdToUse
     });
+
+    existingNames.add(channelName);
+    created++;
   }
 
-  return true;
+  data.roomsCategoryId = categoryIdToUse;
+  saveState();
+
+  return { ok: true, created, skipped };
 }
 
 async function deleteTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
-  const categoryIdToUse = sanitizeText(customCategoryId) || CATEGORY_ID;
+  const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
   const channels = guild.channels.cache.filter(c =>
     c.parentId === categoryIdToUse &&
@@ -541,13 +622,19 @@ async function deleteTeamRooms(customCategoryId) {
     c.name.startsWith('🏆・#')
   );
 
+  let deleted = 0;
+
   for (const ch of channels.values()) {
     try {
       await ch.delete();
+      deleted++;
     } catch {}
   }
 
-  return true;
+  data.roomsCategoryId = categoryIdToUse;
+  saveState();
+
+  return { ok: true, deleted };
 }
 
 async function saveDiscordAttachmentLocally(attachment) {
@@ -597,15 +684,30 @@ function resetAllState() {
   saveState();
 }
 
+function saveBotPanelSettings(settings = {}) {
+  data.registerPanelChannelId = sanitizeText(settings.registerPanelChannelId || data.registerPanelChannelId);
+  data.resultsPanelChannelId = sanitizeText(settings.resultsPanelChannelId || data.resultsPanelChannelId);
+  data.roomsCategoryId = sanitizeText(settings.roomsCategoryId || data.roomsCategoryId);
+  saveState();
+  return {
+    registerPanelChannelId: data.registerPanelChannelId,
+    resultsPanelChannelId: data.resultsPanelChannelId,
+    roomsCategoryId: data.roomsCategoryId
+  };
+}
+
 function getBotConfig() {
   return {
     guildId: GUILD_ID,
     staffChannel: STAFF_CHANNEL,
     classificaChannel: CLASSIFICA_CHANNEL,
-    categoryId: CATEGORY_ID,
+    categoryId: getSavedRoomsCategoryId(),
     storicoChannel: STORICO_CHANNEL,
     tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
-    registrationStatusChannel: REGISTRATION_STATUS_CHANNEL
+    registrationStatusChannel: REGISTRATION_STATUS_CHANNEL,
+    registerPanelChannelId: sanitizeText(data.registerPanelChannelId),
+    resultsPanelChannelId: sanitizeText(data.resultsPanelChannelId),
+    roomsCategoryId: sanitizeText(data.roomsCategoryId)
   };
 }
 
@@ -835,5 +937,6 @@ module.exports = {
   setCurrentMatch,
   submitWebResult,
   getBotConfig,
-  resetAllState
+  resetAllState,
+  saveBotPanelSettings
 };
