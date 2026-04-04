@@ -379,8 +379,6 @@ async function approvePending(id) {
   delete data.pending[id];
   saveState();
 
-  await updateLeaderboard();
-
   let storicoEmbed = await editStaffMessage(entry, true);
   if (!storicoEmbed) {
     storicoEmbed = createResultEmbed(entry, '✅ APPROVATO');
