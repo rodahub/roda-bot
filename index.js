@@ -157,6 +157,19 @@ function isTournamentFull() {
   return Object.keys(teams).length >= getRegistrationLimit();
 }
 
+function sanitizeChannelNamePart(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildTeamVoiceChannelName(slot, teamName) {
+  const safeSlot = Number.isInteger(Number(slot)) && Number(slot) > 0 ? Number(slot) : '-';
+  const cleanTeam = sanitizeChannelNamePart(teamName) || 'TEAM';
+  return `🏆・RØDA CUP #${safeSlot} ${cleanTeam}`;
+}
+
 async function maybeAnnounceTournamentFull() {
   if (!isTournamentFull()) {
     if (data.registrationClosedAnnounced) {
@@ -482,32 +495,57 @@ async function spawnResultsPanel(channelId) {
   return true;
 }
 
-async function createTeamRooms() {
+async function createTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
+  const categoryIdToUse = sanitizeText(customCategoryId) || CATEGORY_ID;
 
-  for (const [teamName, teamData] of getSortedTeamEntries()) {
+  if (!categoryIdToUse) {
+    throw new Error('Categoria non valida');
+  }
+
+  const categoryChannel = await guild.channels.fetch(categoryIdToUse).catch(() => null);
+  if (!categoryChannel) {
+    throw new Error('Categoria non trovata');
+  }
+
+  if (categoryChannel.type !== ChannelType.GuildCategory) {
+    throw new Error('Il channel selezionato non è una categoria');
+  }
+
+  const sortedTeams = getSortedTeamEntries();
+  if (!sortedTeams.length) {
+    throw new Error('Nessun team registrato');
+  }
+
+  for (const [teamName, teamData] of sortedTeams) {
+    const channelName = buildTeamVoiceChannelName(teamData.slot, teamName);
+
     await guild.channels.create({
-      name: `🏆・${teamData.slot || '-'} ${teamName}`,
+      name: channelName,
       type: ChannelType.GuildVoice,
-      parent: CATEGORY_ID
+      parent: categoryIdToUse
     });
   }
 
   return true;
 }
 
-async function deleteTeamRooms() {
+async function deleteTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
+  const categoryIdToUse = sanitizeText(customCategoryId) || CATEGORY_ID;
+
   const channels = guild.channels.cache.filter(c =>
-    c.parentId === CATEGORY_ID &&
+    c.parentId === categoryIdToUse &&
     c.type === ChannelType.GuildVoice &&
-    c.name.startsWith('🏆・')
+    c.name.startsWith('🏆・RØDA CUP')
   );
 
   for (const ch of channels.values()) {
-    try { await ch.delete(); } catch {}
+    try {
+      await ch.delete();
+    } catch {}
   }
 
   return true;
