@@ -930,7 +930,7 @@
         <div class="card-header">
           <div class="card-header-left">
             <h3>🤖 Azioni Bot Discord</h3>
-            <div class="section-note">La classifica Discord viene inviata solo manualmente da qui, quando decidi tu.</div>
+            <div class="section-note">Scegli la categoria e crea le stanze vocali ordinate per slot con nome team incluso.</div>
           </div>
         </div>
         <div class="field">
@@ -941,11 +941,18 @@
           <label>Channel ID pannello risultati</label>
           <input type="text" id="resultsPanelChannel" />
         </div>
+        <div class="field">
+          <label>Categoria dove creare le stanze vocali</label>
+          <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
+        </div>
+        <div class="muted" style="margin-bottom:12px">
+          Formato nome stanze: <strong>🏆・RØDA CUP #SLOT NOME TEAM</strong>
+        </div>
         <div class="row">
           <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
           <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
-          <button class="btn btn-green" onclick="createRooms()">Crea Stanze</button>
-          <button class="btn btn-red" onclick="deleteRooms()">Elimina Stanze</button>
+          <button class="btn btn-green" onclick="createRooms()">CREA STANZE TEAM</button>
+          <button class="btn btn-red" onclick="deleteRooms()">ELIMINA STANZE TEAM</button>
           <button class="btn btn-yellow" onclick="forceLeaderboard()">INVIA / AGGIORNA CLASSIFICA DISCORD</button>
         </div>
       </div>
@@ -1107,6 +1114,7 @@
 
       document.getElementById('registerPanelChannel').value = '';
       document.getElementById('resultsPanelChannel').value = '';
+      document.getElementById('roomsCategoryId').value = botConfig.categoryId || '';
 
       document.getElementById('registrationStatusTitle').value = registrationSettings.title || '';
       document.getElementById('registrationStatusText').value = registrationSettings.text || '';
@@ -1563,25 +1571,37 @@
     }
 
     async function createRooms() {
-      const result = await api('/api/bot/create-rooms', { method: 'POST' });
+      const categoryId = document.getElementById('roomsCategoryId').value.trim();
+
+      const result = await api('/api/bot/create-rooms', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId })
+      });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore creazione stanze');
         return;
       }
 
-      setStatus('Stanze create');
+      setStatus('Stanze team create nella categoria scelta');
     }
 
     async function deleteRooms() {
-      const result = await api('/api/bot/delete-rooms', { method: 'POST' });
+      const categoryId = document.getElementById('roomsCategoryId').value.trim();
+
+      const result = await api('/api/bot/delete-rooms', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId })
+      });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore eliminazione stanze');
         return;
       }
 
-      setStatus('Stanze eliminate');
+      setStatus('Stanze team eliminate dalla categoria scelta');
     }
 
     async function forceLeaderboard() {
