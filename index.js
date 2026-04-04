@@ -85,11 +85,49 @@ function buildPublicUploadUrl(fileName) {
   return `${baseUrl}/uploads/${fileName}`;
 }
 
+function getProjectSettings() {
+  const safe = data?.projectSettings || {};
+  return {
+    brandName: sanitizeText(safe.brandName) || 'RØDA',
+    tournamentName: sanitizeText(safe.tournamentName) || 'RØDA CUP',
+    supportContact: sanitizeText(safe.supportContact),
+    premiumMode: Boolean(safe.premiumMode),
+    setupCompleted: Boolean(safe.setupCompleted)
+  };
+}
+
+function getBotSettings() {
+  const safe = data?.botSettings || {};
+  return {
+    registerPanelMessageId: safe.registerPanelMessageId || null,
+    registerPanelChannelId: sanitizeText(safe.registerPanelChannelId),
+    resultsPanelMessageId: safe.resultsPanelMessageId || null,
+    resultsPanelChannelId: sanitizeText(safe.resultsPanelChannelId),
+    roomsCategoryId: sanitizeText(safe.roomsCategoryId)
+  };
+}
+
+function ensureDataStructures() {
+  if (!data || typeof data !== 'object') {
+    data = getDefaultData();
+  }
+
+  if (!data.projectSettings || typeof data.projectSettings !== 'object') {
+    data.projectSettings = getDefaultData().projectSettings;
+  }
+
+  if (!data.botSettings || typeof data.botSettings !== 'object') {
+    data.botSettings = getDefaultData().botSettings;
+  }
+}
+
 function saveState() {
+  ensureDataStructures();
   data = saveData(data);
 }
 
 function saveEverything() {
+  ensureDataStructures();
   const saved = saveAll(data, teams);
   data = saved.data;
   teams = saved.teams;
@@ -97,6 +135,7 @@ function saveEverything() {
 
 function setDataState(newData) {
   data = newData;
+  ensureDataStructures();
 }
 
 function setTeamsState(newTeams) {
@@ -170,17 +209,19 @@ function buildTeamVoiceChannelName(slot, teamName) {
 }
 
 function getSavedRoomsCategoryId() {
-  return sanitizeText(data.roomsCategoryId) || CATEGORY_ID;
+  return getBotSettings().roomsCategoryId || CATEGORY_ID;
 }
 
 function createRegisterPanelPayload() {
+  const project = getProjectSettings();
+
   const btn = new ButtonBuilder()
     .setCustomId('register_btn')
     .setLabel('📥 REGISTRA TEAM')
     .setStyle(ButtonStyle.Primary);
 
   return {
-    content: 'Clicca per registrare il team',
+    content: `**${project.tournamentName}**\nClicca per registrare il team`,
     components: [new ActionRowBuilder().addComponents(btn)]
   };
 }
@@ -189,6 +230,8 @@ function createResultsPanelPayload() {
   if (Object.keys(teams).length === 0) {
     throw new Error('Nessun team registrato');
   }
+
+  const project = getProjectSettings();
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId('team_select')
@@ -201,7 +244,7 @@ function createResultsPanelPayload() {
     );
 
   return {
-    content: `📊 MATCH ${data.currentMatch}`,
+    content: `**${project.tournamentName}** • 📊 MATCH ${data.currentMatch}`,
     components: [new ActionRowBuilder().addComponents(menu)]
   };
 }
@@ -217,12 +260,14 @@ async function maybeAnnounceTournamentFull() {
 
   if (data.registrationClosedAnnounced) return;
 
+  const project = getProjectSettings();
+
   try {
     const channel = await client.channels.fetch(TOURNAMENT_FULL_CHANNEL);
     const embed = new EmbedBuilder()
       .setTitle('🚫 REGISTRAZIONI CHIUSE')
       .setDescription(
-        `Il torneo ha raggiunto il limite massimo di **${getRegistrationLimit()} team registrati**.\n\n` +
+        `**${project.tournamentName}** ha raggiunto il limite massimo di **${getRegistrationLimit()} team registrati**.\n\n` +
         'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
       );
 
@@ -239,6 +284,7 @@ function queueRegistrationStatusUpdate() {
     .then(async () => {
       await waitReady();
 
+      const project = getProjectSettings();
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
       const displayTeams = getDisplayTeams();
       const title = sanitizeText(data.registrationStatusTitle) || '🏆 SLOT TEAM REGISTRATI';
@@ -247,6 +293,7 @@ function queueRegistrationStatusUpdate() {
       const freeSpots = Math.max(limit - displayTeams.length, 0);
 
       const descriptionParts = [];
+      descriptionParts.push(`**TORNEO:** ${project.tournamentName}`);
       if (intro) descriptionParts.push(`**${intro}**`);
       descriptionParts.push(`**TEAM REGISTRATI:** ${displayTeams.length}/${limit}`);
       descriptionParts.push(`**POSTI DISPONIBILI:** ${freeSpots}`);
@@ -324,10 +371,11 @@ async function waitReady() {
 }
 
 function createResultEmbed(entry, footerText) {
+  const project = getProjectSettings();
   const players = teams[entry.team]?.players || ['Player 1', 'Player 2', 'Player 3'];
 
   const embed = new EmbedBuilder()
-    .setTitle('📸 NUOVO RISULTATO')
+    .setTitle(`📸 NUOVO RISULTATO • ${project.tournamentName}`)
     .setDescription(
       `🏷️ Team: ${entry.team}
 🎯 Slot: ${teams[entry.team]?.slot || '-'}
@@ -358,6 +406,7 @@ function createStaffActionRow(id) {
 async function updateLeaderboard() {
   await waitReady();
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  const project = getProjectSettings();
 
   const sorted = Object.entries(data.scores || {}).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
   const desc = sorted.map((t, i) => `#${i + 1} ${t[0]} - ${t[1]} pts`).join('\n') || 'Nessun dato';
@@ -369,7 +418,7 @@ async function updateLeaderboard() {
     .join('\n') || 'Nessuno';
 
   const embed = new EmbedBuilder()
-    .setTitle(`🏆 CLASSIFICA MATCH ${data.currentMatch}`)
+    .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
     .setDescription(desc)
     .addFields({ name: '🔥 Top Fragger', value: frag });
 
@@ -490,7 +539,9 @@ async function submitWebResult(payload) {
 
 async function spawnRegisterPanel(channelId) {
   await waitReady();
-  const targetChannelId = sanitizeText(channelId) || sanitizeText(data.registerPanelChannelId);
+
+  const botSettings = getBotSettings();
+  const targetChannelId = sanitizeText(channelId) || botSettings.registerPanelChannelId;
   if (!targetChannelId) {
     throw new Error('Channel ID pannello registrazione non valido');
   }
@@ -501,9 +552,9 @@ async function spawnRegisterPanel(channelId) {
   let created = false;
   let updated = false;
 
-  if (data.registerPanelMessageId && data.registerPanelChannelId === targetChannelId) {
+  if (botSettings.registerPanelMessageId && botSettings.registerPanelChannelId === targetChannelId) {
     try {
-      const msg = await channel.messages.fetch(data.registerPanelMessageId);
+      const msg = await channel.messages.fetch(botSettings.registerPanelMessageId);
       await msg.edit(payload);
       updated = true;
     } catch {}
@@ -511,11 +562,11 @@ async function spawnRegisterPanel(channelId) {
 
   if (!updated) {
     const msg = await channel.send(payload);
-    data.registerPanelMessageId = msg.id;
+    data.botSettings.registerPanelMessageId = msg.id;
     created = true;
   }
 
-  data.registerPanelChannelId = targetChannelId;
+  data.botSettings.registerPanelChannelId = targetChannelId;
   saveState();
 
   return { ok: true, created, updated };
@@ -524,7 +575,8 @@ async function spawnRegisterPanel(channelId) {
 async function spawnResultsPanel(channelId) {
   await waitReady();
 
-  const targetChannelId = sanitizeText(channelId) || sanitizeText(data.resultsPanelChannelId);
+  const botSettings = getBotSettings();
+  const targetChannelId = sanitizeText(channelId) || botSettings.resultsPanelChannelId;
   if (!targetChannelId) {
     throw new Error('Channel ID pannello risultati non valido');
   }
@@ -535,9 +587,9 @@ async function spawnResultsPanel(channelId) {
   let created = false;
   let updated = false;
 
-  if (data.resultsPanelMessageId && data.resultsPanelChannelId === targetChannelId) {
+  if (botSettings.resultsPanelMessageId && botSettings.resultsPanelChannelId === targetChannelId) {
     try {
-      const msg = await channel.messages.fetch(data.resultsPanelMessageId);
+      const msg = await channel.messages.fetch(botSettings.resultsPanelMessageId);
       await msg.edit(payload);
       updated = true;
     } catch {}
@@ -545,11 +597,11 @@ async function spawnResultsPanel(channelId) {
 
   if (!updated) {
     const msg = await channel.send(payload);
-    data.resultsPanelMessageId = msg.id;
+    data.botSettings.resultsPanelMessageId = msg.id;
     created = true;
   }
 
-  data.resultsPanelChannelId = targetChannelId;
+  data.botSettings.resultsPanelChannelId = targetChannelId;
   saveState();
 
   return { ok: true, created, updated };
@@ -605,7 +657,7 @@ async function createTeamRooms(customCategoryId) {
     created++;
   }
 
-  data.roomsCategoryId = categoryIdToUse;
+  data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
 
   return { ok: true, created, skipped };
@@ -631,7 +683,7 @@ async function deleteTeamRooms(customCategoryId) {
     } catch {}
   }
 
-  data.roomsCategoryId = categoryIdToUse;
+  data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
 
   return { ok: true, deleted };
@@ -685,18 +737,33 @@ function resetAllState() {
 }
 
 function saveBotPanelSettings(settings = {}) {
-  data.registerPanelChannelId = sanitizeText(settings.registerPanelChannelId || data.registerPanelChannelId);
-  data.resultsPanelChannelId = sanitizeText(settings.resultsPanelChannelId || data.resultsPanelChannelId);
-  data.roomsCategoryId = sanitizeText(settings.roomsCategoryId || data.roomsCategoryId);
+  ensureDataStructures();
+
+  data.botSettings.registerPanelChannelId = sanitizeText(
+    settings.registerPanelChannelId || data.botSettings.registerPanelChannelId
+  );
+
+  data.botSettings.resultsPanelChannelId = sanitizeText(
+    settings.resultsPanelChannelId || data.botSettings.resultsPanelChannelId
+  );
+
+  data.botSettings.roomsCategoryId = sanitizeText(
+    settings.roomsCategoryId || data.botSettings.roomsCategoryId
+  );
+
   saveState();
+
   return {
-    registerPanelChannelId: data.registerPanelChannelId,
-    resultsPanelChannelId: data.resultsPanelChannelId,
-    roomsCategoryId: data.roomsCategoryId
+    registerPanelChannelId: data.botSettings.registerPanelChannelId,
+    resultsPanelChannelId: data.botSettings.resultsPanelChannelId,
+    roomsCategoryId: data.botSettings.roomsCategoryId
   };
 }
 
 function getBotConfig() {
+  const botSettings = getBotSettings();
+  const project = getProjectSettings();
+
   return {
     guildId: GUILD_ID,
     staffChannel: STAFF_CHANNEL,
@@ -705,9 +772,12 @@ function getBotConfig() {
     storicoChannel: STORICO_CHANNEL,
     tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
     registrationStatusChannel: REGISTRATION_STATUS_CHANNEL,
-    registerPanelChannelId: sanitizeText(data.registerPanelChannelId),
-    resultsPanelChannelId: sanitizeText(data.resultsPanelChannelId),
-    roomsCategoryId: sanitizeText(data.roomsCategoryId)
+    registerPanelChannelId: botSettings.registerPanelChannelId,
+    resultsPanelChannelId: botSettings.resultsPanelChannelId,
+    roomsCategoryId: botSettings.roomsCategoryId,
+    brandName: project.brandName,
+    tournamentName: project.tournamentName,
+    premiumMode: project.premiumMode
   };
 }
 
@@ -720,17 +790,19 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
   try {
     if (interaction.isButton() && interaction.customId === 'register_btn') {
+      const project = getProjectSettings();
+
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
         return interaction.reply({
-          content: `🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto ${getRegistrationLimit()} team.`,
+          content: `🚫 Le registrazioni sono chiuse. **${project.tournamentName}** ha già raggiunto ${getRegistrationLimit()} team.`,
           ephemeral: true
         });
       }
 
       const modal = new ModalBuilder()
         .setCustomId('register_modal')
-        .setTitle('Registrazione Team');
+        .setTitle(`Registrazione Team • ${project.brandName}`);
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
@@ -751,12 +823,13 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isStringSelectMenu() && interaction.customId === 'team_select') {
+      const project = getProjectSettings();
       const team = interaction.values[0];
       const players = teams[team]?.players || ['Player 1', 'Player 2', 'Player 3'];
 
       const modal = new ModalBuilder()
         .setCustomId(`modal_${team}`)
-        .setTitle(`Risultato ${team}`);
+        .setTitle(`${project.tournamentName} • ${team}`.slice(0, 45));
 
       for (let i = 0; i < 3; i++) {
         modal.addComponents(
@@ -788,6 +861,7 @@ client.on('interactionCreate', async interaction => {
       const p1 = sanitizeText(interaction.fields.getTextInputValue('p1'));
       const p2 = sanitizeText(interaction.fields.getTextInputValue('p2'));
       const p3 = sanitizeText(interaction.fields.getTextInputValue('p3'));
+      const project = getProjectSettings();
 
       if (!team || !p1 || !p2 || !p3) {
         return interaction.reply({ content: '❌ Compila tutti i campi', ephemeral: true });
@@ -800,7 +874,7 @@ client.on('interactionCreate', async interaction => {
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
         return interaction.reply({
-          content: `🚫 Le registrazioni sono chiuse. Il torneo ha già raggiunto ${getRegistrationLimit()} team.`,
+          content: `🚫 Le registrazioni sono chiuse. **${project.tournamentName}** ha già raggiunto ${getRegistrationLimit()} team.`,
           ephemeral: true
         });
       }
@@ -823,7 +897,7 @@ client.on('interactionCreate', async interaction => {
       await handleRegistrationStateChange();
 
       return interaction.reply({
-        content: `✅ Team registrato con successo nello **slot #${slot}**`,
+        content: `✅ Team registrato con successo nello **slot #${slot}** di **${project.tournamentName}**`,
         ephemeral: true
       });
     }
