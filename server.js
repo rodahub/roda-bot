@@ -326,6 +326,20 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   });
 });
 
+app.post('/api/bot/settings/save', authRequired, (req, res) => {
+  try {
+    const settings = bot.saveBotPanelSettings({
+      registerPanelChannelId: sanitizeText(req.body.registerPanelChannelId),
+      resultsPanelChannelId: sanitizeText(req.body.resultsPanelChannelId),
+      roomsCategoryId: sanitizeText(req.body.roomsCategoryId)
+    });
+
+    return res.json({ ok: true, settings });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore salvataggio impostazioni bot' });
+  }
+});
+
 app.post('/api/teams/save', authRequired, async (req, res) => {
   const teams = loadTeams();
   const data = loadData();
@@ -632,12 +646,8 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
 app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
-    if (!channelId) {
-      return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
-    }
-
-    await bot.spawnRegisterPanel(channelId);
-    return res.json({ ok: true });
+    const result = await bot.spawnRegisterPanel(channelId);
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore spawn pannello register' });
   }
@@ -646,12 +656,8 @@ app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
 app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
-    if (!channelId) {
-      return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
-    }
-
-    await bot.spawnResultsPanel(channelId);
-    return res.json({ ok: true });
+    const result = await bot.spawnResultsPanel(channelId);
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore spawn pannello risultati' });
   }
@@ -660,8 +666,8 @@ app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
 app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
-    await bot.createTeamRooms(categoryId);
-    return res.json({ ok: true });
+    const result = await bot.createTeamRooms(categoryId);
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore creazione stanze' });
   }
@@ -670,8 +676,8 @@ app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
 app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
-    await bot.deleteTeamRooms(categoryId);
-    return res.json({ ok: true });
+    const result = await bot.deleteTeamRooms(categoryId);
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore eliminazione stanze' });
   }
@@ -679,8 +685,8 @@ app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
 
 app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
   try {
-    await bot.updateLeaderboard();
-    return res.json({ ok: true });
+    const result = await bot.updateLeaderboard();
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore update leaderboard' });
   }
