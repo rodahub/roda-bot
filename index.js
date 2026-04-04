@@ -118,6 +118,27 @@ function getSortedTeamEntries() {
   });
 }
 
+function getDisplayTeams() {
+  return getSortedTeamEntries().map(([teamName, teamData], index) => {
+    const numericSlot = Number(teamData?.slot);
+    const slot = Number.isInteger(numericSlot) && numericSlot > 0 ? numericSlot : index + 1;
+
+    return {
+      teamName,
+      slot,
+      players: Array.isArray(teamData?.players) ? teamData.players : []
+    };
+  });
+}
+
+function chunkArray(list, size) {
+  const chunks = [];
+  for (let i = 0; i < list.length; i += size) {
+    chunks.push(list.slice(i, i + size));
+  }
+  return chunks;
+}
+
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
   const used = new Set(
     Object.values(teams)
@@ -150,7 +171,7 @@ async function maybeAnnounceTournamentFull() {
   try {
     const channel = await client.channels.fetch(TOURNAMENT_FULL_CHANNEL);
     const embed = new EmbedBuilder()
-      .setTitle('🚫 Registrazioni chiuse')
+      .setTitle('🚫 REGISTRAZIONI CHIUSE')
       .setDescription(
         `Il torneo ha raggiunto il limite massimo di **${getRegistrationLimit()} team registrati**.\n\n` +
         'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
@@ -170,26 +191,49 @@ function queueRegistrationStatusUpdate() {
       await waitReady();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const sortedTeams = getSortedTeamEntries();
-
-      const lines = sortedTeams.length
-        ? sortedTeams.map(([teamName, teamData]) => `**#${teamData.slot || '-'}** • ${teamName}`)
-        : ['Nessun team registrato.'];
-
-      const title = sanitizeText(data.registrationStatusTitle) || '📋 Slot Team Registrati';
+      const displayTeams = getDisplayTeams();
+      const title = sanitizeText(data.registrationStatusTitle) || '🏆 SLOT TEAM REGISTRATI';
       const intro = sanitizeText(data.registrationStatusText);
+      const limit = getRegistrationLimit();
+      const freeSpots = Math.max(limit - displayTeams.length, 0);
 
-      const description = intro
-        ? `${intro}\n\n${lines.join('\n')}`
-        : lines.join('\n');
+      const descriptionParts = [];
+      if (intro) descriptionParts.push(`**${intro}**`);
+      descriptionParts.push(`**TEAM REGISTRATI:** ${displayTeams.length}/${limit}`);
+      descriptionParts.push(`**POSTI DISPONIBILI:** ${freeSpots}`);
 
       const embed = new EmbedBuilder()
-        .setTitle(title)
-        .setDescription(description)
-        .addFields(
-          { name: '👥 Team registrati', value: `${sortedTeams.length}/${getRegistrationLimit()}`, inline: true },
-          { name: '✅ Stato', value: sortedTeams.length >= getRegistrationLimit() ? 'Torneo pieno' : 'Posti disponibili', inline: true }
-        );
+        .setTitle(title.toUpperCase())
+        .setDescription(descriptionParts.join('\n'));
+
+      if (displayTeams.length) {
+        const chunks = chunkArray(displayTeams, 8);
+
+        chunks.forEach((chunk, idx) => {
+          const start = idx * 8 + 1;
+          const end = start + chunk.length - 1;
+
+          embed.addFields({
+            name: `📌 SLOT ${start} - ${end}`,
+            value: chunk
+              .map(team => `**#${team.slot}** • ${team.teamName}`)
+              .join('\n'),
+            inline: false
+          });
+        });
+      } else {
+        embed.addFields({
+          name: '📌 SLOT',
+          value: 'Nessun team registrato.',
+          inline: false
+        });
+      }
+
+      embed.addFields({
+        name: '✅ STATO',
+        value: displayTeams.length >= limit ? 'TORNEO PIENO' : 'POSTI DISPONIBILI',
+        inline: false
+      });
 
       if (data.registrationStatusMessageId) {
         try {
