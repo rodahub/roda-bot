@@ -9,7 +9,9 @@ const {
   loadTeams,
   saveData,
   saveAll,
-  getDefaultData
+  getDefaultData,
+  getDefaultProjectSettings,
+  getDefaultBotSettings
 } = require('./storage');
 
 initializeFiles();
@@ -159,6 +161,15 @@ function sanitizeText(value) {
   return String(value || '').trim();
 }
 
+function sanitizeOptionalText(value, maxLength = 200) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+function sanitizePositiveInteger(value, fallback = 1) {
+  const num = Number(value);
+  return Number.isInteger(num) && num > 0 ? num : fallback;
+}
+
 function normalizeBaseUrl(value) {
   const clean = String(value || '').trim();
   if (!clean) return '';
@@ -223,6 +234,22 @@ function buildPending(pending, teams) {
     submittedBy: p.submittedBy || '',
     staffMessageId: p.staffMessageId || null
   }));
+}
+
+function buildSetupStatus(data) {
+  const projectSettings = data.projectSettings || getDefaultProjectSettings();
+  const botSettings = data.botSettings || getDefaultBotSettings();
+
+  return {
+    completed: Boolean(projectSettings.setupCompleted),
+    checks: {
+      brandName: Boolean(projectSettings.brandName),
+      tournamentName: Boolean(projectSettings.tournamentName),
+      registerPanelChannelId: Boolean(botSettings.registerPanelChannelId),
+      resultsPanelChannelId: Boolean(botSettings.resultsPanelChannelId),
+      roomsCategoryId: Boolean(botSettings.roomsCategoryId)
+    }
+  };
 }
 
 function saveBase64Image(imageData, req) {
@@ -318,12 +345,36 @@ app.get('/api/dashboard', authRequired, (req, res) => {
       text: data.registrationStatusText || '',
       maxTeams: Number(data.registrationMaxTeams || 16)
     },
+    projectSettings: data.projectSettings || getDefaultProjectSettings(),
+    setupStatus: buildSetupStatus(data),
     stats: {
       teamCount: Object.keys(teams).length,
       pendingCount: Object.keys(data.pending || {}).length,
       fraggerCount: Object.keys(data.fragger || {}).length
     }
   });
+});
+
+app.post('/api/project-settings/save', authRequired, (req, res) => {
+  try {
+    const data = loadData();
+
+    data.projectSettings = {
+      ...(data.projectSettings || getDefaultProjectSettings()),
+      brandName: sanitizeOptionalText(req.body.brandName, 60) || 'RØDA',
+      tournamentName: sanitizeOptionalText(req.body.tournamentName, 80) || 'RØDA CUP',
+      supportContact: sanitizeOptionalText(req.body.supportContact, 120),
+      premiumMode: Boolean(req.body.premiumMode),
+      setupCompleted: Boolean(req.body.setupCompleted)
+    };
+
+    const saved = saveData(data);
+    bot.setDataState(saved);
+
+    return res.json({ ok: true, projectSettings: saved.projectSettings });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore salvataggio impostazioni progetto' });
+  }
 });
 
 app.post('/api/bot/settings/save', authRequired, (req, res) => {
@@ -345,10 +396,10 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
   const data = loadData();
 
   const oldTeamName = sanitizeText(req.body.oldTeamName);
-  const teamName = sanitizeText(req.body.teamName);
-  const p1 = sanitizeText(req.body.p1);
-  const p2 = sanitizeText(req.body.p2);
-  const p3 = sanitizeText(req.body.p3);
+  const teamName = sanitizeOptionalText(req.body.teamName, 50);
+  const p1 = sanitizeOptionalText(req.body.p1, 40);
+  const p2 = sanitizeOptionalText(req.body.p2, 40);
+  const p3 = sanitizeOptionalText(req.body.p3, 40);
 
   if (!teamName || !p1 || !p2 || !p3) {
     return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/player' });
@@ -438,13 +489,9 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
   const data = loadData();
   const teams = loadTeams();
 
-  const title = sanitizeText(req.body.title);
-  const text = sanitizeText(req.body.text);
-  const maxTeams = Number(req.body.maxTeams || 16);
-
-  if (!Number.isInteger(maxTeams) || maxTeams < 1) {
-    return res.status(400).json({ ok: false, message: 'Numero massimo team non valido' });
-  }
+  const title = sanitizeOptionalText(req.body.title, 100);
+  const text = sanitizeOptionalText(req.body.text, 250);
+  const maxTeams = sanitizePositiveInteger(req.body.maxTeams, 16);
 
   if (Object.keys(teams).length > maxTeams) {
     return res.status(400).json({
@@ -485,11 +532,7 @@ app.post('/api/registration-settings/refresh', authRequired, async (req, res) =>
 });
 
 app.post('/api/match/set', authRequired, (req, res) => {
-  const match = Number(req.body.match || 1);
-
-  if (!Number.isInteger(match) || match < 1) {
-    return res.status(400).json({ ok: false, message: 'Match non valido' });
-  }
+  const match = sanitizePositiveInteger(req.body.match, 1);
 
   const data = loadData();
   data.currentMatch = match;
@@ -557,7 +600,7 @@ app.post('/api/scores/reset-team', authRequired, (req, res) => {
 
 app.post('/api/fragger/set', authRequired, (req, res) => {
   const data = loadData();
-  const player = sanitizeText(req.body.player);
+  const player = sanitizeOptionalText(req.body.player, 40);
   const kills = Number(req.body.kills || 0);
 
   if (!player || !Number.isFinite(kills)) {
