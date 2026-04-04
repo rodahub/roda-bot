@@ -383,9 +383,9 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
     data.registrationClosedAnnounced = false;
   }
 
-  saveAll(data, teams);
-  bot.setDataState(data);
-  bot.setTeamsState(teams);
+  const saved = saveAll(data, teams);
+  bot.setDataState(saved.data);
+  bot.setTeamsState(saved.teams);
   await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
@@ -413,9 +413,9 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
     data.registrationClosedAnnounced = false;
   }
 
-  saveAll(data, teams);
-  bot.setDataState(data);
-  bot.setTeamsState(teams);
+  const saved = saveAll(data, teams);
+  bot.setDataState(saved.data);
+  bot.setTeamsState(saved.teams);
   await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
@@ -448,8 +448,8 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
     data.registrationClosedAnnounced = false;
   }
 
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
   bot.setTeamsState(teams);
   await bot.handleRegistrationStateChange();
 
@@ -480,8 +480,8 @@ app.post('/api/match/set', authRequired, (req, res) => {
 
   const data = loadData();
   data.currentMatch = match;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
   return res.json({ ok: true, currentMatch: match });
 });
@@ -489,10 +489,10 @@ app.post('/api/match/set', authRequired, (req, res) => {
 app.post('/api/match/next', authRequired, (req, res) => {
   const data = loadData();
   data.currentMatch = Number(data.currentMatch || 1) + 1;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
-  return res.json({ ok: true, currentMatch: data.currentMatch });
+  return res.json({ ok: true, currentMatch: saved.currentMatch });
 });
 
 app.post('/api/scores/add', authRequired, (req, res) => {
@@ -505,10 +505,10 @@ app.post('/api/scores/add', authRequired, (req, res) => {
   }
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
-  return res.json({ ok: true, score: data.scores[team] });
+  return res.json({ ok: true, score: saved.scores[team] });
 });
 
 app.post('/api/scores/set', authRequired, (req, res) => {
@@ -521,10 +521,10 @@ app.post('/api/scores/set', authRequired, (req, res) => {
   }
 
   data.scores[team] = points;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
-  return res.json({ ok: true, score: data.scores[team] });
+  return res.json({ ok: true, score: saved.scores[team] });
 });
 
 app.post('/api/scores/reset-team', authRequired, (req, res) => {
@@ -536,8 +536,8 @@ app.post('/api/scores/reset-team', authRequired, (req, res) => {
   }
 
   data.scores[team] = 0;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
   return res.json({ ok: true });
 });
@@ -552,8 +552,8 @@ app.post('/api/fragger/set', authRequired, (req, res) => {
   }
 
   data.fragger[player] = kills;
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
   return res.json({ ok: true, kills });
 });
@@ -567,8 +567,8 @@ app.post('/api/fragger/delete', authRequired, (req, res) => {
   }
 
   delete data.fragger[player];
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
 
   return res.json({ ok: true });
 });
@@ -595,8 +595,8 @@ app.post('/api/reset-data', authRequired, (req, res) => {
   const currentTeams = loadTeams();
   const data = getDefaultData();
 
-  saveData(data);
-  bot.setDataState(data);
+  const saved = saveData(data);
+  bot.setDataState(saved);
   bot.setTeamsState(currentTeams);
 
   return res.json({ ok: true });
@@ -610,9 +610,9 @@ app.post('/api/reset-teams', authRequired, async (req, res) => {
   data.tempSubmit = {};
   data.registrationClosedAnnounced = false;
 
-  saveAll(data, emptyTeams);
-  bot.setDataState(data);
-  bot.setTeamsState(emptyTeams);
+  const saved = saveAll(data, emptyTeams);
+  bot.setDataState(saved.data);
+  bot.setTeamsState(saved.teams);
   await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
@@ -622,9 +622,9 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
   const data = getDefaultData();
   const emptyTeams = {};
 
-  saveAll(data, emptyTeams);
-  bot.setDataState(data);
-  bot.setTeamsState(emptyTeams);
+  const saved = saveAll(data, emptyTeams);
+  bot.setDataState(saved.data);
+  bot.setTeamsState(saved.teams);
   await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
