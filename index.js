@@ -21,6 +21,7 @@ const {
   loadTeams,
   saveData,
   saveAll,
+  appendAuditLog,
   getDefaultData
 } = require('./storage');
 
@@ -212,6 +213,14 @@ function getSavedRoomsCategoryId() {
   return getBotSettings().roomsCategoryId || CATEGORY_ID;
 }
 
+function logAudit(actor, source, action, details = {}) {
+  try {
+    appendAuditLog({ actor, source, action, details });
+  } catch (error) {
+    console.error('Errore audit log:', error);
+  }
+}
+
 function createRegisterPanelPayload() {
   const project = getProjectSettings();
 
@@ -274,6 +283,11 @@ async function maybeAnnounceTournamentFull() {
     await channel.send({ embeds: [embed] });
     data.registrationClosedAnnounced = true;
     saveState();
+
+    logAudit('bot', 'discord', 'registration_closed_announced', {
+      tournamentName: project.tournamentName,
+      maxTeams: getRegistrationLimit()
+    });
   } catch (error) {
     console.error('Errore annuncio torneo pieno:', error);
   }
@@ -426,6 +440,10 @@ async function updateLeaderboard() {
     try {
       const msg = await channel.messages.fetch(data.leaderboardMessageId);
       await msg.edit({ embeds: [embed] });
+      logAudit('bot', 'discord', 'leaderboard_updated', {
+        currentMatch: data.currentMatch,
+        updated: true
+      });
       return { ok: true, updated: true };
     } catch {}
   }
@@ -433,6 +451,12 @@ async function updateLeaderboard() {
   const msg = await channel.send({ embeds: [embed] });
   data.leaderboardMessageId = msg.id;
   saveState();
+
+  logAudit('bot', 'discord', 'leaderboard_created', {
+    currentMatch: data.currentMatch,
+    created: true
+  });
+
   return { ok: true, created: true };
 }
 
@@ -461,7 +485,7 @@ async function editStaffMessage(entry, approved) {
   }
 }
 
-async function approvePending(id) {
+async function approvePending(id, actor = 'system', source = 'system') {
   const entry = data.pending[id];
   if (!entry) return { already: true };
 
@@ -483,10 +507,18 @@ async function approvePending(id) {
   }
 
   await sendResultToStorico(storicoEmbed);
+
+  logAudit(actor, source, 'pending_approved', {
+    pendingId: id,
+    team: entry.team,
+    total: Number(entry.total || 0),
+    pos: Number(entry.pos || 0)
+  });
+
   return { ok: true };
 }
 
-async function rejectPending(id) {
+async function rejectPending(id, actor = 'system', source = 'system') {
   const entry = data.pending[id];
   if (!entry) return { already: true };
 
@@ -494,6 +526,14 @@ async function rejectPending(id) {
   saveState();
 
   await editStaffMessage(entry, false);
+
+  logAudit(actor, source, 'pending_rejected', {
+    pendingId: id,
+    team: entry.team,
+    total: Number(entry.total || 0),
+    pos: Number(entry.pos || 0)
+  });
+
   return { ok: true };
 }
 
@@ -511,6 +551,13 @@ async function createPendingSubmission(entry) {
 
   data.pending[id].staffMessageId = msg.id;
   saveState();
+
+  logAudit(entry.submittedBy || 'unknown', entry.source || 'system', 'pending_created', {
+    pendingId: id,
+    team: entry.team,
+    total: Number(entry.total || 0),
+    pos: Number(entry.pos || 0)
+  });
 
   return { id };
 }
@@ -569,6 +616,12 @@ async function spawnRegisterPanel(channelId) {
   data.botSettings.registerPanelChannelId = targetChannelId;
   saveState();
 
+  logAudit('dashboard', 'web', 'register_panel_sent', {
+    channelId: targetChannelId,
+    created,
+    updated
+  });
+
   return { ok: true, created, updated };
 }
 
@@ -603,6 +656,12 @@ async function spawnResultsPanel(channelId) {
 
   data.botSettings.resultsPanelChannelId = targetChannelId;
   saveState();
+
+  logAudit('dashboard', 'web', 'results_panel_sent', {
+    channelId: targetChannelId,
+    created,
+    updated
+  });
 
   return { ok: true, created, updated };
 }
@@ -660,6 +719,12 @@ async function createTeamRooms(customCategoryId) {
   data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
 
+  logAudit('dashboard', 'web', 'team_rooms_created', {
+    categoryId: categoryIdToUse,
+    created,
+    skipped
+  });
+
   return { ok: true, created, skipped };
 }
 
@@ -685,6 +750,11 @@ async function deleteTeamRooms(customCategoryId) {
 
   data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
+
+  logAudit('dashboard', 'web', 'team_rooms_deleted', {
+    categoryId: categoryIdToUse,
+    deleted
+  });
 
   return { ok: true, deleted };
 }
@@ -753,6 +823,12 @@ function saveBotPanelSettings(settings = {}) {
 
   saveState();
 
+  logAudit('dashboard', 'web', 'bot_settings_saved', {
+    registerPanelChannelId: data.botSettings.registerPanelChannelId,
+    resultsPanelChannelId: data.botSettings.resultsPanelChannelId,
+    roomsCategoryId: data.botSettings.roomsCategoryId
+  });
+
   return {
     registerPanelChannelId: data.botSettings.registerPanelChannelId,
     resultsPanelChannelId: data.botSettings.resultsPanelChannelId,
@@ -784,6 +860,9 @@ function getBotConfig() {
 client.once('ready', async () => {
   console.log('ONLINE');
   if (readyResolver) readyResolver(client);
+  logAudit('bot', 'discord', 'bot_ready', {
+    guildId: GUILD_ID
+  });
   await handleRegistrationStateChange();
 });
 
@@ -896,6 +975,12 @@ client.on('interactionCreate', async interaction => {
       saveEverything();
       await handleRegistrationStateChange();
 
+      logAudit(interaction.user.tag, 'discord', 'team_registered_discord', {
+        team,
+        slot,
+        players: [p1, p2, p3]
+      });
+
       return interaction.reply({
         content: `✅ Team registrato con successo nello **slot #${slot}** di **${project.tournamentName}**`,
         ephemeral: true
@@ -923,6 +1008,12 @@ client.on('interactionCreate', async interaction => {
       data.tempSubmit[interaction.user.id] = { team, kills, total, pos };
       saveState();
 
+      logAudit(interaction.user.tag, 'discord', 'result_modal_submitted', {
+        team,
+        total,
+        pos
+      });
+
       return interaction.reply({
         content: '📸 Invia QUI sotto lo screenshot della partita (obbligatorio)',
         ephemeral: true
@@ -939,7 +1030,7 @@ client.on('interactionCreate', async interaction => {
           return interaction.reply({ content: '❌ Risultato non trovato', ephemeral: true });
         }
 
-        await approvePending(id);
+        await approvePending(id, interaction.user.tag, 'discord');
         const embed = createResultEmbed(entry, '✅ APPROVATO');
         return interaction.update({ embeds: [embed], components: [] });
       }
@@ -950,7 +1041,7 @@ client.on('interactionCreate', async interaction => {
           return interaction.reply({ content: '❌ Risultato non trovato', ephemeral: true });
         }
 
-        await rejectPending(id);
+        await rejectPending(id, interaction.user.tag, 'discord');
         const embed = createResultEmbed(entry, '❌ RIFIUTATO');
         return interaction.update({ embeds: [embed], components: [] });
       }
