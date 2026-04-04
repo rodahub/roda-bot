@@ -8,7 +8,6 @@ const {
   loadData,
   loadTeams,
   saveData,
-  saveTeams,
   saveAll,
   getDefaultData
 } = require('./storage');
@@ -633,7 +632,9 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
 app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
-    if (!channelId) return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+    if (!channelId) {
+      return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+    }
 
     await bot.spawnRegisterPanel(channelId);
     return res.json({ ok: true });
@@ -645,7 +646,9 @@ app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
 app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
-    if (!channelId) return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+    if (!channelId) {
+      return res.status(400).json({ ok: false, message: 'Channel ID richiesto' });
+    }
 
     await bot.spawnResultsPanel(channelId);
     return res.json({ ok: true });
