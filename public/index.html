@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RØDA Dashboard Admin</title>
+  <title>Dashboard Premium</title>
   <style>
     :root{
       --bg:#050507;
@@ -64,7 +64,7 @@
     }
 
     .wrap{
-      max-width:1650px;
+      max-width:1700px;
       margin:0 auto;
     }
 
@@ -80,9 +80,9 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:0;
+      gap:14px;
       min-width:0;
-      flex-wrap:nowrap;
+      flex-wrap:wrap;
     }
 
     .brand img.logo{
@@ -92,7 +92,6 @@
       border-radius:18px;
       flex-shrink:0;
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
-      margin-right:0;
     }
 
     .brand-right{
@@ -100,34 +99,19 @@
       flex-direction:column;
       justify-content:center;
       min-width:0;
-      margin-left:6px;
     }
 
-    .brand-text-row{
-      display:flex;
-      align-items:center;
-      height:82px;
-      overflow:hidden;
-      margin-left:-2px;
-      margin-top:4px;
+    .brand-title{
+      font-size:30px;
+      font-weight:900;
+      line-height:1;
+      margin-bottom:6px;
     }
 
-    .brand-text{
-      display:block;
-      height:82px;
-      width:auto;
-      max-width:none;
-      object-fit:contain;
-      filter:drop-shadow(0 0 14px rgba(123,44,255,.35));
-      flex-shrink:0;
-    }
-
-    .subtitle{
+    .brand-subtitle{
       color:var(--muted);
       font-size:13px;
-      margin-top:-4px;
-      margin-left:0;
-      white-space:nowrap;
+      line-height:1.4;
     }
 
     .actions{
@@ -244,6 +228,13 @@
       margin-bottom:18px;
     }
 
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
     .grid-4{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
@@ -335,6 +326,12 @@
       background:rgba(255,77,109,.12);
       color:#ffd0d9;
       border-color:rgba(255,77,109,.28);
+    }
+
+    .status-pending{
+      background:rgba(255,209,102,.12);
+      color:#ffe7a6;
+      border-color:rgba(255,209,102,.26);
     }
 
     .team-players-list{
@@ -480,6 +477,18 @@
       margin-top:6px;
     }
 
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
+    }
+
     input, select, textarea{
       width:100%;
       border-radius:14px;
@@ -513,18 +522,6 @@
     option{
       color:#111;
       background:#fff;
-    }
-
-    .field{
-      display:grid;
-      gap:8px;
-      margin-bottom:12px;
-    }
-
-    .field label{
-      font-size:13px;
-      color:#ddd7f2;
-      font-weight:700;
     }
 
     .empty{
@@ -656,6 +653,39 @@
       line-height:1.45;
     }
 
+    .setup-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .check-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .check-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      font-size:14px;
+    }
+
+    .check-ok{
+      color:#9ff0bf;
+      font-weight:900;
+    }
+
+    .check-no{
+      color:#ffb0bf;
+      font-weight:900;
+    }
+
     @media (max-width: 1400px){
       .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
       .grid-4{ grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -663,13 +693,14 @@
     }
 
     @media (max-width: 1280px){
-      .registered-layout{
+      .registered-layout,
+      .setup-grid{
         grid-template-columns:1fr;
       }
     }
 
     @media (max-width: 1200px){
-      .grid-2{ grid-template-columns:1fr; }
+      .grid-2, .grid-3{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
@@ -684,23 +715,8 @@
         height:56px;
       }
 
-      .brand-right{
-        margin-left:4px;
-      }
-
-      .brand-text-row{
-        height:64px;
-        margin-left:-1px;
-        margin-top:2px;
-      }
-
-      .brand-text{
-        height:64px;
-      }
-
-      .subtitle{
-        margin-top:-2px;
-        white-space:normal;
+      .brand-title{
+        font-size:24px;
       }
 
       .slot-card{
@@ -717,12 +733,10 @@
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <img src="/roda-logo.png" alt="RØDA Logo" class="logo" />
+        <img src="/roda-logo.png" alt="Logo" class="logo" />
         <div class="brand-right">
-          <div class="brand-text-row">
-            <img src="/roda-text.png" alt="RØDA" class="brand-text" />
-          </div>
-          <div class="subtitle">Dashboard admin completa • gestione bot, staff e torneo</div>
+          <div class="brand-title" id="brandTitle">Dashboard Premium</div>
+          <div class="brand-subtitle" id="brandSubtitle">Gestione bot, staff e torneo</div>
         </div>
       </div>
 
@@ -730,6 +744,48 @@
         <div class="pill" id="staffInfo">Connesso</div>
         <button class="btn btn-purple" id="refreshBtn">Aggiorna</button>
         <button class="btn btn-red" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <div class="card section-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h3>🚀 Setup Premium</h3>
+          <div class="section-note">
+            Questa sezione ti permette di preparare il progetto per un utilizzo professionale e futuro modello a pagamento.
+          </div>
+        </div>
+        <div class="pill" id="setupPill">Setup non completato</div>
+      </div>
+
+      <div class="setup-grid">
+        <div class="subsection">
+          <h4>🏷️ Branding progetto</h4>
+          <div class="field">
+            <label>Nome brand</label>
+            <input type="text" id="projectBrandName" placeholder="Es. RØDA" />
+          </div>
+          <div class="field">
+            <label>Nome torneo</label>
+            <input type="text" id="projectTournamentName" placeholder="Es. RØDA CUP" />
+          </div>
+          <div class="field">
+            <label>Contatto supporto</label>
+            <input type="text" id="projectSupportContact" placeholder="Es. Discord, Telegram, email..." />
+          </div>
+          <div class="row">
+            <button class="btn btn-blue" onclick="saveProjectSettings()">SALVA BRANDING</button>
+            <button class="btn btn-green" onclick="completeSetup()">SEGNA SETUP COMPLETATO</button>
+          </div>
+          <div class="helper">Il branding viene usato anche dal bot per pannelli, classifica e messaggi Discord.</div>
+        </div>
+
+        <div class="subsection">
+          <h4>✅ Controlli setup</h4>
+          <div class="check-list" id="setupChecks">
+            <div class="check-item"><span>Caricamento...</span><span class="check-no">...</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -761,23 +817,23 @@
         <div class="card-header-left">
           <h3>⚡ Pannello Operativo Rapido</h3>
           <div class="section-note">
-            Questa sezione ti fa capire al volo cosa puoi fare nel sistema. È pensata per rendere la dashboard più semplice da usare anche in futuro, quando il bot sarà usato da altri staff.
+            Sezione pensata per uso community oggi e prodotto commerciale domani.
           </div>
         </div>
       </div>
 
       <div class="quick-grid">
         <div class="quick-item">
-          <h4>1. Gestione registrazioni</h4>
-          <p>Controlla i team iscritti, gli slot assegnati, il numero massimo team e lo stato del torneo.</p>
+          <h4>1. Registrazioni</h4>
+          <p>Controlla team, slot, limite iscrizioni e stato torneo in un unico punto.</p>
         </div>
         <div class="quick-item">
-          <h4>2. Gestione bot Discord</h4>
-          <p>Invia pannelli, crea o elimina stanze vocali e aggiorna manualmente la classifica Discord.</p>
+          <h4>2. Discord Control</h4>
+          <p>Gestisci pannelli, stanze vocali e classifica senza spam e con logica pulita.</p>
         </div>
         <div class="quick-item">
-          <h4>3. Gestione risultati</h4>
-          <p>Approva i pending, invia risultati manuali e tieni sempre sincronizzati punteggi, fragger e match.</p>
+          <h4>3. Risultati Staff</h4>
+          <p>Approva, rifiuta e monitora i risultati pending mantenendo sincronizzato tutto il sistema.</p>
         </div>
       </div>
     </div>
@@ -787,7 +843,7 @@
         <div class="card-header-left">
           <h3>📋 Team Registrati / Slot Assegnati</h3>
           <div class="section-note">
-            Qui vedi direttamente nella dashboard la stessa situazione slot che hai su Discord, con elenco team ordinato per slot assegnato.
+            Qui vedi direttamente nella dashboard la stessa situazione slot che hai su Discord.
           </div>
         </div>
         <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
@@ -847,7 +903,7 @@
         <div class="card-header">
           <div class="card-header-left">
             <h3>🏆 Classifica Live</h3>
-            <div class="section-note">I punti e i fragger si aggiornano nei dati in automatico. La classifica su Discord parte solo quando premi il bottone manuale.</div>
+            <div class="section-note">I dati si aggiornano live. La classifica Discord resta manuale.</div>
           </div>
         </div>
         <div class="table-wrap">
@@ -976,7 +1032,7 @@
         <div class="card-header">
           <div class="card-header-left">
             <h3>👥 Gestione Team</h3>
-            <div class="section-note">Crea, modifica o elimina team mantenendo la compatibilità con slot e dati esistenti.</div>
+            <div class="section-note">Crea, modifica o elimina team mantenendo slot e dati esistenti.</div>
           </div>
         </div>
         <div class="field">
@@ -1045,22 +1101,20 @@
           <h4>⚙️ Impostazioni bot salvate</h4>
           <div class="field">
             <label>Channel ID pannello registrazione</label>
-            <input type="text" id="registerPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello registrazione" />
+            <input type="text" id="registerPanelChannel" placeholder="Channel ID pannello registrazione" />
           </div>
           <div class="field">
             <label>Channel ID pannello risultati</label>
-            <input type="text" id="resultsPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello risultati" />
+            <input type="text" id="resultsPanelChannel" placeholder="Channel ID pannello risultati" />
           </div>
           <div class="field">
             <label>Categoria dove creare le stanze vocali</label>
-            <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
+            <input type="text" id="roomsCategoryId" placeholder="ID categoria Discord" />
           </div>
           <div class="row">
             <button class="btn btn-blue" onclick="saveBotSettings()">SALVA IMPOSTAZIONI BOT</button>
           </div>
-          <div class="helper">
-            Queste impostazioni restano salvate nel sistema e la dashboard le ricarica automaticamente.
-          </div>
+          <div class="helper">Queste impostazioni restano salvate nel sistema e la dashboard le ricarica automaticamente.</div>
         </div>
 
         <div class="subsection">
@@ -1069,15 +1123,13 @@
             <button class="btn btn-purple" onclick="spawnRegisterPanel()">SPAWN / AGGIORNA REGISTER PANEL</button>
             <button class="btn btn-purple" onclick="spawnResultsPanel()">SPAWN / AGGIORNA RESULTS PANEL</button>
           </div>
-          <div class="helper">
-            I pannelli non vengono più spammati: se esistono già nello stesso canale, il bot prova ad aggiornarli.
-          </div>
+          <div class="helper">I pannelli non vengono spammati: se esistono già nello stesso canale, il bot prova ad aggiornarli.</div>
         </div>
 
         <div class="subsection">
           <h4>🎙️ Gestione stanze vocali team</h4>
           <div class="helper" style="margin-bottom:12px">
-            Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>. Se una stanza esiste già con lo stesso nome nella stessa categoria, non viene ricreata.
+            Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>. Se una stanza esiste già, non viene ricreata.
           </div>
           <div class="row">
             <button class="btn btn-green" onclick="createRooms()">CREA STANZE TEAM</button>
@@ -1088,7 +1140,7 @@
         <div class="subsection">
           <h4>🏆 Classifica Discord</h4>
           <div class="helper" style="margin-bottom:12px">
-            La classifica Discord non parte da sola. Si aggiorna solo quando premi questo bottone, così puoi decidere tu quando inviarla.
+            La classifica Discord non parte da sola. Si aggiorna solo quando premi questo bottone.
           </div>
           <div class="row">
             <button class="btn btn-yellow" onclick="forceLeaderboard()">INVIA / AGGIORNA CLASSIFICA DISCORD</button>
@@ -1192,6 +1244,42 @@
       return { response, data };
     }
 
+    function renderSetupChecks(setupStatus) {
+      const checks = setupStatus?.checks || {};
+      const entries = [
+        ['Brand Name', checks.brandName],
+        ['Tournament Name', checks.tournamentName],
+        ['Channel Register Panel', checks.registerPanelChannelId],
+        ['Channel Results Panel', checks.resultsPanelChannelId],
+        ['Categoria Stanze', checks.roomsCategoryId]
+      ];
+
+      document.getElementById('setupChecks').innerHTML = entries.map(([label, ok]) => `
+        <div class="check-item">
+          <span>${escapeHtml(label)}</span>
+          <span class="${ok ? 'check-ok' : 'check-no'}">${ok ? 'OK' : 'MANCANTE'}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('setupPill').textContent = setupStatus?.completed
+        ? 'Setup completato'
+        : 'Setup non completato';
+    }
+
+    function renderBranding(projectSettings) {
+      const brandName = projectSettings?.brandName || 'RØDA';
+      const tournamentName = projectSettings?.tournamentName || 'RØDA CUP';
+      const premiumMode = projectSettings?.premiumMode ? ' • Premium Mode' : '';
+
+      document.title = `${brandName} Dashboard Premium`;
+      document.getElementById('brandTitle').textContent = `${brandName} Dashboard Premium`;
+      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione bot, staff e torneo${premiumMode}`;
+
+      document.getElementById('projectBrandName').value = brandName;
+      document.getElementById('projectTournamentName').value = tournamentName;
+      document.getElementById('projectSupportContact').value = projectSettings?.supportContact || '';
+    }
+
     async function refreshDashboard() {
       if (loading) return;
       loading = true;
@@ -1238,6 +1326,11 @@
       const sortedTeams = dashboard.sortedTeams || [];
       const botConfig = dashboard.botConfig || {};
       const registrationSettings = dashboard.registrationSettings || {};
+      const projectSettings = dashboard.projectSettings || {};
+      const setupStatus = dashboard.setupStatus || {};
+
+      renderBranding(projectSettings);
+      renderSetupChecks(setupStatus);
 
       const registeredCount = sortedTeams.length;
       const maxTeams = Number(registrationSettings.maxTeams || 16);
@@ -1348,7 +1441,7 @@
                   <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
                   <div class="muted">In attesa di approvazione staff • ${escapeHtml(item.submittedBy || '-')}</div>
                 </div>
-                <div class="status-badge status-open">PENDING</div>
+                <div class="status-badge status-pending">PENDING</div>
               </div>
 
               <div class="pending-grid">
@@ -1388,6 +1481,43 @@
             </div>
           `).join('')
         : `<div class="empty">Nessun risultato pending</div>`;
+    }
+
+    async function saveProjectSettings(customSetupCompleted = null) {
+      const brandName = document.getElementById('projectBrandName').value.trim();
+      const tournamentName = document.getElementById('projectTournamentName').value.trim();
+      const supportContact = document.getElementById('projectSupportContact').value.trim();
+
+      const payload = {
+        brandName,
+        tournamentName,
+        supportContact,
+        premiumMode: true,
+        setupCompleted: customSetupCompleted === null
+          ? Boolean(dashboard?.projectSettings?.setupCompleted)
+          : Boolean(customSetupCompleted)
+      };
+
+      const result = await api('/api/project-settings/save', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (!result) return false;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio branding');
+        return false;
+      }
+
+      await refreshDashboard();
+      setStatus('Branding progetto salvato');
+      return true;
+    }
+
+    async function completeSetup() {
+      const ok = await saveProjectSettings(true);
+      if (!ok) return;
+      setStatus('Setup segnato come completato');
     }
 
     function loadSelectedTeam() {
@@ -1856,6 +1986,8 @@
     document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
+    window.saveProjectSettings = saveProjectSettings;
+    window.completeSetup = completeSetup;
     window.saveBotSettings = saveBotSettings;
     window.saveTeam = saveTeam;
     window.deleteTeam = deleteTeam;
