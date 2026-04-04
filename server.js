@@ -160,10 +160,32 @@ function sanitizeText(value) {
   return String(value || '').trim();
 }
 
+function normalizeBaseUrl(value) {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  return clean.endsWith('/') ? clean.slice(0, -1) : clean;
+}
+
+function getPublicBaseUrl(req) {
+  const explicit = normalizeBaseUrl(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL);
+  if (explicit) return explicit;
+
+  const railwayDomain = sanitizeText(process.env.RAILWAY_PUBLIC_DOMAIN);
+  if (railwayDomain) return `https://${railwayDomain}`;
+
+  if (req) {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    if (host) return `${protocol}://${host}`;
+  }
+
+  return '';
+}
+
 function sortTeamsWithSlot(teams) {
   return Object.entries(teams || {}).sort((a, b) => {
-    const slotA = Number(a[1]?.slot || 999);
-    const slotB = Number(b[1]?.slot || 999);
+    const slotA = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -204,7 +226,7 @@ function buildPending(pending, teams) {
   }));
 }
 
-function saveBase64Image(imageData) {
+function saveBase64Image(imageData, req) {
   const match = String(imageData || '').match(/^data:(image\/png|image\/jpeg|image\/jpg|image\/webp);base64,(.+)$/);
   if (!match) {
     throw new Error('Formato immagine non valido');
@@ -217,7 +239,9 @@ function saveBase64Image(imageData) {
   const filePath = path.join(UPLOADS_DIR, fileName);
   fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
 
-  return `/uploads/${fileName}`;
+  const baseUrl = getPublicBaseUrl(req);
+  if (!baseUrl) return `/uploads/${fileName}`;
+  return `${baseUrl}/uploads/${fileName}`;
 }
 
 app.get('/login', (req, res) => {
@@ -290,6 +314,11 @@ app.get('/api/dashboard', authRequired, (req, res) => {
     scores: data.scores || {},
     fragger: data.fragger || {},
     botConfig: bot.getBotConfig(),
+    registrationSettings: {
+      title: data.registrationStatusTitle || '📋 Slot Team Registrati',
+      text: data.registrationStatusText || '',
+      maxTeams: Number(data.registrationMaxTeams || 16)
+    },
     stats: {
       teamCount: Object.keys(teams).length,
       pendingCount: Object.keys(data.pending || {}).length,
@@ -316,10 +345,11 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
     return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome' });
   }
 
+  const limit = Number(data.registrationMaxTeams || 16);
   const isNewTeam = !oldTeamName || !teams[oldTeamName];
 
-  if (isNewTeam && Object.keys(teams).length >= 16) {
-    return res.status(400).json({ ok: false, message: 'Limite massimo di 16 team raggiunto' });
+  if (isNewTeam && Object.keys(teams).length >= limit) {
+    return res.status(400).json({ ok: false, message: `Limite massimo di ${limit} team raggiunto` });
   }
 
   if (oldTeamName && oldTeamName !== teamName) {
@@ -349,7 +379,7 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
     };
   }
 
-  if (Object.keys(teams).length < 16) {
+  if (Object.keys(teams).length < limit) {
     data.registrationClosedAnnounced = false;
   }
 
@@ -379,7 +409,7 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
     }
   }
 
-  if (Object.keys(teams).length < 16) {
+  if (Object.keys(teams).length < Number(data.registrationMaxTeams || 16)) {
     data.registrationClosedAnnounced = false;
   }
 
@@ -389,6 +419,56 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
   await bot.handleRegistrationStateChange();
 
   return res.json({ ok: true });
+});
+
+app.post('/api/registration-settings/save', authRequired, async (req, res) => {
+  const data = loadData();
+  const teams = loadTeams();
+
+  const title = sanitizeText(req.body.title);
+  const text = sanitizeText(req.body.text);
+  const maxTeams = Number(req.body.maxTeams || 16);
+
+  if (!Number.isInteger(maxTeams) || maxTeams < 1) {
+    return res.status(400).json({ ok: false, message: 'Numero massimo team non valido' });
+  }
+
+  if (Object.keys(teams).length > maxTeams) {
+    return res.status(400).json({
+      ok: false,
+      message: `Hai già ${Object.keys(teams).length} team registrati. Imposta un numero massimo uguale o superiore.`
+    });
+  }
+
+  data.registrationStatusTitle = title || '📋 Slot Team Registrati';
+  data.registrationStatusText = text || '';
+  data.registrationMaxTeams = maxTeams;
+
+  if (Object.keys(teams).length < maxTeams) {
+    data.registrationClosedAnnounced = false;
+  }
+
+  saveData(data);
+  bot.setDataState(data);
+  bot.setTeamsState(teams);
+  await bot.handleRegistrationStateChange();
+
+  return res.json({ ok: true });
+});
+
+app.post('/api/registration-settings/refresh', authRequired, async (req, res) => {
+  try {
+    const data = loadData();
+    const teams = loadTeams();
+
+    bot.setDataState(data);
+    bot.setTeamsState(teams);
+
+    await bot.updateRegistrationStatusMessage();
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento messaggio slot' });
+  }
 });
 
 app.post('/api/match/set', authRequired, (req, res) => {
@@ -616,7 +696,7 @@ app.post('/api/web-submit-result', authRequired, async (req, res) => {
 
     let image = '';
     if (imageData) {
-      image = saveBase64Image(imageData);
+      image = saveBase64Image(imageData, req);
     }
 
     await bot.submitWebResult({
