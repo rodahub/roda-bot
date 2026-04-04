@@ -656,7 +656,8 @@ app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
 
 app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
   try {
-    await bot.createTeamRooms();
+    const categoryId = sanitizeText(req.body.categoryId);
+    await bot.createTeamRooms(categoryId);
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore creazione stanze' });
@@ -665,7 +666,8 @@ app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
 
 app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
   try {
-    await bot.deleteTeamRooms();
+    const categoryId = sanitizeText(req.body.categoryId);
+    await bot.deleteTeamRooms(categoryId);
     return res.json({ ok: true });
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore eliminazione stanze' });
