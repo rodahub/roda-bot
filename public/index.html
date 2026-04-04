@@ -19,6 +19,7 @@
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
+      --cyan:#4de2ff;
       --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 30px rgba(123,44,255,.18);
       --radius:22px;
       --radius-sm:16px;
@@ -63,7 +64,7 @@
     }
 
     .wrap{
-      max-width:1600px;
+      max-width:1650px;
       margin:0 auto;
     }
 
@@ -176,7 +177,7 @@
 
     .stats{
       display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      grid-template-columns:repeat(5,minmax(0,1fr));
       gap:14px;
       margin-bottom:18px;
     }
@@ -231,7 +232,7 @@
     }
 
     .stat-value{
-      font-size:32px;
+      font-size:30px;
       font-weight:900;
       word-break:break-word;
     }
@@ -246,6 +247,13 @@
     .grid-3{
       display:grid;
       grid-template-columns:1fr 1fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:18px;
       margin-bottom:18px;
     }
@@ -309,6 +317,31 @@
       background:rgba(87,183,255,.12);
       border:1px solid rgba(87,183,255,.26);
       color:#dff3ff;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .status-open{
+      background:rgba(24,201,100,.12);
+      color:#b6ffd4;
+      border-color:rgba(24,201,100,.28);
+    }
+
+    .status-full{
+      background:rgba(255,77,109,.12);
+      color:#ffd0d9;
+      border-color:rgba(255,77,109,.28);
     }
 
     .team-players-list{
@@ -430,8 +463,28 @@
       flex:1 1 auto;
     }
 
-    .compact-actions .btn{
-      flex:0 0 auto;
+    .action-stack{
+      display:grid;
+      gap:12px;
+    }
+
+    .subsection{
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .subsection h4{
+      margin:0 0 8px 0;
+      font-size:15px;
+    }
+
+    .helper{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      margin-top:6px;
     }
 
     input, select, textarea{
@@ -585,6 +638,37 @@
       margin:6px 0 18px 0;
     }
 
+    .quick-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .quick-item{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .quick-item h4{
+      margin:0 0 8px 0;
+      font-size:15px;
+    }
+
+    .quick-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    @media (max-width: 1400px){
+      .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .grid-4{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .quick-grid{ grid-template-columns:1fr; }
+    }
+
     @media (max-width: 1280px){
       .registered-layout{
         grid-template-columns:1fr;
@@ -592,13 +676,13 @@
     }
 
     @media (max-width: 1200px){
-      .stats{ grid-template-columns:repeat(2,minmax(0,1fr)); }
       .grid-2, .grid-3{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
       body{ padding:14px; }
       .stats{ grid-template-columns:1fr; }
+      .grid-4{ grid-template-columns:1fr; }
       .pending-grid, .players, .summary-stats{ grid-template-columns:1fr; }
       .actions, .pill, .btn{ width:100%; }
 
@@ -645,7 +729,7 @@
           <div class="brand-text-row">
             <img src="/roda-text.png" alt="RØDA" class="brand-text" />
           </div>
-          <div class="subtitle">Dashboard admin completa • controllo bot dal web</div>
+          <div class="subtitle">Dashboard admin completa • gestione bot, staff e torneo</div>
         </div>
       </div>
 
@@ -672,6 +756,36 @@
       <div class="card">
         <div class="stat-label">Top fragger</div>
         <div class="stat-value" id="statFragger">-</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Stato registrazioni</div>
+        <div class="stat-value" id="statRegistrationState">APERTO</div>
+      </div>
+    </div>
+
+    <div class="card section-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h3>⚡ Pannello Operativo Rapido</h3>
+          <div class="section-note">
+            Questa sezione ti fa capire al volo cosa puoi fare nel sistema. È pensata per rendere la dashboard più semplice da usare anche in futuro, quando il bot sarà usato da altri staff.
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <div class="quick-item">
+          <h4>1. Gestione registrazioni</h4>
+          <p>Controlla i team iscritti, gli slot assegnati, il numero massimo team e lo stato del torneo.</p>
+        </div>
+        <div class="quick-item">
+          <h4>2. Gestione bot Discord</h4>
+          <p>Invia pannelli, crea o elimina stanze vocali e aggiorna manualmente la classifica Discord.</p>
+        </div>
+        <div class="quick-item">
+          <h4>3. Gestione risultati</h4>
+          <p>Approva i pending, invia risultati manuali e tieni sempre sincronizzati punteggi, fragger e match.</p>
+        </div>
       </div>
     </div>
 
@@ -783,7 +897,7 @@
       </div>
     </div>
 
-    <div class="grid-3">
+    <div class="grid-4">
       <div class="card">
         <div class="card-header">
           <div class="card-header-left">
@@ -795,7 +909,7 @@
           <label>Match corrente</label>
           <input type="number" id="matchInput" min="1" />
         </div>
-        <div class="row compact-actions">
+        <div class="row">
           <button class="btn btn-purple" onclick="setMatch()">Salva Match</button>
           <button class="btn btn-green" onclick="nextMatch()">Next Match</button>
         </div>
@@ -820,6 +934,31 @@
           <button class="btn btn-green" onclick="addPoints()">Aggiungi</button>
           <button class="btn btn-yellow" onclick="setPoints()">Imposta</button>
           <button class="btn btn-red" onclick="resetTeamScore()">Reset Team</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🎯 Modifica Fragger</h3>
+            <div class="section-note">Correggi o rimuovi manualmente le kill di un player.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Player</label>
+          <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
+        </div>
+        <div class="field">
+          <label>Nome player</label>
+          <input type="text" id="fraggerName" />
+        </div>
+        <div class="field">
+          <label>Kill</label>
+          <input type="number" id="fraggerKills" />
+        </div>
+        <div class="row">
+          <button class="btn btn-green" onclick="saveFragger()">Salva Fragger</button>
+          <button class="btn btn-red" onclick="deleteFragger()">Elimina Fragger</button>
         </div>
       </div>
 
@@ -877,33 +1016,6 @@
       <div class="card">
         <div class="card-header">
           <div class="card-header-left">
-            <h3>🎯 Modifica Fragger</h3>
-            <div class="section-note">Correggi o rimuovi manualmente le kill di un player.</div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Player</label>
-          <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
-        </div>
-        <div class="field">
-          <label>Nome player</label>
-          <input type="text" id="fraggerName" />
-        </div>
-        <div class="field">
-          <label>Kill</label>
-          <input type="number" id="fraggerKills" />
-        </div>
-        <div class="row">
-          <button class="btn btn-green" onclick="saveFragger()">Salva Fragger</button>
-          <button class="btn btn-red" onclick="deleteFragger()">Elimina Fragger</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
             <h3>📝 Messaggio Slot Team Discord</h3>
             <div class="section-note">Configura titolo, testo e numero massimo team del messaggio slot su Discord.</div>
           </div>
@@ -925,35 +1037,59 @@
           <button class="btn btn-yellow" onclick="forceRegistrationMessage()">Aggiorna Messaggio Ora</button>
         </div>
       </div>
+    </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-left">
-            <h3>🤖 Azioni Bot Discord</h3>
-            <div class="section-note">Scegli la categoria e crea le stanze vocali ordinate per slot con nome team incluso.</div>
+    <div class="card section-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h3>🤖 Controllo Bot Discord</h3>
+          <div class="section-note">Tutte le azioni importanti del bot sono separate qui sotto in blocchi semplici da capire.</div>
+        </div>
+      </div>
+
+      <div class="action-stack">
+        <div class="subsection">
+          <h4>📨 Invio pannelli Discord</h4>
+          <div class="field">
+            <label>Channel ID pannello registrazione</label>
+            <input type="text" id="registerPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello registrazione" />
+          </div>
+          <div class="field">
+            <label>Channel ID pannello risultati</label>
+            <input type="text" id="resultsPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello risultati" />
+          </div>
+          <div class="row">
+            <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
+            <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
+          </div>
+          <div class="helper">
+            Questi campi servono solo per inviare i pannelli nei canali che scegli tu. Non cambiano i dati del torneo.
           </div>
         </div>
-        <div class="field">
-          <label>Channel ID pannello registrazione</label>
-          <input type="text" id="registerPanelChannel" />
+
+        <div class="subsection">
+          <h4>🎙️ Gestione stanze vocali team</h4>
+          <div class="field">
+            <label>Categoria dove creare le stanze vocali</label>
+            <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
+          </div>
+          <div class="helper" style="margin-bottom:12px">
+            Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>
+          </div>
+          <div class="row">
+            <button class="btn btn-green" onclick="createRooms()">CREA STANZE TEAM</button>
+            <button class="btn btn-red" onclick="deleteRooms()">ELIMINA STANZE TEAM</button>
+          </div>
         </div>
-        <div class="field">
-          <label>Channel ID pannello risultati</label>
-          <input type="text" id="resultsPanelChannel" />
-        </div>
-        <div class="field">
-          <label>Categoria dove creare le stanze vocali</label>
-          <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
-        </div>
-        <div class="muted" style="margin-bottom:12px">
-          Formato nome stanze: <strong>🏆・RØDA CUP #SLOT NOME TEAM</strong>
-        </div>
-        <div class="row">
-          <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
-          <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
-          <button class="btn btn-green" onclick="createRooms()">CREA STANZE TEAM</button>
-          <button class="btn btn-red" onclick="deleteRooms()">ELIMINA STANZE TEAM</button>
-          <button class="btn btn-yellow" onclick="forceLeaderboard()">INVIA / AGGIORNA CLASSIFICA DISCORD</button>
+
+        <div class="subsection">
+          <h4>🏆 Classifica Discord</h4>
+          <div class="helper" style="margin-bottom:12px">
+            La classifica Discord non parte da sola. Si aggiorna solo quando premi questo bottone, così puoi decidere tu quando inviarla.
+          </div>
+          <div class="row">
+            <button class="btn btn-yellow" onclick="forceLeaderboard()">INVIA / AGGIORNA CLASSIFICA DISCORD</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1109,9 +1245,9 @@
       document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
       document.getElementById('statPending').textContent = dashboard.stats?.pendingCount || 0;
       document.getElementById('statFragger').textContent = fraggers.length ? fraggers[0].name : '-';
+      document.getElementById('statRegistrationState').textContent = registrationClosed ? 'PIENO' : 'APERTO';
 
       document.getElementById('matchInput').value = dashboard.currentMatch || 1;
-
       document.getElementById('registerPanelChannel').value = '';
       document.getElementById('resultsPanelChannel').value = '';
       document.getElementById('roomsCategoryId').value = botConfig.categoryId || '';
@@ -1209,7 +1345,7 @@
                   <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
                   <div class="muted">In attesa di approvazione staff • ${escapeHtml(item.submittedBy || '-')}</div>
                 </div>
-                <div class="pill">PENDING</div>
+                <div class="status-badge status-open">PENDING</div>
               </div>
 
               <div class="pending-grid">
@@ -1296,6 +1432,7 @@
       await refreshDashboard();
       document.getElementById('teamSelect').value = teamName;
       loadSelectedTeam();
+      setStatus('Team salvato correttamente');
     }
 
     async function deleteTeam() {
@@ -1320,6 +1457,7 @@
 
       newTeamForm();
       await refreshDashboard();
+      setStatus('Team eliminato');
     }
 
     function loadSelectedFragger() {
@@ -1347,6 +1485,7 @@
       await refreshDashboard();
       document.getElementById('fraggerSelect').value = player;
       loadSelectedFragger();
+      setStatus('Fragger salvato correttamente');
     }
 
     async function deleteFragger() {
@@ -1372,6 +1511,7 @@
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
       await refreshDashboard();
+      setStatus('Fragger eliminato');
     }
 
     async function setMatch() {
@@ -1389,6 +1529,7 @@
       }
 
       await refreshDashboard();
+      setStatus('Match aggiornato');
     }
 
     async function nextMatch() {
@@ -1400,6 +1541,7 @@
       }
 
       await refreshDashboard();
+      setStatus('Match avanzato');
     }
 
     async function addPoints() {
@@ -1418,6 +1560,7 @@
       }
 
       await refreshDashboard();
+      setStatus('Punti aggiunti');
     }
 
     async function setPoints() {
@@ -1436,6 +1579,7 @@
       }
 
       await refreshDashboard();
+      setStatus('Punti impostati');
     }
 
     async function resetTeamScore() {
@@ -1459,18 +1603,21 @@
       }
 
       await refreshDashboard();
+      setStatus('Punti team resettati');
     }
 
     async function approvePending(id) {
       const result = await api('/api/approve/' + id, { method: 'POST' });
       if (!result) return;
       await refreshDashboard();
+      setStatus('Pending approvato');
     }
 
     async function rejectPending(id) {
       const result = await api('/api/reject/' + id, { method: 'POST' });
       if (!result) return;
       await refreshDashboard();
+      setStatus('Pending rifiutato');
     }
 
     async function resetTeams() {
