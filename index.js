@@ -64,6 +64,28 @@ function sanitizeText(value) {
   return String(value || '').trim();
 }
 
+function normalizeBaseUrl(value) {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  return clean.endsWith('/') ? clean.slice(0, -1) : clean;
+}
+
+function getPublicBaseUrl() {
+  const explicit = normalizeBaseUrl(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL);
+  if (explicit) return explicit;
+
+  const railwayDomain = sanitizeText(process.env.RAILWAY_PUBLIC_DOMAIN);
+  if (railwayDomain) return `https://${railwayDomain}`;
+
+  return '';
+}
+
+function buildPublicUploadUrl(fileName) {
+  const baseUrl = getPublicBaseUrl();
+  if (!baseUrl) return `/uploads/${fileName}`;
+  return `${baseUrl}/uploads/${fileName}`;
+}
+
 function saveState() {
   data = saveData(data);
 }
@@ -473,7 +495,7 @@ async function saveDiscordAttachmentLocally(attachment) {
       const arrayBuffer = await response.arrayBuffer();
 
       fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
-      return `/uploads/${fileName}`;
+      return buildPublicUploadUrl(fileName);
     } catch {}
   }
 
