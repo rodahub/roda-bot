@@ -473,6 +473,7 @@
     <div class="grid-2">
       <div class="card">
         <h3>🏆 Classifica Live</h3>
+        <div class="muted" style="margin-bottom:12px">I punti e i fragger si aggiornano nei dati in automatico. La classifica su Discord parte solo quando premi il bottone manuale.</div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -630,12 +631,13 @@
           <label>Channel ID pannello risultati</label>
           <input type="text" id="resultsPanelChannel" />
         </div>
+        <div class="muted" style="margin-bottom:12px">La classifica Discord viene inviata solo manualmente da qui, quando decidi tu.</div>
         <div class="row">
           <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
           <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
           <button class="btn btn-green" onclick="createRooms()">Crea Stanze</button>
           <button class="btn btn-red" onclick="deleteRooms()">Elimina Stanze</button>
-          <button class="btn btn-yellow" onclick="forceLeaderboard()">Force Leaderboard</button>
+          <button class="btn btn-yellow" onclick="forceLeaderboard()">INVIA / AGGIORNA CLASSIFICA DISCORD</button>
         </div>
       </div>
     </div>
@@ -1225,7 +1227,7 @@
         return;
       }
 
-      setStatus('Leaderboard Discord aggiornata');
+      setStatus('Classifica Discord inviata manualmente');
     }
 
     async function submitWebResult() {
