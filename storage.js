@@ -14,6 +14,26 @@ function ensureDir(dirPath) {
   }
 }
 
+function getDefaultProjectSettings() {
+  return {
+    brandName: 'RØDA',
+    tournamentName: 'RØDA CUP',
+    supportContact: '',
+    premiumMode: false,
+    setupCompleted: false
+  };
+}
+
+function getDefaultBotSettings() {
+  return {
+    registerPanelMessageId: null,
+    registerPanelChannelId: '',
+    resultsPanelMessageId: null,
+    resultsPanelChannelId: '',
+    roomsCategoryId: ''
+  };
+}
+
 function getDefaultData() {
   return {
     currentMatch: 1,
@@ -27,11 +47,8 @@ function getDefaultData() {
     registrationMaxTeams: 16,
     registrationStatusTitle: '📋 Slot Team Registrati',
     registrationStatusText: 'Lista team attualmente registrati nel torneo.',
-    registerPanelMessageId: null,
-    registerPanelChannelId: '',
-    resultsPanelMessageId: null,
-    resultsPanelChannelId: '',
-    roomsCategoryId: ''
+    projectSettings: getDefaultProjectSettings(),
+    botSettings: getDefaultBotSettings()
   };
 }
 
@@ -41,6 +58,32 @@ function getDefaultTeams() {
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeProjectSettings(value) {
+  const base = getDefaultProjectSettings();
+  const safe = isObject(value) ? value : {};
+
+  base.brandName = String(safe.brandName || base.brandName).trim() || base.brandName;
+  base.tournamentName = String(safe.tournamentName || base.tournamentName).trim() || base.tournamentName;
+  base.supportContact = String(safe.supportContact || '').trim();
+  base.premiumMode = Boolean(safe.premiumMode);
+  base.setupCompleted = Boolean(safe.setupCompleted);
+
+  return base;
+}
+
+function normalizeBotSettings(value) {
+  const base = getDefaultBotSettings();
+  const safe = isObject(value) ? value : {};
+
+  base.registerPanelMessageId = safe.registerPanelMessageId || null;
+  base.registerPanelChannelId = String(safe.registerPanelChannelId || '').trim();
+  base.resultsPanelMessageId = safe.resultsPanelMessageId || null;
+  base.resultsPanelChannelId = String(safe.resultsPanelChannelId || '').trim();
+  base.roomsCategoryId = String(safe.roomsCategoryId || '').trim();
+
+  return base;
 }
 
 function normalizeData(data) {
@@ -65,11 +108,16 @@ function normalizeData(data) {
   base.registrationStatusTitle = String(safe.registrationStatusTitle || base.registrationStatusTitle).trim() || base.registrationStatusTitle;
   base.registrationStatusText = String(safe.registrationStatusText || '').trim();
 
-  base.registerPanelMessageId = safe.registerPanelMessageId || null;
-  base.registerPanelChannelId = String(safe.registerPanelChannelId || '').trim();
-  base.resultsPanelMessageId = safe.resultsPanelMessageId || null;
-  base.resultsPanelChannelId = String(safe.resultsPanelChannelId || '').trim();
-  base.roomsCategoryId = String(safe.roomsCategoryId || '').trim();
+  base.projectSettings = normalizeProjectSettings(safe.projectSettings);
+  base.botSettings = normalizeBotSettings(
+    safe.botSettings || {
+      registerPanelMessageId: safe.registerPanelMessageId,
+      registerPanelChannelId: safe.registerPanelChannelId,
+      resultsPanelMessageId: safe.resultsPanelMessageId,
+      resultsPanelChannelId: safe.resultsPanelChannelId,
+      roomsCategoryId: safe.roomsCategoryId
+    }
+  );
 
   return base;
 }
@@ -225,5 +273,7 @@ module.exports = {
   saveTeams,
   saveAll,
   getDefaultData,
-  getDefaultTeams
+  getDefaultTeams,
+  getDefaultProjectSettings,
+  getDefaultBotSettings
 };
