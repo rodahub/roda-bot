@@ -244,13 +244,6 @@
       margin-bottom:18px;
     }
 
-    .grid-3{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      gap:18px;
-      margin-bottom:18px;
-    }
-
     .grid-4{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
@@ -676,7 +669,7 @@
     }
 
     @media (max-width: 1200px){
-      .grid-2, .grid-3{ grid-template-columns:1fr; }
+      .grid-2{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
@@ -1049,7 +1042,7 @@
 
       <div class="action-stack">
         <div class="subsection">
-          <h4>📨 Invio pannelli Discord</h4>
+          <h4>⚙️ Impostazioni bot salvate</h4>
           <div class="field">
             <label>Channel ID pannello registrazione</label>
             <input type="text" id="registerPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello registrazione" />
@@ -1058,23 +1051,33 @@
             <label>Channel ID pannello risultati</label>
             <input type="text" id="resultsPanelChannel" placeholder="Inserisci il channel ID dove inviare il pannello risultati" />
           </div>
+          <div class="field">
+            <label>Categoria dove creare le stanze vocali</label>
+            <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
+          </div>
           <div class="row">
-            <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn Register Panel</button>
-            <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn Results Panel</button>
+            <button class="btn btn-blue" onclick="saveBotSettings()">SALVA IMPOSTAZIONI BOT</button>
           </div>
           <div class="helper">
-            Questi campi servono solo per inviare i pannelli nei canali che scegli tu. Non cambiano i dati del torneo.
+            Queste impostazioni restano salvate nel sistema e la dashboard le ricarica automaticamente.
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h4>📨 Invio pannelli Discord</h4>
+          <div class="row">
+            <button class="btn btn-purple" onclick="spawnRegisterPanel()">SPAWN / AGGIORNA REGISTER PANEL</button>
+            <button class="btn btn-purple" onclick="spawnResultsPanel()">SPAWN / AGGIORNA RESULTS PANEL</button>
+          </div>
+          <div class="helper">
+            I pannelli non vengono più spammati: se esistono già nello stesso canale, il bot prova ad aggiornarli.
           </div>
         </div>
 
         <div class="subsection">
           <h4>🎙️ Gestione stanze vocali team</h4>
-          <div class="field">
-            <label>Categoria dove creare le stanze vocali</label>
-            <input type="text" id="roomsCategoryId" placeholder="Inserisci ID categoria Discord" />
-          </div>
           <div class="helper" style="margin-bottom:12px">
-            Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>
+            Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>. Se una stanza esiste già con lo stesso nome nella stessa categoria, non viene ricreata.
           </div>
           <div class="row">
             <button class="btn btn-green" onclick="createRooms()">CREA STANZE TEAM</button>
@@ -1248,9 +1251,9 @@
       document.getElementById('statRegistrationState').textContent = registrationClosed ? 'PIENO' : 'APERTO';
 
       document.getElementById('matchInput').value = dashboard.currentMatch || 1;
-      document.getElementById('registerPanelChannel').value = '';
-      document.getElementById('resultsPanelChannel').value = '';
-      document.getElementById('roomsCategoryId').value = botConfig.categoryId || '';
+      document.getElementById('registerPanelChannel').value = botConfig.registerPanelChannelId || '';
+      document.getElementById('resultsPanelChannel').value = botConfig.resultsPanelChannelId || '';
+      document.getElementById('roomsCategoryId').value = botConfig.roomsCategoryId || botConfig.categoryId || '';
 
       document.getElementById('registrationStatusTitle').value = registrationSettings.title || '';
       document.getElementById('registrationStatusText').value = registrationSettings.text || '';
@@ -1409,6 +1412,30 @@
       document.getElementById('teamP1').value = '';
       document.getElementById('teamP2').value = '';
       document.getElementById('teamP3').value = '';
+    }
+
+    async function saveBotSettings() {
+      const registerPanelChannelId = document.getElementById('registerPanelChannel').value.trim();
+      const resultsPanelChannelId = document.getElementById('resultsPanelChannel').value.trim();
+      const roomsCategoryId = document.getElementById('roomsCategoryId').value.trim();
+
+      const result = await api('/api/bot/settings/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          registerPanelChannelId,
+          resultsPanelChannelId,
+          roomsCategoryId
+        })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio impostazioni bot');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Impostazioni bot salvate');
     }
 
     async function saveTeam() {
@@ -1687,6 +1714,7 @@
 
     async function spawnRegisterPanel() {
       const channelId = document.getElementById('registerPanelChannel').value.trim();
+
       const result = await api('/api/bot/spawn-register-panel', {
         method: 'POST',
         body: JSON.stringify({ channelId })
@@ -1698,11 +1726,20 @@
         return;
       }
 
-      setStatus('Pannello registrazione inviato');
+      await refreshDashboard();
+
+      if (result.data.updated) {
+        setStatus('Register panel aggiornato nel canale salvato');
+      } else if (result.data.created) {
+        setStatus('Register panel inviato');
+      } else {
+        setStatus('Register panel gestito correttamente');
+      }
     }
 
     async function spawnResultsPanel() {
       const channelId = document.getElementById('resultsPanelChannel').value.trim();
+
       const result = await api('/api/bot/spawn-results-panel', {
         method: 'POST',
         body: JSON.stringify({ channelId })
@@ -1714,7 +1751,15 @@
         return;
       }
 
-      setStatus('Pannello risultati inviato');
+      await refreshDashboard();
+
+      if (result.data.updated) {
+        setStatus('Results panel aggiornato nel canale salvato');
+      } else if (result.data.created) {
+        setStatus('Results panel inviato');
+      } else {
+        setStatus('Results panel gestito correttamente');
+      }
     }
 
     async function createRooms() {
@@ -1731,7 +1776,8 @@
         return;
       }
 
-      setStatus('Stanze team create nella categoria scelta');
+      await refreshDashboard();
+      setStatus(`Stanze create: ${Number(result.data.created || 0)} • già esistenti saltate: ${Number(result.data.skipped || 0)}`);
     }
 
     async function deleteRooms() {
@@ -1748,7 +1794,8 @@
         return;
       }
 
-      setStatus('Stanze team eliminate dalla categoria scelta');
+      await refreshDashboard();
+      setStatus(`Stanze eliminate: ${Number(result.data.deleted || 0)}`);
     }
 
     async function forceLeaderboard() {
@@ -1809,6 +1856,7 @@
     document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
+    window.saveBotSettings = saveBotSettings;
     window.saveTeam = saveTeam;
     window.deleteTeam = deleteTeam;
     window.newTeamForm = newTeamForm;
