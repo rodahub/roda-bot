@@ -20,7 +20,6 @@ const {
   loadData,
   loadTeams,
   saveData,
-  saveTeams,
   saveAll,
   getDefaultData
 } = require('./storage');
@@ -167,7 +166,7 @@ function sanitizeChannelNamePart(value) {
 function buildTeamVoiceChannelName(slot, teamName) {
   const safeSlot = Number.isInteger(Number(slot)) && Number(slot) > 0 ? Number(slot) : '-';
   const cleanTeam = sanitizeChannelNamePart(teamName) || 'TEAM';
-  return `🏆・RØDA CUP #${safeSlot} ${cleanTeam}`;
+  return `🏆・#${safeSlot} ${cleanTeam}`;
 }
 
 async function maybeAnnounceTournamentFull() {
@@ -539,7 +538,7 @@ async function deleteTeamRooms(customCategoryId) {
   const channels = guild.channels.cache.filter(c =>
     c.parentId === categoryIdToUse &&
     c.type === ChannelType.GuildVoice &&
-    c.name.startsWith('🏆・RØDA CUP')
+    c.name.startsWith('🏆・#')
   );
 
   for (const ch of channels.values()) {
