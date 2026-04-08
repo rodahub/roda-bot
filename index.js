@@ -120,6 +120,11 @@ function ensureDataStructures() {
   if (!data.botSettings || typeof data.botSettings !== 'object') {
     data.botSettings = getDefaultData().botSettings;
   }
+
+  if (!data.pending || typeof data.pending !== 'object') data.pending = {};
+  if (!data.tempSubmit || typeof data.tempSubmit !== 'object') data.tempSubmit = {};
+  if (!data.scores || typeof data.scores !== 'object') data.scores = {};
+  if (!data.fragger || typeof data.fragger !== 'object') data.fragger = {};
 }
 
 function saveState() {
@@ -236,11 +241,14 @@ function createRegisterPanelPayload() {
 }
 
 function createResultsPanelPayload() {
-  if (Object.keys(teams).length === 0) {
-    throw new Error('Nessun team registrato');
-  }
-
   const project = getProjectSettings();
+
+  if (Object.keys(teams).length === 0) {
+    return {
+      content: `**${project.tournamentName}** • 📊 MATCH ${data.currentMatch}\nNessun team registrato al momento.`,
+      components: []
+    };
+  }
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId('team_select')
@@ -369,9 +377,61 @@ async function updateRegistrationStatusMessage() {
   return queueRegistrationStatusUpdate();
 }
 
+async function updateSavedRegisterPanelIfExists() {
+  await waitReady();
+
+  const botSettings = getBotSettings();
+  if (!botSettings.registerPanelMessageId || !botSettings.registerPanelChannelId) {
+    return { ok: true, skipped: true };
+  }
+
+  try {
+    const channel = await client.channels.fetch(botSettings.registerPanelChannelId);
+    const msg = await channel.messages.fetch(botSettings.registerPanelMessageId);
+    await msg.edit(createRegisterPanelPayload());
+    return { ok: true, updated: true };
+  } catch (error) {
+    console.error('Errore update register panel salvato:', error);
+    return { ok: false, updated: false };
+  }
+}
+
+async function updateSavedResultsPanelIfExists() {
+  await waitReady();
+
+  const botSettings = getBotSettings();
+  if (!botSettings.resultsPanelMessageId || !botSettings.resultsPanelChannelId) {
+    return { ok: true, skipped: true };
+  }
+
+  try {
+    const channel = await client.channels.fetch(botSettings.resultsPanelChannelId);
+    const msg = await channel.messages.fetch(botSettings.resultsPanelMessageId);
+    await msg.edit(createResultsPanelPayload());
+    return { ok: true, updated: true };
+  } catch (error) {
+    console.error('Errore update results panel salvato:', error);
+    return { ok: false, updated: false };
+  }
+}
+
+async function refreshSavedPanels() {
+  const results = await Promise.allSettled([
+    updateSavedRegisterPanelIfExists(),
+    updateSavedResultsPanelIfExists()
+  ]);
+
+  return {
+    ok: true,
+    registerPanel: results[0].status === 'fulfilled' ? results[0].value : { ok: false },
+    resultsPanel: results[1].status === 'fulfilled' ? results[1].value : { ok: false }
+  };
+}
+
 async function handleRegistrationStateChange() {
   await updateRegistrationStatusMessage();
   await maybeAnnounceTournamentFull();
+  await refreshSavedPanels();
 }
 
 function calcPoints(pos, kills) {
@@ -540,7 +600,7 @@ async function rejectPending(id, actor = 'system', source = 'system') {
 async function createPendingSubmission(entry) {
   await waitReady();
 
-  const id = String(Date.now());
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   data.pending[id] = entry;
   saveState();
 
@@ -733,6 +793,10 @@ async function deleteTeamRooms(customCategoryId) {
   const guild = await client.guilds.fetch(GUILD_ID);
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
+  if (!categoryIdToUse) {
+    throw new Error('Categoria non valida');
+  }
+
   const channels = guild.channels.cache.filter(c =>
     c.parentId === categoryIdToUse &&
     c.type === ChannelType.GuildVoice &&
@@ -760,6 +824,10 @@ async function deleteTeamRooms(customCategoryId) {
 }
 
 async function saveDiscordAttachmentLocally(attachment) {
+  if (typeof fetch !== 'function') {
+    throw new Error('Fetch non disponibile nel runtime Node corrente');
+  }
+
   const tryUrls = [attachment.url, attachment.proxyURL].filter(Boolean);
 
   for (const target of tryUrls) {
@@ -790,36 +858,58 @@ async function saveDiscordAttachmentLocally(attachment) {
   return attachment.url;
 }
 
-function setCurrentMatch(match) {
+async function setCurrentMatch(match) {
   data.currentMatch = Number(match || 1);
   saveState();
+  await updateSavedResultsPanelIfExists();
 }
 
-function nextMatch() {
+async function nextMatch() {
   data.currentMatch = Number(data.currentMatch || 1) + 1;
   saveState();
+  await updateSavedResultsPanelIfExists();
   return data.currentMatch;
 }
 
 function resetAllState() {
+  const preservedProject = getProjectSettings();
+  const preservedBot = getBotSettings();
+
   data = getDefaultData();
+  data.projectSettings = preservedProject;
+  data.botSettings = {
+    ...preservedBot
+  };
+
   saveState();
 }
 
 function saveBotPanelSettings(settings = {}) {
   ensureDataStructures();
 
-  data.botSettings.registerPanelChannelId = sanitizeText(
+  const nextRegisterPanelChannelId = sanitizeText(
     settings.registerPanelChannelId || data.botSettings.registerPanelChannelId
   );
 
-  data.botSettings.resultsPanelChannelId = sanitizeText(
+  const nextResultsPanelChannelId = sanitizeText(
     settings.resultsPanelChannelId || data.botSettings.resultsPanelChannelId
   );
 
-  data.botSettings.roomsCategoryId = sanitizeText(
+  const nextRoomsCategoryId = sanitizeText(
     settings.roomsCategoryId || data.botSettings.roomsCategoryId
   );
+
+  if (data.botSettings.registerPanelChannelId && data.botSettings.registerPanelChannelId !== nextRegisterPanelChannelId) {
+    data.botSettings.registerPanelMessageId = null;
+  }
+
+  if (data.botSettings.resultsPanelChannelId && data.botSettings.resultsPanelChannelId !== nextResultsPanelChannelId) {
+    data.botSettings.resultsPanelMessageId = null;
+  }
+
+  data.botSettings.registerPanelChannelId = nextRegisterPanelChannelId;
+  data.botSettings.resultsPanelChannelId = nextResultsPanelChannelId;
+  data.botSettings.roomsCategoryId = nextRoomsCategoryId;
 
   saveState();
 
@@ -849,7 +939,9 @@ function getBotConfig() {
     tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
     registrationStatusChannel: REGISTRATION_STATUS_CHANNEL,
     registerPanelChannelId: botSettings.registerPanelChannelId,
+    registerPanelMessageId: botSettings.registerPanelMessageId,
     resultsPanelChannelId: botSettings.resultsPanelChannelId,
+    resultsPanelMessageId: botSettings.resultsPanelMessageId,
     roomsCategoryId: botSettings.roomsCategoryId,
     brandName: project.brandName,
     tournamentName: project.tournamentName,
@@ -1092,6 +1184,9 @@ module.exports = {
   updateLeaderboard,
   updateRegistrationStatusMessage,
   handleRegistrationStateChange,
+  refreshSavedPanels,
+  updateSavedRegisterPanelIfExists,
+  updateSavedResultsPanelIfExists,
   approvePending,
   rejectPending,
   spawnRegisterPanel,
