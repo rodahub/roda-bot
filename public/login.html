@@ -155,10 +155,25 @@
   <script>
     const loginBtn = document.getElementById('loginBtn');
     const msg = document.getElementById('msg');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
 
-    loginBtn.onclick = async () => {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/session', {
+          credentials: 'same-origin'
+        });
+
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.ok) {
+          window.location.href = '/';
+        }
+      } catch {}
+    }
+
+    async function doLogin() {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
 
       msg.textContent = '';
       loginBtn.disabled = true;
@@ -189,7 +204,19 @@
         loginBtn.disabled = false;
         loginBtn.innerText = 'ACCEDI ALLA DASHBOARD';
       }
-    };
+    }
+
+    loginBtn.onclick = doLogin;
+
+    usernameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    passwordInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    checkSession();
   </script>
 </body>
 </html>
