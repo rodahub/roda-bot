@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Premium</title>
+  <title>Dashboard Admin</title>
   <style>
     :root{
       --bg:#050507;
@@ -332,6 +332,12 @@
       background:rgba(255,209,102,.12);
       color:#ffe7a6;
       border-color:rgba(255,209,102,.26);
+    }
+
+    .status-premium{
+      background:rgba(123,44,255,.12);
+      color:#ead8ff;
+      border-color:rgba(123,44,255,.28);
     }
 
     .team-players-list{
@@ -686,6 +692,101 @@
       font-weight:900;
     }
 
+    .switch-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .checkbox-line{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      min-height:46px;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .checkbox-line input{
+      width:auto;
+      height:auto;
+      margin:0;
+      padding:0;
+    }
+
+    .log-list,
+    .archive-list{
+      display:grid;
+      gap:12px;
+      max-height:540px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .log-card,
+    .archive-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .log-card-top,
+    .archive-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .log-action,
+    .archive-title{
+      font-size:16px;
+      font-weight:900;
+      word-break:break-word;
+    }
+
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:12px;
+      color:#ded6ff;
+      word-break:break-word;
+    }
+
+    .detail-grid{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .detail-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:12px;
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e9e4fb;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+
+    .archive-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
     @media (max-width: 1400px){
       .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
       .grid-4{ grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -735,7 +836,7 @@
       <div class="brand">
         <img src="/roda-logo.png" alt="Logo" class="logo" />
         <div class="brand-right">
-          <div class="brand-title" id="brandTitle">Dashboard Premium</div>
+          <div class="brand-title" id="brandTitle">Dashboard Admin</div>
           <div class="brand-subtitle" id="brandSubtitle">Gestione bot, staff e torneo</div>
         </div>
       </div>
@@ -750,9 +851,9 @@
     <div class="card section-card">
       <div class="card-header">
         <div class="card-header-left">
-          <h3>🚀 Setup Premium</h3>
+          <h3>🚀 Setup progetto</h3>
           <div class="section-note">
-            Questa sezione ti permette di preparare il progetto per un utilizzo professionale e futuro modello a pagamento.
+            Sezione branding e configurazione base. La modalità premium viene mostrata solo se realmente attiva nei dati del progetto.
           </div>
         </div>
         <div class="pill" id="setupPill">Setup non completato</div>
@@ -773,11 +874,17 @@
             <label>Contatto supporto</label>
             <input type="text" id="projectSupportContact" placeholder="Es. Discord, Telegram, email..." />
           </div>
+          <div class="switch-row">
+            <label class="checkbox-line">
+              <input type="checkbox" id="projectPremiumMode" />
+              Modalità premium/pro attiva
+            </label>
+          </div>
           <div class="row">
             <button class="btn btn-blue" onclick="saveProjectSettings()">SALVA BRANDING</button>
             <button class="btn btn-green" onclick="completeSetup()">SEGNA SETUP COMPLETATO</button>
           </div>
-          <div class="helper">Il branding viene usato anche dal bot per pannelli, classifica e messaggi Discord.</div>
+          <div class="helper">Il branding viene usato anche dal bot per pannelli, classifica e messaggi Discord già esistenti.</div>
         </div>
 
         <div class="subsection">
@@ -817,7 +924,7 @@
         <div class="card-header-left">
           <h3>⚡ Pannello Operativo Rapido</h3>
           <div class="section-note">
-            Sezione pensata per uso community oggi e prodotto commerciale domani.
+            Tutte le funzioni importanti restano separate, ma la dashboard è più ordinata e coerente con il backend reale.
           </div>
         </div>
       </div>
@@ -829,11 +936,11 @@
         </div>
         <div class="quick-item">
           <h4>2. Discord Control</h4>
-          <p>Gestisci pannelli, stanze vocali e classifica senza spam e con logica pulita.</p>
+          <p>Gestisci pannelli, stanze vocali e classifica senza spam e con messaggi unici.</p>
         </div>
         <div class="quick-item">
-          <h4>3. Risultati Staff</h4>
-          <p>Approva, rifiuta e monitora i risultati pending mantenendo sincronizzato tutto il sistema.</p>
+          <h4>3. Storico Staff</h4>
+          <p>Monitora pending, audit log e archivio tornei direttamente dalla dashboard.</p>
         </div>
       </div>
     </div>
@@ -1015,7 +1122,7 @@
         <div class="card-header">
           <div class="card-header-left">
             <h3>🧹 Reset Separati</h3>
-            <div class="section-note">Reset team registrati separato da classifica, fragger e match.</div>
+            <div class="section-note">I reset mantengono le impostazioni progetto/bot e salvano prima un archivio automatico.</div>
           </div>
         </div>
         <div class="row">
@@ -1123,7 +1230,7 @@
             <button class="btn btn-purple" onclick="spawnRegisterPanel()">SPAWN / AGGIORNA REGISTER PANEL</button>
             <button class="btn btn-purple" onclick="spawnResultsPanel()">SPAWN / AGGIORNA RESULTS PANEL</button>
           </div>
-          <div class="helper">I pannelli non vengono spammati: se esistono già nello stesso canale, il bot prova ad aggiornarli.</div>
+          <div class="helper">I pannelli non vengono spammati: se esistono già nello stesso canale, il bot li aggiorna.</div>
         </div>
 
         <div class="subsection">
@@ -1197,6 +1304,45 @@
       </div>
     </div>
 
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🧾 Audit Log Staff</h3>
+            <div class="section-note">Storico operativo reale del backend: login, pannelli, reset, archivi, approvazioni e azioni staff.</div>
+          </div>
+        </div>
+        <div id="auditLogList" class="log-list">
+          <div class="empty">Nessun log disponibile</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <h3>🗂️ Archivio Tornei / Snapshot</h3>
+            <div class="section-note">Puoi creare snapshot manuali e ripristinare uno stato precedente del torneo.</div>
+          </div>
+        </div>
+
+        <div class="subsection" style="margin-bottom:12px">
+          <div class="field">
+            <label>Etichetta archivio</label>
+            <input type="text" id="archiveLabel" placeholder="Es. Fine Match 4 / Pre reset / Snapshot staff" />
+          </div>
+          <div class="field">
+            <label>Nota archivio</label>
+            <textarea id="archiveNote" placeholder="Nota opzionale archivio"></textarea>
+          </div>
+          <button class="btn btn-blue" onclick="createArchive()">CREA ARCHIVIO ORA</button>
+        </div>
+
+        <div id="archiveList" class="archive-list">
+          <div class="empty">Nessun archivio disponibile</div>
+        </div>
+      </div>
+    </div>
+
     <div class="pill" id="statusBar">Dashboard pronta</div>
   </div>
 
@@ -1217,6 +1363,12 @@
         .replaceAll("'", '&#039;');
     }
 
+    function formatDateTime(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value || '-';
+      return date.toLocaleString('it-IT');
+    }
+
     async function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1227,10 +1379,15 @@
     }
 
     async function api(url, options = {}) {
+      const baseHeaders = options.body
+        ? { 'Content-Type': 'application/json' }
+        : {};
+
       const response = await fetch(url, {
         credentials: 'same-origin',
         headers: {
-          'Content-Type': 'application/json'
+          ...baseHeaders,
+          ...(options.headers || {})
         },
         ...options
       });
@@ -1269,15 +1426,77 @@
     function renderBranding(projectSettings) {
       const brandName = projectSettings?.brandName || 'RØDA';
       const tournamentName = projectSettings?.tournamentName || 'RØDA CUP';
-      const premiumMode = projectSettings?.premiumMode ? ' • Premium Mode' : '';
+      const premiumMode = Boolean(projectSettings?.premiumMode);
+      const modeLabel = premiumMode ? 'Dashboard Premium' : 'Dashboard Admin';
 
-      document.title = `${brandName} Dashboard Premium`;
-      document.getElementById('brandTitle').textContent = `${brandName} Dashboard Premium`;
-      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione bot, staff e torneo${premiumMode}`;
+      document.title = `${brandName} ${modeLabel}`;
+      document.getElementById('brandTitle').textContent = `${brandName} ${modeLabel}`;
+      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione bot, staff e torneo${premiumMode ? ' • premium mode attiva' : ''}`;
 
       document.getElementById('projectBrandName').value = brandName;
       document.getElementById('projectTournamentName').value = tournamentName;
       document.getElementById('projectSupportContact').value = projectSettings?.supportContact || '';
+      document.getElementById('projectPremiumMode').checked = premiumMode;
+    }
+
+    function renderAuditLog(auditLog) {
+      const list = document.getElementById('auditLogList');
+
+      list.innerHTML = auditLog.length
+        ? auditLog.map(item => `
+            <div class="log-card">
+              <div class="log-card-top">
+                <div>
+                  <div class="log-action">${escapeHtml(item.action || 'unknown')}</div>
+                  <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
+                </div>
+                <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
+              </div>
+              <div class="detail-grid">
+                <div class="mono">${escapeHtml(item.id || '')}</div>
+                ${Object.keys(item.details || {}).length
+                  ? `<div>${Object.entries(item.details).map(([key, value]) => `
+                        <span class="detail-chip"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
+                     `).join('')}</div>`
+                  : `<div class="muted">Nessun dettaglio aggiuntivo</div>`}
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun log disponibile</div>`;
+    }
+
+    function renderArchives(archives) {
+      const list = document.getElementById('archiveList');
+
+      list.innerHTML = archives.length
+        ? archives.map(item => `
+            <div class="archive-card">
+              <div class="archive-card-top">
+                <div>
+                  <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
+                  <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
+                </div>
+                <div class="status-badge status-premium">ARCHIVIO</div>
+              </div>
+              <div class="detail-grid">
+                <div>
+                  <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
+                  <span class="detail-chip">Actor: ${escapeHtml(item.actor || '-')}</span>
+                  <span class="detail-chip">Source: ${escapeHtml(item.source || '-')}</span>
+                </div>
+                <div>
+                  <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
+                  <span class="detail-chip">Pending: ${Number(item.pendingCount || 0)}</span>
+                  <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
+                </div>
+                <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
+              </div>
+              <div class="archive-actions">
+                <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">RIPRISTINA</button>
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun archivio disponibile</div>`;
     }
 
     async function refreshDashboard() {
@@ -1328,9 +1547,13 @@
       const registrationSettings = dashboard.registrationSettings || {};
       const projectSettings = dashboard.projectSettings || {};
       const setupStatus = dashboard.setupStatus || {};
+      const auditLog = dashboard.auditLog || [];
+      const archives = dashboard.archives || [];
 
       renderBranding(projectSettings);
       renderSetupChecks(setupStatus);
+      renderAuditLog(auditLog);
+      renderArchives(archives);
 
       const registeredCount = sortedTeams.length;
       const maxTeams = Number(registrationSettings.maxTeams || 16);
@@ -1487,12 +1710,13 @@
       const brandName = document.getElementById('projectBrandName').value.trim();
       const tournamentName = document.getElementById('projectTournamentName').value.trim();
       const supportContact = document.getElementById('projectSupportContact').value.trim();
+      const premiumMode = document.getElementById('projectPremiumMode').checked;
 
       const payload = {
         brandName,
         tournamentName,
         supportContact,
-        premiumMode: true,
+        premiumMode,
         setupCompleted: customSetupCompleted === null
           ? Boolean(dashboard?.projectSettings?.setupCompleted)
           : Boolean(customSetupCompleted)
@@ -1766,6 +1990,10 @@
     async function approvePending(id) {
       const result = await api('/api/approve/' + id, { method: 'POST' });
       if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore approvazione pending');
+        return;
+      }
       await refreshDashboard();
       setStatus('Pending approvato');
     }
@@ -1773,12 +2001,16 @@
     async function rejectPending(id) {
       const result = await api('/api/reject/' + id, { method: 'POST' });
       if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore rifiuto pending');
+        return;
+      }
       await refreshDashboard();
       setStatus('Pending rifiutato');
     }
 
     async function resetTeams() {
-      if (!confirm('Confermi RESET TEAM registrati?')) return;
+      if (!confirm('Confermi RESET TEAM registrati? Verrà creato prima un archivio automatico.')) return;
 
       const result = await api('/api/reset-teams', { method: 'POST' });
       if (!result) return;
@@ -1793,7 +2025,7 @@
     }
 
     async function resetData() {
-      if (!confirm('Confermi RESET classifica / fragger / match?')) return;
+      if (!confirm('Confermi RESET classifica / fragger / match? Verrà creato prima un archivio automatico.')) return;
 
       const result = await api('/api/reset-data', { method: 'POST' });
       if (!result) return;
@@ -1839,6 +2071,7 @@
         return;
       }
 
+      await refreshDashboard();
       setStatus('Messaggio slot aggiornato su Discord');
     }
 
@@ -1936,6 +2169,7 @@
         return;
       }
 
+      await refreshDashboard();
       setStatus('Classifica Discord inviata manualmente');
     }
 
@@ -1978,6 +2212,52 @@
       setStatus('Risultato web inviato allo staff');
     }
 
+    async function createArchive() {
+      const label = document.getElementById('archiveLabel').value.trim();
+      const note = document.getElementById('archiveNote').value.trim();
+
+      const result = await api('/api/archives/create', {
+        method: 'POST',
+        body: JSON.stringify({ label, note })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore creazione archivio');
+        return;
+      }
+
+      document.getElementById('archiveLabel').value = '';
+      document.getElementById('archiveNote').value = '';
+      await refreshDashboard();
+      setStatus('Archivio creato correttamente');
+    }
+
+    async function restoreArchive(archiveId) {
+      if (!archiveId) {
+        alert('Archivio non valido');
+        return;
+      }
+
+      if (!confirm('Confermi il ripristino di questo archivio? Verrà creato automaticamente un backup dello stato attuale prima del restore.')) {
+        return;
+      }
+
+      const result = await api('/api/archives/restore', {
+        method: 'POST',
+        body: JSON.stringify({ archiveId: decodeURIComponent(archiveId) })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore ripristino archivio');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Archivio ripristinato correttamente');
+    }
+
     async function logout() {
       await api('/api/logout', { method: 'POST' });
       location.href = '/login';
@@ -2013,6 +2293,8 @@
     window.deleteRooms = deleteRooms;
     window.forceLeaderboard = forceLeaderboard;
     window.submitWebResult = submitWebResult;
+    window.createArchive = createArchive;
+    window.restoreArchive = restoreArchive;
 
     refreshDashboard();
     setInterval(() => {
