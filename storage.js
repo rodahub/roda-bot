@@ -387,6 +387,30 @@ function listTournamentArchives() {
   return archives;
 }
 
+function getTournamentArchive(archiveId) {
+  ensureDir(ARCHIVES_DIR);
+
+  const safeId = String(archiveId || '').trim().replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!safeId) return null;
+
+  const archivePath = path.join(ARCHIVES_DIR, `${safeId}.json`);
+  const payload = readJsonSafe(archivePath);
+  if (!payload || !isObject(payload)) return null;
+
+  return {
+    archiveId: String(payload.archiveId || safeId).trim(),
+    createdAt: String(payload.createdAt || '').trim(),
+    meta: {
+      label: String(payload.meta?.label || '').trim(),
+      actor: String(payload.meta?.actor || '').trim(),
+      note: String(payload.meta?.note || '').trim(),
+      source: String(payload.meta?.source || '').trim()
+    },
+    data: normalizeData(payload.data || getDefaultData()),
+    teams: normalizeTeams(payload.teams || getDefaultTeams())
+  };
+}
+
 module.exports = {
   BACKUP_DIR,
   ARCHIVES_DIR,
@@ -404,6 +428,7 @@ module.exports = {
   appendAuditLog,
   createTournamentArchive,
   listTournamentArchives,
+  getTournamentArchive,
   getDefaultData,
   getDefaultTeams,
   getDefaultProjectSettings,
