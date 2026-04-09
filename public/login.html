@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RØDA Staff Login</title>
+  <title>Accesso area admin</title>
   <style>
     :root{
       --line:rgba(160,110,255,.18);
@@ -74,9 +74,16 @@
       margin-bottom:8px;
     }
 
+    .title{
+      font-size:24px;
+      font-weight:900;
+      margin-bottom:8px;
+    }
+
     .subtitle{
       color:var(--muted);
       font-size:14px;
+      line-height:1.45;
     }
 
     .field{
@@ -121,6 +128,19 @@
       cursor:not-allowed;
     }
 
+    .secondary-btn{
+      width:100%;
+      height:50px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      margin-top:10px;
+    }
+
     .msg{
       min-height:22px;
       margin-top:14px;
@@ -133,14 +153,15 @@
 <body>
   <div class="login-box">
     <div class="head">
-      <img src="/roda-logo.png" alt="RØDA Logo" class="logo" />
+      <img src="/roda-logo.png" alt="Logo" class="logo" />
       <img src="/roda-text.png" alt="RØDA" class="text-logo" />
-      <div class="subtitle">Staff dashboard access</div>
+      <div class="title">Accesso area admin</div>
+      <div class="subtitle">Inserisci email e password per entrare nella dashboard staff privata.</div>
     </div>
 
     <div class="field">
-      <label for="username">Username</label>
-      <input id="username" type="text" autocomplete="username" placeholder="Inserisci username" />
+      <label for="email">Email admin</label>
+      <input id="email" type="email" autocomplete="username" placeholder="Inserisci email admin" />
     </div>
 
     <div class="field">
@@ -149,13 +170,16 @@
     </div>
 
     <button id="loginBtn" class="login-btn">ACCEDI ALLA DASHBOARD</button>
+    <button id="homeBtn" class="secondary-btn">TORNA AL SITO PUBBLICO</button>
+
     <div id="msg" class="msg"></div>
   </div>
 
   <script>
     const loginBtn = document.getElementById('loginBtn');
+    const homeBtn = document.getElementById('homeBtn');
     const msg = document.getElementById('msg');
-    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
 
     async function checkSession() {
@@ -166,13 +190,13 @@
 
         const data = await res.json().catch(() => null);
         if (res.ok && data?.ok) {
-          window.location.href = '/';
+          window.location.href = '/admin';
         }
       } catch {}
     }
 
     async function doLogin() {
-      const username = usernameInput.value.trim();
+      const email = emailInput.value.trim();
       const password = passwordInput.value;
 
       msg.textContent = '';
@@ -186,19 +210,19 @@
             'Content-Type': 'application/json'
           },
           credentials: 'same-origin',
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ email, password })
         });
 
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          msg.textContent = data.message || 'Login fallito';
+          msg.textContent = data.message || 'Accesso fallito';
           loginBtn.disabled = false;
           loginBtn.innerText = 'ACCEDI ALLA DASHBOARD';
           return;
         }
 
-        window.location.href = '/';
+        window.location.href = '/admin';
       } catch (e) {
         msg.textContent = 'Errore di connessione';
         loginBtn.disabled = false;
@@ -208,7 +232,11 @@
 
     loginBtn.onclick = doLogin;
 
-    usernameInput.addEventListener('keydown', e => {
+    homeBtn.onclick = () => {
+      window.location.href = '/';
+    };
+
+    emailInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
 
