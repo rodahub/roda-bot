@@ -22,7 +22,8 @@ const {
   saveData,
   saveAll,
   appendAuditLog,
-  getDefaultData
+  getDefaultData,
+  UPLOADS_DIR
 } = require('./storage');
 
 const client = new Client({
@@ -43,8 +44,6 @@ const CATEGORY_ID = process.env.CATEGORY_ID || '1478303649586348165';
 const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
 const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
 const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '1482050564375318579';
-
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -87,11 +86,9 @@ function buildPublicUploadUrl(fileName) {
 }
 
 function buildPublicAssetUrl(fileName) {
-  const safeFile = sanitizeText(fileName);
-  if (!safeFile) return '';
   const baseUrl = getPublicBaseUrl();
   if (!baseUrl) return '';
-  return `${baseUrl}/${safeFile.replace(/^\/+/, '')}`;
+  return `${baseUrl}/${String(fileName || '').replace(/^\/+/, '')}`;
 }
 
 function getLogoUrl() {
@@ -180,14 +177,6 @@ function getDisplayTeams() {
       players: Array.isArray(teamData?.players) ? teamData.players : []
     };
   });
-}
-
-function chunkArray(list, size) {
-  const chunks = [];
-  for (let i = 0; i < list.length; i += size) {
-    chunks.push(list.slice(i, i + size));
-  }
-  return chunks;
 }
 
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
@@ -286,6 +275,7 @@ async function maybeAnnounceTournamentFull() {
   try {
     const channel = await client.channels.fetch(TOURNAMENT_FULL_CHANNEL);
     const embed = new EmbedBuilder()
+      .setColor(0x7b2cff)
       .setTitle('🚫 REGISTRAZIONI CHIUSE')
       .setDescription(
         `**${project.tournamentName}** ha raggiunto il limite massimo di **${getRegistrationLimit()} team registrati**.\n\n` +
@@ -293,9 +283,7 @@ async function maybeAnnounceTournamentFull() {
       );
 
     const logoUrl = getLogoUrl();
-    if (logoUrl) {
-      embed.setThumbnail(logoUrl);
-    }
+    if (logoUrl) embed.setThumbnail(logoUrl);
 
     await channel.send({ embeds: [embed] });
     data.registrationClosedAnnounced = true;
@@ -310,7 +298,7 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-function buildRegistrationStatusEmbeds() {
+function buildRegistrationStatusEmbed() {
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
   const title = sanitizeText(data.registrationStatusTitle) || '📋 Slot Team Registrati';
@@ -321,16 +309,20 @@ function buildRegistrationStatusEmbeds() {
   const isFull = registered >= limit;
   const logoUrl = getLogoUrl();
 
-  const embeds = [];
-  const pageChunks = chunkArray(displayTeams, 12);
+  const listValue = displayTeams.length
+    ? displayTeams.map(team => `**#${team.slot}** • ${team.teamName}`).join('\n')
+    : 'Nessun team registrato al momento.';
 
-  const summaryEmbed = new EmbedBuilder()
+  const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
     .setTitle(`🏆 ${project.tournamentName}`)
     .setDescription(
       [
+        `╔════════════════╗`,
         `**${title}**`,
+        `╚════════════════╝`,
         intro ? `\n${intro}` : '',
-        '\n**Panoramica registrazioni**',
+        '\n**Stato registrazioni**',
         `• Team registrati: **${registered}/${limit}**`,
         `• Posti disponibili: **${freeSpots}**`,
         `• Stato: **${isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE'}**`
@@ -338,68 +330,24 @@ function buildRegistrationStatusEmbeds() {
     )
     .addFields(
       {
-        name: '📌 Lista slot',
-        value: displayTeams.length
-          ? 'Scorri qui sotto per vedere i team registrati ordinati per slot.'
-          : 'Nessun team registrato al momento.',
-        inline: false
-      },
-      {
-        name: '✨ Formato stanze vocali',
-        value: 'Le stanze team vengono create con formato: **🏆・#SLOT NomeTeam**',
+        name: '✨ Slot team registrati',
+        value: listValue.length > 1024 ? `${listValue.slice(0, 1000)}\n...` : listValue,
         inline: false
       }
-    );
+    )
+    .setFooter({
+      text: `${project.brandName} • Pannello slot sincronizzato`
+    });
 
   if (logoUrl) {
-    summaryEmbed.setThumbnail(logoUrl);
+    embed.setThumbnail(logoUrl);
+    embed.setAuthor({
+      name: project.brandName,
+      iconURL: logoUrl
+    });
   }
 
-  embeds.push(summaryEmbed);
-
-  if (!pageChunks.length) {
-    const emptyEmbed = new EmbedBuilder()
-      .setTitle('📋 Elenco slot')
-      .setDescription('Non ci sono ancora team registrati.')
-      .addFields({
-        name: '✅ Stato registrazioni',
-        value: isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE',
-        inline: false
-      });
-
-    if (logoUrl) {
-      emptyEmbed.setThumbnail(logoUrl);
-    }
-
-    embeds.push(emptyEmbed);
-    return embeds;
-  }
-
-  pageChunks.forEach((chunk, index) => {
-    const start = index * 12 + 1;
-    const end = start + chunk.length - 1;
-
-    const embed = new EmbedBuilder()
-      .setTitle(`📋 Slot registrati • Pagina ${index + 1}/${pageChunks.length}`)
-      .setDescription(
-        chunk.map(team => {
-          const players = (team.players || []).filter(Boolean);
-          const playersText = players.length ? `\n👥 ${players.join(' • ')}` : '';
-          return `**#${team.slot} ${team.teamName}**${playersText}`;
-        }).join('\n\n')
-      )
-      .setFooter({
-        text: `Slot ${start}-${end} • ${project.brandName}`
-      });
-
-    if (logoUrl) {
-      embed.setThumbnail(logoUrl);
-    }
-
-    embeds.push(embed);
-  });
-
-  return embeds.slice(0, 10);
+  return embed;
 }
 
 function queueRegistrationStatusUpdate() {
@@ -408,17 +356,17 @@ function queueRegistrationStatusUpdate() {
       await waitReady();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const embeds = buildRegistrationStatusEmbeds();
+      const embed = buildRegistrationStatusEmbed();
 
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit({ embeds });
+          await msg.edit({ embeds: [embed] });
           return true;
         } catch {}
       }
 
-      const msg = await channel.send({ embeds });
+      const msg = await channel.send({ embeds: [embed] });
       data.registrationStatusMessageId = msg.id;
       saveState();
       return true;
@@ -454,6 +402,7 @@ function createResultEmbed(entry, footerText) {
   const players = teams[entry.team]?.players || ['Player 1', 'Player 2', 'Player 3'];
 
   const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
     .setTitle(`📸 NUOVO RISULTATO • ${project.tournamentName}`)
     .setDescription(
       `🏷️ Team: ${entry.team}
@@ -502,14 +451,13 @@ async function updateLeaderboard() {
     .join('\n') || 'Nessuno';
 
   const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
     .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
     .setDescription(desc)
     .addFields({ name: '🔥 Top Fragger', value: frag });
 
   const logoUrl = getLogoUrl();
-  if (logoUrl) {
-    embed.setThumbnail(logoUrl);
-  }
+  if (logoUrl) embed.setThumbnail(logoUrl);
 
   if (data.leaderboardMessageId) {
     try {
