@@ -206,8 +206,7 @@ function getPublicBaseUrl(req) {
 function sortTeamsWithSlot(teams) {
   return Object.entries(teams || {}).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(b[1]?.slot || 999999);
-
+    const slotB = Number(a[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -409,13 +408,12 @@ function buildPublicPayload(req) {
   };
 }
 
-/* ROUTE HTML PRINCIPALI PRIMA DEGLI ASSET STATICI */
 app.get('/', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'home.html'));
 });
 
 app.get('/admin', authRequired, (req, res) => {
-  return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
 app.get('/login', (req, res) => {
@@ -427,7 +425,6 @@ app.get('/login', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
 
-/* ASSET STATICI SENZA INDEX AUTOMATICO */
 app.use(express.static(PUBLIC_DIR, { index: false }));
 
 app.get('/api/public/dashboard', (req, res) => {
