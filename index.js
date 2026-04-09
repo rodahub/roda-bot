@@ -327,26 +327,43 @@ function strokeRoundedRect(ctx, x, y, w, h, r, strokeStyle, lineWidth = 1) {
   ctx.restore();
 }
 
-function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor) {
+function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
   ctx.save();
   ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 36;
+  ctx.shadowBlur = blur;
   fillRoundedRect(ctx, x, y, w, h, r, fillColor);
   ctx.restore();
   strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167, 116, 255, 0.35)', 2);
 }
 
-function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700') {
+function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700', minSize = 16) {
   let size = startSize;
-  while (size > 18) {
+  while (size > minSize) {
     ctx.font = `${weight} ${size}px sans-serif`;
     if (ctx.measureText(text).width <= maxWidth) {
       return ctx.font;
     }
     size -= 2;
   }
-  ctx.font = `${weight} 18px sans-serif`;
+  ctx.font = `${weight} ${minSize}px sans-serif`;
   return ctx.font;
+}
+
+function truncateText(ctx, text, maxWidth, font) {
+  ctx.save();
+  ctx.font = font;
+  const source = String(text || '');
+  if (ctx.measureText(source).width <= maxWidth) {
+    ctx.restore();
+    return source;
+  }
+
+  let out = source;
+  while (out.length > 0 && ctx.measureText(`${out}...`).width > maxWidth) {
+    out = out.slice(0, -1);
+  }
+  ctx.restore();
+  return `${out}...`;
 }
 
 async function generateRegistrationStatusPanelBuffer() {
@@ -359,182 +376,240 @@ async function generateRegistrationStatusPanelBuffer() {
   const freeSpots = Math.max(limit - registered, 0);
   const isFull = registered >= limit;
 
-  const width = 1600;
-  const leftPad = 64;
+  const width = 2200;
+  const leftPad = 72;
   const topPad = 56;
-  const rowHeight = 58;
-  const listTop = 320;
-  const bottomPad = 56;
-  const rows = Math.max(displayTeams.length, 1);
-  const height = Math.max(900, listTop + rows * rowHeight + bottomPad);
+  const headerHeight = 172;
+  const statsY = 248;
+  const statsHeight = 96;
+  const panelY = 382;
+  const rowHeight = 74;
+  const columns = 3;
+  const rows = Math.max(Math.ceil(Math.max(displayTeams.length, 1) / columns), 1);
+  const height = Math.max(920, panelY + 92 + rows * rowHeight + 70);
 
   const canvas = Canvas.createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  const bg = ctx.createLinearGradient(0, 0, 0, height);
-  bg.addColorStop(0, '#06060b');
-  bg.addColorStop(1, '#0d0b14');
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#05050a');
+  bg.addColorStop(0.40, '#090811');
+  bg.addColorStop(0.70, '#120a19');
+  bg.addColorStop(1, '#1a0f25');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.shadowColor = 'rgba(123, 44, 255, 0.35)';
-  ctx.shadowBlur = 120;
-  ctx.fillStyle = 'rgba(123, 44, 255, 0.18)';
+  ctx.shadowColor = 'rgba(123,44,255,0.35)';
+  ctx.shadowBlur = 180;
+  ctx.fillStyle = 'rgba(123,44,255,0.15)';
   ctx.beginPath();
-  ctx.arc(240, 160, 120, 0, Math.PI * 2);
+  ctx.arc(220, 140, 170, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(width - 220, 180, 130, 0, Math.PI * 2);
+  ctx.arc(width - 190, 150, 180, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(width / 2, height - 120, 180, 0, Math.PI * 2);
+  ctx.arc(width / 2, height - 60, 260, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  glowRoundedRect(ctx, 34, 34, width - 68, height - 68, 34, 'rgba(123, 44, 255, 0.50)', 'rgba(16, 16, 26, 0.92)');
+  glowRoundedRect(
+    ctx,
+    28,
+    28,
+    width - 56,
+    height - 56,
+    38,
+    'rgba(123,44,255,0.58)',
+    'rgba(12,12,20,0.95)',
+    60
+  );
 
-  fillRoundedRect(ctx, 56, 56, width - 112, 170, 28, 'rgba(255,255,255,0.025)');
-  strokeRoundedRect(ctx, 56, 56, width - 112, 170, 28, 'rgba(168, 124, 255, 0.22)', 2);
+  glowRoundedRect(
+    ctx,
+    leftPad,
+    topPad,
+    width - leftPad * 2,
+    headerHeight,
+    30,
+    'rgba(123,44,255,0.20)',
+    'rgba(255,255,255,0.025)',
+    26
+  );
 
   const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
-  const logoExists = fs.existsSync(logoPath);
-
-  if (logoExists) {
+  if (fs.existsSync(logoPath)) {
     try {
       const logo = await Canvas.loadImage(logoPath);
-      ctx.save();
-      ctx.shadowColor = 'rgba(123, 44, 255, 0.70)';
-      ctx.shadowBlur = 40;
-      fillRoundedRect(ctx, 82, 82, 124, 124, 30, 'rgba(123,44,255,0.12)');
-      ctx.restore();
-      ctx.drawImage(logo, 92, 92, 104, 104);
+      glowRoundedRect(
+        ctx,
+        leftPad + 24,
+        topPad + 24,
+        116,
+        116,
+        28,
+        'rgba(123,44,255,0.60)',
+        'rgba(123,44,255,0.10)',
+        34
+      );
+      ctx.drawImage(logo, leftPad + 34, topPad + 34, 96, 96);
     } catch (error) {
       console.error('Errore caricamento logo RØDA:', error);
     }
   }
 
+  const textBaseX = leftPad + 168;
+
   ctx.fillStyle = '#ffffff';
   ctx.font = '700 26px sans-serif';
-  ctx.fillText(project.brandName, 230, 102);
+  ctx.fillText(project.brandName, textBaseX, topPad + 42);
 
-  ctx.fillStyle = '#e9dcff';
-  ctx.font = measureFittedFont(ctx, project.tournamentName, width - 420, 52, '800');
-  ctx.fillText(project.tournamentName, 230, 154);
+  ctx.fillStyle = '#efe5ff';
+  ctx.font = measureFittedFont(ctx, project.tournamentName, width - 640, 58, '800', 30);
+  ctx.fillText(project.tournamentName, textBaseX, topPad + 96);
 
-  ctx.fillStyle = '#b5b0cf';
-  ctx.font = '500 22px sans-serif';
-  ctx.fillText(title, 230, 194);
+  ctx.fillStyle = '#b9b1d2';
+  ctx.font = measureFittedFont(ctx, title, width - 720, 24, '600', 18);
+  ctx.fillText(title, textBaseX, topPad + 132);
 
-  const cardsY = 244;
-  const cardGap = 20;
+  const pillW = 320;
+  const pillH = 54;
+  const pillX = width - leftPad - pillW - 24;
+  const pillY = topPad + 52;
+
+  glowRoundedRect(
+    ctx,
+    pillX,
+    pillY,
+    pillW,
+    pillH,
+    18,
+    'rgba(123,44,255,0.28)',
+    isFull ? 'rgba(255,77,109,0.12)' : 'rgba(123,44,255,0.12)',
+    22
+  );
+
+  ctx.fillStyle = isFull ? '#ffd1da' : '#f4edff';
+  ctx.font = '800 22px sans-serif';
+  const statusText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
+  const statusWidth = ctx.measureText(statusText).width;
+  ctx.fillText(statusText, pillX + (pillW - statusWidth) / 2, pillY + 35);
+
+  const cardGap = 22;
   const cardW = (width - leftPad * 2 - cardGap * 2) / 3;
-  const cardH = 110;
+  const cardH = statsHeight;
 
-  const summaryCards = [
+  const cards = [
     { label: 'TEAM REGISTRATI', value: `${registered}/${limit}` },
     { label: 'POSTI DISPONIBILI', value: `${freeSpots}` },
-    { label: 'STATO', value: isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE' }
+    { label: 'TORNEO', value: project.brandName }
   ];
 
-  summaryCards.forEach((card, index) => {
+  cards.forEach((card, index) => {
     const x = leftPad + index * (cardW + cardGap);
-    glowRoundedRect(ctx, x, cardsY, cardW, cardH, 24, 'rgba(123,44,255,0.35)', 'rgba(255,255,255,0.03)');
-    ctx.fillStyle = '#a8a2c8';
+
+    glowRoundedRect(
+      ctx,
+      x,
+      statsY,
+      cardW,
+      cardH,
+      22,
+      'rgba(123,44,255,0.28)',
+      'rgba(255,255,255,0.03)',
+      24
+    );
+
+    ctx.fillStyle = '#a59dc4';
     ctx.font = '700 18px sans-serif';
-    ctx.fillText(card.label, x + 24, cardsY + 34);
+    ctx.fillText(card.label, x + 24, statsY + 30);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = measureFittedFont(ctx, card.value, cardW - 48, 38, '800');
-    ctx.fillText(card.value, x + 24, cardsY + 78);
+    ctx.font = measureFittedFont(ctx, card.value, cardW - 48, 38, '800', 20);
+    ctx.fillText(card.value, x + 24, statsY + 68);
   });
 
-  const listCardY = listTop - 20;
-  const listCardH = height - listCardY - 44;
-  glowRoundedRect(ctx, leftPad, listCardY, width - leftPad * 2, listCardH, 28, 'rgba(123,44,255,0.35)', 'rgba(255,255,255,0.025)');
+  const panelH = height - panelY - 44;
+  glowRoundedRect(
+    ctx,
+    leftPad,
+    panelY,
+    width - leftPad * 2,
+    panelH,
+    30,
+    'rgba(123,44,255,0.30)',
+    'rgba(255,255,255,0.022)',
+    26
+  );
 
   ctx.fillStyle = '#f5efff';
   ctx.font = '800 30px sans-serif';
-  ctx.fillText('SLOT TEAM REGISTRATI', leftPad + 28, listCardY + 48);
+  ctx.fillText('LISTA SLOT TEAM', leftPad + 30, panelY + 44);
 
   if (intro) {
     ctx.fillStyle = '#b7b0d2';
-    ctx.font = '500 18px sans-serif';
-    ctx.fillText(intro, leftPad + 28, listCardY + 78);
+    ctx.font = measureFittedFont(ctx, intro, width - leftPad * 2 - 60, 19, '500', 14);
+    const introText = truncateText(ctx, intro, width - leftPad * 2 - 60, ctx.font);
+    ctx.fillText(introText, leftPad + 30, panelY + 74);
   }
 
-  const lineStartY = listCardY + (intro ? 108 : 90);
-
-  ctx.strokeStyle = 'rgba(170, 120, 255, 0.18)';
+  const dividerY = panelY + (intro ? 98 : 82);
+  ctx.strokeStyle = 'rgba(170, 120, 255, 0.20)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(leftPad + 28, lineStartY);
-  ctx.lineTo(width - leftPad - 28, lineStartY);
+  ctx.moveTo(leftPad + 28, dividerY);
+  ctx.lineTo(width - leftPad - 28, dividerY);
   ctx.stroke();
 
   if (!displayTeams.length) {
-    ctx.fillStyle = '#c9c3e3';
+    ctx.fillStyle = '#d5d0e7';
     ctx.font = '700 28px sans-serif';
-    ctx.fillText('Nessun team registrato al momento.', leftPad + 34, lineStartY + 80);
+    ctx.fillText('Nessun team registrato al momento.', leftPad + 36, dividerY + 90);
   } else {
-    const columns = 2;
-    const columnGap = 26;
-    const columnWidth = (width - leftPad * 2 - 56 - columnGap) / columns;
-    const rowsPerColumn = Math.ceil(displayTeams.length / columns);
-
-    const groups = chunkArray(displayTeams, rowsPerColumn);
+    const columnGap = 24;
+    const columnWidth = (width - leftPad * 2 - 60 - columnGap * 2) / 3;
+    const groups = chunkArray(displayTeams, Math.ceil(displayTeams.length / 3));
 
     groups.forEach((group, colIndex) => {
-      const baseX = leftPad + 28 + colIndex * (columnWidth + columnGap);
+      const baseX = leftPad + 30 + colIndex * (columnWidth + columnGap);
 
       group.forEach((team, rowIndex) => {
-        const y = lineStartY + 26 + rowIndex * rowHeight;
-        const rowBoxH = 42;
+        const y = dividerY + 24 + rowIndex * rowHeight;
 
-        fillRoundedRect(ctx, baseX, y, columnWidth, rowBoxH, 16, 'rgba(255,255,255,0.03)');
-        strokeRoundedRect(ctx, baseX, y, columnWidth, rowBoxH, 16, 'rgba(170,120,255,0.12)', 1);
+        glowRoundedRect(
+          ctx,
+          baseX,
+          y,
+          columnWidth,
+          56,
+          18,
+          'rgba(123,44,255,0.18)',
+          'rgba(255,255,255,0.032)',
+          18
+        );
+
+        fillRoundedRect(ctx, baseX + 12, y + 8, 92, 40, 14, 'rgba(123,44,255,0.18)');
+        strokeRoundedRect(ctx, baseX + 12, y + 8, 92, 40, 14, 'rgba(176,134,255,0.30)', 1);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '800 22px sans-serif';
-        ctx.fillText(`#${team.slot}`, baseX + 18, y + 28);
+        ctx.font = '800 20px sans-serif';
+        ctx.fillText(`#${team.slot}`, baseX + 28, y + 34);
 
-        ctx.fillStyle = '#efe9ff';
-        ctx.font = measureFittedFont(ctx, team.teamName, columnWidth - 120, 24, '700');
-        ctx.fillText(team.teamName, baseX + 90, y + 28);
+        const nameFont = measureFittedFont(ctx, team.teamName, columnWidth - 130, 26, '700', 18);
+        const safeName = truncateText(ctx, team.teamName, columnWidth - 130, nameFont);
+        ctx.fillStyle = '#f2ebff';
+        ctx.font = nameFont;
+        ctx.fillText(safeName, baseX + 118, y + 35);
       });
     });
   }
 
-  ctx.fillStyle = '#9e97bf';
+  ctx.fillStyle = '#948db3';
   ctx.font = '500 16px sans-serif';
-  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, leftPad + 30, height - 26);
+  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, leftPad + 30, height - 20);
 
   return await canvas.encode('png');
-}
-
-function buildRegistrationFallbackText() {
-  const project = getProjectSettings();
-  const displayTeams = getDisplayTeams();
-  const limit = getRegistrationLimit();
-  const freeSpots = Math.max(limit - displayTeams.length, 0);
-
-  const lines = [
-    `**${project.tournamentName}**`,
-    `Team registrati: **${displayTeams.length}/${limit}**`,
-    `Posti disponibili: **${freeSpots}**`,
-    ''
-  ];
-
-  if (!displayTeams.length) {
-    lines.push('Nessun team registrato al momento.');
-  } else {
-    displayTeams.forEach(team => {
-      lines.push(`• **#${team.slot}** ${team.teamName}`);
-    });
-  }
-
-  const joined = lines.join('\n');
-  return joined.length > 1900 ? `${joined.slice(0, 1850)}\n...` : joined;
 }
 
 async function buildRegistrationStatusMessagePayload() {
@@ -551,14 +626,14 @@ async function buildRegistrationStatusMessagePayload() {
     .setColor(0x7b2cff)
     .setTitle(`🏆 ${project.tournamentName}`)
     .setDescription(
-      `Pannello slot team registrati aggiornato in tempo reale.\n\n` +
       `**Team registrati:** ${displayTeams.length}/${limit}\n` +
-      `**Posti disponibili:** ${freeSpots}`
+      `**Posti disponibili:** ${freeSpots}\n` +
+      `**Pannello slot aggiornato in tempo reale**`
     )
     .setImage(`attachment://${uniqueName}`);
 
   return {
-    content: buildRegistrationFallbackText(),
+    content: '',
     embeds: [embed],
     files: [attachment]
   };
