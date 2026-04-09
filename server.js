@@ -16,7 +16,8 @@ const {
   getTournamentArchive,
   getDefaultData,
   getDefaultProjectSettings,
-  getDefaultBotSettings
+  getDefaultBotSettings,
+  UPLOADS_DIR
 } = require('./storage');
 
 initializeFiles();
@@ -28,7 +29,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 const DASHBOARD_EMAIL = process.env.DASHBOARD_EMAIL || 'admin@example.com';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
@@ -425,6 +425,7 @@ app.get('/login', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
 
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(PUBLIC_DIR, { index: false }));
 
 app.get('/api/public/dashboard', (req, res) => {
@@ -727,7 +728,6 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
   const saved = saveAll(data, teams);
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
-
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'team_salvato', {
@@ -763,7 +763,6 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
   const saved = saveAll(data, teams);
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
-
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'team_eliminato', {
@@ -799,7 +798,6 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
   const saved = saveData(data);
   bot.setDataState(saved);
   bot.setTeamsState(teams);
-
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'impostazioni_registrazione_salvate', {
@@ -833,7 +831,6 @@ app.post('/api/match/set', authRequired, async (req, res) => {
 
   const data = loadData();
   data.currentMatch = match;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -849,7 +846,6 @@ app.post('/api/match/set', authRequired, async (req, res) => {
 app.post('/api/match/next', authRequired, async (req, res) => {
   const data = loadData();
   data.currentMatch = Number(data.currentMatch || 1) + 1;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -872,7 +868,6 @@ app.post('/api/scores/add', authRequired, (req, res) => {
   }
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -895,7 +890,6 @@ app.post('/api/scores/set', authRequired, (req, res) => {
   }
 
   data.scores[team] = points;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -916,7 +910,6 @@ app.post('/api/scores/reset-team', authRequired, (req, res) => {
   }
 
   data.scores[team] = 0;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -937,7 +930,6 @@ app.post('/api/fragger/set', authRequired, (req, res) => {
   }
 
   data.fragger[player] = kills;
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -958,7 +950,6 @@ app.post('/api/fragger/delete', authRequired, (req, res) => {
   }
 
   delete data.fragger[player];
-
   const saved = saveData(data);
   bot.setDataState(saved);
 
@@ -1036,7 +1027,6 @@ app.post('/api/reset-teams', authRequired, async (req, res) => {
   const saved = saveAll(data, emptyTeams);
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
-
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'reset_team', {});
@@ -1064,7 +1054,6 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
 
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
-
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'reset_totale', {});
