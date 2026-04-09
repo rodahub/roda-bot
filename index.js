@@ -10,9 +10,11 @@ const {
   TextInputStyle,
   StringSelectMenuBuilder,
   EmbedBuilder,
+  AttachmentBuilder,
   ChannelType
 } = require('discord.js');
 
+const Canvas = require('@napi-rs/canvas');
 const fs = require('fs');
 const path = require('path');
 
@@ -83,16 +85,6 @@ function buildPublicUploadUrl(fileName) {
   const baseUrl = getPublicBaseUrl();
   if (!baseUrl) return `/uploads/${fileName}`;
   return `${baseUrl}/uploads/${fileName}`;
-}
-
-function buildPublicAssetUrl(fileName) {
-  const baseUrl = getPublicBaseUrl();
-  if (!baseUrl) return '';
-  return `${baseUrl}/${String(fileName || '').replace(/^\/+/, '')}`;
-}
-
-function getLogoUrl() {
-  return buildPublicAssetUrl('roda-logo.png');
 }
 
 function getProjectSettings() {
@@ -177,6 +169,14 @@ function getDisplayTeams() {
       players: Array.isArray(teamData?.players) ? teamData.players : []
     };
   });
+}
+
+function chunkArray(list, size) {
+  const chunks = [];
+  for (let i = 0; i < list.length; i += size) {
+    chunks.push(list.slice(i, i + size));
+  }
+  return chunks;
 }
 
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
@@ -282,9 +282,6 @@ async function maybeAnnounceTournamentFull() {
         'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
       );
 
-    const logoUrl = getLogoUrl();
-    if (logoUrl) embed.setThumbnail(logoUrl);
-
     await channel.send({ embeds: [embed] });
     data.registrationClosedAnnounced = true;
     saveState();
@@ -298,56 +295,238 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-function buildRegistrationStatusEmbed() {
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function fillRoundedRect(ctx, x, y, w, h, r, fillStyle) {
+  ctx.save();
+  ctx.fillStyle = fillStyle;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeRoundedRect(ctx, x, y, w, h, r, strokeStyle, lineWidth = 1) {
+  ctx.save();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor) {
+  ctx.save();
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = 36;
+  fillRoundedRect(ctx, x, y, w, h, r, fillColor);
+  ctx.restore();
+  strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167, 116, 255, 0.35)', 2);
+}
+
+function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700') {
+  let size = startSize;
+  while (size > 18) {
+    ctx.font = `${weight} ${size}px sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) {
+      return ctx.font;
+    }
+    size -= 2;
+  }
+  ctx.font = `${weight} 18px sans-serif`;
+  return ctx.font;
+}
+
+async function generateRegistrationStatusPanelBuffer() {
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
-  const title = sanitizeText(data.registrationStatusTitle) || '📋 Slot Team Registrati';
+  const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
   const intro = sanitizeText(data.registrationStatusText);
   const limit = getRegistrationLimit();
   const registered = displayTeams.length;
   const freeSpots = Math.max(limit - registered, 0);
   const isFull = registered >= limit;
-  const logoUrl = getLogoUrl();
 
-  const listValue = displayTeams.length
-    ? displayTeams.map(team => `**#${team.slot}** • ${team.teamName}`).join('\n')
-    : 'Nessun team registrato al momento.';
+  const width = 1600;
+  const leftPad = 64;
+  const topPad = 56;
+  const rowHeight = 58;
+  const listTop = 320;
+  const bottomPad = 56;
+  const rows = Math.max(displayTeams.length, 1);
+  const height = Math.max(900, listTop + rows * rowHeight + bottomPad);
 
-  const embed = new EmbedBuilder()
-    .setColor(0x7b2cff)
-    .setTitle(`🏆 ${project.tournamentName}`)
-    .setDescription(
-      [
-        `╔════════════════╗`,
-        `**${title}**`,
-        `╚════════════════╝`,
-        intro ? `\n${intro}` : '',
-        '\n**Stato registrazioni**',
-        `• Team registrati: **${registered}/${limit}**`,
-        `• Posti disponibili: **${freeSpots}**`,
-        `• Stato: **${isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE'}**`
-      ].join('\n')
-    )
-    .addFields(
-      {
-        name: '✨ Slot team registrati',
-        value: listValue.length > 1024 ? `${listValue.slice(0, 1000)}\n...` : listValue,
-        inline: false
-      }
-    )
-    .setFooter({
-      text: `${project.brandName} • Pannello slot sincronizzato`
-    });
+  const canvas = Canvas.createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
 
-  if (logoUrl) {
-    embed.setThumbnail(logoUrl);
-    embed.setAuthor({
-      name: project.brandName,
-      iconURL: logoUrl
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, '#06060b');
+  bg.addColorStop(1, '#0d0b14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(123, 44, 255, 0.35)';
+  ctx.shadowBlur = 120;
+  ctx.fillStyle = 'rgba(123, 44, 255, 0.18)';
+  ctx.beginPath();
+  ctx.arc(240, 160, 120, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width - 220, 180, 130, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width / 2, height - 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  glowRoundedRect(ctx, 34, 34, width - 68, height - 68, 34, 'rgba(123, 44, 255, 0.50)', 'rgba(16, 16, 26, 0.92)');
+
+  fillRoundedRect(ctx, 56, 56, width - 112, 170, 28, 'rgba(255,255,255,0.025)');
+  strokeRoundedRect(ctx, 56, 56, width - 112, 170, 28, 'rgba(168, 124, 255, 0.22)', 2);
+
+  const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
+  const logoExists = fs.existsSync(logoPath);
+
+  if (logoExists) {
+    try {
+      const logo = await Canvas.loadImage(logoPath);
+      ctx.save();
+      ctx.shadowColor = 'rgba(123, 44, 255, 0.70)';
+      ctx.shadowBlur = 40;
+      fillRoundedRect(ctx, 82, 82, 124, 124, 30, 'rgba(123,44,255,0.12)');
+      ctx.restore();
+      ctx.drawImage(logo, 92, 92, 104, 104);
+    } catch (error) {
+      console.error('Errore caricamento logo RØDA:', error);
+    }
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 26px sans-serif';
+  ctx.fillText(project.brandName, 230, 102);
+
+  ctx.fillStyle = '#e9dcff';
+  ctx.font = measureFittedFont(ctx, project.tournamentName, width - 420, 52, '800');
+  ctx.fillText(project.tournamentName, 230, 154);
+
+  ctx.fillStyle = '#b5b0cf';
+  ctx.font = '500 22px sans-serif';
+  ctx.fillText(title, 230, 194);
+
+  const cardsY = 244;
+  const cardGap = 20;
+  const cardW = (width - leftPad * 2 - cardGap * 2) / 3;
+  const cardH = 110;
+
+  const summaryCards = [
+    { label: 'TEAM REGISTRATI', value: `${registered}/${limit}` },
+    { label: 'POSTI DISPONIBILI', value: `${freeSpots}` },
+    { label: 'STATO', value: isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE' }
+  ];
+
+  summaryCards.forEach((card, index) => {
+    const x = leftPad + index * (cardW + cardGap);
+    glowRoundedRect(ctx, x, cardsY, cardW, cardH, 24, 'rgba(123,44,255,0.35)', 'rgba(255,255,255,0.03)');
+    ctx.fillStyle = '#a8a2c8';
+    ctx.font = '700 18px sans-serif';
+    ctx.fillText(card.label, x + 24, cardsY + 34);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = measureFittedFont(ctx, card.value, cardW - 48, 38, '800');
+    ctx.fillText(card.value, x + 24, cardsY + 78);
+  });
+
+  const listCardY = listTop - 20;
+  const listCardH = height - listCardY - 44;
+  glowRoundedRect(ctx, leftPad, listCardY, width - leftPad * 2, listCardH, 28, 'rgba(123,44,255,0.35)', 'rgba(255,255,255,0.025)');
+
+  ctx.fillStyle = '#f5efff';
+  ctx.font = '800 30px sans-serif';
+  ctx.fillText('SLOT TEAM REGISTRATI', leftPad + 28, listCardY + 48);
+
+  if (intro) {
+    ctx.fillStyle = '#b7b0d2';
+    ctx.font = '500 18px sans-serif';
+    ctx.fillText(intro, leftPad + 28, listCardY + 78);
+  }
+
+  const lineStartY = listCardY + (intro ? 108 : 90);
+
+  ctx.strokeStyle = 'rgba(170, 120, 255, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(leftPad + 28, lineStartY);
+  ctx.lineTo(width - leftPad - 28, lineStartY);
+  ctx.stroke();
+
+  if (!displayTeams.length) {
+    ctx.fillStyle = '#c9c3e3';
+    ctx.font = '700 28px sans-serif';
+    ctx.fillText('Nessun team registrato al momento.', leftPad + 34, lineStartY + 80);
+  } else {
+    const columns = 2;
+    const columnGap = 26;
+    const columnWidth = (width - leftPad * 2 - 56 - columnGap) / columns;
+    const rowsPerColumn = Math.ceil(displayTeams.length / columns);
+
+    const groups = chunkArray(displayTeams, rowsPerColumn);
+
+    groups.forEach((group, colIndex) => {
+      const baseX = leftPad + 28 + colIndex * (columnWidth + columnGap);
+
+      group.forEach((team, rowIndex) => {
+        const y = lineStartY + 26 + rowIndex * rowHeight;
+        const rowBoxH = 42;
+
+        fillRoundedRect(ctx, baseX, y, columnWidth, rowBoxH, 16, 'rgba(255,255,255,0.03)');
+        strokeRoundedRect(ctx, baseX, y, columnWidth, rowBoxH, 16, 'rgba(170,120,255,0.12)', 1);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 22px sans-serif';
+        ctx.fillText(`#${team.slot}`, baseX + 18, y + 28);
+
+        ctx.fillStyle = '#efe9ff';
+        ctx.font = measureFittedFont(ctx, team.teamName, columnWidth - 120, 24, '700');
+        ctx.fillText(team.teamName, baseX + 90, y + 28);
+      });
     });
   }
 
-  return embed;
+  ctx.fillStyle = '#9e97bf';
+  ctx.font = '500 16px sans-serif';
+  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, leftPad + 30, height - 26);
+
+  return await canvas.encode('png');
+}
+
+async function buildRegistrationStatusMessagePayload() {
+  const imageBuffer = await generateRegistrationStatusPanelBuffer();
+  const attachment = new AttachmentBuilder(imageBuffer, { name: 'registration-led-panel.png' });
+
+  const project = getProjectSettings();
+  const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
+    .setTitle(`🏆 ${project.tournamentName}`)
+    .setDescription('Pannello slot team registrati aggiornato in tempo reale.')
+    .setImage('attachment://registration-led-panel.png');
+
+  return {
+    embeds: [embed],
+    files: [attachment]
+  };
 }
 
 function queueRegistrationStatusUpdate() {
@@ -356,17 +535,17 @@ function queueRegistrationStatusUpdate() {
       await waitReady();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const embed = buildRegistrationStatusEmbed();
+      const payload = await buildRegistrationStatusMessagePayload();
 
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit({ embeds: [embed] });
+          await msg.edit(payload);
           return true;
         } catch {}
       }
 
-      const msg = await channel.send({ embeds: [embed] });
+      const msg = await channel.send(payload);
       data.registrationStatusMessageId = msg.id;
       saveState();
       return true;
@@ -417,11 +596,6 @@ function createResultEmbed(entry, footerText) {
     )
     .setFooter({ text: footerText || '⏳ In attesa approvazione staff' });
 
-  const logoUrl = getLogoUrl();
-  if (logoUrl) {
-    embed.setThumbnail(logoUrl);
-  }
-
   if (entry.image) {
     embed.setImage(entry.image);
   }
@@ -455,9 +629,6 @@ async function updateLeaderboard() {
     .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
     .setDescription(desc)
     .addFields({ name: '🔥 Top Fragger', value: frag });
-
-  const logoUrl = getLogoUrl();
-  if (logoUrl) embed.setThumbnail(logoUrl);
 
   if (data.leaderboardMessageId) {
     try {
