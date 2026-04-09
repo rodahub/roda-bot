@@ -1,17 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = __dirname;
-const DATA_FILE = path.join(ROOT, 'data.json');
-const TEAMS_FILE = path.join(ROOT, 'teams.json');
-const BACKUP_DIR = path.join(ROOT, 'backups');
+const APP_ROOT = __dirname;
+const DATA_ROOT = path.resolve(process.env.DATA_DIR || APP_ROOT);
+
+const DATA_FILE = path.join(DATA_ROOT, 'data.json');
+const TEAMS_FILE = path.join(DATA_ROOT, 'teams.json');
+const BACKUP_DIR = path.join(DATA_ROOT, 'backups');
 const DATA_BACKUP_FILE = path.join(BACKUP_DIR, 'data.latest.json');
 const TEAMS_BACKUP_FILE = path.join(BACKUP_DIR, 'teams.latest.json');
 
-const AUDIT_LOG_FILE = path.join(ROOT, 'audit-log.json');
+const AUDIT_LOG_FILE = path.join(DATA_ROOT, 'audit-log.json');
 const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 
-const ARCHIVES_DIR = path.join(ROOT, 'archives');
+const ARCHIVES_DIR = path.join(DATA_ROOT, 'archives');
+const UPLOADS_DIR = path.join(DATA_ROOT, 'uploads');
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -199,6 +202,23 @@ function normalizeAuditLog(value) {
     .slice(-1000);
 }
 
+function normalizeArchivePayload(payload) {
+  if (!isObject(payload)) return null;
+
+  return {
+    archiveId: String(payload.archiveId || '').trim() || `archive-${Date.now()}`,
+    createdAt: String(payload.createdAt || new Date().toISOString()).trim(),
+    meta: {
+      label: String(payload.meta?.label || '').trim() || 'Archivio torneo',
+      actor: String(payload.meta?.actor || 'system').trim() || 'system',
+      note: String(payload.meta?.note || '').trim(),
+      source: String(payload.meta?.source || 'system').trim() || 'system'
+    },
+    data: normalizeData(payload.data),
+    teams: normalizeTeams(payload.teams)
+  };
+}
+
 function readJsonSafe(filePath) {
   try {
     if (!fs.existsSync(filePath)) return null;
@@ -223,8 +243,10 @@ function writeBackup(filePath, backupPath, data) {
 }
 
 function initializeFiles() {
+  ensureDir(DATA_ROOT);
   ensureDir(BACKUP_DIR);
   ensureDir(ARCHIVES_DIR);
+  ensureDir(UPLOADS_DIR);
 
   const dataMain = readJsonSafe(DATA_FILE);
   const dataBackup = readJsonSafe(DATA_BACKUP_FILE);
@@ -368,16 +390,16 @@ function listTournamentArchives() {
   const archives = [];
 
   for (const file of files.slice(0, 100)) {
-    const payload = readJsonSafe(path.join(ARCHIVES_DIR, file));
-    if (!payload || !isObject(payload)) continue;
+    const payload = normalizeArchivePayload(readJsonSafe(path.join(ARCHIVES_DIR, file)));
+    if (!payload) continue;
 
     archives.push({
-      archiveId: String(payload.archiveId || file.replace(/\.json$/i, '')).trim(),
-      createdAt: String(payload.createdAt || '').trim(),
-      label: String(payload.meta?.label || '').trim(),
-      actor: String(payload.meta?.actor || '').trim(),
-      note: String(payload.meta?.note || '').trim(),
-      source: String(payload.meta?.source || '').trim(),
+      archiveId: payload.archiveId,
+      createdAt: payload.createdAt,
+      label: payload.meta.label,
+      actor: payload.meta.actor,
+      note: payload.meta.note,
+      source: payload.meta.source,
       teamCount: Object.keys(payload.teams || {}).length,
       pendingCount: Object.keys(payload.data?.pending || {}).length,
       currentMatch: Number(payload.data?.currentMatch || 1)
@@ -388,32 +410,19 @@ function listTournamentArchives() {
 }
 
 function getTournamentArchive(archiveId) {
-  ensureDir(ARCHIVES_DIR);
+  const safeArchiveId = String(archiveId || '').trim();
+  if (!safeArchiveId) return null;
 
-  const safeId = String(archiveId || '').trim().replace(/[^a-zA-Z0-9._-]/g, '');
-  if (!safeId) return null;
-
-  const archivePath = path.join(ARCHIVES_DIR, `${safeId}.json`);
-  const payload = readJsonSafe(archivePath);
-  if (!payload || !isObject(payload)) return null;
-
-  return {
-    archiveId: String(payload.archiveId || safeId).trim(),
-    createdAt: String(payload.createdAt || '').trim(),
-    meta: {
-      label: String(payload.meta?.label || '').trim(),
-      actor: String(payload.meta?.actor || '').trim(),
-      note: String(payload.meta?.note || '').trim(),
-      source: String(payload.meta?.source || '').trim()
-    },
-    data: normalizeData(payload.data || getDefaultData()),
-    teams: normalizeTeams(payload.teams || getDefaultTeams())
-  };
+  const archivePath = path.join(ARCHIVES_DIR, `${safeArchiveId}.json`);
+  return normalizeArchivePayload(readJsonSafe(archivePath));
 }
 
 module.exports = {
+  APP_ROOT,
+  DATA_ROOT,
   BACKUP_DIR,
   ARCHIVES_DIR,
+  UPLOADS_DIR,
   DATA_FILE,
   TEAMS_FILE,
   AUDIT_LOG_FILE,
