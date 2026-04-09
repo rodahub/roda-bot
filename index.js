@@ -512,21 +512,96 @@ async function generateRegistrationStatusPanelBuffer() {
   return await canvas.encode('png');
 }
 
+function buildRegistrationFallbackText() {
+  const project = getProjectSettings();
+  const displayTeams = getDisplayTeams();
+  const limit = getRegistrationLimit();
+  const freeSpots = Math.max(limit - displayTeams.length, 0);
+
+  const lines = [
+    `**${project.tournamentName}**`,
+    `Team registrati: **${displayTeams.length}/${limit}**`,
+    `Posti disponibili: **${freeSpots}**`,
+    ''
+  ];
+
+  if (!displayTeams.length) {
+    lines.push('Nessun team registrato al momento.');
+  } else {
+    displayTeams.forEach(team => {
+      lines.push(`• **#${team.slot}** ${team.teamName}`);
+    });
+  }
+
+  const joined = lines.join('\n');
+  return joined.length > 1900 ? `${joined.slice(0, 1850)}\n...` : joined;
+}
+
 async function buildRegistrationStatusMessagePayload() {
   const imageBuffer = await generateRegistrationStatusPanelBuffer();
-  const attachment = new AttachmentBuilder(imageBuffer, { name: 'registration-led-panel.png' });
+  const uniqueName = `registration-led-panel-${Date.now()}.png`;
+  const attachment = new AttachmentBuilder(imageBuffer, { name: uniqueName });
 
   const project = getProjectSettings();
+  const displayTeams = getDisplayTeams();
+  const limit = getRegistrationLimit();
+  const freeSpots = Math.max(limit - displayTeams.length, 0);
+
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
     .setTitle(`🏆 ${project.tournamentName}`)
-    .setDescription('Pannello slot team registrati aggiornato in tempo reale.')
-    .setImage('attachment://registration-led-panel.png');
+    .setDescription(
+      `Pannello slot team registrati aggiornato in tempo reale.\n\n` +
+      `**Team registrati:** ${displayTeams.length}/${limit}\n` +
+      `**Posti disponibili:** ${freeSpots}`
+    )
+    .setImage(`attachment://${uniqueName}`);
 
   return {
+    content: buildRegistrationFallbackText(),
     embeds: [embed],
     files: [attachment]
   };
+}
+
+async function refreshSavedPanels() {
+  const settings = getBotSettings();
+  const results = {
+    registerPanel: null,
+    resultsPanel: null
+  };
+
+  if (settings.registerPanelChannelId) {
+    try {
+      results.registerPanel = await spawnRegisterPanel(settings.registerPanelChannelId);
+    } catch (error) {
+      console.error('Errore refresh pannello registrazione:', error);
+    }
+  }
+
+  if (settings.resultsPanelChannelId) {
+    try {
+      results.resultsPanel = await spawnResultsPanel(settings.resultsPanelChannelId);
+    } catch (error) {
+      console.error('Errore refresh pannello risultati:', error);
+    }
+  }
+
+  return results;
+}
+
+async function updateSavedResultsPanelIfExists() {
+  const settings = getBotSettings();
+  if (!settings.resultsPanelChannelId) return { skipped: true };
+
+  return spawnResultsPanel(settings.resultsPanelChannelId);
+}
+
+async function updateSavedRegisterPanelIfExists() {
+  const settings = getBotSettings();
+  if (!settings.registerPanelChannelId) return { skipped: true };
+
+  return spawnRegisterPanel(settings.registerPanelChannelId);
 }
 
 function queueRegistrationStatusUpdate() {
@@ -563,6 +638,8 @@ async function updateRegistrationStatusMessage() {
 
 async function handleRegistrationStateChange() {
   await updateRegistrationStatusMessage();
+  await updateSavedRegisterPanelIfExists().catch(() => {});
+  await updateSavedResultsPanelIfExists().catch(() => {});
   await maybeAnnounceTournamentFull();
 }
 
@@ -860,39 +937,6 @@ async function spawnResultsPanel(channelId) {
   return { ok: true, created, updated };
 }
 
-async function refreshSavedPanels() {
-  const settings = getBotSettings();
-  const results = {
-    registerPanel: null,
-    resultsPanel: null
-  };
-
-  if (settings.registerPanelChannelId) {
-    try {
-      results.registerPanel = await spawnRegisterPanel(settings.registerPanelChannelId);
-    } catch (error) {
-      console.error('Errore refresh pannello registrazione:', error);
-    }
-  }
-
-  if (settings.resultsPanelChannelId) {
-    try {
-      results.resultsPanel = await spawnResultsPanel(settings.resultsPanelChannelId);
-    } catch (error) {
-      console.error('Errore refresh pannello risultati:', error);
-    }
-  }
-
-  return results;
-}
-
-async function updateSavedResultsPanelIfExists() {
-  const settings = getBotSettings();
-  if (!settings.resultsPanelChannelId) return { skipped: true };
-
-  return spawnResultsPanel(settings.resultsPanelChannelId);
-}
-
 async function createTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
@@ -1087,9 +1131,14 @@ function getBotConfig() {
 client.once('ready', async () => {
   console.log('ONLINE');
   if (readyResolver) readyResolver(client);
+
+  teams = loadTeams();
+  data = loadData();
+
   logAudit('bot', 'discord', 'bot_ready', {
     guildId: GUILD_ID
   });
+
   await handleRegistrationStateChange();
 });
 
@@ -1201,7 +1250,6 @@ client.on('interactionCreate', async interaction => {
 
       saveEverything();
       await handleRegistrationStateChange();
-      await updateSavedResultsPanelIfExists().catch(() => {});
 
       logAudit(interaction.user.tag, 'discord', 'team_registered_discord', {
         team,
@@ -1326,6 +1374,7 @@ module.exports = {
   spawnResultsPanel,
   refreshSavedPanels,
   updateSavedResultsPanelIfExists,
+  updateSavedRegisterPanelIfExists,
   createTeamRooms,
   deleteTeamRooms,
   nextMatch,
