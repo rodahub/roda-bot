@@ -171,14 +171,6 @@ function getDisplayTeams() {
   });
 }
 
-function chunkArray(list, size) {
-  const chunks = [];
-  for (let i = 0; i < list.length; i += size) {
-    chunks.push(list.slice(i, i + size));
-  }
-  return chunks;
-}
-
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
   const used = new Set(
     Object.values(teams)
@@ -333,7 +325,7 @@ function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
   ctx.shadowBlur = blur;
   fillRoundedRect(ctx, x, y, w, h, r, fillColor);
   ctx.restore();
-  strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167, 116, 255, 0.35)', 2);
+  strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167,116,255,0.35)', 2);
 }
 
 function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700', minSize = 16) {
@@ -366,6 +358,13 @@ function truncateText(ctx, text, maxWidth, font) {
   return `${out}...`;
 }
 
+function drawPlayerLine(ctx, x, y, maxWidth, text) {
+  ctx.fillStyle = '#cfc7ea';
+  ctx.font = measureFittedFont(ctx, text, maxWidth, 16, '500', 12);
+  const safeText = truncateText(ctx, text, maxWidth, ctx.font);
+  ctx.fillText(safeText, x, y);
+}
+
 async function generateRegistrationStatusPanelBuffer() {
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
@@ -376,50 +375,40 @@ async function generateRegistrationStatusPanelBuffer() {
   const freeSpots = Math.max(limit - registered, 0);
   const isFull = registered >= limit;
 
-  const width = 2200;
-  const leftPad = 72;
-  const topPad = 56;
-  const headerHeight = 172;
-  const statsY = 248;
-  const statsHeight = 96;
-  const panelY = 382;
-  const rowHeight = 74;
-  const columns = 3;
-  const rows = Math.max(Math.ceil(Math.max(displayTeams.length, 1) / columns), 1);
-  const height = Math.max(920, panelY + 92 + rows * rowHeight + 70);
+  const width = 1920;
+  const height = 1080;
 
   const canvas = Canvas.createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
   const bg = ctx.createLinearGradient(0, 0, width, height);
   bg.addColorStop(0, '#05050a');
-  bg.addColorStop(0.40, '#090811');
-  bg.addColorStop(0.70, '#120a19');
-  bg.addColorStop(1, '#1a0f25');
+  bg.addColorStop(0.45, '#0a0813');
+  bg.addColorStop(1, '#170d22');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
   ctx.shadowColor = 'rgba(123,44,255,0.35)';
-  ctx.shadowBlur = 180;
+  ctx.shadowBlur = 200;
   ctx.fillStyle = 'rgba(123,44,255,0.15)';
   ctx.beginPath();
-  ctx.arc(220, 140, 170, 0, Math.PI * 2);
+  ctx.arc(170, 130, 150, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(width - 190, 150, 180, 0, Math.PI * 2);
+  ctx.arc(width - 140, 140, 170, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(width / 2, height - 60, 260, 0, Math.PI * 2);
+  ctx.arc(width / 2, height - 40, 260, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
   glowRoundedRect(
     ctx,
-    28,
-    28,
-    width - 56,
-    height - 56,
+    26,
+    26,
+    width - 52,
+    height - 52,
     38,
     'rgba(123,44,255,0.58)',
     'rgba(12,12,20,0.95)',
@@ -428,14 +417,14 @@ async function generateRegistrationStatusPanelBuffer() {
 
   glowRoundedRect(
     ctx,
-    leftPad,
-    topPad,
-    width - leftPad * 2,
-    headerHeight,
+    54,
+    48,
+    width - 108,
+    170,
     30,
-    'rgba(123,44,255,0.20)',
+    'rgba(123,44,255,0.22)',
     'rgba(255,255,255,0.025)',
-    26
+    28
   );
 
   const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
@@ -444,61 +433,62 @@ async function generateRegistrationStatusPanelBuffer() {
       const logo = await Canvas.loadImage(logoPath);
       glowRoundedRect(
         ctx,
-        leftPad + 24,
-        topPad + 24,
-        116,
-        116,
+        82,
+        74,
+        120,
+        120,
         28,
         'rgba(123,44,255,0.60)',
-        'rgba(123,44,255,0.10)',
-        34
+        'rgba(123,44,255,0.12)',
+        36
       );
-      ctx.drawImage(logo, leftPad + 34, topPad + 34, 96, 96);
+      ctx.drawImage(logo, 94, 86, 96, 96);
     } catch (error) {
       console.error('Errore caricamento logo RØDA:', error);
     }
   }
 
-  const textBaseX = leftPad + 168;
+  const textX = 232;
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 26px sans-serif';
-  ctx.fillText(project.brandName, textBaseX, topPad + 42);
+  ctx.font = '700 24px sans-serif';
+  ctx.fillText(project.brandName, textX, 96);
 
   ctx.fillStyle = '#efe5ff';
-  ctx.font = measureFittedFont(ctx, project.tournamentName, width - 640, 58, '800', 30);
-  ctx.fillText(project.tournamentName, textBaseX, topPad + 96);
+  ctx.font = measureFittedFont(ctx, project.tournamentName, 940, 56, '800', 30);
+  ctx.fillText(project.tournamentName, textX, 146);
 
   ctx.fillStyle = '#b9b1d2';
-  ctx.font = measureFittedFont(ctx, title, width - 720, 24, '600', 18);
-  ctx.fillText(title, textBaseX, topPad + 132);
+  ctx.font = measureFittedFont(ctx, title, 980, 24, '600', 18);
+  ctx.fillText(title, textX, 184);
 
-  const pillW = 320;
-  const pillH = 54;
-  const pillX = width - leftPad - pillW - 24;
-  const pillY = topPad + 52;
+  const statusPillX = width - 400;
+  const statusPillY = 92;
+  const statusPillW = 270;
+  const statusPillH = 52;
 
   glowRoundedRect(
     ctx,
-    pillX,
-    pillY,
-    pillW,
-    pillH,
+    statusPillX,
+    statusPillY,
+    statusPillW,
+    statusPillH,
     18,
-    'rgba(123,44,255,0.28)',
+    'rgba(123,44,255,0.24)',
     isFull ? 'rgba(255,77,109,0.12)' : 'rgba(123,44,255,0.12)',
     22
   );
 
   ctx.fillStyle = isFull ? '#ffd1da' : '#f4edff';
-  ctx.font = '800 22px sans-serif';
+  ctx.font = '800 20px sans-serif';
   const statusText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
   const statusWidth = ctx.measureText(statusText).width;
-  ctx.fillText(statusText, pillX + (pillW - statusWidth) / 2, pillY + 35);
+  ctx.fillText(statusText, statusPillX + (statusPillW - statusWidth) / 2, statusPillY + 34);
 
-  const cardGap = 22;
-  const cardW = (width - leftPad * 2 - cardGap * 2) / 3;
-  const cardH = statsHeight;
+  const statsY = 248;
+  const statsGap = 22;
+  const statsW = (width - 108 - statsGap * 2) / 3;
+  const statsH = 98;
 
   const cards = [
     { label: 'TEAM REGISTRATI', value: `${registered}/${limit}` },
@@ -507,14 +497,14 @@ async function generateRegistrationStatusPanelBuffer() {
   ];
 
   cards.forEach((card, index) => {
-    const x = leftPad + index * (cardW + cardGap);
+    const x = 54 + index * (statsW + statsGap);
 
     glowRoundedRect(
       ctx,
       x,
       statsY,
-      cardW,
-      cardH,
+      statsW,
+      statsH,
       22,
       'rgba(123,44,255,0.28)',
       'rgba(255,255,255,0.03)',
@@ -526,88 +516,110 @@ async function generateRegistrationStatusPanelBuffer() {
     ctx.fillText(card.label, x + 24, statsY + 30);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = measureFittedFont(ctx, card.value, cardW - 48, 38, '800', 20);
+    ctx.font = measureFittedFont(ctx, card.value, statsW - 48, 38, '800', 20);
     ctx.fillText(card.value, x + 24, statsY + 68);
   });
 
-  const panelH = height - panelY - 44;
   glowRoundedRect(
     ctx,
-    leftPad,
-    panelY,
-    width - leftPad * 2,
-    panelH,
+    54,
+    372,
+    width - 108,
+    654,
     30,
-    'rgba(123,44,255,0.30)',
+    'rgba(123,44,255,0.28)',
     'rgba(255,255,255,0.022)',
     26
   );
 
   ctx.fillStyle = '#f5efff';
   ctx.font = '800 30px sans-serif';
-  ctx.fillText('LISTA SLOT TEAM', leftPad + 30, panelY + 44);
+  ctx.fillText('LISTA SLOT TEAM REGISTRATI', 84, 418);
 
-  if (intro) {
-    ctx.fillStyle = '#b7b0d2';
-    ctx.font = measureFittedFont(ctx, intro, width - leftPad * 2 - 60, 19, '500', 14);
-    const introText = truncateText(ctx, intro, width - leftPad * 2 - 60, ctx.font);
-    ctx.fillText(introText, leftPad + 30, panelY + 74);
-  }
+  const introText = intro || 'Elenco completo dei team registrati con slot assegnato e giocatori.';
+  ctx.fillStyle = '#b7b0d2';
+  ctx.font = measureFittedFont(ctx, introText, width - 220, 18, '500', 14);
+  const safeIntro = truncateText(ctx, introText, width - 220, ctx.font);
+  ctx.fillText(safeIntro, 84, 452);
 
-  const dividerY = panelY + (intro ? 98 : 82);
-  ctx.strokeStyle = 'rgba(170, 120, 255, 0.20)';
+  ctx.strokeStyle = 'rgba(170,120,255,0.20)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(leftPad + 28, dividerY);
-  ctx.lineTo(width - leftPad - 28, dividerY);
+  ctx.moveTo(84, 476);
+  ctx.lineTo(width - 84, 476);
   ctx.stroke();
 
-  if (!displayTeams.length) {
+  const columns = 3;
+  const rows = 6;
+  const gridX = 84;
+  const gridY = 506;
+  const gapX = 26;
+  const gapY = 18;
+  const cardW = (width - 168 - gapX * 2) / 3;
+  const cardH = 74;
+
+  const maxVisible = columns * rows;
+  const visibleTeams = displayTeams.slice(0, maxVisible);
+
+  if (!visibleTeams.length) {
     ctx.fillStyle = '#d5d0e7';
     ctx.font = '700 28px sans-serif';
-    ctx.fillText('Nessun team registrato al momento.', leftPad + 36, dividerY + 90);
+    ctx.fillText('Nessun team registrato al momento.', 96, 588);
   } else {
-    const columnGap = 24;
-    const columnWidth = (width - leftPad * 2 - 60 - columnGap * 2) / 3;
-    const groups = chunkArray(displayTeams, Math.ceil(displayTeams.length / 3));
+    visibleTeams.forEach((team, index) => {
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = gridX + col * (cardW + gapX);
+      const y = gridY + row * (cardH + gapY);
 
-    groups.forEach((group, colIndex) => {
-      const baseX = leftPad + 30 + colIndex * (columnWidth + columnGap);
+      glowRoundedRect(
+        ctx,
+        x,
+        y,
+        cardW,
+        cardH,
+        22,
+        'rgba(123,44,255,0.22)',
+        'rgba(255,255,255,0.032)',
+        18
+      );
 
-      group.forEach((team, rowIndex) => {
-        const y = dividerY + 24 + rowIndex * rowHeight;
+      fillRoundedRect(ctx, x + 14, y + 14, 92, 46, 14, 'rgba(123,44,255,0.18)');
+      strokeRoundedRect(ctx, x + 14, y + 14, 92, 46, 14, 'rgba(176,134,255,0.30)', 1);
 
-        glowRoundedRect(
-          ctx,
-          baseX,
-          y,
-          columnWidth,
-          56,
-          18,
-          'rgba(123,44,255,0.18)',
-          'rgba(255,255,255,0.032)',
-          18
-        );
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 22px sans-serif';
+      ctx.fillText(`#${team.slot}`, x + 31, y + 44);
 
-        fillRoundedRect(ctx, baseX + 12, y + 8, 92, 40, 14, 'rgba(123,44,255,0.18)');
-        strokeRoundedRect(ctx, baseX + 12, y + 8, 92, 40, 14, 'rgba(176,134,255,0.30)', 1);
+      const teamNameX = x + 124;
+      const teamNameMax = cardW - 138;
+      const teamFont = measureFittedFont(ctx, team.teamName, teamNameMax, 28, '800', 18);
+      const safeTeamName = truncateText(ctx, team.teamName, teamNameMax, teamFont);
+      ctx.fillStyle = '#f2ebff';
+      ctx.font = teamFont;
+      ctx.fillText(safeTeamName, teamNameX, y + 34);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '800 20px sans-serif';
-        ctx.fillText(`#${team.slot}`, baseX + 28, y + 34);
+      const players = [
+        sanitizeText(team.players?.[0]) || 'Player 1',
+        sanitizeText(team.players?.[1]) || 'Player 2',
+        sanitizeText(team.players?.[2]) || 'Player 3'
+      ];
 
-        const nameFont = measureFittedFont(ctx, team.teamName, columnWidth - 130, 26, '700', 18);
-        const safeName = truncateText(ctx, team.teamName, columnWidth - 130, nameFont);
-        ctx.fillStyle = '#f2ebff';
-        ctx.font = nameFont;
-        ctx.fillText(safeName, baseX + 118, y + 35);
-      });
+      const playersText = players.join(' • ');
+      drawPlayerLine(ctx, teamNameX, y + 58, teamNameMax, playersText);
     });
+
+    if (displayTeams.length > maxVisible) {
+      const remaining = displayTeams.length - maxVisible;
+      ctx.fillStyle = '#c7bdf0';
+      ctx.font = '700 18px sans-serif';
+      ctx.fillText(`Altri team non visibili in questa schermata: ${remaining}`, 84, 1000);
+    }
   }
 
   ctx.fillStyle = '#948db3';
   ctx.font = '500 16px sans-serif';
-  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, leftPad + 30, height - 20);
+  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, 84, 1042);
 
   return await canvas.encode('png');
 }
@@ -628,7 +640,7 @@ async function buildRegistrationStatusMessagePayload() {
     .setDescription(
       `**Team registrati:** ${displayTeams.length}/${limit}\n` +
       `**Posti disponibili:** ${freeSpots}\n` +
-      `**Pannello slot aggiornato in tempo reale**`
+      `**Grafica slot aggiornata in tempo reale**`
     )
     .setImage(`attachment://${uniqueName}`);
 
