@@ -206,7 +206,7 @@ function getPublicBaseUrl(req) {
 function sortTeamsWithSlot(teams) {
   return Object.entries(teams || {}).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -409,7 +409,7 @@ function buildPublicPayload(req) {
 }
 
 app.get('/', (req, res) => {
-  return res.sendFile(path.join(PUBLIC_DIR, 'home.html'));
+  return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 app.get('/admin', authRequired, (req, res) => {
