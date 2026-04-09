@@ -86,6 +86,18 @@ function buildPublicUploadUrl(fileName) {
   return `${baseUrl}/uploads/${fileName}`;
 }
 
+function buildPublicAssetUrl(fileName) {
+  const safeFile = sanitizeText(fileName);
+  if (!safeFile) return '';
+  const baseUrl = getPublicBaseUrl();
+  if (!baseUrl) return '';
+  return `${baseUrl}/${safeFile.replace(/^\/+/, '')}`;
+}
+
+function getLogoUrl() {
+  return buildPublicAssetUrl('roda-logo.png');
+}
+
 function getProjectSettings() {
   const safe = data?.projectSettings || {};
   return {
@@ -120,11 +132,6 @@ function ensureDataStructures() {
   if (!data.botSettings || typeof data.botSettings !== 'object') {
     data.botSettings = getDefaultData().botSettings;
   }
-
-  if (!data.pending || typeof data.pending !== 'object') data.pending = {};
-  if (!data.tempSubmit || typeof data.tempSubmit !== 'object') data.tempSubmit = {};
-  if (!data.scores || typeof data.scores !== 'object') data.scores = {};
-  if (!data.fragger || typeof data.fragger !== 'object') data.fragger = {};
 }
 
 function saveState() {
@@ -241,14 +248,11 @@ function createRegisterPanelPayload() {
 }
 
 function createResultsPanelPayload() {
-  const project = getProjectSettings();
-
   if (Object.keys(teams).length === 0) {
-    return {
-      content: `**${project.tournamentName}** • 📊 MATCH ${data.currentMatch}\nNessun team registrato al momento.`,
-      components: []
-    };
+    throw new Error('Nessun team registrato');
   }
+
+  const project = getProjectSettings();
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId('team_select')
@@ -288,6 +292,11 @@ async function maybeAnnounceTournamentFull() {
         'Grazie a tutti per l’interesse. Le iscrizioni sono ora chiuse. 🔥'
       );
 
+    const logoUrl = getLogoUrl();
+    if (logoUrl) {
+      embed.setThumbnail(logoUrl);
+    }
+
     await channel.send({ embeds: [embed] });
     data.registrationClosedAnnounced = true;
     saveState();
@@ -301,67 +310,115 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
+function buildRegistrationStatusEmbeds() {
+  const project = getProjectSettings();
+  const displayTeams = getDisplayTeams();
+  const title = sanitizeText(data.registrationStatusTitle) || '📋 Slot Team Registrati';
+  const intro = sanitizeText(data.registrationStatusText);
+  const limit = getRegistrationLimit();
+  const registered = displayTeams.length;
+  const freeSpots = Math.max(limit - registered, 0);
+  const isFull = registered >= limit;
+  const logoUrl = getLogoUrl();
+
+  const embeds = [];
+  const pageChunks = chunkArray(displayTeams, 12);
+
+  const summaryEmbed = new EmbedBuilder()
+    .setTitle(`🏆 ${project.tournamentName}`)
+    .setDescription(
+      [
+        `**${title}**`,
+        intro ? `\n${intro}` : '',
+        '\n**Panoramica registrazioni**',
+        `• Team registrati: **${registered}/${limit}**`,
+        `• Posti disponibili: **${freeSpots}**`,
+        `• Stato: **${isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE'}**`
+      ].join('\n')
+    )
+    .addFields(
+      {
+        name: '📌 Lista slot',
+        value: displayTeams.length
+          ? 'Scorri qui sotto per vedere i team registrati ordinati per slot.'
+          : 'Nessun team registrato al momento.',
+        inline: false
+      },
+      {
+        name: '✨ Formato stanze vocali',
+        value: 'Le stanze team vengono create con formato: **🏆・#SLOT NomeTeam**',
+        inline: false
+      }
+    );
+
+  if (logoUrl) {
+    summaryEmbed.setThumbnail(logoUrl);
+  }
+
+  embeds.push(summaryEmbed);
+
+  if (!pageChunks.length) {
+    const emptyEmbed = new EmbedBuilder()
+      .setTitle('📋 Elenco slot')
+      .setDescription('Non ci sono ancora team registrati.')
+      .addFields({
+        name: '✅ Stato registrazioni',
+        value: isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE',
+        inline: false
+      });
+
+    if (logoUrl) {
+      emptyEmbed.setThumbnail(logoUrl);
+    }
+
+    embeds.push(emptyEmbed);
+    return embeds;
+  }
+
+  pageChunks.forEach((chunk, index) => {
+    const start = index * 12 + 1;
+    const end = start + chunk.length - 1;
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📋 Slot registrati • Pagina ${index + 1}/${pageChunks.length}`)
+      .setDescription(
+        chunk.map(team => {
+          const players = (team.players || []).filter(Boolean);
+          const playersText = players.length ? `\n👥 ${players.join(' • ')}` : '';
+          return `**#${team.slot} ${team.teamName}**${playersText}`;
+        }).join('\n\n')
+      )
+      .setFooter({
+        text: `Slot ${start}-${end} • ${project.brandName}`
+      });
+
+    if (logoUrl) {
+      embed.setThumbnail(logoUrl);
+    }
+
+    embeds.push(embed);
+  });
+
+  return embeds.slice(0, 10);
+}
+
 function queueRegistrationStatusUpdate() {
   registrationStatusUpdateQueue = registrationStatusUpdateQueue
     .then(async () => {
       await waitReady();
 
-      const project = getProjectSettings();
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const displayTeams = getDisplayTeams();
-      const title = sanitizeText(data.registrationStatusTitle) || '🏆 SLOT TEAM REGISTRATI';
-      const intro = sanitizeText(data.registrationStatusText);
-      const limit = getRegistrationLimit();
-      const freeSpots = Math.max(limit - displayTeams.length, 0);
-
-      const descriptionParts = [];
-      descriptionParts.push(`**TORNEO:** ${project.tournamentName}`);
-      if (intro) descriptionParts.push(`**${intro}**`);
-      descriptionParts.push(`**TEAM REGISTRATI:** ${displayTeams.length}/${limit}`);
-      descriptionParts.push(`**POSTI DISPONIBILI:** ${freeSpots}`);
-
-      const embed = new EmbedBuilder()
-        .setTitle(title.toUpperCase())
-        .setDescription(descriptionParts.join('\n'));
-
-      if (displayTeams.length) {
-        const chunks = chunkArray(displayTeams, 8);
-
-        chunks.forEach((chunk, idx) => {
-          const start = idx * 8 + 1;
-          const end = start + chunk.length - 1;
-
-          embed.addFields({
-            name: `📌 SLOT ${start} - ${end}`,
-            value: chunk
-              .map(team => `**#${team.slot}** • ${team.teamName}`)
-              .join('\n'),
-            inline: false
-          });
-        });
-      } else {
-        embed.addFields({
-          name: '📌 SLOT',
-          value: 'Nessun team registrato.',
-          inline: false
-        });
-      }
-
-      embed.addFields({
-        name: '✅ STATO',
-        value: displayTeams.length >= limit ? 'TORNEO PIENO' : 'POSTI DISPONIBILI',
-        inline: false
-      });
+      const embeds = buildRegistrationStatusEmbeds();
 
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit({ embeds: [embed] });
+          await msg.edit({ embeds });
           return true;
         } catch {}
       }
 
-      const msg = await channel.send({ embeds: [embed] });
+      const msg = await channel.send({ embeds });
       data.registrationStatusMessageId = msg.id;
       saveState();
       return true;
@@ -377,61 +434,9 @@ async function updateRegistrationStatusMessage() {
   return queueRegistrationStatusUpdate();
 }
 
-async function updateSavedRegisterPanelIfExists() {
-  await waitReady();
-
-  const botSettings = getBotSettings();
-  if (!botSettings.registerPanelMessageId || !botSettings.registerPanelChannelId) {
-    return { ok: true, skipped: true };
-  }
-
-  try {
-    const channel = await client.channels.fetch(botSettings.registerPanelChannelId);
-    const msg = await channel.messages.fetch(botSettings.registerPanelMessageId);
-    await msg.edit(createRegisterPanelPayload());
-    return { ok: true, updated: true };
-  } catch (error) {
-    console.error('Errore update register panel salvato:', error);
-    return { ok: false, updated: false };
-  }
-}
-
-async function updateSavedResultsPanelIfExists() {
-  await waitReady();
-
-  const botSettings = getBotSettings();
-  if (!botSettings.resultsPanelMessageId || !botSettings.resultsPanelChannelId) {
-    return { ok: true, skipped: true };
-  }
-
-  try {
-    const channel = await client.channels.fetch(botSettings.resultsPanelChannelId);
-    const msg = await channel.messages.fetch(botSettings.resultsPanelMessageId);
-    await msg.edit(createResultsPanelPayload());
-    return { ok: true, updated: true };
-  } catch (error) {
-    console.error('Errore update results panel salvato:', error);
-    return { ok: false, updated: false };
-  }
-}
-
-async function refreshSavedPanels() {
-  const results = await Promise.allSettled([
-    updateSavedRegisterPanelIfExists(),
-    updateSavedResultsPanelIfExists()
-  ]);
-
-  return {
-    ok: true,
-    registerPanel: results[0].status === 'fulfilled' ? results[0].value : { ok: false },
-    resultsPanel: results[1].status === 'fulfilled' ? results[1].value : { ok: false }
-  };
-}
-
 async function handleRegistrationStateChange() {
   await updateRegistrationStatusMessage();
   await maybeAnnounceTournamentFull();
-  await refreshSavedPanels();
 }
 
 function calcPoints(pos, kills) {
@@ -462,6 +467,11 @@ function createResultEmbed(entry, footerText) {
 🧾 Inviato da: ${entry.submittedBy || 'Sconosciuto'}`
     )
     .setFooter({ text: footerText || '⏳ In attesa approvazione staff' });
+
+  const logoUrl = getLogoUrl();
+  if (logoUrl) {
+    embed.setThumbnail(logoUrl);
+  }
 
   if (entry.image) {
     embed.setImage(entry.image);
@@ -495,6 +505,11 @@ async function updateLeaderboard() {
     .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
     .setDescription(desc)
     .addFields({ name: '🔥 Top Fragger', value: frag });
+
+  const logoUrl = getLogoUrl();
+  if (logoUrl) {
+    embed.setThumbnail(logoUrl);
+  }
 
   if (data.leaderboardMessageId) {
     try {
@@ -600,7 +615,7 @@ async function rejectPending(id, actor = 'system', source = 'system') {
 async function createPendingSubmission(entry) {
   await waitReady();
 
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = String(Date.now());
   data.pending[id] = entry;
   saveState();
 
@@ -726,6 +741,39 @@ async function spawnResultsPanel(channelId) {
   return { ok: true, created, updated };
 }
 
+async function refreshSavedPanels() {
+  const settings = getBotSettings();
+  const results = {
+    registerPanel: null,
+    resultsPanel: null
+  };
+
+  if (settings.registerPanelChannelId) {
+    try {
+      results.registerPanel = await spawnRegisterPanel(settings.registerPanelChannelId);
+    } catch (error) {
+      console.error('Errore refresh pannello registrazione:', error);
+    }
+  }
+
+  if (settings.resultsPanelChannelId) {
+    try {
+      results.resultsPanel = await spawnResultsPanel(settings.resultsPanelChannelId);
+    } catch (error) {
+      console.error('Errore refresh pannello risultati:', error);
+    }
+  }
+
+  return results;
+}
+
+async function updateSavedResultsPanelIfExists() {
+  const settings = getBotSettings();
+  if (!settings.resultsPanelChannelId) return { skipped: true };
+
+  return spawnResultsPanel(settings.resultsPanelChannelId);
+}
+
 async function createTeamRooms(customCategoryId) {
   await waitReady();
   const guild = await client.guilds.fetch(GUILD_ID);
@@ -793,10 +841,6 @@ async function deleteTeamRooms(customCategoryId) {
   const guild = await client.guilds.fetch(GUILD_ID);
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
-  if (!categoryIdToUse) {
-    throw new Error('Categoria non valida');
-  }
-
   const channels = guild.channels.cache.filter(c =>
     c.parentId === categoryIdToUse &&
     c.type === ChannelType.GuildVoice &&
@@ -824,10 +868,6 @@ async function deleteTeamRooms(customCategoryId) {
 }
 
 async function saveDiscordAttachmentLocally(attachment) {
-  if (typeof fetch !== 'function') {
-    throw new Error('Fetch non disponibile nel runtime Node corrente');
-  }
-
   const tryUrls = [attachment.url, attachment.proxyURL].filter(Boolean);
 
   for (const target of tryUrls) {
@@ -858,58 +898,36 @@ async function saveDiscordAttachmentLocally(attachment) {
   return attachment.url;
 }
 
-async function setCurrentMatch(match) {
+function setCurrentMatch(match) {
   data.currentMatch = Number(match || 1);
   saveState();
-  await updateSavedResultsPanelIfExists();
 }
 
-async function nextMatch() {
+function nextMatch() {
   data.currentMatch = Number(data.currentMatch || 1) + 1;
   saveState();
-  await updateSavedResultsPanelIfExists();
   return data.currentMatch;
 }
 
 function resetAllState() {
-  const preservedProject = getProjectSettings();
-  const preservedBot = getBotSettings();
-
   data = getDefaultData();
-  data.projectSettings = preservedProject;
-  data.botSettings = {
-    ...preservedBot
-  };
-
   saveState();
 }
 
 function saveBotPanelSettings(settings = {}) {
   ensureDataStructures();
 
-  const nextRegisterPanelChannelId = sanitizeText(
+  data.botSettings.registerPanelChannelId = sanitizeText(
     settings.registerPanelChannelId || data.botSettings.registerPanelChannelId
   );
 
-  const nextResultsPanelChannelId = sanitizeText(
+  data.botSettings.resultsPanelChannelId = sanitizeText(
     settings.resultsPanelChannelId || data.botSettings.resultsPanelChannelId
   );
 
-  const nextRoomsCategoryId = sanitizeText(
+  data.botSettings.roomsCategoryId = sanitizeText(
     settings.roomsCategoryId || data.botSettings.roomsCategoryId
   );
-
-  if (data.botSettings.registerPanelChannelId && data.botSettings.registerPanelChannelId !== nextRegisterPanelChannelId) {
-    data.botSettings.registerPanelMessageId = null;
-  }
-
-  if (data.botSettings.resultsPanelChannelId && data.botSettings.resultsPanelChannelId !== nextResultsPanelChannelId) {
-    data.botSettings.resultsPanelMessageId = null;
-  }
-
-  data.botSettings.registerPanelChannelId = nextRegisterPanelChannelId;
-  data.botSettings.resultsPanelChannelId = nextResultsPanelChannelId;
-  data.botSettings.roomsCategoryId = nextRoomsCategoryId;
 
   saveState();
 
@@ -939,9 +957,7 @@ function getBotConfig() {
     tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
     registrationStatusChannel: REGISTRATION_STATUS_CHANNEL,
     registerPanelChannelId: botSettings.registerPanelChannelId,
-    registerPanelMessageId: botSettings.registerPanelMessageId,
     resultsPanelChannelId: botSettings.resultsPanelChannelId,
-    resultsPanelMessageId: botSettings.resultsPanelMessageId,
     roomsCategoryId: botSettings.roomsCategoryId,
     brandName: project.brandName,
     tournamentName: project.tournamentName,
@@ -1066,6 +1082,7 @@ client.on('interactionCreate', async interaction => {
 
       saveEverything();
       await handleRegistrationStateChange();
+      await updateSavedResultsPanelIfExists().catch(() => {});
 
       logAudit(interaction.user.tag, 'discord', 'team_registered_discord', {
         team,
@@ -1184,13 +1201,12 @@ module.exports = {
   updateLeaderboard,
   updateRegistrationStatusMessage,
   handleRegistrationStateChange,
-  refreshSavedPanels,
-  updateSavedRegisterPanelIfExists,
-  updateSavedResultsPanelIfExists,
   approvePending,
   rejectPending,
   spawnRegisterPanel,
   spawnResultsPanel,
+  refreshSavedPanels,
+  updateSavedResultsPanelIfExists,
   createTeamRooms,
   deleteTeamRooms,
   nextMatch,
