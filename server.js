@@ -44,7 +44,6 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
-app.use(express.static(PUBLIC_DIR));
 
 function parseCookies(cookieHeader) {
   const out = {};
@@ -410,6 +409,7 @@ function buildPublicPayload(req) {
   };
 }
 
+/* ROUTE HTML PRINCIPALI PRIMA DEGLI ASSET STATICI */
 app.get('/', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'home.html'));
 });
@@ -426,6 +426,9 @@ app.get('/login', (req, res) => {
   if (session) return res.redirect('/admin');
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
+
+/* ASSET STATICI SENZA INDEX AUTOMATICO */
+app.use(express.static(PUBLIC_DIR, { index: false }));
 
 app.get('/api/public/dashboard', (req, res) => {
   return res.json(buildPublicPayload(req));
