@@ -51,6 +51,39 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+function registerCanvasFonts() {
+  const fontCandidates = [
+    {
+      family: 'RodaPanel',
+      path: '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+    },
+    {
+      family: 'RodaPanelBold',
+      path: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+    },
+    {
+      family: 'RodaPanelAlt',
+      path: '/usr/share/fonts/opentype/inter/InterDisplay-MediumItalic.otf'
+    },
+    {
+      family: 'RodaPanelLato',
+      path: '/usr/share/fonts/truetype/lato/Lato-Medium.ttf'
+    }
+  ];
+
+  for (const font of fontCandidates) {
+    try {
+      if (fs.existsSync(font.path)) {
+        Canvas.GlobalFonts.registerFromPath(font.path, font.family);
+      }
+    } catch (error) {
+      console.error(`Errore registrazione font ${font.family}:`, error);
+    }
+  }
+}
+
+registerCanvasFonts();
+
 let teams = loadTeams();
 let data = loadData();
 
@@ -336,16 +369,21 @@ function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
   strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167,116,255,0.35)', 2);
 }
 
-function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700', minSize = 16) {
+function fontString(size, weight = '400', family = 'RodaPanel') {
+  const normalizedWeight = String(weight);
+  return `${normalizedWeight} ${Math.max(10, Number(size) || 16)}px "${family}"`;
+}
+
+function measureFittedFont(ctx, text, maxWidth, startSize, weight = '700', minSize = 16, family = 'RodaPanel') {
   let size = startSize;
   while (size > minSize) {
-    ctx.font = `${weight} ${size}px sans-serif`;
-    if (ctx.measureText(text).width <= maxWidth) {
+    ctx.font = fontString(size, weight, family);
+    if (ctx.measureText(String(text || '')).width <= maxWidth) {
       return ctx.font;
     }
     size -= 2;
   }
-  ctx.font = `${weight} ${minSize}px sans-serif`;
+  ctx.font = fontString(minSize, weight, family);
   return ctx.font;
 }
 
@@ -366,12 +404,36 @@ function truncateText(ctx, text, maxWidth, font) {
   return `${out}...`;
 }
 
+function drawText(ctx, text, x, y, options = {}) {
+  const {
+    color = '#ffffff',
+    size = 20,
+    weight = '400',
+    family = 'RodaPanel',
+    align = 'left',
+    baseline = 'alphabetic'
+  } = options;
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = fontString(size, weight, family);
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.fillText(String(text || ''), x, y);
+  ctx.restore();
+}
+
 function drawPlayerLine(ctx, x, y, maxWidth, text) {
-  ctx.fillStyle = '#d4cdee';
-  const font = measureFittedFont(ctx, text, maxWidth, 22, '500', 14);
+  const font = measureFittedFont(ctx, text, maxWidth, 22, '500', 14, 'RodaPanel');
   const safeText = truncateText(ctx, text, maxWidth, font);
+
+  ctx.save();
+  ctx.fillStyle = '#d4cdee';
   ctx.font = font;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillText(safeText, x, y);
+  ctx.restore();
 }
 
 async function generateRegistrationStatusPanelBuffer() {
@@ -460,19 +522,29 @@ async function generateRegistrationStatusPanelBuffer() {
 
   const headerTextX = 246;
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 28px sans-serif';
-  ctx.fillText(project.brandName, headerTextX, 98);
+  drawText(ctx, project.brandName, headerTextX, 98, {
+    color: '#ffffff',
+    size: 28,
+    weight: '700',
+    family: 'RodaPanelBold'
+  });
 
+  const tournamentFont = measureFittedFont(ctx, project.tournamentName, 1200, 66, '800', 32, 'RodaPanelBold');
+  const safeTournament = truncateText(ctx, project.tournamentName, 1200, tournamentFont);
+  ctx.save();
   ctx.fillStyle = '#f2eaff';
-  ctx.font = measureFittedFont(ctx, project.tournamentName, 1200, 66, '800', 32);
-  ctx.fillText(project.tournamentName, headerTextX, 158);
+  ctx.font = tournamentFont;
+  ctx.fillText(safeTournament, headerTextX, 158);
+  ctx.restore();
 
-  ctx.fillStyle = '#bbb4d5';
   const headerSub = intro || title;
-  const subFont = measureFittedFont(ctx, headerSub, 1350, 28, '600', 18);
+  const subFont = measureFittedFont(ctx, headerSub, 1350, 28, '600', 18, 'RodaPanel');
+  const safeSub = truncateText(ctx, headerSub, 1350, subFont);
+  ctx.save();
+  ctx.fillStyle = '#bbb4d5';
   ctx.font = subFont;
-  ctx.fillText(truncateText(ctx, headerSub, 1350, subFont), headerTextX, 202);
+  ctx.fillText(safeSub, headerTextX, 202);
+  ctx.restore();
 
   const statusPillW = 320;
   const statusPillH = 58;
@@ -491,11 +563,15 @@ async function generateRegistrationStatusPanelBuffer() {
     24
   );
 
-  ctx.fillStyle = isFull ? '#ffd4dc' : '#f7f0ff';
-  ctx.font = '800 24px sans-serif';
   const statusLabel = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
-  const statusWidth = ctx.measureText(statusLabel).width;
-  ctx.fillText(statusLabel, statusPillX + (statusPillW - statusWidth) / 2, statusPillY + 39);
+  drawText(ctx, statusLabel, statusPillX + statusPillW / 2, statusPillY + 30, {
+    color: isFull ? '#ffd4dc' : '#f7f0ff',
+    size: 24,
+    weight: '800',
+    family: 'RodaPanelBold',
+    align: 'center',
+    baseline: 'middle'
+  });
 
   const statsY = 252;
   const statsGap = 24;
@@ -523,13 +599,20 @@ async function generateRegistrationStatusPanelBuffer() {
       24
     );
 
-    ctx.fillStyle = '#a59dc4';
-    ctx.font = '700 19px sans-serif';
-    ctx.fillText(card.label, x + 28, statsY + 34);
+    drawText(ctx, card.label, x + 28, statsY + 34, {
+      color: '#a59dc4',
+      size: 19,
+      weight: '700',
+      family: 'RodaPanelBold'
+    });
 
+    const valueFont = measureFittedFont(ctx, card.value, statsW - 56, 42, '800', 22, 'RodaPanelBold');
+    const safeValue = truncateText(ctx, card.value, statsW - 56, valueFont);
+    ctx.save();
     ctx.fillStyle = '#ffffff';
-    ctx.font = measureFittedFont(ctx, card.value, statsW - 56, 42, '800', 22);
-    ctx.fillText(card.value, x + 28, statsY + 76);
+    ctx.font = valueFont;
+    ctx.fillText(safeValue, x + 28, statsY + 76);
+    ctx.restore();
   });
 
   glowRoundedRect(
@@ -544,13 +627,19 @@ async function generateRegistrationStatusPanelBuffer() {
     28
   );
 
-  ctx.fillStyle = '#f7f0ff';
-  ctx.font = '800 34px sans-serif';
-  ctx.fillText('LISTA SLOT TEAM REGISTRATI', 88, 438);
+  drawText(ctx, 'LISTA SLOT TEAM REGISTRATI', 88, 438, {
+    color: '#f7f0ff',
+    size: 34,
+    weight: '800',
+    family: 'RodaPanelBold'
+  });
 
-  ctx.fillStyle = '#bdb6d8';
-  ctx.font = '600 20px sans-serif';
-  ctx.fillText('Slot assegnato • nome team • player registrati', 88, 474);
+  drawText(ctx, 'Slot assegnato • nome team • player registrati', 88, 474, {
+    color: '#bdb6d8',
+    size: 20,
+    weight: '600',
+    family: 'RodaPanel'
+  });
 
   ctx.strokeStyle = 'rgba(170,120,255,0.20)';
   ctx.lineWidth = 1;
@@ -560,9 +649,12 @@ async function generateRegistrationStatusPanelBuffer() {
   ctx.stroke();
 
   if (!displayTeams.length) {
-    ctx.fillStyle = '#ddd6f3';
-    ctx.font = '700 34px sans-serif';
-    ctx.fillText('Nessun team registrato al momento.', 102, 610);
+    drawText(ctx, 'Nessun team registrato al momento.', 102, 610, {
+      color: '#ddd6f3',
+      size: 34,
+      weight: '700',
+      family: 'RodaPanelBold'
+    });
   } else {
     const columns = 2;
     const rowsPerColumn = 8;
@@ -597,17 +689,26 @@ async function generateRegistrationStatusPanelBuffer() {
         fillRoundedRect(ctx, baseX + 18, y + 20, 106, 48, 16, 'rgba(123,44,255,0.18)');
         strokeRoundedRect(ctx, baseX + 18, y + 20, 106, 48, 16, 'rgba(176,134,255,0.32)', 1);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '800 26px sans-serif';
-        ctx.fillText(`#${team.slot}`, baseX + 36, y + 52);
+        drawText(ctx, `#${team.slot}`, baseX + 71, y + 44, {
+          color: '#ffffff',
+          size: 26,
+          weight: '800',
+          family: 'RodaPanelBold',
+          align: 'center',
+          baseline: 'middle'
+        });
 
+        const teamName = sanitizeText(team.teamName) || 'TEAM';
         const nameX = baseX + 150;
         const nameMax = cardW - 170;
-        const teamFont = measureFittedFont(ctx, team.teamName, nameMax, 36, '800', 22);
-        const safeTeamName = truncateText(ctx, team.teamName, nameMax, teamFont);
+        const teamFont = measureFittedFont(ctx, teamName, nameMax, 36, '800', 22, 'RodaPanelBold');
+        const safeTeamName = truncateText(ctx, teamName, nameMax, teamFont);
+
+        ctx.save();
         ctx.fillStyle = '#f5eeff';
         ctx.font = teamFont;
         ctx.fillText(safeTeamName, nameX, y + 46);
+        ctx.restore();
 
         const players = [
           sanitizeText(team.players?.[0]) || 'Player 1',
@@ -622,15 +723,21 @@ async function generateRegistrationStatusPanelBuffer() {
 
     if (displayTeams.length > columns * rowsPerColumn) {
       const remaining = displayTeams.length - (columns * rowsPerColumn);
-      ctx.fillStyle = '#d6ccf3';
-      ctx.font = '700 20px sans-serif';
-      ctx.fillText(`Altri team non visibili in questa schermata: ${remaining}`, 90, 1000);
+      drawText(ctx, `Altri team non visibili in questa schermata: ${remaining}`, 90, 1000, {
+        color: '#d6ccf3',
+        size: 20,
+        weight: '700',
+        family: 'RodaPanelBold'
+      });
     }
   }
 
-  ctx.fillStyle = '#978fb8';
-  ctx.font = '500 17px sans-serif';
-  ctx.fillText(`${project.brandName} • pannello slot sincronizzato`, 88, 1042);
+  drawText(ctx, `${project.brandName} • pannello slot sincronizzato`, 88, 1042, {
+    color: '#978fb8',
+    size: 17,
+    weight: '500',
+    family: 'RodaPanel'
+  });
 
   return await canvas.encode('png');
 }
