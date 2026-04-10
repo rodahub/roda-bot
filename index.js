@@ -64,7 +64,6 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
-
 let cachedFonts = null;
 
 async function getBitmapFonts() {
@@ -104,6 +103,12 @@ function buildPublicUploadUrl(fileName) {
   const baseUrl = getPublicBaseUrl();
   if (!baseUrl) return `/uploads/${fileName}`;
   return `${baseUrl}/uploads/${fileName}`;
+}
+
+function refreshStateFromDisk() {
+  data = loadData();
+  teams = loadTeams();
+  ensureDataStructures();
 }
 
 function getProjectSettings() {
@@ -188,14 +193,6 @@ function getDisplayTeams() {
       players: Array.isArray(teamData?.players) ? teamData.players : []
     };
   });
-}
-
-function chunkArray(list, size) {
-  const chunks = [];
-  for (let i = 0; i < list.length; i += size) {
-    chunks.push(list.slice(i, i + size));
-  }
-  return chunks;
 }
 
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
@@ -314,15 +311,6 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 function getLogoDataUri() {
   try {
     const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
@@ -339,8 +327,6 @@ function buildRegistrationBaseSvg() {
   const displayTeams = getDisplayTeams();
   const limit = getRegistrationLimit();
   const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
-  const intro = sanitizeText(data.registrationStatusText) || 'Pannello premium sincronizzato con sito e Discord.';
   const isFull = displayTeams.length >= limit;
   const logoDataUri = getLogoDataUri();
 
@@ -472,6 +458,8 @@ async function printBitmapText(image, font, x, y, text, maxWidth = null, maxHeig
 }
 
 async function generateRegistrationBannerBuffer() {
+  refreshStateFromDisk();
+
   const fontsLoaded = await getBitmapFonts();
   const image = await createBasePanelImage();
 
@@ -480,7 +468,7 @@ async function generateRegistrationBannerBuffer() {
   const limit = getRegistrationLimit();
   const freeSpots = Math.max(limit - displayTeams.length, 0);
   const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
-  const intro = sanitizeText(data.registrationStatusText) || 'Pannello premium sincronizzato con sito e Discord.';
+  const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
   const isFull = displayTeams.length >= limit;
 
   await printBitmapText(image, fontsLoaded.medium, 270, 96, truncateForBitmap(project.brandName, 28), 500, 40);
@@ -488,7 +476,7 @@ async function generateRegistrationBannerBuffer() {
   await printBitmapText(image, fontsLoaded.large, 270, 225, truncateForBitmap(title, 50), 1200, 50);
   await printBitmapText(image, fontsLoaded.medium, 92, 590, truncateForBitmap(intro, 120), 1800, 40);
 
-  await printBitmapText(image, fontsLoaded.medium, 2020, 122, isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE', 220, 32);
+  await printBitmapText(image, fontsLoaded.medium, 2020, 122, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 230, 32);
 
   await printBitmapText(image, fontsLoaded.medium, 86, 350, 'TEAM REGISTRATI', 320, 30);
   await printBitmapText(image, fontsLoaded.large, 86, 390, `${displayTeams.length}/${limit}`, 320, 40);
@@ -524,16 +512,7 @@ async function generateRegistrationBannerBuffer() {
       const x = startX + col * (cardWidth + gapX);
       const y = startY + row * (cardHeight + gapY);
 
-      await image.print({
-        font: fontsLoaded.medium,
-        x: x + 38,
-        y: y + 34,
-        text: `#${team.slot}`,
-        maxWidth: 90,
-        maxHeight: 26
-      }).catch(async () => {
-        await image.print(fontsLoaded.medium, x + 38, y + 34, `#${team.slot}`);
-      });
+      await printBitmapText(image, fontsLoaded.medium, x + 38, y + 34, `#${team.slot}`, 90, 26);
 
       const safeTeamName = truncateForBitmap(team.teamName, 34);
       await printBitmapText(image, fontsLoaded.large, x + 166, y + 28, safeTeamName, 860, 40);
@@ -583,8 +562,10 @@ async function saveRegistrationDebugFile(panelBuffer) {
 }
 
 async function buildRegistrationStatusMessagePayload() {
+  refreshStateFromDisk();
+
   const panelBuffer = await generateRegistrationBannerBuffer();
-  const panelName = 'registration-panel.png';
+  const panelName = `registration-panel-${Date.now()}.png`;
   const panelAttachment = new AttachmentBuilder(panelBuffer, { name: panelName });
 
   await saveRegistrationDebugFile(panelBuffer);
@@ -599,6 +580,7 @@ function queueRegistrationStatusUpdate() {
   registrationStatusUpdateQueue = registrationStatusUpdateQueue
     .then(async () => {
       await waitReady();
+      refreshStateFromDisk();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
       const payload = await buildRegistrationStatusMessagePayload();
@@ -606,9 +588,15 @@ function queueRegistrationStatusUpdate() {
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit(payload);
+          await msg.edit({
+            content: payload.content,
+            files: payload.files,
+            attachments: []
+          });
           return true;
-        } catch {}
+        } catch (error) {
+          console.error('Errore edit pannello slot, invio nuovo messaggio:', error);
+        }
       }
 
       const msg = await channel.send(payload);
@@ -668,6 +656,7 @@ async function updateSavedRegisterPanelIfExists() {
 }
 
 async function handleRegistrationStateChange() {
+  refreshStateFromDisk();
   await updateRegistrationStatusMessage();
   await updateSavedRegisterPanelIfExists().catch(() => {});
   await updateSavedResultsPanelIfExists().catch(() => {});
@@ -1163,8 +1152,7 @@ client.once('ready', async () => {
   console.log('ONLINE');
   if (readyResolver) readyResolver(client);
 
-  teams = loadTeams();
-  data = loadData();
+  refreshStateFromDisk();
 
   logAudit('bot', 'discord', 'bot_ready', {
     guildId: GUILD_ID
@@ -1245,6 +1233,8 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isModalSubmit() && interaction.customId === 'register_modal') {
       await interaction.deferReply({ ephemeral: true });
 
+      refreshStateFromDisk();
+
       const team = sanitizeText(interaction.fields.getTextInputValue('team'));
       const p1 = sanitizeText(interaction.fields.getTextInputValue('p1'));
       const p2 = sanitizeText(interaction.fields.getTextInputValue('p2'));
@@ -1280,6 +1270,7 @@ client.on('interactionCreate', async interaction => {
       };
 
       saveEverything();
+      refreshStateFromDisk();
       await handleRegistrationStateChange();
 
       logAudit(interaction.user.tag, 'discord', 'team_registered_discord', {
