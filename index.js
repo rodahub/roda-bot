@@ -336,6 +336,75 @@ function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
   strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167,116,255,0.35)', 2);
 }
 
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function svgToDataUri(svg) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+async function drawSvgText(ctx, text, x, y, options = {}) {
+  const {
+    size = 28,
+    weight = 700,
+    color = '#ffffff',
+    maxWidth = 800,
+    align = 'left',
+    baseline = 'alphabetic'
+  } = options;
+
+  const safeText = escapeXml(text);
+  const anchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
+  const dominantBaseline = baseline === 'middle' ? 'middle' : 'alphabetic';
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${Math.max(32, Math.ceil(maxWidth + 20))}" height="${Math.max(32, Math.ceil(size * 2.2))}">
+      <text
+        x="${align === 'center' ? Math.max(16, Math.ceil(maxWidth / 2)) : align === 'right' ? Math.max(16, Math.ceil(maxWidth)) : 0}"
+        y="${baseline === 'middle' ? Math.ceil(size) : Math.ceil(size * 1.2)}"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="${size}"
+        font-weight="${weight}"
+        fill="${color}"
+        text-anchor="${anchor}"
+        dominant-baseline="${dominantBaseline}"
+      >${safeText}</text>
+    </svg>
+  `;
+
+  const image = await Canvas.loadImage(svgToDataUri(svg));
+  const drawX = align === 'center' ? x - image.width / 2 : align === 'right' ? x - image.width : x;
+  const drawY = baseline === 'middle' ? y - image.height / 2 : y - image.height + size * 1.2;
+  ctx.drawImage(image, drawX, drawY);
+}
+
+async function drawSvgMultilineText(ctx, lines, x, y, options = {}) {
+  const {
+    size = 22,
+    weight = 500,
+    color = '#d7cff0',
+    lineHeight = 30,
+    maxWidth = 760
+  } = options;
+
+  for (let i = 0; i < lines.length; i++) {
+    await drawSvgText(ctx, lines[i], x, y + i * lineHeight, {
+      size,
+      weight,
+      color,
+      maxWidth,
+      align: 'left',
+      baseline: 'alphabetic'
+    });
+  }
+}
+
 async function generateRegistrationBannerBuffer() {
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
@@ -346,7 +415,11 @@ async function generateRegistrationBannerBuffer() {
   const isFull = displayTeams.length >= limit;
 
   const width = 2400;
-  const height = 900;
+  const height = 1600;
+  const columns = 2;
+  const rows = 4;
+  const visibleCards = columns * rows;
+  const visibleTeams = displayTeams.slice(0, visibleCards);
 
   const canvas = Canvas.createCanvas(width, height);
   const ctx = canvas.getContext('2d');
@@ -419,17 +492,26 @@ async function generateRegistrationBannerBuffer() {
     }
   }
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 30px sans-serif';
-  ctx.fillText(project.brandName, 270, 118);
+  await drawSvgText(ctx, project.brandName, 270, 118, {
+    size: 30,
+    weight: 700,
+    color: '#ffffff',
+    maxWidth: 500
+  });
 
-  ctx.fillStyle = '#f4ecff';
-  ctx.font = '800 76px sans-serif';
-  ctx.fillText(project.tournamentName, 270, 198);
+  await drawSvgText(ctx, project.tournamentName, 270, 198, {
+    size: 76,
+    weight: 800,
+    color: '#f4ecff',
+    maxWidth: 1100
+  });
 
-  ctx.fillStyle = '#bbb4d7';
-  ctx.font = '600 28px sans-serif';
-  ctx.fillText(title, 270, 240);
+  await drawSvgText(ctx, title, 270, 240, {
+    size: 28,
+    weight: 600,
+    color: '#bbb4d7',
+    maxWidth: 1000
+  });
 
   const pillX = width - 460;
   const pillY = 104;
@@ -448,11 +530,15 @@ async function generateRegistrationBannerBuffer() {
     26
   );
 
-  ctx.fillStyle = isFull ? '#ffd4dc' : '#f7f0ff';
-  ctx.font = '800 28px sans-serif';
   const pillText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
-  const pillTextWidth = ctx.measureText(pillText).width;
-  ctx.fillText(pillText, pillX + (pillW - pillTextWidth) / 2, pillY + 42);
+  await drawSvgText(ctx, pillText, pillX + pillW / 2, pillY + pillH / 2, {
+    size: 28,
+    weight: 800,
+    color: isFull ? '#ffd4dc' : '#f7f0ff',
+    maxWidth: pillW - 20,
+    align: 'center',
+    baseline: 'middle'
+  });
 
   const statY = 326;
   const statGap = 28;
@@ -465,7 +551,8 @@ async function generateRegistrationBannerBuffer() {
     { label: 'STATO', value: isFull ? 'CHIUSO' : 'APERTO' }
   ];
 
-  statCards.forEach((card, index) => {
+  for (let index = 0; index < statCards.length; index++) {
+    const card = statCards[index];
     const x = 56 + index * (statW + statGap);
 
     glowRoundedRect(
@@ -480,34 +567,46 @@ async function generateRegistrationBannerBuffer() {
       28
     );
 
-    ctx.fillStyle = '#ab9fd1';
-    ctx.font = '700 24px sans-serif';
-    ctx.fillText(card.label, x + 30, statY + 42);
+    await drawSvgText(ctx, card.label, x + 30, statY + 42, {
+      size: 24,
+      weight: 700,
+      color: '#ab9fd1',
+      maxWidth: statW - 60
+    });
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '800 52px sans-serif';
-    ctx.fillText(card.value, x + 30, statY + 98);
-  });
+    await drawSvgText(ctx, card.value, x + 30, statY + 98, {
+      size: 52,
+      weight: 800,
+      color: '#ffffff',
+      maxWidth: statW - 60
+    });
+  }
 
   glowRoundedRect(
     ctx,
     56,
     506,
     width - 112,
-    320,
+    1030,
     32,
     'rgba(123,44,255,0.22)',
     'rgba(255,255,255,0.022)',
     28
   );
 
-  ctx.fillStyle = '#f5eeff';
-  ctx.font = '800 40px sans-serif';
-  ctx.fillText('PANNELLO SLOT TEAM', 92, 564);
+  await drawSvgText(ctx, 'PANNELLO SLOT TEAM', 92, 564, {
+    size: 40,
+    weight: 800,
+    color: '#f5eeff',
+    maxWidth: 800
+  });
 
-  ctx.fillStyle = '#c3bcde';
-  ctx.font = '600 24px sans-serif';
-  ctx.fillText(intro, 92, 610);
+  await drawSvgText(ctx, intro, 92, 610, {
+    size: 24,
+    weight: 600,
+    color: '#c3bcde',
+    maxWidth: 1800
+  });
 
   ctx.strokeStyle = 'rgba(170,120,255,0.18)';
   ctx.lineWidth = 1;
@@ -516,13 +615,96 @@ async function generateRegistrationBannerBuffer() {
   ctx.lineTo(width - 92, 636);
   ctx.stroke();
 
-  ctx.fillStyle = '#9b92be';
-  ctx.font = '600 24px sans-serif';
-  ctx.fillText('Lista team completa visibile negli embed qui sotto.', 92, 720);
+  if (!visibleTeams.length) {
+    await drawSvgText(ctx, 'Nessun team registrato al momento.', 120, 760, {
+      size: 40,
+      weight: 700,
+      color: '#f0e9ff',
+      maxWidth: 900
+    });
+  } else {
+    const cardWidth = 1088;
+    const cardHeight = 190;
+    const gapX = 48;
+    const gapY = 28;
+    const startX = 88;
+    const startY = 700;
 
-  ctx.fillStyle = '#8f86b5';
-  ctx.font = '500 20px sans-serif';
-  ctx.fillText(`${project.brandName} • grafica premium sincronizzata`, 92, 786);
+    for (let index = 0; index < visibleTeams.length; index++) {
+      const team = visibleTeams[index];
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = startX + col * (cardWidth + gapX);
+      const y = startY + row * (cardHeight + gapY);
+
+      glowRoundedRect(
+        ctx,
+        x,
+        y,
+        cardWidth,
+        cardHeight,
+        26,
+        'rgba(123,44,255,0.22)',
+        'rgba(255,255,255,0.035)',
+        20
+      );
+
+      fillRoundedRect(ctx, x + 22, y + 24, 120, 56, 18, 'rgba(123,44,255,0.18)');
+      strokeRoundedRect(ctx, x + 22, y + 24, 120, 56, 18, 'rgba(170,120,255,0.45)', 1.5);
+
+      await drawSvgText(ctx, `#${team.slot}`, x + 82, y + 58, {
+        size: 28,
+        weight: 800,
+        color: '#ffffff',
+        maxWidth: 90,
+        align: 'center',
+        baseline: 'middle'
+      });
+
+      await drawSvgText(ctx, sanitizeText(team.teamName) || 'TEAM', x + 166, y + 56, {
+        size: 34,
+        weight: 800,
+        color: '#f4ecff',
+        maxWidth: 850
+      });
+
+      const safePlayers = [
+        `👤 ${sanitizeText(team.players?.[0]) || 'Player 1'}`,
+        `👤 ${sanitizeText(team.players?.[1]) || 'Player 2'}`,
+        `👤 ${sanitizeText(team.players?.[2]) || 'Player 3'}`
+      ];
+
+      await drawSvgMultilineText(ctx, safePlayers, x + 166, y + 98, {
+        size: 22,
+        weight: 500,
+        color: '#d7cff0',
+        lineHeight: 30,
+        maxWidth: 840
+      });
+    }
+  }
+
+  if (displayTeams.length > visibleCards) {
+    await drawSvgText(
+      ctx,
+      `Altri team non visibili in questa schermata: ${displayTeams.length - visibleCards}`,
+      120,
+      1500,
+      {
+        size: 24,
+        weight: 600,
+        color: '#bcaed9',
+        maxWidth: 900
+      }
+    );
+  }
+
+  await drawSvgText(ctx, `${project.brandName} • grafica premium sincronizzata`, 92, 1560, {
+    size: 20,
+    weight: 500,
+    color: '#8f86b5',
+    maxWidth: 900
+  });
 
   return await canvas.encode('png');
 }
@@ -548,83 +730,13 @@ function formatTeamPlayers(players = []) {
 }
 
 async function buildRegistrationStatusMessagePayload() {
-  const project = getProjectSettings();
-  const displayTeams = getDisplayTeams();
-  const limit = getRegistrationLimit();
-  const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
-  const intro = sanitizeText(data.registrationStatusText) || 'Elenco completo dei team registrati con slot assegnato e giocatori.';
-  const logoUrl = getLogoUrl();
-
-  const bannerBuffer = await generateRegistrationBannerBuffer();
-  const bannerName = `registration-banner-${Date.now()}.png`;
-  const bannerAttachment = new AttachmentBuilder(bannerBuffer, { name: bannerName });
-
-  const summaryEmbed = new EmbedBuilder()
-    .setColor(0x7b2cff)
-    .setTitle(`🏆 ${project.tournamentName}`)
-    .setDescription(`**${title}**\n${intro}`)
-    .setImage(`attachment://${bannerName}`)
-    .addFields(
-      {
-        name: '📊 Team registrati',
-        value: `**${displayTeams.length}/${limit}**`,
-        inline: true
-      },
-      {
-        name: '🟢 Posti disponibili',
-        value: `**${freeSpots}**`,
-        inline: true
-      },
-      {
-        name: '📌 Stato',
-        value: displayTeams.length >= limit ? '**TORNEO PIENO**' : '**ISCRIZIONI APERTE**',
-        inline: true
-      }
-    );
-
-  if (logoUrl) {
-    summaryEmbed.setThumbnail(logoUrl);
-  }
-
-  const embeds = [summaryEmbed];
-
-  if (!displayTeams.length) {
-    summaryEmbed.addFields({
-      name: '📋 Lista team',
-      value: 'Nessun team registrato al momento.',
-      inline: false
-    });
-
-    return {
-      content: '',
-      embeds,
-      files: [bannerAttachment]
-    };
-  }
-
-  const chunks = chunkArray(displayTeams, 6);
-
-  chunks.forEach((chunk, chunkIndex) => {
-    const embed = new EmbedBuilder()
-      .setColor(0x7b2cff)
-      .setTitle(`✨ Team registrati • Pagina ${chunkIndex + 1}/${chunks.length}`);
-
-    chunk.forEach(team => {
-      embed.addFields({
-        name: `🏆 Slot #${team.slot} • ${team.teamName}`,
-        value: formatTeamPlayers(team.players),
-        inline: true
-      });
-    });
-
-    embeds.push(embed);
-  });
+  const panelBuffer = await generateRegistrationBannerBuffer();
+  const panelName = `registration-panel-${Date.now()}.png`;
+  const panelAttachment = new AttachmentBuilder(panelBuffer, { name: panelName });
 
   return {
     content: '',
-    embeds,
-    files: [bannerAttachment]
+    files: [panelAttachment]
   };
 }
 
