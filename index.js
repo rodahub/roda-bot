@@ -171,7 +171,7 @@ function getRegistrationLimit() {
 function getSortedTeamEntries() {
   return Object.entries(teams).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -1243,6 +1243,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'register_modal') {
+      await interaction.deferReply({ ephemeral: true });
+
       const team = sanitizeText(interaction.fields.getTextInputValue('team'));
       const p1 = sanitizeText(interaction.fields.getTextInputValue('p1'));
       const p2 = sanitizeText(interaction.fields.getTextInputValue('p2'));
@@ -1250,27 +1252,25 @@ client.on('interactionCreate', async interaction => {
       const project = getProjectSettings();
 
       if (!team || !p1 || !p2 || !p3) {
-        return interaction.reply({ content: '❌ Compila tutti i campi', ephemeral: true });
+        return interaction.editReply({ content: '❌ Compila tutti i campi' });
       }
 
       if (teams[team]) {
-        return interaction.reply({ content: '❌ Esiste già un team con questo nome', ephemeral: true });
+        return interaction.editReply({ content: '❌ Esiste già un team con questo nome' });
       }
 
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
-        return interaction.reply({
-          content: `🚫 Le registrazioni sono chiuse. **${project.tournamentName}** ha già raggiunto ${getRegistrationLimit()} team.`,
-          ephemeral: true
+        return interaction.editReply({
+          content: `🚫 Le registrazioni sono chiuse. **${project.tournamentName}** ha già raggiunto ${getRegistrationLimit()} team.`
         });
       }
 
       const slot = getNextAvailableSlot();
       if (!slot) {
         await maybeAnnounceTournamentFull();
-        return interaction.reply({
-          content: '🚫 Nessuno slot disponibile. Registrazioni chiuse.',
-          ephemeral: true
+        return interaction.editReply({
+          content: '🚫 Nessuno slot disponibile. Registrazioni chiuse.'
         });
       }
 
@@ -1288,9 +1288,8 @@ client.on('interactionCreate', async interaction => {
         players: [p1, p2, p3]
       });
 
-      return interaction.reply({
-        content: `✅ Team registrato con successo nello **slot #${slot}** di **${project.tournamentName}**`,
-        ephemeral: true
+      return interaction.editReply({
+        content: `✅ Team registrato con successo nello **slot #${slot}** di **${project.tournamentName}**`
       });
     }
 
@@ -1355,6 +1354,16 @@ client.on('interactionCreate', async interaction => {
     }
   } catch (error) {
     console.error(error);
+
+    try {
+      if (interaction.isRepliable()) {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({ content: '❌ Si è verificato un errore durante l’operazione.' });
+        } else {
+          await interaction.reply({ content: '❌ Si è verificato un errore durante l’operazione.', ephemeral: true });
+        }
+      }
+    } catch {}
   }
 });
 
