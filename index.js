@@ -614,13 +614,32 @@ function formatTeamPlayers(players = []) {
   ].join('\n');
 }
 
+async function saveRegistrationDebugFile(panelBuffer) {
+  try {
+    const debugFileName = 'registration-debug.png';
+    const debugFilePath = path.join(UPLOADS_DIR, debugFileName);
+    fs.writeFileSync(debugFilePath, panelBuffer);
+
+    const debugUrl = buildPublicUploadUrl(debugFileName);
+    console.log(`DEBUG registration panel salvato: ${debugFilePath}`);
+    console.log(`DEBUG registration panel URL: ${debugUrl}`);
+
+    return { ok: true, filePath: debugFilePath, url: debugUrl };
+  } catch (error) {
+    console.error('Errore salvataggio debug pannello:', error);
+    return { ok: false, filePath: '', url: '' };
+  }
+}
+
 async function buildRegistrationStatusMessagePayload() {
   const panelBuffer = await generateRegistrationBannerBuffer();
   const panelName = 'registration-panel.png';
   const panelAttachment = new AttachmentBuilder(panelBuffer, { name: panelName });
 
+  const debugInfo = await saveRegistrationDebugFile(panelBuffer);
+
   return {
-    content: '',
+    content: debugInfo.ok ? `Debug pannello: ${debugInfo.url}` : '',
     files: [panelAttachment]
   };
 }
