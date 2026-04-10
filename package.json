@@ -3,12 +3,13 @@
   "version": "2.0.0",
   "description": "Bot torneo con dashboard web admin completa",
   "main": "server.js",
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
     "discord.js": "^14.14.1",
-    "express": "^4.18.2",
-    "sharp": "^0.33.5"
+    "express": "^4.18.2"
   }
 }
