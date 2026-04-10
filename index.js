@@ -15,7 +15,6 @@ const {
 } = require('discord.js');
 
 const Canvas = require('@napi-rs/canvas');
-const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
@@ -51,6 +50,36 @@ const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
+
+let registeredFontFamily = 'sans-serif';
+
+function tryRegisterFont(fontPath, family) {
+  try {
+    if (!fs.existsSync(fontPath)) return false;
+    Canvas.GlobalFonts.registerFromPath(fontPath, family);
+    registeredFontFamily = family;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function registerCanvasFonts() {
+  const candidates = [
+    ['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 'RodaSans'],
+    ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 'RodaSansBold'],
+    ['/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf', 'RodaLiberation'],
+    ['/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf', 'RodaLiberationBold'],
+    ['/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf', 'RodaNoto'],
+    ['/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf', 'RodaNotoBold']
+  ];
+
+  for (const [fontPath, family] of candidates) {
+    tryRegisterFont(fontPath, family);
+  }
+}
+
+registerCanvasFonts();
 
 let teams = loadTeams();
 let data = loadData();
@@ -296,70 +325,97 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
 
-function getLogoDataUri() {
-  try {
-    const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
-    if (!fs.existsSync(logoPath)) return '';
-    const buf = fs.readFileSync(logoPath);
-    return `data:image/png;base64,${buf.toString('base64')}`;
-  } catch {
-    return '';
+function fillRoundedRect(ctx, x, y, w, h, r, fillStyle) {
+  ctx.save();
+  ctx.fillStyle = fillStyle;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeRoundedRect(ctx, x, y, w, h, r, strokeStyle, lineWidth = 1) {
+  ctx.save();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
+  ctx.save();
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = blur;
+  fillRoundedRect(ctx, x, y, w, h, r, fillColor);
+  ctx.restore();
+  strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167,116,255,0.35)', 2);
+}
+
+function setCanvasFont(ctx, size, weight = 400) {
+  ctx.font = `${weight} ${size}px "${registeredFontFamily}"`;
+}
+
+function fitTextToWidth(ctx, text, maxWidth, startSize, minSize = 14, weight = 700) {
+  let size = startSize;
+  while (size > minSize) {
+    setCanvasFont(ctx, size, weight);
+    if (ctx.measureText(String(text || '')).width <= maxWidth) {
+      return size;
+    }
+    size -= 1;
   }
+  return minSize;
 }
 
-function buildTeamCardSvg(team, x, y, width, height) {
-  const teamName = escapeHtml(sanitizeText(team.teamName) || 'TEAM');
-  const players = [
-    escapeHtml(sanitizeText(team.players?.[0]) || 'Player 1'),
-    escapeHtml(sanitizeText(team.players?.[1]) || 'Player 2'),
-    escapeHtml(sanitizeText(team.players?.[2]) || 'Player 3')
-  ];
+function truncateTextToWidth(ctx, text, maxWidth) {
+  const source = String(text || '');
+  if (ctx.measureText(source).width <= maxWidth) return source;
 
-  return `
-    <g>
-      <rect x="${x}" y="${y}" rx="26" ry="26" width="${width}" height="${height}"
-        fill="rgba(255,255,255,0.035)"
-        stroke="rgba(149,92,255,0.42)"
-        stroke-width="2"/>
-      <rect x="${x + 22}" y="${y + 22}" rx="18" ry="18" width="120" height="56"
-        fill="rgba(123,44,255,0.18)"
-        stroke="rgba(170,120,255,0.45)"
-        stroke-width="1.5"/>
-      <text x="${x + 82}" y="${y + 58}" text-anchor="middle"
-        font-size="28" font-weight="800"
-        fill="#ffffff"
-        font-family="Arial, Helvetica, sans-serif">#${team.slot}</text>
+  let out = source;
+  while (out.length > 0 && ctx.measureText(`${out}...`).width > maxWidth) {
+    out = out.slice(0, -1);
+  }
+  return `${out}...`;
+}
 
-      <text x="${x + 166}" y="${y + 56}"
-        font-size="34" font-weight="800"
-        fill="#f4ecff"
-        font-family="Arial, Helvetica, sans-serif">${teamName}</text>
+function drawText(ctx, text, x, y, options = {}) {
+  const {
+    size = 24,
+    weight = 700,
+    color = '#ffffff',
+    align = 'left',
+    baseline = 'alphabetic',
+    maxWidth = null
+  } = options;
 
-      <text x="${x + 166}" y="${y + 98}"
-        font-size="22" font-weight="500"
-        fill="#d7cff0"
-        font-family="Arial, Helvetica, sans-serif">👤 ${players[0]}</text>
+  ctx.save();
+  setCanvasFont(ctx, size, weight);
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
 
-      <text x="${x + 166}" y="${y + 128}"
-        font-size="22" font-weight="500"
-        fill="#d7cff0"
-        font-family="Arial, Helvetica, sans-serif">👤 ${players[1]}</text>
+  let value = String(text || '');
+  if (typeof maxWidth === 'number' && maxWidth > 0) {
+    value = truncateTextToWidth(ctx, value, maxWidth);
+  }
 
-      <text x="${x + 166}" y="${y + 158}"
-        font-size="22" font-weight="500"
-        fill="#d7cff0"
-        font-family="Arial, Helvetica, sans-serif">👤 ${players[2]}</text>
-    </g>
-  `;
+  ctx.fillText(value, x, y);
+  ctx.restore();
 }
 
 async function generateRegistrationBannerBuffer() {
@@ -370,7 +426,6 @@ async function generateRegistrationBannerBuffer() {
   const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
   const intro = sanitizeText(data.registrationStatusText) || 'Pannello premium sincronizzato con sito e Discord.';
   const isFull = displayTeams.length >= limit;
-  const logoDataUri = getLogoDataUri();
 
   const width = 2400;
   const height = 1600;
@@ -379,17 +434,207 @@ async function generateRegistrationBannerBuffer() {
   const visibleCards = columns * rows;
   const visibleTeams = displayTeams.slice(0, visibleCards);
 
-  let teamCardsSvg = '';
+  const canvas = Canvas.createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#05050a');
+  bg.addColorStop(0.38, '#0a0813');
+  bg.addColorStop(0.72, '#130b1d');
+  bg.addColorStop(1, '#1b1128');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(123,44,255,0.35)';
+  ctx.shadowBlur = 220;
+  ctx.fillStyle = 'rgba(123,44,255,0.15)';
+  ctx.beginPath();
+  ctx.arc(130, 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width - 140, 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width / 2, height - 10, 330, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  glowRoundedRect(
+    ctx,
+    22,
+    22,
+    width - 44,
+    height - 44,
+    42,
+    'rgba(123,44,255,0.55)',
+    'rgba(11,11,19,0.96)',
+    74
+  );
+
+  glowRoundedRect(
+    ctx,
+    56,
+    52,
+    width - 112,
+    220,
+    34,
+    'rgba(123,44,255,0.22)',
+    'rgba(255,255,255,0.024)',
+    34
+  );
+
+  const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
+  if (fs.existsSync(logoPath)) {
+    try {
+      const logo = await Canvas.loadImage(logoPath);
+      glowRoundedRect(
+        ctx,
+        92,
+        88,
+        136,
+        136,
+        32,
+        'rgba(123,44,255,0.60)',
+        'rgba(123,44,255,0.12)',
+        38
+      );
+      ctx.drawImage(logo, 110, 106, 100, 100);
+    } catch (error) {
+      console.error('Errore caricamento logo RØDA:', error);
+    }
+  }
+
+  drawText(ctx, project.brandName, 270, 118, {
+    size: 30,
+    weight: 700,
+    color: '#ffffff',
+    maxWidth: 420
+  });
+
+  const tournamentSize = fitTextToWidth(ctx, project.tournamentName, 1150, 76, 40, 800);
+  drawText(ctx, project.tournamentName, 270, 198, {
+    size: tournamentSize,
+    weight: 800,
+    color: '#f4ecff',
+    maxWidth: 1150
+  });
+
+  drawText(ctx, title, 270, 240, {
+    size: 28,
+    weight: 600,
+    color: '#bbb4d7',
+    maxWidth: 1050
+  });
+
+  const pillX = width - 460;
+  const pillY = 104;
+  const pillW = 300;
+  const pillH = 64;
+
+  glowRoundedRect(
+    ctx,
+    pillX,
+    pillY,
+    pillW,
+    pillH,
+    22,
+    'rgba(123,44,255,0.28)',
+    isFull ? 'rgba(255,77,109,0.13)' : 'rgba(123,44,255,0.12)',
+    26
+  );
+
+  const pillText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
+  drawText(ctx, pillText, pillX + pillW / 2, pillY + pillH / 2, {
+    size: 28,
+    weight: 800,
+    color: isFull ? '#ffd4dc' : '#f7f0ff',
+    align: 'center',
+    baseline: 'middle',
+    maxWidth: pillW - 30
+  });
+
+  const statY = 326;
+  const statGap = 28;
+  const statW = (width - 112 - statGap * 2) / 3;
+  const statH = 132;
+
+  const statCards = [
+    { label: 'TEAM REGISTRATI', value: `${displayTeams.length}/${limit}` },
+    { label: 'POSTI DISPONIBILI', value: `${freeSpots}` },
+    { label: 'STATO', value: isFull ? 'CHIUSO' : 'APERTO' }
+  ];
+
+  statCards.forEach((card, index) => {
+    const x = 56 + index * (statW + statGap);
+
+    glowRoundedRect(
+      ctx,
+      x,
+      statY,
+      statW,
+      statH,
+      28,
+      'rgba(123,44,255,0.24)',
+      'rgba(255,255,255,0.028)',
+      28
+    );
+
+    drawText(ctx, card.label, x + 30, statY + 42, {
+      size: 24,
+      weight: 700,
+      color: '#ab9fd1',
+      maxWidth: statW - 60
+    });
+
+    drawText(ctx, card.value, x + 30, statY + 98, {
+      size: 52,
+      weight: 800,
+      color: '#ffffff',
+      maxWidth: statW - 60
+    });
+  });
+
+  glowRoundedRect(
+    ctx,
+    56,
+    506,
+    width - 112,
+    1030,
+    32,
+    'rgba(123,44,255,0.22)',
+    'rgba(255,255,255,0.022)',
+    28
+  );
+
+  drawText(ctx, 'PANNELLO SLOT TEAM', 92, 564, {
+    size: 40,
+    weight: 800,
+    color: '#f5eeff',
+    maxWidth: 760
+  });
+
+  drawText(ctx, intro, 92, 610, {
+    size: 24,
+    weight: 600,
+    color: '#c3bcde',
+    maxWidth: 1800
+  });
+
+  ctx.strokeStyle = 'rgba(170,120,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(92, 636);
+  ctx.lineTo(width - 92, 636);
+  ctx.stroke();
 
   if (!visibleTeams.length) {
-    teamCardsSvg = `
-      <text x="120" y="760"
-        font-size="40" font-weight="700"
-        fill="#f0e9ff"
-        font-family="Arial, Helvetica, sans-serif">
-        Nessun team registrato al momento.
-      </text>
-    `;
+    drawText(ctx, 'Nessun team registrato al momento.', 120, 760, {
+      size: 40,
+      weight: 700,
+      color: '#f0e9ff',
+      maxWidth: 900
+    });
   } else {
     const cardWidth = 1088;
     const cardHeight = 190;
@@ -403,170 +648,86 @@ async function generateRegistrationBannerBuffer() {
       const row = Math.floor(index / columns);
       const x = startX + col * (cardWidth + gapX);
       const y = startY + row * (cardHeight + gapY);
-      teamCardsSvg += buildTeamCardSvg(team, x, y, cardWidth, cardHeight);
+
+      glowRoundedRect(
+        ctx,
+        x,
+        y,
+        cardWidth,
+        cardHeight,
+        26,
+        'rgba(123,44,255,0.22)',
+        'rgba(255,255,255,0.035)',
+        20
+      );
+
+      fillRoundedRect(ctx, x + 22, y + 24, 120, 56, 18, 'rgba(123,44,255,0.18)');
+      strokeRoundedRect(ctx, x + 22, y + 24, 120, 56, 18, 'rgba(170,120,255,0.45)', 1.5);
+
+      drawText(ctx, `#${team.slot}`, x + 82, y + 52, {
+        size: 28,
+        weight: 800,
+        color: '#ffffff',
+        align: 'center',
+        baseline: 'middle',
+        maxWidth: 80
+      });
+
+      const teamName = sanitizeText(team.teamName) || 'TEAM';
+      const teamNameSize = fitTextToWidth(ctx, teamName, 860, 34, 22, 800);
+      drawText(ctx, teamName, x + 166, y + 56, {
+        size: teamNameSize,
+        weight: 800,
+        color: '#f4ecff',
+        maxWidth: 860
+      });
+
+      const players = [
+        `👤 ${sanitizeText(team.players?.[0]) || 'Player 1'}`,
+        `👤 ${sanitizeText(team.players?.[1]) || 'Player 2'}`,
+        `👤 ${sanitizeText(team.players?.[2]) || 'Player 3'}`
+      ];
+
+      drawText(ctx, players[0], x + 166, y + 98, {
+        size: 22,
+        weight: 500,
+        color: '#d7cff0',
+        maxWidth: 840
+      });
+
+      drawText(ctx, players[1], x + 166, y + 128, {
+        size: 22,
+        weight: 500,
+        color: '#d7cff0',
+        maxWidth: 840
+      });
+
+      drawText(ctx, players[2], x + 166, y + 158, {
+        size: 22,
+        weight: 500,
+        color: '#d7cff0',
+        maxWidth: 840
+      });
     });
   }
 
-  const overflowSvg = displayTeams.length > visibleCards
-    ? `
-      <text x="120" y="1500"
-        font-size="24" font-weight="600"
-        fill="#bcaed9"
-        font-family="Arial, Helvetica, sans-serif">
-        Altri team non visibili in questa schermata: ${displayTeams.length - visibleCards}
-      </text>
-    `
-    : '';
+  if (displayTeams.length > visibleCards) {
+    drawText(ctx, `Altri team non visibili in questa schermata: ${displayTeams.length - visibleCards}`, 120, 1500, {
+      size: 24,
+      weight: 600,
+      color: '#bcaed9',
+      maxWidth: 980
+    });
+  }
 
-  const statusText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
-  const stateCardText = isFull ? 'CHIUSO' : 'APERTO';
+  drawText(ctx, `${project.brandName} • grafica premium sincronizzata`, 92, 1560, {
+    size: 20,
+    weight: 500,
+    color: '#8f86b5',
+    maxWidth: 900
+  });
 
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#05050a"/>
-          <stop offset="38%" stop-color="#0a0813"/>
-          <stop offset="72%" stop-color="#130b1d"/>
-          <stop offset="100%" stop-color="#1b1128"/>
-        </linearGradient>
-
-        <filter id="glowHeavy" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="40" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="glowSoft" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="18" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
-      <rect width="${width}" height="${height}" fill="url(#bg)"/>
-
-      <circle cx="130" cy="120" r="180" fill="rgba(123,44,255,0.15)" filter="url(#glowHeavy)"/>
-      <circle cx="${width - 140}" cy="120" r="180" fill="rgba(123,44,255,0.15)" filter="url(#glowHeavy)"/>
-      <circle cx="${Math.floor(width / 2)}" cy="${height - 10}" r="330" fill="rgba(123,44,255,0.12)" filter="url(#glowHeavy)"/>
-
-      <rect x="22" y="22" rx="42" ry="42" width="${width - 44}" height="${height - 44}"
-        fill="rgba(11,11,19,0.96)"
-        stroke="rgba(123,44,255,0.55)"
-        stroke-width="4"/>
-
-      <rect x="56" y="52" rx="34" ry="34" width="${width - 112}" height="220"
-        fill="rgba(255,255,255,0.024)"
-        stroke="rgba(123,44,255,0.22)"
-        stroke-width="2"/>
-
-      <rect x="92" y="88" rx="32" ry="32" width="136" height="136"
-        fill="rgba(123,44,255,0.12)"
-        stroke="rgba(123,44,255,0.60)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      ${logoDataUri ? `<image href="${logoDataUri}" x="110" y="106" width="100" height="100"/>` : ''}
-
-      <text x="270" y="118"
-        font-size="30" font-weight="700"
-        fill="#ffffff"
-        font-family="Arial, Helvetica, sans-serif">${escapeHtml(project.brandName)}</text>
-
-      <text x="270" y="198"
-        font-size="76" font-weight="800"
-        fill="#f4ecff"
-        font-family="Arial, Helvetica, sans-serif">${escapeHtml(project.tournamentName)}</text>
-
-      <text x="270" y="240"
-        font-size="28" font-weight="600"
-        fill="#bbb4d7"
-        font-family="Arial, Helvetica, sans-serif">${escapeHtml(title)}</text>
-
-      <rect x="${width - 460}" y="104" rx="22" ry="22" width="300" height="64"
-        fill="${isFull ? 'rgba(255,77,109,0.13)' : 'rgba(123,44,255,0.12)'}"
-        stroke="rgba(123,44,255,0.28)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <text x="${width - 310}" y="146"
-        text-anchor="middle"
-        font-size="28" font-weight="800"
-        fill="${isFull ? '#ffd4dc' : '#f7f0ff'}"
-        font-family="Arial, Helvetica, sans-serif">${statusText}</text>
-
-      <rect x="56" y="326" rx="28" ry="28" width="${(width - 112 - 56) / 3}" height="132"
-        fill="rgba(255,255,255,0.028)"
-        stroke="rgba(123,44,255,0.24)"
-        stroke-width="2"/>
-      <text x="86" y="368"
-        font-size="24" font-weight="700"
-        fill="#ab9fd1"
-        font-family="Arial, Helvetica, sans-serif">TEAM REGISTRATI</text>
-      <text x="86" y="424"
-        font-size="52" font-weight="800"
-        fill="#ffffff"
-        font-family="Arial, Helvetica, sans-serif">${displayTeams.length}/${limit}</text>
-
-      <rect x="${56 + ((width - 112 - 56) / 3) + 28}" y="326" rx="28" ry="28" width="${(width - 112 - 56) / 3}" height="132"
-        fill="rgba(255,255,255,0.028)"
-        stroke="rgba(123,44,255,0.24)"
-        stroke-width="2"/>
-      <text x="${86 + ((width - 112 - 56) / 3) + 28}" y="368"
-        font-size="24" font-weight="700"
-        fill="#ab9fd1"
-        font-family="Arial, Helvetica, sans-serif">POSTI DISPONIBILI</text>
-      <text x="${86 + ((width - 112 - 56) / 3) + 28}" y="424"
-        font-size="52" font-weight="800"
-        fill="#ffffff"
-        font-family="Arial, Helvetica, sans-serif">${freeSpots}</text>
-
-      <rect x="${56 + (((width - 112 - 56) / 3) + 28) * 2}" y="326" rx="28" ry="28" width="${(width - 112 - 56) / 3}" height="132"
-        fill="rgba(255,255,255,0.028)"
-        stroke="rgba(123,44,255,0.24)"
-        stroke-width="2"/>
-      <text x="${86 + (((width - 112 - 56) / 3) + 28) * 2}" y="368"
-        font-size="24" font-weight="700"
-        fill="#ab9fd1"
-        font-family="Arial, Helvetica, sans-serif">STATO</text>
-      <text x="${86 + (((width - 112 - 56) / 3) + 28) * 2}" y="424"
-        font-size="52" font-weight="800"
-        fill="#ffffff"
-        font-family="Arial, Helvetica, sans-serif">${stateCardText}</text>
-
-      <rect x="56" y="506" rx="32" ry="32" width="${width - 112}" height="1030"
-        fill="rgba(255,255,255,0.022)"
-        stroke="rgba(123,44,255,0.22)"
-        stroke-width="2"/>
-
-      <text x="92" y="564"
-        font-size="40" font-weight="800"
-        fill="#f5eeff"
-        font-family="Arial, Helvetica, sans-serif">PANNELLO SLOT TEAM</text>
-
-      <text x="92" y="610"
-        font-size="24" font-weight="600"
-        fill="#c3bcde"
-        font-family="Arial, Helvetica, sans-serif">${escapeHtml(intro)}</text>
-
-      <line x1="92" y1="636" x2="${width - 92}" y2="636"
-        stroke="rgba(170,120,255,0.18)" stroke-width="1"/>
-
-      ${teamCardsSvg}
-      ${overflowSvg}
-
-      <text x="92" y="1560"
-        font-size="20" font-weight="500"
-        fill="#8f86b5"
-        font-family="Arial, Helvetica, sans-serif">${escapeHtml(project.brandName)} • grafica premium sincronizzata</text>
-    </svg>
-  `;
-
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  return await canvas.encode('png');
 }
 
 function getLogoUrl() {
