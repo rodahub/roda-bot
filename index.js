@@ -10,9 +10,11 @@ const {
   TextInputStyle,
   StringSelectMenuBuilder,
   EmbedBuilder,
+  AttachmentBuilder,
   ChannelType
 } = require('discord.js');
 
+const Canvas = require('@napi-rs/canvas');
 const fs = require('fs');
 const path = require('path');
 
@@ -293,6 +295,238 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function fillRoundedRect(ctx, x, y, w, h, r, fillStyle) {
+  ctx.save();
+  ctx.fillStyle = fillStyle;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeRoundedRect(ctx, x, y, w, h, r, strokeStyle, lineWidth = 1) {
+  ctx.save();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  drawRoundedRect(ctx, x, y, w, h, r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function glowRoundedRect(ctx, x, y, w, h, r, glowColor, fillColor, blur = 36) {
+  ctx.save();
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = blur;
+  fillRoundedRect(ctx, x, y, w, h, r, fillColor);
+  ctx.restore();
+  strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(167,116,255,0.35)', 2);
+}
+
+async function generateRegistrationBannerBuffer() {
+  const project = getProjectSettings();
+  const displayTeams = getDisplayTeams();
+  const limit = getRegistrationLimit();
+  const freeSpots = Math.max(limit - displayTeams.length, 0);
+  const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
+  const intro = sanitizeText(data.registrationStatusText) || 'Pannello premium sincronizzato con sito e Discord.';
+  const isFull = displayTeams.length >= limit;
+
+  const width = 2400;
+  const height = 900;
+
+  const canvas = Canvas.createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#05050a');
+  bg.addColorStop(0.38, '#0a0813');
+  bg.addColorStop(0.72, '#130b1d');
+  bg.addColorStop(1, '#1b1128');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(123,44,255,0.35)';
+  ctx.shadowBlur = 220;
+  ctx.fillStyle = 'rgba(123,44,255,0.15)';
+  ctx.beginPath();
+  ctx.arc(130, 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width - 140, 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width / 2, height - 10, 330, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  glowRoundedRect(
+    ctx,
+    22,
+    22,
+    width - 44,
+    height - 44,
+    42,
+    'rgba(123,44,255,0.55)',
+    'rgba(11,11,19,0.96)',
+    74
+  );
+
+  glowRoundedRect(
+    ctx,
+    56,
+    52,
+    width - 112,
+    220,
+    34,
+    'rgba(123,44,255,0.22)',
+    'rgba(255,255,255,0.024)',
+    34
+  );
+
+  const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
+  if (fs.existsSync(logoPath)) {
+    try {
+      const logo = await Canvas.loadImage(logoPath);
+      glowRoundedRect(
+        ctx,
+        92,
+        88,
+        136,
+        136,
+        32,
+        'rgba(123,44,255,0.60)',
+        'rgba(123,44,255,0.12)',
+        38
+      );
+      ctx.drawImage(logo, 110, 106, 100, 100);
+    } catch (error) {
+      console.error('Errore caricamento logo RØDA:', error);
+    }
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 30px sans-serif';
+  ctx.fillText(project.brandName, 270, 118);
+
+  ctx.fillStyle = '#f4ecff';
+  ctx.font = '800 76px sans-serif';
+  ctx.fillText(project.tournamentName, 270, 198);
+
+  ctx.fillStyle = '#bbb4d7';
+  ctx.font = '600 28px sans-serif';
+  ctx.fillText(title, 270, 240);
+
+  const pillX = width - 460;
+  const pillY = 104;
+  const pillW = 300;
+  const pillH = 64;
+
+  glowRoundedRect(
+    ctx,
+    pillX,
+    pillY,
+    pillW,
+    pillH,
+    22,
+    'rgba(123,44,255,0.28)',
+    isFull ? 'rgba(255,77,109,0.13)' : 'rgba(123,44,255,0.12)',
+    26
+  );
+
+  ctx.fillStyle = isFull ? '#ffd4dc' : '#f7f0ff';
+  ctx.font = '800 28px sans-serif';
+  const pillText = isFull ? 'TORNEO PIENO' : 'ISCRIZIONI APERTE';
+  const pillTextWidth = ctx.measureText(pillText).width;
+  ctx.fillText(pillText, pillX + (pillW - pillTextWidth) / 2, pillY + 42);
+
+  const statY = 326;
+  const statGap = 28;
+  const statW = (width - 112 - statGap * 2) / 3;
+  const statH = 132;
+
+  const statCards = [
+    { label: 'TEAM REGISTRATI', value: `${displayTeams.length}/${limit}` },
+    { label: 'POSTI DISPONIBILI', value: `${freeSpots}` },
+    { label: 'STATO', value: isFull ? 'CHIUSO' : 'APERTO' }
+  ];
+
+  statCards.forEach((card, index) => {
+    const x = 56 + index * (statW + statGap);
+
+    glowRoundedRect(
+      ctx,
+      x,
+      statY,
+      statW,
+      statH,
+      28,
+      'rgba(123,44,255,0.24)',
+      'rgba(255,255,255,0.028)',
+      28
+    );
+
+    ctx.fillStyle = '#ab9fd1';
+    ctx.font = '700 24px sans-serif';
+    ctx.fillText(card.label, x + 30, statY + 42);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 52px sans-serif';
+    ctx.fillText(card.value, x + 30, statY + 98);
+  });
+
+  glowRoundedRect(
+    ctx,
+    56,
+    506,
+    width - 112,
+    320,
+    32,
+    'rgba(123,44,255,0.22)',
+    'rgba(255,255,255,0.022)',
+    28
+  );
+
+  ctx.fillStyle = '#f5eeff';
+  ctx.font = '800 40px sans-serif';
+  ctx.fillText('PANNELLO SLOT TEAM', 92, 564);
+
+  ctx.fillStyle = '#c3bcde';
+  ctx.font = '600 24px sans-serif';
+  ctx.fillText(intro, 92, 610);
+
+  ctx.strokeStyle = 'rgba(170,120,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(92, 636);
+  ctx.lineTo(width - 92, 636);
+  ctx.stroke();
+
+  ctx.fillStyle = '#9b92be';
+  ctx.font = '600 24px sans-serif';
+  ctx.fillText('Lista team completa visibile negli embed qui sotto.', 92, 720);
+
+  ctx.fillStyle = '#8f86b5';
+  ctx.font = '500 20px sans-serif';
+  ctx.fillText(`${project.brandName} • grafica premium sincronizzata`, 92, 786);
+
+  return await canvas.encode('png');
+}
+
 function getLogoUrl() {
   const baseUrl = getPublicBaseUrl();
   if (!baseUrl) return null;
@@ -313,7 +547,7 @@ function formatTeamPlayers(players = []) {
   ].join('\n');
 }
 
-function buildRegistrationEmbeds() {
+async function buildRegistrationStatusMessagePayload() {
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
   const limit = getRegistrationLimit();
@@ -322,10 +556,15 @@ function buildRegistrationEmbeds() {
   const intro = sanitizeText(data.registrationStatusText) || 'Elenco completo dei team registrati con slot assegnato e giocatori.';
   const logoUrl = getLogoUrl();
 
+  const bannerBuffer = await generateRegistrationBannerBuffer();
+  const bannerName = `registration-banner-${Date.now()}.png`;
+  const bannerAttachment = new AttachmentBuilder(bannerBuffer, { name: bannerName });
+
   const summaryEmbed = new EmbedBuilder()
     .setColor(0x7b2cff)
     .setTitle(`🏆 ${project.tournamentName}`)
     .setDescription(`**${title}**\n${intro}`)
+    .setImage(`attachment://${bannerName}`)
     .addFields(
       {
         name: '📊 Team registrati',
@@ -348,6 +587,8 @@ function buildRegistrationEmbeds() {
     summaryEmbed.setThumbnail(logoUrl);
   }
 
+  const embeds = [summaryEmbed];
+
   if (!displayTeams.length) {
     summaryEmbed.addFields({
       name: '📋 Lista team',
@@ -355,11 +596,14 @@ function buildRegistrationEmbeds() {
       inline: false
     });
 
-    return [summaryEmbed];
+    return {
+      content: '',
+      embeds,
+      files: [bannerAttachment]
+    };
   }
 
   const chunks = chunkArray(displayTeams, 6);
-  const embeds = [summaryEmbed];
 
   chunks.forEach((chunk, chunkIndex) => {
     const embed = new EmbedBuilder()
@@ -377,7 +621,11 @@ function buildRegistrationEmbeds() {
     embeds.push(embed);
   });
 
-  return embeds;
+  return {
+    content: '',
+    embeds,
+    files: [bannerAttachment]
+  };
 }
 
 function queueRegistrationStatusUpdate() {
@@ -386,11 +634,7 @@ function queueRegistrationStatusUpdate() {
       await waitReady();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const embeds = buildRegistrationEmbeds();
-      const payload = {
-        content: '',
-        embeds
-      };
+      const payload = await buildRegistrationStatusMessagePayload();
 
       if (data.registrationStatusMessageId) {
         try {
