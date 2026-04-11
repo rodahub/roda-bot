@@ -322,111 +322,6 @@ function getLogoDataUri() {
   }
 }
 
-function buildRegistrationBaseSvg() {
-  const displayTeams = getDisplayTeams();
-  const limit = getRegistrationLimit();
-  const isFull = displayTeams.length >= limit;
-  const logoDataUri = getLogoDataUri();
-
-  const width = 3200;
-  const height = 2000;
-
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#03040b"/>
-          <stop offset="38%" stop-color="#060714"/>
-          <stop offset="68%" stop-color="#090b1b"/>
-          <stop offset="100%" stop-color="#0c1022"/>
-        </linearGradient>
-
-        <linearGradient id="panelStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(113,51,255,0.95)"/>
-          <stop offset="50%" stop-color="rgba(90,58,255,0.48)"/>
-          <stop offset="100%" stop-color="rgba(45,110,255,0.82)"/>
-        </linearGradient>
-
-        <linearGradient id="headFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(30,34,72,0.40)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
-        </linearGradient>
-
-        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.038)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.018)"/>
-        </linearGradient>
-
-        <filter id="glowHeavy" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="60" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="glowSoft" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="18" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
-      <rect width="${width}" height="${height}" fill="url(#bg)"/>
-
-      <circle cx="120" cy="100" r="220" fill="rgba(102,52,255,0.20)" filter="url(#glowHeavy)"/>
-      <circle cx="${width - 120}" cy="120" r="220" fill="rgba(45,110,255,0.14)" filter="url(#glowHeavy)"/>
-      <circle cx="${Math.floor(width / 2)}" cy="${height - 30}" r="420" fill="rgba(90,58,255,0.16)" filter="url(#glowHeavy)"/>
-
-      <rect x="18" y="18" rx="46" ry="46" width="${width - 36}" height="${height - 36}"
-        fill="rgba(5,7,16,0.97)"
-        stroke="url(#panelStroke)"
-        stroke-width="5"
-        filter="url(#glowSoft)"/>
-
-      <rect x="54" y="48" rx="34" ry="34" width="${width - 108}" height="220"
-        fill="rgba(255,255,255,0.015)"
-        stroke="rgba(99,72,255,0.32)"
-        stroke-width="2"/>
-
-      <rect x="100" y="100" rx="28" ry="28" width="126" height="126"
-        fill="rgba(97,55,255,0.16)"
-        stroke="rgba(164,133,255,0.55)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      ${logoDataUri ? `<image href="${logoDataUri}" x="116" y="116" width="94" height="94"/>` : ''}
-
-      <rect x="${width - 560}" y="104" rx="24" ry="24" width="360" height="76"
-        fill="${isFull ? 'rgba(255,77,109,0.17)' : 'rgba(104,70,255,0.18)'}"
-        stroke="rgba(144,119,255,0.40)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <rect x="54" y="360" rx="26" ry="26" width="${width - 108}" height="${height - 430}"
-        fill="rgba(255,255,255,0.01)"
-        stroke="rgba(87,74,255,0.24)"
-        stroke-width="2"/>
-
-      <rect x="76" y="492" rx="22" ry="22" width="${width - 152}" height="94"
-        fill="url(#headFill)"
-        stroke="rgba(92,90,255,0.18)"
-        stroke-width="1.5"/>
-
-      <line x1="76" y1="586" x2="${width - 76}" y2="586"
-        stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-    </svg>
-  `;
-}
-
-async function createBasePanelImage() {
-  const svg = buildRegistrationBaseSvg();
-  const baseBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return Jimp.read(baseBuffer);
-}
-
 function safeString(value) {
   return String(value || '').trim();
 }
@@ -466,154 +361,158 @@ async function compositeSvgBox(image, svgString, x, y) {
   image.composite(layer, x, y);
 }
 
-function buildSlotBadgeSvg() {
+function buildPosterBaseSvg() {
+  const displayTeams = getDisplayTeams();
+  const limit = getRegistrationLimit();
+  const isFull = displayTeams.length >= limit;
+  const logoDataUri = getLogoDataUri();
+
+  const width = 2400;
+  const height = 3200;
+
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="122" height="92">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
-        <linearGradient id="badgeFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="rgba(31,67,135,0.98)"/>
-          <stop offset="100%" stop-color="rgba(18,40,88,0.98)"/>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#11041b"/>
+          <stop offset="35%" stop-color="#170624"/>
+          <stop offset="70%" stop-color="#0c0d1d"/>
+          <stop offset="100%" stop-color="#090a16"/>
         </linearGradient>
-        <filter id="badgeGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="9" result="blur"/>
+
+        <linearGradient id="titlePink" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff62ff"/>
+          <stop offset="100%" stop-color="#bb4dff"/>
+        </linearGradient>
+
+        <linearGradient id="tableHead" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ff55f7"/>
+          <stop offset="100%" stop-color="#cf58ff"/>
+        </linearGradient>
+
+        <linearGradient id="tableBody" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#f2f5fb"/>
+          <stop offset="100%" stop-color="#dde3ee"/>
+        </linearGradient>
+
+        <filter id="heavyGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="52" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <filter id="softGlow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="14" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
-      <rect x="2" y="2" rx="34" ry="34" width="118" height="88"
-        fill="url(#badgeFill)"
-        stroke="rgba(98,195,255,0.70)"
-        stroke-width="2.2"
-        filter="url(#badgeGlow)"/>
+
+      <rect width="${width}" height="${height}" fill="url(#bg)"/>
+
+      <polygon points="0,0 380,0 0,860" fill="rgba(214,70,255,0.20)" filter="url(#heavyGlow)"/>
+      <polygon points="${width},0 ${width},820 ${width - 420},0" fill="rgba(122,68,255,0.18)" filter="url(#heavyGlow)"/>
+
+      <rect x="56" y="1020" width="${width - 112}" height="100" rx="0" fill="url(#tableHead)" filter="url(#softGlow)"/>
+
+      ${logoDataUri ? `<image href="${logoDataUri}" x="1680" y="160" width="260" height="260"/>` : ''}
+
+      <rect x="720" y="760" width="960" height="84" fill="rgba(0,0,0,0.75)"/>
+
+      <rect x="56" y="1120" width="${width - 112}" height="1850" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.14)" stroke-width="3"/>
+      <line x1="250" y1="1020" x2="250" y2="2970" stroke="#35203f" stroke-width="5"/>
+      <line x1="940" y1="1020" x2="940" y2="2970" stroke="#35203f" stroke-width="5"/>
+      <line x1="1428" y1="1020" x2="1428" y2="2970" stroke="#35203f" stroke-width="5"/>
+      <line x1="1719" y1="1020" x2="1719" y2="2970" stroke="#35203f" stroke-width="5"/>
+      <line x1="2010" y1="1020" x2="2010" y2="2970" stroke="#35203f" stroke-width="5"/>
+
+      <line x1="56" y1="1274" x2="${width - 56}" y2="1274" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="1428" x2="${width - 56}" y2="1428" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="1582" x2="${width - 56}" y2="1582" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="1736" x2="${width - 56}" y2="1736" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="1890" x2="${width - 56}" y2="1890" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2044" x2="${width - 56}" y2="2044" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2198" x2="${width - 56}" y2="2198" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2352" x2="${width - 56}" y2="2352" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2506" x2="${width - 56}" y2="2506" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2660" x2="${width - 56}" y2="2660" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2814" x2="${width - 56}" y2="2814" stroke="#35203f" stroke-width="5"/>
+      <line x1="56" y1="2968" x2="${width - 56}" y2="2968" stroke="#35203f" stroke-width="5"/>
+
+      <rect x="1650" y="68" rx="26" ry="26" width="560" height="90"
+        fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(177,88,255,0.20)'}"
+        stroke="rgba(255,255,255,0.18)"
+        stroke-width="2"
+        filter="url(#softGlow)"/>
     </svg>
   `;
 }
 
-function buildPlayerChipSvg(width = 180, height = 58) {
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <rect x="1" y="1" rx="26" ry="26" width="${width - 2}" height="${height - 2}"
-        fill="rgba(255,255,255,0.030)"
-        stroke="rgba(255,255,255,0.11)"
-        stroke-width="1.6"/>
-    </svg>
-  `;
+async function createBasePosterImage() {
+  const svg = buildPosterBaseSvg();
+  const baseBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
+  return Jimp.read(baseBuffer);
 }
 
-function buildRowCardSvg(rowWidth, rowHeight) {
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${rowWidth}" height="${rowHeight}">
-      <defs>
-        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.032)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.014)"/>
-        </linearGradient>
-        <filter id="rowGlow" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur stdDeviation="10" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
-      <rect x="1" y="1" rx="30" ry="30" width="${rowWidth - 2}" height="${rowHeight - 2}"
-        fill="url(#rowFill)"
-        stroke="rgba(94,88,255,0.20)"
-        stroke-width="1.5"
-        filter="url(#rowGlow)"/>
-    </svg>
-  `;
+function getRowY(index) {
+  return 1120 + index * 154;
 }
 
 async function generateRegistrationBannerBuffer() {
   refreshStateFromDisk();
 
   const fontsLoaded = await getBitmapFonts();
-  const image = await createBasePanelImage();
+  const image = await createBasePosterImage();
 
   const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
   const limit = getRegistrationLimit();
   const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const title = sanitizeText(data.registrationStatusTitle) || 'Team registrati';
+  const title = sanitizeText(data.registrationStatusTitle) || 'TEAM REGISTRATI';
   const intro = sanitizeText(data.registrationStatusText) || 'Elenco completo dei team con slot assegnato e players registrati.';
   const isFull = displayTeams.length >= limit;
+  const pageTeams = displayTeams.slice(0, 12);
 
-  await printBitmapText(image, fontsLoaded.medium, 270, 96, truncateForBitmap(project.brandName, 28), 520, 34);
-  await printBitmapText(image, fontsLoaded.title, 270, 136, truncateForBitmap(project.tournamentName, 30), 1400, 86);
-  await printBitmapText(image, fontsLoaded.medium, 2670, 128, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 260, 30);
+  await printBitmapText(image, fontsLoaded.title, 620, 180, 'TEAM', 520, 90);
+  await printBitmapText(image, fontsLoaded.title, 620, 285, 'REGISTRATI', 780, 90);
 
-  await printBitmapText(image, fontsLoaded.large, 78, 390, truncateForBitmap(title, 40), 760, 40);
-  await printBitmapText(image, fontsLoaded.medium, 78, 450, truncateForBitmap(intro, 140), 2400, 32);
+  await printBitmapText(image, fontsLoaded.medium, 820, 790, truncateForBitmap(project.tournamentName, 42), 760, 30);
 
-  await printBitmapText(image, fontsLoaded.medium, 84, 528, 'SLOT', 120, 24);
-  await printBitmapText(image, fontsLoaded.medium, 470, 528, 'TEAM', 180, 24);
-  await printBitmapText(image, fontsLoaded.medium, 1220, 528, 'GIOCATORI', 260, 24);
+  await printBitmapText(image, fontsLoaded.medium, 96, 905, truncateForBitmap(title, 48), 800, 34);
+  await printBitmapText(image, fontsLoaded.medium, 96, 952, truncateForBitmap(intro, 130), 1600, 30);
 
-  await printBitmapText(image, fontsLoaded.medium, 80, 292, 'TEAM REGISTRATI', 250, 28);
-  await printBitmapText(image, fontsLoaded.large, 80, 320, `${displayTeams.length}/${limit}`, 220, 34);
+  await printBitmapText(image, fontsLoaded.medium, 1790, 100, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 320, 32);
 
-  await printBitmapText(image, fontsLoaded.medium, 430, 292, 'POSTI DISPONIBILI', 320, 28);
-  await printBitmapText(image, fontsLoaded.large, 430, 320, `${freeSpots}`, 220, 34);
+  await printBitmapText(image, fontsLoaded.medium, 88, 1052, 'SLOT', 120, 26);
+  await printBitmapText(image, fontsLoaded.medium, 430, 1052, 'TEAM', 200, 26);
+  await printBitmapText(image, fontsLoaded.medium, 1030, 1052, 'PLAYER 1', 220, 26);
+  await printBitmapText(image, fontsLoaded.medium, 1490, 1052, 'PLAYER 2', 220, 26);
+  await printBitmapText(image, fontsLoaded.medium, 1780, 1052, 'PLAYER 3', 220, 26);
+  await printBitmapText(image, fontsLoaded.medium, 2080, 1052, 'TOT', 100, 26);
 
-  await printBitmapText(image, fontsLoaded.medium, 880, 292, 'STATO', 120, 28);
-  await printBitmapText(image, fontsLoaded.large, 880, 320, isFull ? 'CHIUSO' : 'APERTO', 250, 34);
-
-  const startX = 76;
-  const startY = 620;
-  const rowGap = 26;
-  const rowWidth = 3048;
-  const rowHeight = 146;
-  const visibleRows = 8;
-  const visibleTeams = displayTeams.slice(0, visibleRows);
-
-  if (!visibleTeams.length) {
-    await printBitmapText(image, fontsLoaded.large, 120, 740, 'Nessun team registrato al momento.', 1000, 40);
+  if (!pageTeams.length) {
+    await printBitmapText(image, fontsLoaded.large, 760, 1450, 'NESSUN TEAM REGISTRATO', 1000, 40);
   } else {
-    for (let i = 0; i < visibleTeams.length; i++) {
-      const team = visibleTeams[i];
-      const y = startY + i * (rowHeight + rowGap);
+    for (let i = 0; i < pageTeams.length; i++) {
+      const team = pageTeams[i];
+      const rowY = getRowY(i) + 42;
 
-      await compositeSvgBox(image, buildRowCardSvg(rowWidth, rowHeight), startX, y);
-      await compositeSvgBox(image, buildSlotBadgeSvg(), startX + 18, y + 28);
-
-      await printBitmapText(image, fontsLoaded.large, startX + 42, y + 56, `#${team.slot}`, 70, 30);
-      await printBitmapText(image, fontsLoaded.large, startX + 470, y + 48, truncateForBitmap(team.teamName, 34), 520, 36);
-
-      const players = [
-        truncateForBitmap(team.players?.[0] || 'Player 1', 14),
-        truncateForBitmap(team.players?.[1] || 'Player 2', 14),
-        truncateForBitmap(team.players?.[2] || 'Player 3', 14)
-      ];
-
-      const chipY = y + 44;
-      let chipX = startX + 1220;
-
-      for (const player of players) {
-        const chipWidth = Math.max(190, Math.min(280, 70 + player.length * 18));
-        await compositeSvgBox(image, buildPlayerChipSvg(chipWidth, 58), chipX, chipY);
-        await printBitmapText(image, fontsLoaded.medium, chipX + 24, chipY + 19, player, chipWidth - 38, 24);
-        chipX += chipWidth + 20;
-      }
+      await printBitmapText(image, fontsLoaded.large, 118, rowY, String(team.slot), 80, 36);
+      await printBitmapText(image, fontsLoaded.large, 292, rowY, truncateForBitmap(team.teamName, 20), 560, 36);
+      await printBitmapText(image, fontsLoaded.large, 980, rowY, truncateForBitmap(team.players?.[0] || '-', 12), 370, 36);
+      await printBitmapText(image, fontsLoaded.large, 1450, rowY, truncateForBitmap(team.players?.[1] || '-', 12), 220, 36);
+      await printBitmapText(image, fontsLoaded.large, 1740, rowY, truncateForBitmap(team.players?.[2] || '-', 12), 220, 36);
+      await printBitmapText(image, fontsLoaded.large, 2140, rowY, '3', 60, 36);
     }
   }
 
-  if (displayTeams.length > visibleRows) {
-    await printBitmapText(
-      image,
-      fontsLoaded.medium,
-      90,
-      1870,
-      `Altri team non visibili in questa schermata: ${displayTeams.length - visibleRows}`,
-      1200,
-      28
-    );
-  }
-
-  await printBitmapText(image, fontsLoaded.small, 90, 1945, `${project.brandName} • grafica premium sincronizzata`, 900, 24);
+  await printBitmapText(image, fontsLoaded.medium, 88, 3060, `TEAM: ${displayTeams.length}/${limit}`, 260, 28);
+  await printBitmapText(image, fontsLoaded.medium, 420, 3060, `POSTI DISPONIBILI: ${freeSpots}`, 420, 28);
+  await printBitmapText(image, fontsLoaded.medium, 980, 3060, `${project.brandName} • grafica premium sincronizzata`, 760, 28);
 
   return image.getBuffer('image/png');
 }
