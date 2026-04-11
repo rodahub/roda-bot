@@ -329,7 +329,7 @@ function buildRegistrationBaseSvg() {
   const logoDataUri = getLogoDataUri();
 
   const width = 3200;
-  const height = 1850;
+  const height = 2000;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -352,9 +352,9 @@ function buildRegistrationBaseSvg() {
           <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
         </linearGradient>
 
-        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.035)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.016)"/>
+        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.038)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.018)"/>
         </linearGradient>
 
         <filter id="glowHeavy" x="-40%" y="-40%" width="180%" height="180%">
@@ -410,12 +410,12 @@ function buildRegistrationBaseSvg() {
         stroke="rgba(87,74,255,0.24)"
         stroke-width="2"/>
 
-      <rect x="76" y="492" rx="22" ry="22" width="${width - 152}" height="86"
+      <rect x="76" y="492" rx="22" ry="22" width="${width - 152}" height="94"
         fill="url(#headFill)"
         stroke="rgba(92,90,255,0.18)"
         stroke-width="1.5"/>
 
-      <line x1="76" y1="578" x2="${width - 76}" y2="578"
+      <line x1="76" y1="586" x2="${width - 76}" y2="586"
         stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
     </svg>
   `;
@@ -468,36 +468,36 @@ async function compositeSvgBox(image, svgString, x, y) {
 
 function buildSlotBadgeSvg() {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="94" height="74">
+    <svg xmlns="http://www.w3.org/2000/svg" width="122" height="92">
       <defs>
         <linearGradient id="badgeFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="rgba(29,56,114,0.95)"/>
-          <stop offset="100%" stop-color="rgba(16,34,72,0.95)"/>
+          <stop offset="0%" stop-color="rgba(31,67,135,0.98)"/>
+          <stop offset="100%" stop-color="rgba(18,40,88,0.98)"/>
         </linearGradient>
         <filter id="badgeGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feGaussianBlur stdDeviation="9" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
-      <rect x="2" y="2" rx="28" ry="28" width="90" height="70"
+      <rect x="2" y="2" rx="34" ry="34" width="118" height="88"
         fill="url(#badgeFill)"
-        stroke="rgba(77,178,255,0.60)"
-        stroke-width="2"
+        stroke="rgba(98,195,255,0.70)"
+        stroke-width="2.2"
         filter="url(#badgeGlow)"/>
     </svg>
   `;
 }
 
-function buildPlayerChipSvg(width = 120, height = 46) {
+function buildPlayerChipSvg(width = 180, height = 58) {
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <rect x="1" y="1" rx="20" ry="20" width="${width - 2}" height="${height - 2}"
-        fill="rgba(255,255,255,0.028)"
-        stroke="rgba(255,255,255,0.09)"
-        stroke-width="1.5"/>
+      <rect x="1" y="1" rx="26" ry="26" width="${width - 2}" height="${height - 2}"
+        fill="rgba(255,255,255,0.030)"
+        stroke="rgba(255,255,255,0.11)"
+        stroke-width="1.6"/>
     </svg>
   `;
 }
@@ -507,8 +507,8 @@ function buildRowCardSvg(rowWidth, rowHeight) {
     <svg xmlns="http://www.w3.org/2000/svg" width="${rowWidth}" height="${rowHeight}">
       <defs>
         <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.012)"/>
+          <stop offset="0%" stop-color="rgba(255,255,255,0.032)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.014)"/>
         </linearGradient>
         <filter id="rowGlow" x="-25%" y="-25%" width="150%" height="150%">
           <feGaussianBlur stdDeviation="10" result="blur"/>
@@ -519,7 +519,7 @@ function buildRowCardSvg(rowWidth, rowHeight) {
         </filter>
       </defs>
 
-      <rect x="1" y="1" rx="26" ry="26" width="${rowWidth - 2}" height="${rowHeight - 2}"
+      <rect x="1" y="1" rx="30" ry="30" width="${rowWidth - 2}" height="${rowHeight - 2}"
         fill="url(#rowFill)"
         stroke="rgba(94,88,255,0.20)"
         stroke-width="1.5"
@@ -546,12 +546,12 @@ async function generateRegistrationBannerBuffer() {
   await printBitmapText(image, fontsLoaded.title, 270, 136, truncateForBitmap(project.tournamentName, 30), 1400, 86);
   await printBitmapText(image, fontsLoaded.medium, 2670, 128, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 260, 30);
 
-  await printBitmapText(image, fontsLoaded.large, 78, 390, truncateForBitmap(title, 40), 700, 40);
-  await printBitmapText(image, fontsLoaded.medium, 78, 450, truncateForBitmap(intro, 140), 2200, 32);
+  await printBitmapText(image, fontsLoaded.large, 78, 390, truncateForBitmap(title, 40), 760, 40);
+  await printBitmapText(image, fontsLoaded.medium, 78, 450, truncateForBitmap(intro, 140), 2400, 32);
 
-  await printBitmapText(image, fontsLoaded.medium, 84, 526, 'SLOT', 120, 24);
-  await printBitmapText(image, fontsLoaded.medium, 430, 526, 'TEAM', 180, 24);
-  await printBitmapText(image, fontsLoaded.medium, 1080, 526, 'GIOCATORI', 260, 24);
+  await printBitmapText(image, fontsLoaded.medium, 84, 528, 'SLOT', 120, 24);
+  await printBitmapText(image, fontsLoaded.medium, 470, 528, 'TEAM', 180, 24);
+  await printBitmapText(image, fontsLoaded.medium, 1220, 528, 'GIOCATORI', 260, 24);
 
   await printBitmapText(image, fontsLoaded.medium, 80, 292, 'TEAM REGISTRATI', 250, 28);
   await printBitmapText(image, fontsLoaded.large, 80, 320, `${displayTeams.length}/${limit}`, 220, 34);
@@ -563,40 +563,40 @@ async function generateRegistrationBannerBuffer() {
   await printBitmapText(image, fontsLoaded.large, 880, 320, isFull ? 'CHIUSO' : 'APERTO', 250, 34);
 
   const startX = 76;
-  const startY = 606;
-  const rowGap = 24;
+  const startY = 620;
+  const rowGap = 26;
   const rowWidth = 3048;
-  const rowHeight = 118;
+  const rowHeight = 146;
   const visibleRows = 8;
   const visibleTeams = displayTeams.slice(0, visibleRows);
 
   if (!visibleTeams.length) {
-    await printBitmapText(image, fontsLoaded.large, 120, 700, 'Nessun team registrato al momento.', 1000, 40);
+    await printBitmapText(image, fontsLoaded.large, 120, 740, 'Nessun team registrato al momento.', 1000, 40);
   } else {
     for (let i = 0; i < visibleTeams.length; i++) {
       const team = visibleTeams[i];
       const y = startY + i * (rowHeight + rowGap);
 
       await compositeSvgBox(image, buildRowCardSvg(rowWidth, rowHeight), startX, y);
-      await compositeSvgBox(image, buildSlotBadgeSvg(), startX + 18, y + 22);
+      await compositeSvgBox(image, buildSlotBadgeSvg(), startX + 18, y + 28);
 
-      await printBitmapText(image, fontsLoaded.medium, startX + 36, y + 45, `#${team.slot}`, 44, 24);
-      await printBitmapText(image, fontsLoaded.large, startX + 430, y + 34, truncateForBitmap(team.teamName, 34), 420, 32);
+      await printBitmapText(image, fontsLoaded.large, startX + 42, y + 56, `#${team.slot}`, 70, 30);
+      await printBitmapText(image, fontsLoaded.large, startX + 470, y + 48, truncateForBitmap(team.teamName, 34), 520, 36);
 
       const players = [
-        truncateForBitmap(team.players?.[0] || 'Player 1', 12),
-        truncateForBitmap(team.players?.[1] || 'Player 2', 12),
-        truncateForBitmap(team.players?.[2] || 'Player 3', 12)
+        truncateForBitmap(team.players?.[0] || 'Player 1', 14),
+        truncateForBitmap(team.players?.[1] || 'Player 2', 14),
+        truncateForBitmap(team.players?.[2] || 'Player 3', 14)
       ];
 
-      const chipY = y + 35;
-      let chipX = startX + 1080;
+      const chipY = y + 44;
+      let chipX = startX + 1220;
 
       for (const player of players) {
-        const chipWidth = Math.max(120, Math.min(210, 44 + player.length * 16));
-        await compositeSvgBox(image, buildPlayerChipSvg(chipWidth, 46), chipX, chipY);
-        await printBitmapText(image, fontsLoaded.medium, chipX + 20, chipY + 13, player, chipWidth - 30, 22);
-        chipX += chipWidth + 18;
+        const chipWidth = Math.max(190, Math.min(280, 70 + player.length * 18));
+        await compositeSvgBox(image, buildPlayerChipSvg(chipWidth, 58), chipX, chipY);
+        await printBitmapText(image, fontsLoaded.medium, chipX + 24, chipY + 19, player, chipWidth - 38, 24);
+        chipX += chipWidth + 20;
       }
     }
   }
@@ -606,14 +606,14 @@ async function generateRegistrationBannerBuffer() {
       image,
       fontsLoaded.medium,
       90,
-      1700,
+      1870,
       `Altri team non visibili in questa schermata: ${displayTeams.length - visibleRows}`,
       1200,
       28
     );
   }
 
-  await printBitmapText(image, fontsLoaded.small, 90, 1802, `${project.brandName} • grafica premium sincronizzata`, 900, 24);
+  await printBitmapText(image, fontsLoaded.small, 90, 1945, `${project.brandName} • grafica premium sincronizzata`, 900, 24);
 
   return image.getBuffer('image/png');
 }
