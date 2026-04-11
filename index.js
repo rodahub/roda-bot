@@ -195,6 +195,14 @@ function getDisplayTeams() {
   });
 }
 
+function chunkArray(list, size) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) {
+    out.push(list.slice(i, i + size));
+  }
+  return out;
+}
+
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
   const used = new Set(
     Object.values(teams)
@@ -355,56 +363,44 @@ async function printBitmapText(image, font, x, y, text, maxWidth = null, maxHeig
   }
 }
 
-async function compositeSvgBox(image, svgString, x, y) {
-  const buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
-  const layer = await Jimp.read(buffer);
-  image.composite(layer, x, y);
-}
-
-function buildPosterBaseSvg() {
+async function createHorizontalPanelBase(pageIndex, totalPages) {
+  const width = 2600;
+  const height = 940;
+  const logoDataUri = getLogoDataUri();
   const displayTeams = getDisplayTeams();
   const limit = getRegistrationLimit();
   const isFull = displayTeams.length >= limit;
-  const logoDataUri = getLogoDataUri();
 
-  const width = 2400;
-  const height = 3200;
-
-  return `
+  const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#11041b"/>
-          <stop offset="35%" stop-color="#170624"/>
-          <stop offset="70%" stop-color="#0c0d1d"/>
-          <stop offset="100%" stop-color="#090a16"/>
+          <stop offset="0%" stop-color="#070a16"/>
+          <stop offset="50%" stop-color="#0d1020"/>
+          <stop offset="100%" stop-color="#101528"/>
         </linearGradient>
 
-        <linearGradient id="titlePink" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#ff62ff"/>
-          <stop offset="100%" stop-color="#bb4dff"/>
+        <linearGradient id="frame" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(154,77,255,0.95)"/>
+          <stop offset="50%" stop-color="rgba(108,77,255,0.55)"/>
+          <stop offset="100%" stop-color="rgba(73,134,255,0.78)"/>
         </linearGradient>
 
-        <linearGradient id="tableHead" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ff55f7"/>
-          <stop offset="100%" stop-color="#cf58ff"/>
+        <linearGradient id="headfill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#f858f2"/>
+          <stop offset="100%" stop-color="#c866ff"/>
         </linearGradient>
 
-        <linearGradient id="tableBody" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#f2f5fb"/>
-          <stop offset="100%" stop-color="#dde3ee"/>
-        </linearGradient>
-
-        <filter id="heavyGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="52" result="blur"/>
+        <filter id="bigGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="28" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
 
-        <filter id="softGlow" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur stdDeviation="14" result="blur"/>
+        <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="8" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -413,115 +409,94 @@ function buildPosterBaseSvg() {
       </defs>
 
       <rect width="${width}" height="${height}" fill="url(#bg)"/>
+      <circle cx="100" cy="90" r="160" fill="rgba(166,76,255,0.18)" filter="url(#bigGlow)"/>
+      <circle cx="${width - 90}" cy="100" r="160" fill="rgba(73,134,255,0.10)" filter="url(#bigGlow)"/>
 
-      <polygon points="0,0 380,0 0,860" fill="rgba(214,70,255,0.20)" filter="url(#heavyGlow)"/>
-      <polygon points="${width},0 ${width},820 ${width - 420},0" fill="rgba(122,68,255,0.18)" filter="url(#heavyGlow)"/>
+      <rect x="18" y="18" width="${width - 36}" height="${height - 36}" rx="28" fill="rgba(6,8,18,0.88)" stroke="url(#frame)" stroke-width="4" filter="url(#softGlow)"/>
+      <rect x="40" y="40" width="${width - 80}" height="128" rx="22" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+      <rect x="${width - 520}" y="62" width="380" height="56" rx="18" fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(145,81,255,0.18)'}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
 
-      <rect x="56" y="1020" width="${width - 112}" height="100" rx="0" fill="url(#tableHead)" filter="url(#softGlow)"/>
+      ${logoDataUri ? `<image href="${logoDataUri}" x="70" y="56" width="84" height="84"/>` : ''}
 
-      ${logoDataUri ? `<image href="${logoDataUri}" x="1680" y="160" width="260" height="260"/>` : ''}
+      <rect x="40" y="222" width="${width - 80}" height="84" fill="url(#headfill)" filter="url(#softGlow)"/>
+      <rect x="40" y="306" width="${width - 80}" height="540" fill="rgba(239,243,250,0.96)" stroke="rgba(58,31,82,0.92)" stroke-width="4"/>
 
-      <rect x="720" y="760" width="960" height="84" fill="rgba(0,0,0,0.75)"/>
+      <line x1="230" y1="222" x2="230" y2="846" stroke="#392349" stroke-width="5"/>
+      <line x1="840" y1="222" x2="840" y2="846" stroke="#392349" stroke-width="5"/>
+      <line x1="1450" y1="222" x2="1450" y2="846" stroke="#392349" stroke-width="5"/>
+      <line x1="1990" y1="222" x2="1990" y2="846" stroke="#392349" stroke-width="5"/>
 
-      <rect x="56" y="1120" width="${width - 112}" height="1850" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.14)" stroke-width="3"/>
-      <line x1="250" y1="1020" x2="250" y2="2970" stroke="#35203f" stroke-width="5"/>
-      <line x1="940" y1="1020" x2="940" y2="2970" stroke="#35203f" stroke-width="5"/>
-      <line x1="1428" y1="1020" x2="1428" y2="2970" stroke="#35203f" stroke-width="5"/>
-      <line x1="1719" y1="1020" x2="1719" y2="2970" stroke="#35203f" stroke-width="5"/>
-      <line x1="2010" y1="1020" x2="2010" y2="2970" stroke="#35203f" stroke-width="5"/>
-
-      <line x1="56" y1="1274" x2="${width - 56}" y2="1274" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="1428" x2="${width - 56}" y2="1428" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="1582" x2="${width - 56}" y2="1582" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="1736" x2="${width - 56}" y2="1736" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="1890" x2="${width - 56}" y2="1890" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2044" x2="${width - 56}" y2="2044" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2198" x2="${width - 56}" y2="2198" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2352" x2="${width - 56}" y2="2352" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2506" x2="${width - 56}" y2="2506" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2660" x2="${width - 56}" y2="2660" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2814" x2="${width - 56}" y2="2814" stroke="#35203f" stroke-width="5"/>
-      <line x1="56" y1="2968" x2="${width - 56}" y2="2968" stroke="#35203f" stroke-width="5"/>
-
-      <rect x="1650" y="68" rx="26" ry="26" width="560" height="90"
-        fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(177,88,255,0.20)'}"
-        stroke="rgba(255,255,255,0.18)"
-        stroke-width="2"
-        filter="url(#softGlow)"/>
+      <line x1="40" y1="486" x2="${width - 40}" y2="486" stroke="#392349" stroke-width="5"/>
+      <line x1="40" y1="666" x2="${width - 40}" y2="666" stroke="#392349" stroke-width="5"/>
+      <line x1="40" y1="846" x2="${width - 40}" y2="846" stroke="#392349" stroke-width="5"/>
     </svg>
   `;
-}
 
-async function createBasePosterImage() {
-  const svg = buildPosterBaseSvg();
-  const baseBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return Jimp.read(baseBuffer);
-}
-
-function getRowY(index) {
-  return 1120 + index * 154;
-}
-
-async function generateRegistrationBannerBuffer() {
-  refreshStateFromDisk();
-
-  const fontsLoaded = await getBitmapFonts();
-  const image = await createBasePosterImage();
+  const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
+  const image = await Jimp.read(buffer);
+  const fontSet = await getBitmapFonts();
 
   const project = getProjectSettings();
-  const displayTeams = getDisplayTeams();
-  const limit = getRegistrationLimit();
+  const regTitle = sanitizeText(data.registrationStatusTitle) || 'Team registrati';
+
+  await printBitmapText(image, fontSet.medium, 190, 56, project.brandName, 180, 24);
+  await printBitmapText(image, fontSet.title, 190, 78, truncateForBitmap(project.tournamentName, 24), 820, 72);
+  await printBitmapText(image, fontSet.medium, 950, 94, truncateForBitmap(regTitle, 46), 900, 28);
+
+  await printBitmapText(image, fontSet.medium, width - 470, 76, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 280, 24);
+
+  await printBitmapText(image, fontSet.medium, 76, 250, 'SLOT', 100, 24);
+  await printBitmapText(image, fontSet.medium, 400, 250, 'TEAM', 140, 24);
+  await printBitmapText(image, fontSet.medium, 1040, 250, 'PLAYER 1', 180, 24);
+  await printBitmapText(image, fontSet.medium, 1600, 250, 'PLAYER 2', 180, 24);
+  await printBitmapText(image, fontSet.medium, 2140, 250, 'PLAYER 3', 180, 24);
+  await printBitmapText(image, fontSet.medium, width - 250, 250, `PAG ${pageIndex + 1}/${totalPages}`, 160, 24);
+
   const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const title = sanitizeText(data.registrationStatusTitle) || 'TEAM REGISTRATI';
-  const intro = sanitizeText(data.registrationStatusText) || 'Elenco completo dei team con slot assegnato e players registrati.';
-  const isFull = displayTeams.length >= limit;
-  const pageTeams = displayTeams.slice(0, 12);
+  await printBitmapText(image, fontSet.medium, 60, 876, `TEAM: ${displayTeams.length}/${limit}`, 220, 24);
+  await printBitmapText(image, fontSet.medium, 360, 876, `POSTI: ${freeSpots}`, 200, 24);
+  await printBitmapText(image, fontSet.medium, 620, 876, 'LAYOUT ULTRA ORIZZONTALE', 420, 24);
 
-  await printBitmapText(image, fontsLoaded.title, 620, 180, 'TEAM', 520, 90);
-  await printBitmapText(image, fontsLoaded.title, 620, 285, 'REGISTRATI', 780, 90);
+  return image;
+}
 
-  await printBitmapText(image, fontsLoaded.medium, 820, 790, truncateForBitmap(project.tournamentName, 42), 760, 30);
+function getHorizontalRowY(index) {
+  return 356 + index * 180;
+}
 
-  await printBitmapText(image, fontsLoaded.medium, 96, 905, truncateForBitmap(title, 48), 800, 34);
-  await printBitmapText(image, fontsLoaded.medium, 96, 952, truncateForBitmap(intro, 130), 1600, 30);
-
-  await printBitmapText(image, fontsLoaded.medium, 1790, 100, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 320, 32);
-
-  await printBitmapText(image, fontsLoaded.medium, 88, 1052, 'SLOT', 120, 26);
-  await printBitmapText(image, fontsLoaded.medium, 430, 1052, 'TEAM', 200, 26);
-  await printBitmapText(image, fontsLoaded.medium, 1030, 1052, 'PLAYER 1', 220, 26);
-  await printBitmapText(image, fontsLoaded.medium, 1490, 1052, 'PLAYER 2', 220, 26);
-  await printBitmapText(image, fontsLoaded.medium, 1780, 1052, 'PLAYER 3', 220, 26);
-  await printBitmapText(image, fontsLoaded.medium, 2080, 1052, 'TOT', 100, 26);
+async function generateRegistrationPageBuffer(pageTeams, pageIndex, totalPages) {
+  const image = await createHorizontalPanelBase(pageIndex, totalPages);
+  const fontSet = await getBitmapFonts();
 
   if (!pageTeams.length) {
-    await printBitmapText(image, fontsLoaded.large, 760, 1450, 'NESSUN TEAM REGISTRATO', 1000, 40);
-  } else {
-    for (let i = 0; i < pageTeams.length; i++) {
-      const team = pageTeams[i];
-      const rowY = getRowY(i) + 42;
-
-      await printBitmapText(image, fontsLoaded.large, 118, rowY, String(team.slot), 80, 36);
-      await printBitmapText(image, fontsLoaded.large, 292, rowY, truncateForBitmap(team.teamName, 20), 560, 36);
-      await printBitmapText(image, fontsLoaded.large, 980, rowY, truncateForBitmap(team.players?.[0] || '-', 12), 370, 36);
-      await printBitmapText(image, fontsLoaded.large, 1450, rowY, truncateForBitmap(team.players?.[1] || '-', 12), 220, 36);
-      await printBitmapText(image, fontsLoaded.large, 1740, rowY, truncateForBitmap(team.players?.[2] || '-', 12), 220, 36);
-      await printBitmapText(image, fontsLoaded.large, 2140, rowY, '3', 60, 36);
-    }
+    await printBitmapText(image, fontSet.large, 980, 500, 'NESSUN TEAM REGISTRATO', 700, 40);
+    return image.getBuffer('image/png');
   }
 
-  await printBitmapText(image, fontsLoaded.medium, 88, 3060, `TEAM: ${displayTeams.length}/${limit}`, 260, 28);
-  await printBitmapText(image, fontsLoaded.medium, 420, 3060, `POSTI DISPONIBILI: ${freeSpots}`, 420, 28);
-  await printBitmapText(image, fontsLoaded.medium, 980, 3060, `${project.brandName} • grafica premium sincronizzata`, 760, 28);
+  for (let i = 0; i < pageTeams.length; i++) {
+    const team = pageTeams[i];
+    const y = getHorizontalRowY(i);
+
+    await printBitmapText(image, fontSet.large, 86, y, `#${team.slot}`, 110, 42);
+    await printBitmapText(image, fontSet.large, 320, y, truncateForBitmap(team.teamName, 22), 460, 42);
+    await printBitmapText(image, fontSet.large, 930, y, truncateForBitmap(team.players?.[0] || '-', 18), 430, 42);
+    await printBitmapText(image, fontSet.large, 1500, y, truncateForBitmap(team.players?.[1] || '-', 18), 380, 42);
+    await printBitmapText(image, fontSet.large, 2040, y, truncateForBitmap(team.players?.[2] || '-', 18), 380, 42);
+  }
 
   return image.getBuffer('image/png');
 }
 
-async function saveRegistrationDebugFile(panelBuffer) {
+async function saveRegistrationDebugFile(panelBuffers) {
   try {
+    const firstBuffer = Array.isArray(panelBuffers) ? panelBuffers[0] : panelBuffers;
+    if (!firstBuffer) {
+      return { ok: false, filePath: '', url: '' };
+    }
+
     const debugFileName = 'registration-debug.png';
     const debugFilePath = path.join(UPLOADS_DIR, debugFileName);
-    fs.writeFileSync(debugFilePath, panelBuffer);
+    fs.writeFileSync(debugFilePath, firstBuffer);
 
     const debugUrl = buildPublicUploadUrl(debugFileName);
     console.log(`DEBUG registration panel salvato: ${debugFilePath}`);
@@ -537,15 +512,24 @@ async function saveRegistrationDebugFile(panelBuffer) {
 async function buildRegistrationStatusMessagePayload() {
   refreshStateFromDisk();
 
-  const panelBuffer = await generateRegistrationBannerBuffer();
-  const panelName = `registration-panel-${Date.now()}.png`;
-  const panelAttachment = new AttachmentBuilder(panelBuffer, { name: panelName });
+  const displayTeams = getDisplayTeams();
+  const pages = chunkArray(displayTeams, 3);
+  const effectivePages = pages.length ? pages : [[]];
 
-  await saveRegistrationDebugFile(panelBuffer);
+  const files = [];
+  const buffers = [];
+
+  for (let i = 0; i < effectivePages.length; i++) {
+    const buffer = await generateRegistrationPageBuffer(effectivePages[i], i, effectivePages.length);
+    buffers.push(buffer);
+    files.push(new AttachmentBuilder(buffer, { name: `registration-panel-${i + 1}-${Date.now()}.png` }));
+  }
+
+  await saveRegistrationDebugFile(buffers);
 
   return {
     content: '',
-    files: [panelAttachment]
+    files
   };
 }
 
