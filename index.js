@@ -329,49 +329,44 @@ function buildRegistrationBaseSvg() {
   const logoDataUri = getLogoDataUri();
 
   const width = 3200;
-  const height = 1450;
-  const statGap = 36;
-  const statW = (width - 160 - statGap * 2) / 3;
+  const height = 1850;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#05050a"/>
-          <stop offset="25%" stop-color="#090814"/>
-          <stop offset="58%" stop-color="#120a1d"/>
-          <stop offset="100%" stop-color="#1a1030"/>
+          <stop offset="0%" stop-color="#03040b"/>
+          <stop offset="38%" stop-color="#060714"/>
+          <stop offset="68%" stop-color="#090b1b"/>
+          <stop offset="100%" stop-color="#0c1022"/>
         </linearGradient>
 
-        <linearGradient id="panelGlow" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(150,80,255,0.9)"/>
-          <stop offset="50%" stop-color="rgba(123,44,255,0.55)"/>
-          <stop offset="100%" stop-color="rgba(85,30,220,0.9)"/>
+        <linearGradient id="panelStroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(113,51,255,0.95)"/>
+          <stop offset="50%" stop-color="rgba(90,58,255,0.48)"/>
+          <stop offset="100%" stop-color="rgba(45,110,255,0.82)"/>
         </linearGradient>
 
-        <linearGradient id="softCard" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.04)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0.015)"/>
+        <linearGradient id="headFill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(30,34,72,0.40)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
+        </linearGradient>
+
+        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.035)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.016)"/>
         </linearGradient>
 
         <filter id="glowHeavy" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="55" result="blur"/>
+          <feGaussianBlur stdDeviation="60" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
 
-        <filter id="glowMedium" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="24" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="glowSoft" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="14" result="blur"/>
+        <filter id="glowSoft" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="18" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -381,60 +376,47 @@ function buildRegistrationBaseSvg() {
 
       <rect width="${width}" height="${height}" fill="url(#bg)"/>
 
-      <circle cx="160" cy="140" r="220" fill="rgba(123,44,255,0.20)" filter="url(#glowHeavy)"/>
-      <circle cx="${width - 180}" cy="130" r="240" fill="rgba(123,44,255,0.17)" filter="url(#glowHeavy)"/>
-      <circle cx="${Math.floor(width / 2)}" cy="${height - 20}" r="420" fill="rgba(123,44,255,0.14)" filter="url(#glowHeavy)"/>
+      <circle cx="120" cy="100" r="220" fill="rgba(102,52,255,0.20)" filter="url(#glowHeavy)"/>
+      <circle cx="${width - 120}" cy="120" r="220" fill="rgba(45,110,255,0.14)" filter="url(#glowHeavy)"/>
+      <circle cx="${Math.floor(width / 2)}" cy="${height - 30}" r="420" fill="rgba(90,58,255,0.16)" filter="url(#glowHeavy)"/>
 
       <rect x="18" y="18" rx="46" ry="46" width="${width - 36}" height="${height - 36}"
-        fill="rgba(8,8,18,0.96)"
-        stroke="url(#panelGlow)"
+        fill="rgba(5,7,16,0.97)"
+        stroke="url(#panelStroke)"
         stroke-width="5"
         filter="url(#glowSoft)"/>
 
-      <rect x="54" y="48" rx="34" ry="34" width="${width - 108}" height="204"
-        fill="rgba(255,255,255,0.018)"
-        stroke="rgba(145,90,255,0.35)"
-        stroke-width="2"/>
-
-      <rect x="92" y="86" rx="26" ry="26" width="126" height="126"
-        fill="rgba(123,44,255,0.18)"
-        stroke="rgba(185,135,255,0.62)"
-        stroke-width="2"
-        filter="url(#glowMedium)"/>
-
-      ${logoDataUri ? `<image href="${logoDataUri}" x="108" y="102" width="94" height="94"/>` : ''}
-
-      <rect x="${width - 540}" y="100" rx="24" ry="24" width="340" height="74"
-        fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(123,44,255,0.18)'}"
-        stroke="rgba(170,120,255,0.42)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <rect x="54" y="300" rx="28" ry="28" width="${statW}" height="126"
-        fill="url(#softCard)"
-        stroke="rgba(123,44,255,0.28)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <rect x="${54 + statW + statGap}" y="300" rx="28" ry="28" width="${statW}" height="126"
-        fill="url(#softCard)"
-        stroke="rgba(123,44,255,0.28)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <rect x="${54 + (statW + statGap) * 2}" y="300" rx="28" ry="28" width="${statW}" height="126"
-        fill="url(#softCard)"
-        stroke="rgba(123,44,255,0.28)"
-        stroke-width="2"
-        filter="url(#glowSoft)"/>
-
-      <rect x="54" y="470" rx="34" ry="34" width="${width - 108}" height="910"
+      <rect x="54" y="48" rx="34" ry="34" width="${width - 108}" height="220"
         fill="rgba(255,255,255,0.015)"
-        stroke="rgba(123,44,255,0.26)"
+        stroke="rgba(99,72,255,0.32)"
         stroke-width="2"/>
 
-      <line x1="100" y1="620" x2="${width - 100}" y2="620"
-        stroke="rgba(170,120,255,0.18)" stroke-width="1"/>
+      <rect x="100" y="100" rx="28" ry="28" width="126" height="126"
+        fill="rgba(97,55,255,0.16)"
+        stroke="rgba(164,133,255,0.55)"
+        stroke-width="2"
+        filter="url(#glowSoft)"/>
+
+      ${logoDataUri ? `<image href="${logoDataUri}" x="116" y="116" width="94" height="94"/>` : ''}
+
+      <rect x="${width - 560}" y="104" rx="24" ry="24" width="360" height="76"
+        fill="${isFull ? 'rgba(255,77,109,0.17)' : 'rgba(104,70,255,0.18)'}"
+        stroke="rgba(144,119,255,0.40)"
+        stroke-width="2"
+        filter="url(#glowSoft)"/>
+
+      <rect x="54" y="360" rx="26" ry="26" width="${width - 108}" height="${height - 430}"
+        fill="rgba(255,255,255,0.01)"
+        stroke="rgba(87,74,255,0.24)"
+        stroke-width="2"/>
+
+      <rect x="76" y="492" rx="22" ry="22" width="${width - 152}" height="86"
+        fill="url(#headFill)"
+        stroke="rgba(92,90,255,0.18)"
+        stroke-width="1.5"/>
+
+      <line x1="76" y1="578" x2="${width - 76}" y2="578"
+        stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
     </svg>
   `;
 }
@@ -478,6 +460,74 @@ async function printBitmapText(image, font, x, y, text, maxWidth = null, maxHeig
   }
 }
 
+async function compositeSvgBox(image, svgString, x, y) {
+  const buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
+  const layer = await Jimp.read(buffer);
+  image.composite(layer, x, y);
+}
+
+function buildSlotBadgeSvg() {
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="94" height="74">
+      <defs>
+        <linearGradient id="badgeFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="rgba(29,56,114,0.95)"/>
+          <stop offset="100%" stop-color="rgba(16,34,72,0.95)"/>
+        </linearGradient>
+        <filter id="badgeGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <rect x="2" y="2" rx="28" ry="28" width="90" height="70"
+        fill="url(#badgeFill)"
+        stroke="rgba(77,178,255,0.60)"
+        stroke-width="2"
+        filter="url(#badgeGlow)"/>
+    </svg>
+  `;
+}
+
+function buildPlayerChipSvg(width = 120, height = 46) {
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <rect x="1" y="1" rx="20" ry="20" width="${width - 2}" height="${height - 2}"
+        fill="rgba(255,255,255,0.028)"
+        stroke="rgba(255,255,255,0.09)"
+        stroke-width="1.5"/>
+    </svg>
+  `;
+}
+
+function buildRowCardSvg(rowWidth, rowHeight) {
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${rowWidth}" height="${rowHeight}">
+      <defs>
+        <linearGradient id="rowFill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.012)"/>
+        </linearGradient>
+        <filter id="rowGlow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="10" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect x="1" y="1" rx="26" ry="26" width="${rowWidth - 2}" height="${rowHeight - 2}"
+        fill="url(#rowFill)"
+        stroke="rgba(94,88,255,0.20)"
+        stroke-width="1.5"
+        filter="url(#rowGlow)"/>
+    </svg>
+  `;
+}
+
 async function generateRegistrationBannerBuffer() {
   refreshStateFromDisk();
 
@@ -488,111 +538,82 @@ async function generateRegistrationBannerBuffer() {
   const displayTeams = getDisplayTeams();
   const limit = getRegistrationLimit();
   const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const title = sanitizeText(data.registrationStatusTitle) || 'Slot Team Registrati';
-  const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
+  const title = sanitizeText(data.registrationStatusTitle) || 'Team registrati';
+  const intro = sanitizeText(data.registrationStatusText) || 'Elenco completo dei team con slot assegnato e players registrati.';
   const isFull = displayTeams.length >= limit;
 
-  await printBitmapText(image, fontsLoaded.medium, 280, 88, truncateForBitmap(project.brandName, 28), 520, 36);
-  await printBitmapText(image, fontsLoaded.title, 280, 126, truncateForBitmap(project.tournamentName, 30), 1300, 90);
-  await printBitmapText(image, fontsLoaded.large, 280, 214, truncateForBitmap(title, 56), 1200, 48);
+  await printBitmapText(image, fontsLoaded.medium, 270, 96, truncateForBitmap(project.brandName, 28), 520, 34);
+  await printBitmapText(image, fontsLoaded.title, 270, 136, truncateForBitmap(project.tournamentName, 30), 1400, 86);
+  await printBitmapText(image, fontsLoaded.medium, 2670, 128, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 260, 30);
 
-  await printBitmapText(image, fontsLoaded.medium, 2700, 126, isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE', 260, 32);
+  await printBitmapText(image, fontsLoaded.large, 78, 390, truncateForBitmap(title, 40), 700, 40);
+  await printBitmapText(image, fontsLoaded.medium, 78, 450, truncateForBitmap(intro, 140), 2200, 32);
 
-  await printBitmapText(image, fontsLoaded.medium, 92, 332, 'TEAM REGISTRATI', 340, 30);
-  await printBitmapText(image, fontsLoaded.large, 92, 370, `${displayTeams.length}/${limit}`, 300, 40);
+  await printBitmapText(image, fontsLoaded.medium, 84, 526, 'SLOT', 120, 24);
+  await printBitmapText(image, fontsLoaded.medium, 430, 526, 'TEAM', 180, 24);
+  await printBitmapText(image, fontsLoaded.medium, 1080, 526, 'GIOCATORI', 260, 24);
 
-  await printBitmapText(image, fontsLoaded.medium, 1105, 332, 'POSTI DISPONIBILI', 360, 30);
-  await printBitmapText(image, fontsLoaded.large, 1105, 370, `${freeSpots}`, 300, 40);
+  await printBitmapText(image, fontsLoaded.medium, 80, 292, 'TEAM REGISTRATI', 250, 28);
+  await printBitmapText(image, fontsLoaded.large, 80, 320, `${displayTeams.length}/${limit}`, 220, 34);
 
-  await printBitmapText(image, fontsLoaded.medium, 2118, 332, 'STATO', 220, 30);
-  await printBitmapText(image, fontsLoaded.large, 2118, 370, isFull ? 'CHIUSO' : 'APERTO', 320, 40);
+  await printBitmapText(image, fontsLoaded.medium, 430, 292, 'POSTI DISPONIBILI', 320, 28);
+  await printBitmapText(image, fontsLoaded.large, 430, 320, `${freeSpots}`, 220, 34);
 
-  await printBitmapText(image, fontsLoaded.large, 100, 510, 'PANNELLO SLOT TEAM', 760, 42);
-  await printBitmapText(image, fontsLoaded.medium, 100, 570, truncateForBitmap(intro, 135), 2200, 34);
+  await printBitmapText(image, fontsLoaded.medium, 880, 292, 'STATO', 120, 28);
+  await printBitmapText(image, fontsLoaded.large, 880, 320, isFull ? 'CHIUSO' : 'APERTO', 250, 34);
 
-  const columns = 3;
-  const rows = 3;
-  const visibleCards = columns * rows;
-  const visibleTeams = displayTeams.slice(0, visibleCards);
+  const startX = 76;
+  const startY = 606;
+  const rowGap = 24;
+  const rowWidth = 3048;
+  const rowHeight = 118;
+  const visibleRows = 8;
+  const visibleTeams = displayTeams.slice(0, visibleRows);
 
   if (!visibleTeams.length) {
-    await printBitmapText(image, fontsLoaded.large, 130, 740, 'Nessun team registrato al momento.', 1000, 40);
+    await printBitmapText(image, fontsLoaded.large, 120, 700, 'Nessun team registrato al momento.', 1000, 40);
   } else {
-    const cardWidth = 972;
-    const cardHeight = 210;
-    const gapX = 34;
-    const gapY = 28;
-    const startX = 86;
-    const startY = 680;
+    for (let i = 0; i < visibleTeams.length; i++) {
+      const team = visibleTeams[i];
+      const y = startY + i * (rowHeight + rowGap);
 
-    for (let index = 0; index < visibleTeams.length; index++) {
-      const team = visibleTeams[index];
-      const col = index % columns;
-      const row = Math.floor(index / columns);
-      const x = startX + col * (cardWidth + gapX);
-      const y = startY + row * (cardHeight + gapY);
+      await compositeSvgBox(image, buildRowCardSvg(rowWidth, rowHeight), startX, y);
+      await compositeSvgBox(image, buildSlotBadgeSvg(), startX + 18, y + 22);
 
-      const cardSvg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${cardWidth}" height="${cardHeight}">
-          <defs>
-            <linearGradient id="cardFill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="rgba(255,255,255,0.04)"/>
-              <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
-            </linearGradient>
-            <filter id="cardGlow" x="-25%" y="-25%" width="150%" height="150%">
-              <feGaussianBlur stdDeviation="12" result="blur"/>
-              <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-
-          <rect x="0" y="0" rx="28" ry="28" width="${cardWidth}" height="${cardHeight}"
-            fill="url(#cardFill)"
-            stroke="rgba(150,92,255,0.45)"
-            stroke-width="2"
-            filter="url(#cardGlow)"/>
-
-          <rect x="22" y="22" rx="18" ry="18" width="128" height="58"
-            fill="rgba(123,44,255,0.22)"
-            stroke="rgba(190,145,255,0.55)"
-            stroke-width="1.5"/>
-        </svg>
-      `;
-
-      const cardBuffer = await sharp(Buffer.from(cardSvg)).png().toBuffer();
-      const cardImage = await Jimp.read(cardBuffer);
-      image.composite(cardImage, x, y);
-
-      await printBitmapText(image, fontsLoaded.medium, x + 42, y + 36, `#${team.slot}`, 92, 26);
-      await printBitmapText(image, fontsLoaded.large, x + 176, y + 28, truncateForBitmap(team.teamName, 28), 720, 40);
+      await printBitmapText(image, fontsLoaded.medium, startX + 36, y + 45, `#${team.slot}`, 44, 24);
+      await printBitmapText(image, fontsLoaded.large, startX + 430, y + 34, truncateForBitmap(team.teamName, 34), 420, 32);
 
       const players = [
-        `P1: ${truncateForBitmap(team.players?.[0] || 'Player 1', 28)}`,
-        `P2: ${truncateForBitmap(team.players?.[1] || 'Player 2', 28)}`,
-        `P3: ${truncateForBitmap(team.players?.[2] || 'Player 3', 28)}`
+        truncateForBitmap(team.players?.[0] || 'Player 1', 12),
+        truncateForBitmap(team.players?.[1] || 'Player 2', 12),
+        truncateForBitmap(team.players?.[2] || 'Player 3', 12)
       ];
 
-      await printBitmapText(image, fontsLoaded.medium, x + 176, y + 90, players[0], 730, 26);
-      await printBitmapText(image, fontsLoaded.medium, x + 176, y + 124, players[1], 730, 26);
-      await printBitmapText(image, fontsLoaded.medium, x + 176, y + 158, players[2], 730, 26);
+      const chipY = y + 35;
+      let chipX = startX + 1080;
+
+      for (const player of players) {
+        const chipWidth = Math.max(120, Math.min(210, 44 + player.length * 16));
+        await compositeSvgBox(image, buildPlayerChipSvg(chipWidth, 46), chipX, chipY);
+        await printBitmapText(image, fontsLoaded.medium, chipX + 20, chipY + 13, player, chipWidth - 30, 22);
+        chipX += chipWidth + 18;
+      }
     }
   }
 
-  if (displayTeams.length > visibleCards) {
+  if (displayTeams.length > visibleRows) {
     await printBitmapText(
       image,
       fontsLoaded.medium,
-      120,
-      1330,
-      `Altri team non visibili in questa schermata: ${displayTeams.length - visibleCards}`,
+      90,
+      1700,
+      `Altri team non visibili in questa schermata: ${displayTeams.length - visibleRows}`,
       1200,
-      30
+      28
     );
   }
 
-  await printBitmapText(image, fontsLoaded.small, 90, 1405, `${project.brandName} • grafica premium sincronizzata`, 950, 26);
+  await printBitmapText(image, fontsLoaded.small, 90, 1802, `${project.brandName} • grafica premium sincronizzata`, 900, 24);
 
   return image.getBuffer('image/png');
 }
