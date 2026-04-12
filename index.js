@@ -337,60 +337,68 @@ function buildRegistrationPageSvg(pageTeams, pageIndex, totalPages) {
   const title = sanitizeText(data.registrationStatusTitle) || 'TEAM REGISTRATI';
   const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
 
-  const width = 2800;
+  const width = 3000;
   const rowCount = Math.max(pageTeams.length, 1);
-  const rowHeight = 145;
-  const headerHeight = 185;
-  const titleBlockHeight = 145;
-  const footerHeight = 70;
-  const tableTop = 190;
-  const tableHeaderHeight = 80;
+  const rowHeight = 160;
+  const headerTop = 36;
+  const tableTop = 255;
+  const tableHeaderHeight = 92;
   const tableBodyTop = tableTop + tableHeaderHeight;
   const totalTableHeight = rowCount * rowHeight;
-  const height = tableBodyTop + totalTableHeight + footerHeight + 30;
+  const height = tableBodyTop + totalTableHeight + 92;
+
+  const rowLines = Array.from({ length: rowCount }, (_, index) => {
+    const y = tableBodyTop + (index + 1) * rowHeight;
+    return `<line x1="44" y1="${y}" x2="${width - 44}" y2="${y}" stroke="rgba(163,111,255,0.22)" stroke-width="3"/>`;
+  }).join('');
 
   const rowsMarkup = pageTeams.length
     ? pageTeams.map((team, index) => {
         const y = tableBodyTop + index * rowHeight;
-        const textY = y + 92;
+        const rowCenterY = y + 102;
 
         return `
-          <line x1="40" y1="${y + rowHeight}" x2="${width - 40}" y2="${y + rowHeight}" stroke="#3a2447" stroke-width="4"/>
-          <text x="82" y="${textY}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="900">#${escapeXml(team.slot)}</text>
-          <text x="320" y="${textY}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="900">${escapeXml(truncateText(team.teamName, 22))}</text>
-          <text x="980" y="${textY}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="800">${escapeXml(truncateText(team.players?.[0] || '-', 18))}</text>
-          <text x="1580" y="${textY}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="800">${escapeXml(truncateText(team.players?.[1] || '-', 18))}</text>
-          <text x="2140" y="${textY}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="800">${escapeXml(truncateText(team.players?.[2] || '-', 18))}</text>
+          <rect x="58" y="${y + 14}" width="${width - 116}" height="${rowHeight - 28}" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(147,101,255,0.12)" stroke-width="1.5"/>
+          <rect x="76" y="${y + 38}" width="150" height="78" rx="22" fill="rgba(58,112,255,0.14)" stroke="rgba(92,195,255,0.42)" stroke-width="2"/>
+          <text x="108" y="${rowCenterY - 4}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="900">#${escapeXml(team.slot)}</text>
+
+          <text x="300" y="${rowCenterY}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="900">${escapeXml(truncateText(team.teamName, 24))}</text>
+          <text x="1048" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[0] || '-', 18))}</text>
+          <text x="1708" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[1] || '-', 18))}</text>
+          <text x="2338" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[2] || '-', 18))}</text>
         `;
       }).join('')
     : `
-        <text x="980" y="${tableBodyTop + 95}" fill="#0f1220" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900">NESSUN TEAM REGISTRATO</text>
+        <text x="1090" y="${tableBodyTop + 104}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900">NESSUN TEAM REGISTRATO</text>
       `;
-
-  const columnBottom = tableBodyTop + totalTableHeight;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#070916"/>
-          <stop offset="50%" stop-color="#0d1020"/>
-          <stop offset="100%" stop-color="#11162a"/>
+          <stop offset="0%" stop-color="#05070f"/>
+          <stop offset="40%" stop-color="#0a0d1b"/>
+          <stop offset="100%" stop-color="#101426"/>
         </linearGradient>
 
         <linearGradient id="frame" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="rgba(154,77,255,0.95)"/>
-          <stop offset="50%" stop-color="rgba(108,77,255,0.58)"/>
-          <stop offset="100%" stop-color="rgba(73,134,255,0.82)"/>
+          <stop offset="0%" stop-color="#9c53ff"/>
+          <stop offset="50%" stop-color="#714fff"/>
+          <stop offset="100%" stop-color="#4194ff"/>
         </linearGradient>
 
-        <linearGradient id="headfill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#fa5cf3"/>
-          <stop offset="100%" stop-color="#cb67ff"/>
+        <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff5cf2"/>
+          <stop offset="100%" stop-color="#b85dff"/>
         </linearGradient>
 
-        <filter id="bigGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="24" result="blur"/>
+        <linearGradient id="tableHead" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ef52ff"/>
+          <stop offset="100%" stop-color="#bb61ff"/>
+        </linearGradient>
+
+        <filter id="outerGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="16" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -407,43 +415,49 @@ function buildRegistrationPageSvg(pageTeams, pageIndex, totalPages) {
       </defs>
 
       <rect width="${width}" height="${height}" fill="url(#bg)"/>
-      <circle cx="100" cy="80" r="150" fill="rgba(166,76,255,0.18)" filter="url(#bigGlow)"/>
-      <circle cx="${width - 120}" cy="90" r="150" fill="rgba(73,134,255,0.10)" filter="url(#bigGlow)"/>
+      <circle cx="120" cy="90" r="180" fill="rgba(172,77,255,0.16)" filter="url(#outerGlow)"/>
+      <circle cx="${width - 120}" cy="92" r="180" fill="rgba(65,148,255,0.10)" filter="url(#outerGlow)"/>
 
-      <rect x="16" y="16" width="${width - 32}" height="${height - 32}" rx="26" fill="rgba(6,8,18,0.90)" stroke="url(#frame)" stroke-width="4" filter="url(#softGlow)"/>
+      <rect x="16" y="16" width="${width - 32}" height="${height - 32}" rx="28" fill="rgba(6,8,18,0.92)" stroke="url(#frame)" stroke-width="4" filter="url(#softGlow)"/>
 
-      <rect x="40" y="38" width="${width - 80}" height="112" rx="20" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
-      ${logoDataUri ? `<image href="${logoDataUri}" x="64" y="52" width="72" height="72"/>` : ''}
+      <rect x="42" y="${headerTop}" width="${width - 84}" height="155" rx="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
 
-      <text x="165" y="82" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700">${escapeXml(project.brandName)}</text>
-      <text x="165" y="124" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="900">${escapeXml(truncateText(project.tournamentName, 24))}</text>
+      <polygon points="42,36 190,36 96,191 42,191" fill="rgba(196,82,255,0.18)"/>
+      <polygon points="${width - 42},36 ${width - 220},36 ${width - 132},191 ${width - 42},191" fill="rgba(84,103,255,0.12)"/>
 
-      <text x="930" y="88" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="1000">${escapeXml(truncateText(title, 24))}</text>
-      <text x="932" y="126" fill="#cdd4ea" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">${escapeXml(truncateText(intro, 90))}</text>
+      ${logoDataUri ? `<image href="${logoDataUri}" x="84" y="72" width="88" height="88"/>` : ''}
 
-      <rect x="${width - 520}" y="56" width="390" height="52" rx="16" fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(145,81,255,0.18)'}" stroke="rgba(255,255,255,0.16)" stroke-width="1.5"/>
-      <text x="${width - 455}" y="90" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">${isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE'}</text>
+      <text x="205" y="92" fill="#cdd4ea" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(project.brandName)}</text>
+      <text x="205" y="146" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="1000">${escapeXml(truncateText(project.tournamentName, 24))}</text>
 
-      <rect x="40" y="${tableTop}" width="${width - 80}" height="${tableHeaderHeight}" fill="url(#headfill)" filter="url(#softGlow)"/>
-      <rect x="40" y="${tableBodyTop}" width="${width - 80}" height="${totalTableHeight}" fill="rgba(239,243,250,0.98)" stroke="rgba(58,31,82,0.92)" stroke-width="4"/>
+      <text x="980" y="110" fill="url(#hero)" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="1000" text-anchor="middle">TEAM REGISTRATI</text>
+      <text x="980" y="150" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" text-anchor="middle">${escapeXml(truncateText(intro, 86))}</text>
 
-      <line x1="250" y1="${tableTop}" x2="250" y2="${columnBottom}" stroke="#392349" stroke-width="5"/>
-      <line x1="900" y1="${tableTop}" x2="900" y2="${columnBottom}" stroke="#392349" stroke-width="5"/>
-      <line x1="1520" y1="${tableTop}" x2="1520" y2="${columnBottom}" stroke="#392349" stroke-width="5"/>
-      <line x1="2080" y1="${tableTop}" x2="2080" y2="${columnBottom}" stroke="#392349" stroke-width="5"/>
+      <rect x="${width - 520}" y="62" width="390" height="54" rx="16" fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(145,81,255,0.18)'}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+      <text x="${width - 455}" y="98" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">${isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE'}</text>
 
-      <text x="76" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900">SLOT</text>
-      <text x="360" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900">TEAM</text>
-      <text x="1020" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900">PLAYER 1</text>
-      <text x="1600" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900">PLAYER 2</text>
-      <text x="2160" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="900">PLAYER 3</text>
-      <text x="${width - 250}" y="${tableTop + 52}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="900">PAG ${pageIndex + 1}/${totalPages}</text>
+      <text x="${width - 390}" y="150" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800">PAG ${pageIndex + 1}/${totalPages}</text>
 
+      <rect x="44" y="${tableTop}" width="${width - 88}" height="${tableHeaderHeight}" rx="18" fill="url(#tableHead)" filter="url(#softGlow)"/>
+      <rect x="44" y="${tableBodyTop}" width="${width - 88}" height="${totalTableHeight}" rx="18" fill="rgba(14,18,34,0.96)" stroke="rgba(176,102,255,0.20)" stroke-width="2"/>
+
+      <line x1="260" y1="${tableTop}" x2="260" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
+      <line x1="940" y1="${tableTop}" x2="940" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
+      <line x1="1630" y1="${tableTop}" x2="1630" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
+      <line x1="2260" y1="${tableTop}" x2="2260" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
+
+      <text x="92" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">SLOT</text>
+      <text x="368" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">TEAM</text>
+      <text x="1045" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 1</text>
+      <text x="1710" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 2</text>
+      <text x="2340" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 3</text>
+
+      ${rowLines}
       ${rowsMarkup}
 
-      <text x="48" y="${height - 26}" fill="#c9d0e8" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">TEAM: ${allTeams.length}/${limit}</text>
-      <text x="290" y="${height - 26}" fill="#c9d0e8" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">POSTI: ${freeSpots}</text>
-      <text x="520" y="${height - 26}" fill="#c9d0e8" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">PANNELLO ULTRA ORIZZONTALE</text>
+      <text x="56" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">TEAM: ${allTeams.length}/${limit}</text>
+      <text x="300" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">POSTI: ${freeSpots}</text>
+      <text x="520" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(title)}</text>
     </svg>
   `;
 }
