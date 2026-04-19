@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Premium</title>
+  <title>RØDA CUP</title>
   <style>
     :root{
       --bg:#050507;
-      --bg-2:#0a0a11;
-      --panel:#10101a;
-      --panel-2:#151525;
-      --panel-3:#1b1b2b;
+      --bg-2:#090911;
+      --panel:#11111b;
+      --panel-2:#171726;
       --line:rgba(160,110,255,.16);
-      --line-strong:rgba(180,130,255,.30);
+      --line-strong:rgba(180,130,255,.28);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
@@ -21,12 +20,10 @@
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
-      --cyan:#4de2ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 28px rgba(123,44,255,.14);
-      --radius:22px;
+      --radius:24px;
       --radius-sm:16px;
-      --sidebar-width:290px;
-      --topbar-height:84px;
+      --container:1450px;
     }
 
     *{
@@ -56,46 +53,60 @@
       min-height:100vh;
       font-family:Inter,Arial,sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(123,44,255,.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(123,44,255,.10), transparent 22%),
-        radial-gradient(circle at bottom center, rgba(123,44,255,.08), transparent 28%),
+        radial-gradient(circle at top left, rgba(123,44,255,.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(123,44,255,.10), transparent 24%),
+        radial-gradient(circle at bottom center, rgba(123,44,255,.10), transparent 30%),
         linear-gradient(180deg, #050507 0%, #090910 100%);
       color:var(--text);
     }
 
     body{
-      overflow:hidden;
+      overflow-x:hidden;
     }
 
-    .app{
-      display:grid;
-      grid-template-columns:var(--sidebar-width) 1fr;
-      min-height:100vh;
+    a{
+      color:inherit;
+      text-decoration:none;
     }
 
-    .sidebar{
-      background:linear-gradient(180deg, rgba(15,15,26,.98), rgba(9,9,16,.98));
-      border-right:1px solid var(--line);
-      padding:18px 14px;
+    .wrap{
+      max-width:var(--container);
+      margin:0 auto;
+      padding:0 20px 28px 20px;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:30;
+      backdrop-filter:blur(14px);
+      background:linear-gradient(180deg, rgba(9,9,15,.88), rgba(9,9,15,.56));
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+
+    .topbar-inner{
+      max-width:var(--container);
+      margin:0 auto;
+      padding:16px 20px;
       display:flex;
-      flex-direction:column;
-      gap:16px;
-      min-width:0;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
     }
 
     .brand{
       display:flex;
       align-items:center;
-      gap:12px;
-      padding:10px 10px 14px 10px;
-      border-bottom:1px solid rgba(255,255,255,.06);
+      gap:14px;
+      min-width:0;
     }
 
-    .brand img.logo{
-      width:54px;
-      height:54px;
-      border-radius:16px;
+    .brand img{
+      width:58px;
+      height:58px;
       object-fit:contain;
+      border-radius:18px;
       flex-shrink:0;
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
     }
@@ -105,73 +116,23 @@
     }
 
     .brand-title{
-      font-size:21px;
+      font-size:24px;
       font-weight:900;
       line-height:1.05;
       margin-bottom:4px;
     }
 
     .brand-subtitle{
-      font-size:12px;
       color:var(--muted);
+      font-size:13px;
       line-height:1.35;
     }
 
-    .sidebar-group{
-      display:grid;
-      gap:8px;
-    }
-
-    .sidebar-label{
-      padding:0 10px;
-      font-size:11px;
-      color:var(--muted);
-      text-transform:uppercase;
-      letter-spacing:.8px;
-      font-weight:800;
-    }
-
-    .nav-btn{
-      width:100%;
-      border:1px solid transparent;
-      background:rgba(255,255,255,.03);
-      color:#f2ecff;
-      border-radius:16px;
-      min-height:48px;
-      text-align:left;
-      padding:12px 14px;
-      font-size:14px;
-      font-weight:800;
-      cursor:pointer;
-      transition:.18s ease;
+    .nav-right{
       display:flex;
+      gap:10px;
+      flex-wrap:wrap;
       align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .nav-btn:hover{
-      transform:translateX(2px);
-      border-color:rgba(160,110,255,.18);
-      background:rgba(255,255,255,.045);
-    }
-
-    .nav-btn.active{
-      background:linear-gradient(135deg, rgba(123,44,255,.20), rgba(156,92,255,.14));
-      border-color:rgba(160,110,255,.28);
-      box-shadow:var(--shadow);
-    }
-
-    .nav-btn small{
-      color:var(--muted);
-      font-size:11px;
-      font-weight:700;
-    }
-
-    .sidebar-bottom{
-      margin-top:auto;
-      display:grid;
-      gap:10px;
     }
 
     .pill{
@@ -179,125 +140,217 @@
       border:1px solid var(--line);
       color:#ddd7f2;
       border-radius:999px;
-      padding:11px 14px;
+      padding:10px 14px;
       font-size:13px;
       box-shadow:var(--shadow);
-      text-align:center;
     }
 
-    .sidebar-actions{
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 18px;
+      font-weight:800;
+      font-size:14px;
+      color:#fff;
+      transition:.18s ease;
+      min-height:46px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
+    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+
+    .hero{
+      padding:34px 0 20px 0;
+    }
+
+    .hero-box{
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at top left, rgba(123,44,255,.20), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(87,183,255,.12), transparent 26%),
+        linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid var(--line);
+      border-radius:32px;
+      padding:30px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-box::before{
+      content:"";
+      position:absolute;
+      inset:auto -120px -140px auto;
+      width:320px;
+      height:320px;
+      background:radial-gradient(circle, rgba(123,44,255,.16), transparent 70%);
+      pointer-events:none;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .hero-left{
+      min-width:0;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e6ddff;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+      margin-bottom:16px;
+    }
+
+    .hero-title{
+      font-size:52px;
+      line-height:1.02;
+      font-weight:1000;
+      margin:0 0 12px 0;
+      letter-spacing:-1px;
+    }
+
+    .hero-text{
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.65;
+      max-width:760px;
+      margin-bottom:20px;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:22px;
+    }
+
+    .hero-stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .mini-stat{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:16px;
+      min-width:0;
+    }
+
+    .mini-stat span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      margin-bottom:8px;
+      font-weight:800;
+    }
+
+    .mini-stat strong{
+      font-size:30px;
+      font-weight:1000;
+      display:block;
+      word-break:break-word;
+    }
+
+    .hero-right{
+      display:grid;
+      gap:14px;
+    }
+
+    .side-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:22px;
+      padding:18px;
+    }
+
+    .side-card h3{
+      margin:0 0 8px 0;
+      font-size:18px;
+    }
+
+    .side-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .status-box{
       display:grid;
       gap:10px;
     }
 
-    .main{
-      min-width:0;
-      display:flex;
-      flex-direction:column;
-      min-height:100vh;
-    }
-
-    .topbar{
-      min-height:var(--topbar-height);
-      padding:18px 22px;
-      border-bottom:1px solid rgba(255,255,255,.05);
+    .status-line{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-      background:linear-gradient(180deg, rgba(14,14,24,.72), rgba(10,10,18,.40));
-      backdrop-filter:blur(12px);
+      gap:12px;
+      padding:12px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      font-size:14px;
     }
 
-    .topbar-left{
-      min-width:0;
-      flex:1;
+    .status-line strong{
+      font-size:14px;
     }
 
-    .page-title{
-      font-size:28px;
-      font-weight:900;
-      line-height:1.05;
-      margin-bottom:6px;
-    }
-
-    .page-subtitle{
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.45;
-    }
-
-    .topbar-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+    .status-badge{
+      display:inline-flex;
       align-items:center;
+      justify-content:center;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      border:1px solid rgba(255,255,255,.08);
     }
 
-    .content{
-      flex:1;
-      overflow:auto;
-      padding:22px;
+    .status-open{
+      background:rgba(24,201,100,.12);
+      color:#b6ffd4;
+      border-color:rgba(24,201,100,.28);
     }
 
-    .page{
-      display:none;
-      animation:fadeIn .18s ease;
+    .status-full{
+      background:rgba(255,77,109,.12);
+      color:#ffd0d9;
+      border-color:rgba(255,77,109,.28);
     }
 
-    .page.active{
-      display:block;
+    .section{
+      margin-top:18px;
     }
 
-    @keyframes fadeIn{
-      from{opacity:.45; transform:translateY(4px);}
-      to{opacity:1; transform:none;}
-    }
-
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:14px;
-      margin-bottom:18px;
-    }
-
-    .grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-      margin-bottom:18px;
-    }
-
-    .grid-3{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:18px;
-      margin-bottom:18px;
-    }
-
-    .grid-4{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:18px;
-      margin-bottom:18px;
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(11,11,19,.98));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:18px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      min-width:0;
-    }
-
-    .section-card{
-      margin-bottom:18px;
-    }
-
-    .card-header{
+    .section-header{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
@@ -306,36 +359,51 @@
       margin-bottom:14px;
     }
 
-    .card-header-left{
+    .section-title{
+      font-size:24px;
+      font-weight:900;
+      margin:0 0 6px 0;
+    }
+
+    .section-subtitle{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+      margin:0;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid var(--line);
+      border-radius:26px;
+      padding:18px;
+      box-shadow:var(--shadow);
       min-width:0;
-      flex:1;
+      overflow:hidden;
     }
 
     .card h3{
       margin:0 0 6px 0;
       font-size:19px;
-      line-height:1.2;
     }
 
-    .section-note{
+    .card-note{
       color:var(--muted);
       font-size:13px;
-      line-height:1.45;
-    }
-
-    .stat-label{
-      color:var(--muted);
-      font-size:12px;
-      text-transform:uppercase;
-      letter-spacing:.7px;
-      margin-bottom:10px;
-      font-weight:700;
-    }
-
-    .stat-value{
-      font-size:30px;
-      font-weight:900;
-      word-break:break-word;
+      line-height:1.5;
+      margin-bottom:14px;
     }
 
     .table-wrap{
@@ -352,7 +420,7 @@
 
     th,td{
       text-align:left;
-      padding:12px 12px;
+      padding:12px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
       vertical-align:top;
@@ -389,7 +457,7 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-width:42px;
+      min-width:44px;
       padding:8px 12px;
       border-radius:999px;
       font-size:13px;
@@ -397,37 +465,6 @@
       background:rgba(87,183,255,.12);
       border:1px solid rgba(87,183,255,.26);
       color:#dff3ff;
-    }
-
-    .status-badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:8px 14px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-      border:1px solid rgba(255,255,255,.08);
-    }
-
-    .status-open{
-      background:rgba(24,201,100,.12);
-      color:#b6ffd4;
-      border-color:rgba(24,201,100,.28);
-    }
-
-    .status-full{
-      background:rgba(255,77,109,.12);
-      color:#ffd0d9;
-      border-color:rgba(255,77,109,.28);
-    }
-
-    .status-pending{
-      background:rgba(255,209,102,.12);
-      color:#ffe7a6;
-      border-color:rgba(255,209,102,.26);
     }
 
     .team-players-list{
@@ -439,7 +476,6 @@
     .mini-chip{
       display:inline-flex;
       align-items:center;
-      gap:6px;
       padding:7px 10px;
       border-radius:999px;
       font-size:12px;
@@ -448,192 +484,9 @@
       color:#e9e4fb;
     }
 
-    .list{
-      display:grid;
-      gap:12px;
-    }
-
-    .pending-card{
-      background:rgba(255,255,255,.025);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:18px;
-      padding:14px;
-    }
-
-    .pending-top{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-
-    .pending-team{
-      font-size:20px;
-      font-weight:900;
-    }
-
-    .muted{
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .pending-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
-      margin-bottom:12px;
-    }
-
-    .box{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:14px;
-      padding:12px;
-    }
-
-    .box span{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-    }
-
-    .box strong{
-      font-size:20px;
-    }
-
-    .players{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
-      margin-bottom:12px;
-    }
-
-    .player-card{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:14px;
-      padding:12px;
-    }
-
-    .player-card b{
-      display:block;
-      margin-bottom:8px;
-    }
-
-    .img-box{
-      margin-bottom:12px;
-      overflow:hidden;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.08);
-      background:#09090d;
-    }
-
-    .img-box img{
-      width:100%;
-      max-height:340px;
-      object-fit:cover;
-      display:block;
-    }
-
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .row > *{
-      flex:1 1 auto;
-    }
-
-    .action-stack{
-      display:grid;
-      gap:12px;
-    }
-
-    .subsection{
-      background:rgba(255,255,255,.025);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
-      padding:14px;
-    }
-
-    .subsection h4{
-      margin:0 0 8px 0;
-      font-size:15px;
-    }
-
-    .helper{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.45;
-      margin-top:6px;
-    }
-
-    .field{
-      display:grid;
-      gap:8px;
-      margin-bottom:12px;
-    }
-
-    .field label{
-      font-size:13px;
-      color:#ddd7f2;
-      font-weight:700;
-    }
-
-    input, select, textarea{
-      width:100%;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      color:#fff;
-      padding:12px 14px;
-      outline:none;
-      font-size:14px;
-    }
-
-    input, select{
-      height:46px;
-    }
-
-    textarea{
-      min-height:100px;
-      resize:vertical;
-    }
-
-    input[type="file"]{
-      padding:10px 14px;
-      height:auto;
-    }
-
-    select{
-      color:#fff;
-      background:#11111a;
-    }
-
-    option{
-      color:#111;
-      background:#fff;
-    }
-
-    .empty{
-      color:var(--muted);
-      font-size:14px;
-      padding:12px;
-    }
-
-    .danger-zone{
-      border-color:rgba(255,77,109,.22);
-      box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 26px rgba(255,77,109,.08);
-    }
-
     .registered-layout{
       display:grid;
-      grid-template-columns:minmax(0,1.3fr) minmax(340px,.7fr);
+      grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr);
       gap:18px;
       align-items:start;
     }
@@ -646,7 +499,7 @@
     .summary-box{
       background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
+      border-radius:20px;
       padding:16px;
     }
 
@@ -718,771 +571,309 @@
       gap:8px;
     }
 
-    .section-divider{
-      height:1px;
-      background:linear-gradient(90deg, transparent, rgba(160,110,255,.22), transparent);
-      margin:6px 0 18px 0;
+    .empty{
+      color:var(--muted);
+      font-size:14px;
+      padding:14px;
     }
 
-    .quick-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
-    }
-
-    .quick-item{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
-      padding:16px;
-    }
-
-    .quick-item h4{
-      margin:0 0 8px 0;
-      font-size:15px;
-    }
-
-    .quick-item p{
-      margin:0;
+    .footer{
+      margin-top:26px;
+      padding:20px 0 8px 0;
       color:var(--muted);
       font-size:13px;
-      line-height:1.45;
+      text-align:center;
     }
 
-    .setup-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-    }
-
-    .check-list{
-      display:grid;
-      gap:10px;
-    }
-
-    .check-item{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      font-size:14px;
-    }
-
-    .check-ok{
-      color:#9ff0bf;
+    .public-admin-link{
       font-weight:900;
-    }
-
-    .check-no{
-      color:#ffb0bf;
-      font-weight:900;
-    }
-
-    .section-toolbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
-    }
-
-    .btn{
-      border:0;
-      cursor:pointer;
-      border-radius:14px;
-      padding:12px 16px;
-      font-weight:800;
-      font-size:14px;
-      color:#fff;
-      transition:.18s ease;
-      min-height:46px;
-    }
-
-    .btn:hover{
-      transform:translateY(-1px);
-    }
-
-    .btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
-    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
-    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
-    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
-    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
-
-    .top-actions-group{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .status-bar{
-      position:sticky;
-      bottom:0;
-      margin-top:18px;
-      background:rgba(255,255,255,.04);
-      border:1px solid var(--line);
-      color:#ddd7f2;
-      border-radius:16px;
-      padding:12px 14px;
-      box-shadow:var(--shadow);
-      font-size:13px;
-      z-index:3;
-    }
-
-    @media (max-width: 1400px){
-      .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .grid-4{ grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .quick-grid{ grid-template-columns:1fr; }
+      color:#f1e7ff;
     }
 
     @media (max-width: 1280px){
-      .registered-layout,
-      .setup-grid{
+      .hero-grid,
+      .registered-layout{
         grid-template-columns:1fr;
       }
     }
 
-    @media (max-width: 1200px){
-      .app{
+    @media (max-width: 1100px){
+      .grid-2,
+      .grid-3{
         grid-template-columns:1fr;
       }
 
-      .sidebar{
-        border-right:0;
-        border-bottom:1px solid var(--line);
-      }
-
-      .grid-2, .grid-3{
-        grid-template-columns:1fr;
+      .hero-stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
       }
     }
 
     @media (max-width: 760px){
-      body{ overflow:auto; }
-      .content{ padding:14px; }
-      .topbar{ padding:14px; }
-      .stats{ grid-template-columns:1fr; }
-      .grid-4{ grid-template-columns:1fr; }
-      .pending-grid, .players, .summary-stats{ grid-template-columns:1fr; }
-      .actions, .pill, .btn{ width:100%; }
-      .row > *{ width:100%; }
-      .brand-title{ font-size:18px; }
-      .page-title{ font-size:22px; }
-      .slot-card{ flex-direction:column; }
+      .wrap,
+      .topbar-inner{
+        padding-left:14px;
+        padding-right:14px;
+      }
+
+      .hero-box{
+        padding:20px;
+      }
+
+      .hero-title{
+        font-size:34px;
+      }
+
+      .brand-title{
+        font-size:20px;
+      }
+
+      .summary-stats{
+        grid-template-columns:1fr;
+      }
+
+      .hero-stats{
+        grid-template-columns:1fr;
+      }
+
+      .slot-card{
+        flex-direction:column;
+      }
+
+      .nav-right,
+      .hero-actions{
+        width:100%;
+      }
+
+      .nav-right .btn,
+      .hero-actions .btn{
+        width:100%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
+  <div class="topbar">
+    <div class="topbar-inner">
       <div class="brand">
-        <img src="/roda-logo.png" alt="Logo" class="logo" />
+        <img src="/roda-logo.png" alt="RØDA Logo" />
         <div class="brand-text">
-          <div class="brand-title" id="sidebarBrandTitle">RØDA Dashboard</div>
-          <div class="brand-subtitle" id="sidebarBrandSubtitle">Gestione torneo e staff</div>
+          <div class="brand-title" id="brandTitle">RØDA CUP</div>
+          <div class="brand-subtitle" id="brandSubtitle">Portale pubblico torneo</div>
         </div>
       </div>
 
-      <div class="sidebar-group">
-        <div class="sidebar-label">Navigazione</div>
-        <button class="nav-btn active" data-page="page-overview">
-          <span>📊 Panoramica</span>
-          <small>Home</small>
-        </button>
-        <button class="nav-btn" data-page="page-teams">
-          <span>👥 Team</span>
-          <small>Registrazioni</small>
-        </button>
-        <button class="nav-btn" data-page="page-ranking">
-          <span>🏆 Classifica</span>
-          <small>Punti e fragger</small>
-        </button>
-        <button class="nav-btn" data-page="page-results">
-          <span>📸 Risultati</span>
-          <small>Pending staff</small>
-        </button>
-        <button class="nav-btn" data-page="page-discord">
-          <span>🤖 Discord</span>
-          <small>Bot e pannelli</small>
-        </button>
-        <button class="nav-btn" data-page="page-settings">
-          <span>⚙️ Impostazioni</span>
-          <small>Brand e setup</small>
-        </button>
+      <div class="nav-right">
+        <div class="pill" id="publicStatusPill">Caricamento...</div>
+        <a href="/login" class="btn btn-purple">Accesso Admin</a>
       </div>
+    </div>
+  </div>
 
-      <div class="sidebar-bottom">
-        <div class="pill" id="staffInfo">Connesso</div>
-        <div class="sidebar-actions">
-          <button class="btn btn-purple" id="refreshBtn">Aggiorna dashboard</button>
-          <button class="btn btn-red" id="logoutBtn">Logout</button>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-box">
+        <div class="hero-grid">
+          <div class="hero-left">
+            <div class="eyebrow">🏆 Torneo pubblico live</div>
+            <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
+            <div class="hero-text" id="heroTournamentText">
+              Segui la classifica live, i team registrati, i top fragger e lo stato delle registrazioni direttamente dal sito ufficiale del torneo.
+            </div>
+
+            <div class="hero-actions">
+              <a href="#classifica" class="btn btn-purple">Vai alla classifica</a>
+              <a href="#team-registrati" class="btn btn-blue">Vedi i team registrati</a>
+            </div>
+
+            <div class="hero-stats">
+              <div class="mini-stat">
+                <span>Match corrente</span>
+                <strong id="heroMatch">1</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Team registrati</span>
+                <strong id="heroTeams">0</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Top fragger</span>
+                <strong id="heroFragger">-</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Risultati in attesa</span>
+                <strong id="heroPending">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <div class="side-card">
+              <h3>📢 Stato torneo</h3>
+              <p id="heroStateText">
+                Tutti i dati mostrati qui sono sincronizzati con il sistema del torneo.
+              </p>
+            </div>
+
+            <div class="side-card status-box">
+              <div class="status-line">
+                <span>Registrazioni</span>
+                <strong id="heroRegistrationBadge" class="status-badge status-open">APERTE</strong>
+              </div>
+              <div class="status-line">
+                <span>Team / limite</span>
+                <strong id="heroTeamsCountLine">0 / 0</strong>
+              </div>
+              <div class="status-line">
+                <span>Posti disponibili</span>
+                <strong id="heroFreeSlotsLine">0</strong>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </aside>
+    </section>
 
-    <main class="main">
-      <div class="topbar">
-        <div class="topbar-left">
-          <div class="page-title" id="topbarTitle">Panoramica</div>
-          <div class="page-subtitle" id="topbarSubtitle">Controlla velocemente lo stato generale del torneo e del bot.</div>
-        </div>
-        <div class="topbar-actions">
-          <div class="pill" id="setupPill">Setup non completato</div>
+    <section class="section" id="classifica">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">🏆 Classifica Live</h2>
+          <p class="section-subtitle">Punti aggiornati in tempo reale dal sistema del torneo.</p>
         </div>
       </div>
 
-      <div class="content">
-        <!-- PANORAMICA -->
-        <section class="page active" id="page-overview">
-          <div class="stats">
-            <div class="card">
-              <div class="stat-label">Match corrente</div>
-              <div class="stat-value" id="statMatch">1</div>
-            </div>
-            <div class="card">
-              <div class="stat-label">Team registrati</div>
-              <div class="stat-value" id="statTeams">0</div>
-            </div>
-            <div class="card">
-              <div class="stat-label">Risultati in attesa</div>
-              <div class="stat-value" id="statPending">0</div>
-            </div>
-            <div class="card">
-              <div class="stat-label">Top fragger</div>
-              <div class="stat-value" id="statFragger">-</div>
-            </div>
-            <div class="card">
-              <div class="stat-label">Stato registrazioni</div>
-              <div class="stat-value" id="statRegistrationState">APERTO</div>
-            </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Classifica team</h3>
+          <div class="card-note">Classifica generale del torneo ordinata per punteggio.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team</th>
+                  <th>Punti</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <div class="card section-card">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>⚡ Azioni rapide</h3>
-                <div class="section-note">Da qui gestisci subito le operazioni principali senza entrare nelle altre sezioni.</div>
-              </div>
-            </div>
-
-            <div class="quick-grid">
-              <div class="quick-item">
-                <h4>Match</h4>
-                <p>Imposta il match corrente o passa al successivo con un clic.</p>
-                <div class="field" style="margin-top:12px">
-                  <label>Match corrente</label>
-                  <input type="number" id="matchInput" min="1" />
-                </div>
-                <div class="row">
-                  <button class="btn btn-purple" onclick="setMatch()">Salva Match</button>
-                  <button class="btn btn-green" onclick="nextMatch()">Next Match</button>
-                </div>
-              </div>
-
-              <div class="quick-item">
-                <h4>Discord</h4>
-                <p>Aggiorna classifica e messaggio slot direttamente dal pannello.</p>
-                <div class="row" style="margin-top:12px">
-                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna Classifica Discord</button>
-                  <button class="btn btn-blue" onclick="forceRegistrationMessage()">Aggiorna Messaggio Slot</button>
-                </div>
-              </div>
-
-              <div class="quick-item">
-                <h4>Reset rapidi</h4>
-                <p>Usa queste azioni solo quando vuoi ripulire il torneo o azzerare i dati.</p>
-                <div class="row" style="margin-top:12px">
-                  <button class="btn btn-red" onclick="resetTeams()">Reset Team</button>
-                  <button class="btn btn-yellow" onclick="resetData()">Reset Classifica / Fragger</button>
-                </div>
-              </div>
-            </div>
+        <div class="card">
+          <h3>🔥 Top Fragger</h3>
+          <div class="card-note">Player con più kill registrate nel torneo.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Player</th>
+                  <th>Kill</th>
+                </tr>
+              </thead>
+              <tbody id="fraggerBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
           </div>
-
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>🏆 Classifica Live</h3>
-                  <div class="section-note">Vista rapida dei punteggi correnti del torneo.</div>
-                </div>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Team</th>
-                      <th>Punti</th>
-                    </tr>
-                  </thead>
-                  <tbody id="leaderboardBody">
-                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>🔥 Top Fragger</h3>
-                  <div class="section-note">Vista rapida dei migliori player per kill.</div>
-                </div>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Player</th>
-                      <th>Kill</th>
-                    </tr>
-                  </thead>
-                  <tbody id="fraggerBody">
-                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="card section-card">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>🚀 Stato setup</h3>
-                <div class="section-note">Controllo veloce delle impostazioni di base del progetto.</div>
-              </div>
-            </div>
-            <div class="check-list" id="setupChecks">
-              <div class="check-item"><span>Caricamento...</span><span class="check-no">...</span></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- TEAM -->
-        <section class="page" id="page-teams">
-          <div class="card section-card">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>📋 Team registrati / Slot assegnati</h3>
-                <div class="section-note">Qui vedi direttamente nella dashboard la situazione slot del torneo.</div>
-              </div>
-              <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
-            </div>
-
-            <div class="registered-layout">
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Slot</th>
-                      <th>Team</th>
-                      <th>Players</th>
-                    </tr>
-                  </thead>
-                  <tbody id="registeredTeamsBody">
-                    <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="registered-summary">
-                <div class="summary-box">
-                  <h4>📊 Stato registrazioni</h4>
-                  <div class="summary-stats">
-                    <div class="summary-mini">
-                      <span>Registrati</span>
-                      <strong id="registeredTeamsCount">0</strong>
-                    </div>
-                    <div class="summary-mini">
-                      <span>Disponibili</span>
-                      <strong id="availableTeamsCount">0</strong>
-                    </div>
-                    <div class="summary-mini">
-                      <span>Massimo team</span>
-                      <strong id="maxTeamsCount">0</strong>
-                    </div>
-                    <div class="summary-mini">
-                      <span>Stato</span>
-                      <strong id="registrationStateText">APERTO</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="summary-box">
-                  <h4>🏷️ Anteprima slot</h4>
-                  <div class="slot-preview" id="slotPreviewList">
-                    <div class="empty">Nessun team registrato</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>👥 Gestione Team</h3>
-                  <div class="section-note">Crea, modifica o elimina team mantenendo slot e dati esistenti.</div>
-                </div>
-              </div>
-              <div class="field">
-                <label>Seleziona team esistente</label>
-                <select id="teamSelect" onchange="loadSelectedTeam()"></select>
-              </div>
-              <div class="field">
-                <label>Nome team</label>
-                <input type="text" id="teamName" />
-              </div>
-              <div class="field">
-                <label>Player 1</label>
-                <input type="text" id="teamP1" />
-              </div>
-              <div class="field">
-                <label>Player 2</label>
-                <input type="text" id="teamP2" />
-              </div>
-              <div class="field">
-                <label>Player 3</label>
-                <input type="text" id="teamP3" />
-              </div>
-              <div class="row">
-                <button class="btn btn-green" onclick="saveTeam()">Salva Team</button>
-                <button class="btn btn-red" onclick="deleteTeam()">Elimina Team</button>
-                <button class="btn btn-purple" onclick="newTeamForm()">Nuovo Team</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>📝 Messaggio slot team Discord</h3>
-                  <div class="section-note">Configura titolo, testo e numero massimo team del messaggio slot su Discord.</div>
-                </div>
-              </div>
-              <div class="field">
-                <label>Titolo messaggio</label>
-                <input type="text" id="registrationStatusTitle" />
-              </div>
-              <div class="field">
-                <label>Testo sopra la lista</label>
-                <textarea id="registrationStatusText"></textarea>
-              </div>
-              <div class="field">
-                <label>Numero massimo team</label>
-                <input type="number" id="registrationMaxTeams" min="1" />
-              </div>
-              <div class="row">
-                <button class="btn btn-purple" onclick="saveRegistrationSettings()">Salva Messaggio Slot</button>
-                <button class="btn btn-yellow" onclick="forceRegistrationMessage()">Aggiorna Messaggio Ora</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- CLASSIFICA -->
-        <section class="page" id="page-ranking">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>🏆 Classifica completa</h3>
-                  <div class="section-note">Modifica manualmente i punteggi dei team quando serve.</div>
-                </div>
-              </div>
-              <div class="table-wrap" style="margin-bottom:14px">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Team</th>
-                      <th>Punti</th>
-                    </tr>
-                  </thead>
-                  <tbody id="leaderboardBodyClone">
-                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="field">
-                <label>Team</label>
-                <select id="scoreTeam"></select>
-              </div>
-              <div class="field">
-                <label>Punti</label>
-                <input type="number" id="scorePoints" />
-              </div>
-              <div class="row">
-                <button class="btn btn-green" onclick="addPoints()">Aggiungi</button>
-                <button class="btn btn-yellow" onclick="setPoints()">Imposta</button>
-                <button class="btn btn-red" onclick="resetTeamScore()">Reset Team</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>🔥 Gestione fragger</h3>
-                  <div class="section-note">Correggi o rimuovi manualmente le kill di un player.</div>
-                </div>
-              </div>
-
-              <div class="table-wrap" style="margin-bottom:14px">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Player</th>
-                      <th>Kill</th>
-                    </tr>
-                  </thead>
-                  <tbody id="fraggerBodyClone">
-                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="field">
-                <label>Player</label>
-                <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
-              </div>
-              <div class="field">
-                <label>Nome player</label>
-                <input type="text" id="fraggerName" />
-              </div>
-              <div class="field">
-                <label>Kill</label>
-                <input type="number" id="fraggerKills" />
-              </div>
-              <div class="row">
-                <button class="btn btn-green" onclick="saveFragger()">Salva Fragger</button>
-                <button class="btn btn-red" onclick="deleteFragger()">Elimina Fragger</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- RISULTATI -->
-        <section class="page" id="page-results">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>📤 Invia risultato dal sito</h3>
-                  <div class="section-note">Invia manualmente un risultato alla coda staff, con screenshot opzionale.</div>
-                </div>
-              </div>
-              <div class="field">
-                <label>Team</label>
-                <select id="webResultTeam"></select>
-              </div>
-              <div class="field">
-                <label>Kill Player 1</label>
-                <input type="number" id="webK1" />
-              </div>
-              <div class="field">
-                <label>Kill Player 2</label>
-                <input type="number" id="webK2" />
-              </div>
-              <div class="field">
-                <label>Kill Player 3</label>
-                <input type="number" id="webK3" />
-              </div>
-              <div class="field">
-                <label>Posizione</label>
-                <input type="number" id="webPos" />
-              </div>
-              <div class="field">
-                <label>Screenshot opzionale</label>
-                <input type="file" id="webScreenshot" accept="image/*" />
-              </div>
-              <button class="btn btn-green" onclick="submitWebResult()">Invia Risultato Web</button>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>📸 Risultati in attesa</h3>
-                  <div class="section-note">Qui lo staff approva o rifiuta i risultati pending.</div>
-                </div>
-              </div>
-              <div id="pendingList" class="list">
-                <div class="empty">Nessun risultato pending</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- DISCORD -->
-        <section class="page" id="page-discord">
-          <div class="card section-card">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>🤖 Controllo Bot Discord</h3>
-                <div class="section-note">Tutte le azioni importanti del bot sono separate qui sotto in blocchi chiari.</div>
-              </div>
-            </div>
-
-            <div class="action-stack">
-              <div class="subsection">
-                <h4>⚙️ Impostazioni bot salvate</h4>
-                <div class="field">
-                  <label>Channel ID pannello registrazione</label>
-                  <input type="text" id="registerPanelChannel" placeholder="Channel ID pannello registrazione" />
-                </div>
-                <div class="field">
-                  <label>Channel ID pannello risultati</label>
-                  <input type="text" id="resultsPanelChannel" placeholder="Channel ID pannello risultati" />
-                </div>
-                <div class="field">
-                  <label>Categoria dove creare le stanze vocali</label>
-                  <input type="text" id="roomsCategoryId" placeholder="ID categoria Discord" />
-                </div>
-                <div class="row">
-                  <button class="btn btn-blue" onclick="saveBotSettings()">Salva impostazioni bot</button>
-                </div>
-                <div class="helper">Queste impostazioni restano salvate e la dashboard le ricarica automaticamente.</div>
-              </div>
-
-              <div class="subsection">
-                <h4>📨 Invio pannelli Discord</h4>
-                <div class="row">
-                  <button class="btn btn-purple" onclick="spawnRegisterPanel()">Spawn / aggiorna register panel</button>
-                  <button class="btn btn-purple" onclick="spawnResultsPanel()">Spawn / aggiorna results panel</button>
-                </div>
-              </div>
-
-              <div class="subsection">
-                <h4>🎙️ Gestione stanze vocali team</h4>
-                <div class="helper" style="margin-bottom:12px">
-                  Le stanze vengono create ordinate per slot con formato: <strong>🏆・#SLOT NOME TEAM</strong>.
-                </div>
-                <div class="row">
-                  <button class="btn btn-green" onclick="createRooms()">Crea stanze team</button>
-                  <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze team</button>
-                </div>
-              </div>
-
-              <div class="subsection">
-                <h4>🏆 Classifica Discord</h4>
-                <div class="helper" style="margin-bottom:12px">
-                  La classifica Discord si aggiorna solo quando premi questo pulsante.
-                </div>
-                <div class="row">
-                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Invia / aggiorna classifica Discord</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- IMPOSTAZIONI -->
-        <section class="page" id="page-settings">
-          <div class="card section-card">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>🚀 Setup Premium</h3>
-                <div class="section-note">Questa sezione prepara il progetto per un utilizzo professionale e ordinato.</div>
-              </div>
-            </div>
-
-            <div class="setup-grid">
-              <div class="subsection">
-                <h4>🏷️ Branding progetto</h4>
-                <div class="field">
-                  <label>Nome brand</label>
-                  <input type="text" id="projectBrandName" placeholder="Es. RØDA" />
-                </div>
-                <div class="field">
-                  <label>Nome torneo</label>
-                  <input type="text" id="projectTournamentName" placeholder="Es. RØDA CUP" />
-                </div>
-                <div class="field">
-                  <label>Contatto supporto</label>
-                  <input type="text" id="projectSupportContact" placeholder="Es. Discord, Telegram, email..." />
-                </div>
-                <div class="row">
-                  <button class="btn btn-blue" onclick="saveProjectSettings()">Salva branding</button>
-                  <button class="btn btn-green" onclick="completeSetup()">Segna setup completato</button>
-                </div>
-                <div class="helper">Il branding viene usato dal bot per pannelli, classifica e messaggi Discord.</div>
-              </div>
-
-              <div class="subsection">
-                <h4>✅ Controlli setup</h4>
-                <div class="check-list" id="setupChecksClone">
-                  <div class="check-item"><span>Caricamento...</span><span class="check-no">...</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card danger-zone">
-            <div class="card-header">
-              <div class="card-header-left">
-                <h3>🧹 Reset separati</h3>
-                <div class="section-note">Usa queste azioni solo quando vuoi resettare dati o registrazioni.</div>
-              </div>
-            </div>
-            <div class="row">
-              <button class="btn btn-red" onclick="resetTeams()">Reset Team</button>
-              <button class="btn btn-yellow" onclick="resetData()">Reset Classifica / Fragger</button>
-            </div>
-          </div>
-        </section>
-
-        <div class="status-bar" id="statusBar">Dashboard pronta</div>
+        </div>
       </div>
-    </main>
+    </section>
+
+    <section class="section" id="team-registrati">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">👥 Team Registrati</h2>
+          <p class="section-subtitle">Elenco pubblico dei team iscritti con slot assegnato e giocatori.</p>
+        </div>
+        <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
+      </div>
+
+      <div class="registered-layout">
+        <div class="card">
+          <h3>Lista team</h3>
+          <div class="card-note">Situazione completa dei team registrati al torneo.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>Team</th>
+                  <th>Players</th>
+                </tr>
+              </thead>
+              <tbody id="registeredTeamsBody">
+                <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="registered-summary">
+          <div class="summary-box">
+            <h4>📊 Stato registrazioni</h4>
+            <div class="summary-stats">
+              <div class="summary-mini">
+                <span>Registrati</span>
+                <strong id="registeredTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Disponibili</span>
+                <strong id="availableTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Massimo team</span>
+                <strong id="maxTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Stato</span>
+                <strong id="registrationStateText">APERTO</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h4>🏷️ Anteprima slot</h4>
+            <div class="slot-preview" id="slotPreviewList">
+              <div class="empty">Nessun team registrato</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid-3">
+        <div class="card">
+          <h3>📌 Match corrente</h3>
+          <div class="card-note">Numero del match attualmente attivo nel torneo.</div>
+          <div style="font-size:36px; font-weight:1000" id="bottomMatch">1</div>
+        </div>
+
+        <div class="card">
+          <h3>📨 Risultati in attesa</h3>
+          <div class="card-note">Risultati ancora in attesa di approvazione staff.</div>
+          <div style="font-size:36px; font-weight:1000" id="bottomPending">0</div>
+        </div>
+
+        <div class="card">
+          <h3>🔐 Area staff</h3>
+          <div class="card-note">
+            Per modifiche, gestione team, risultati, Discord e impostazioni usa l’accesso amministratore.
+          </div>
+          <a href="/login" class="btn btn-purple" style="margin-top:8px">Vai al login admin</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      Portale pubblico torneo • <a class="public-admin-link" href="/login">Accesso Admin</a>
+    </div>
   </div>
 
   <script>
-    let dashboard = null;
-    let loading = false;
-
-    const pageMeta = {
-      'page-overview': {
-        title: 'Panoramica',
-        subtitle: 'Controlla velocemente lo stato generale del torneo e del bot.'
-      },
-      'page-teams': {
-        title: 'Team',
-        subtitle: 'Gestisci registrazioni, slot assegnati, players e messaggio slot Discord.'
-      },
-      'page-ranking': {
-        title: 'Classifica',
-        subtitle: 'Controlla punti, fragger e correzioni manuali del torneo.'
-      },
-      'page-results': {
-        title: 'Risultati',
-        subtitle: 'Invia risultati dal sito e approva o rifiuta le richieste in attesa.'
-      },
-      'page-discord': {
-        title: 'Discord',
-        subtitle: 'Gestisci pannelli, classifica, stanze vocali e automazioni del bot.'
-      },
-      'page-settings': {
-        title: 'Impostazioni',
-        subtitle: 'Configura branding, setup, bot e parametri principali del progetto.'
-      }
-    };
-
-    function setStatus(text) {
-      document.getElementById('statusBar').textContent = text;
-    }
+    let publicData = null;
 
     function escapeHtml(text) {
       return String(text ?? '')
@@ -1491,29 +882,6 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
-    }
-
-    function switchPage(pageId) {
-      document.querySelectorAll('.page').forEach(page => {
-        page.classList.toggle('active', page.id === pageId);
-      });
-
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.page === pageId);
-      });
-
-      const meta = pageMeta[pageId] || pageMeta['page-overview'];
-      document.getElementById('topbarTitle').textContent = meta.title;
-      document.getElementById('topbarSubtitle').textContent = meta.subtitle;
-    }
-
-    async function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
     }
 
     async function api(url, options = {}) {
@@ -1529,131 +897,83 @@
         headers
       });
 
-      if (response.status === 401) {
-        location.href = '/login';
-        return null;
-      }
-
       const data = await response.json();
       return { response, data };
     }
 
-    function renderSetupChecks(setupStatus) {
-      const checks = setupStatus?.checks || {};
-      const entries = [
-        ['Brand Name', checks.brandName],
-        ['Tournament Name', checks.tournamentName],
-        ['Channel Register Panel', checks.registerPanelChannelId],
-        ['Channel Results Panel', checks.resultsPanelChannelId],
-        ['Categoria Stanze', checks.roomsCategoryId]
-      ];
+    function renderPublicPage() {
+      const leaderboard = publicData.classificaTeam || [];
+      const fraggers = publicData.classificaFragger || [];
+      const sortedTeams = publicData.teamRegistrati || [];
+      const torneo = publicData.torneo || {};
+      const registrationMessage = publicData.messaggioRegistrazione || {};
 
-      const html = entries.map(([label, ok]) => `
-        <div class="check-item">
-          <span>${escapeHtml(label)}</span>
-          <span class="${ok ? 'check-ok' : 'check-no'}">${ok ? 'OK' : 'MANCANTE'}</span>
-        </div>
-      `).join('');
+      const brandName = torneo.brandName || 'RØDA';
+      const tournamentName = torneo.tournamentName || 'RØDA CUP';
+      const supportContact = torneo.supportContact || '';
 
-      document.getElementById('setupChecks').innerHTML = html;
-      document.getElementById('setupChecksClone').innerHTML = html;
+      const registeredCount = Number(torneo.teamRegistrati || 0);
+      const maxTeams = Number(torneo.maxTeams || 16);
+      const availableCount = Number(torneo.postiDisponibili || 0);
+      const registrationClosed = !Boolean(torneo.registrazioniAperte);
 
-      document.getElementById('setupPill').textContent = setupStatus?.completed
-        ? 'Setup completato'
-        : 'Setup non completato';
-    }
+      document.title = tournamentName;
+      document.getElementById('brandTitle').textContent = tournamentName;
+      document.getElementById('brandSubtitle').textContent = registrationMessage.titolo || 'Portale pubblico torneo';
+      document.getElementById('heroTournamentTitle').textContent = tournamentName;
+      document.getElementById('heroTournamentText').textContent =
+        supportContact
+          ? `Segui classifica, team registrati e top fragger dal sito pubblico ufficiale. Supporto: ${supportContact}.`
+          : 'Segui la classifica live, i team registrati, i top fragger e lo stato delle registrazioni direttamente dal sito ufficiale del torneo.';
 
-    function renderBranding(projectSettings) {
-      const brandName = projectSettings?.brandName || 'RØDA';
-      const tournamentName = projectSettings?.tournamentName || 'RØDA CUP';
-      const premiumMode = projectSettings?.premiumMode ? ' • Premium Mode' : '';
+      document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
+      document.getElementById('heroTeams').textContent = registeredCount;
+      document.getElementById('heroFragger').textContent = fraggers.length ? fraggers[0].nome : '-';
+      document.getElementById('heroPending').textContent = 'Live';
+      document.getElementById('bottomMatch').textContent = torneo.matchCorrente || 1;
+      document.getElementById('bottomPending').textContent = 'Staff';
 
-      document.title = `${brandName} Dashboard Premium`;
-      document.getElementById('sidebarBrandTitle').textContent = `${brandName} Dashboard`;
-      document.getElementById('sidebarBrandSubtitle').textContent = `${tournamentName}${premiumMode}`;
+      document.getElementById('heroTeamsCountLine').textContent = `${registeredCount} / ${maxTeams}`;
+      document.getElementById('heroFreeSlotsLine').textContent = String(availableCount);
+      document.getElementById('heroStateText').textContent = registrationClosed
+        ? `${brandName} ha raggiunto il numero massimo di team registrati.`
+        : `${brandName} ha ancora posti disponibili per nuove registrazioni.`;
 
-      document.getElementById('projectBrandName').value = brandName;
-      document.getElementById('projectTournamentName').value = tournamentName;
-      document.getElementById('projectSupportContact').value = projectSettings?.supportContact || '';
-    }
+      const registrationBadge = document.getElementById('heroRegistrationBadge');
+      registrationBadge.textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      registrationBadge.className = `status-badge ${registrationClosed ? 'status-full' : 'status-open'}`;
 
-    async function refreshDashboard() {
-      if (loading) return;
-      loading = true;
-      document.getElementById('refreshBtn').disabled = true;
-      document.getElementById('refreshBtn').textContent = 'Aggiornamento...';
-      setStatus('Caricamento dati...');
-
-      try {
-        const sessionResult = await api('/api/session');
-        if (!sessionResult) return;
-
-        if (!sessionResult.response.ok || !sessionResult.data.ok) {
-          location.href = '/login';
-          return;
-        }
-
-        document.getElementById('staffInfo').textContent = 'Connesso come ' + sessionResult.data.username;
-
-        const result = await api('/api/dashboard');
-        if (!result) return;
-
-        if (!result.response.ok || !result.data.ok) {
-          setStatus(result.data.message || 'Errore caricamento dashboard');
-          return;
-        }
-
-        dashboard = result.data;
-        renderDashboard();
-        setStatus('Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT'));
-      } catch (error) {
-        console.error(error);
-        setStatus('Errore di connessione');
-      } finally {
-        loading = false;
-        document.getElementById('refreshBtn').disabled = false;
-        document.getElementById('refreshBtn').textContent = 'Aggiorna dashboard';
-      }
-    }
-
-    function renderDashboard() {
-      const leaderboard = dashboard.leaderboard || [];
-      const fraggers = dashboard.fraggers || [];
-      const pending = dashboard.pending || [];
-      const sortedTeams = dashboard.sortedTeams || [];
-      const botConfig = dashboard.botConfig || {};
-      const registrationSettings = dashboard.registrationSettings || {};
-      const projectSettings = dashboard.projectSettings || {};
-      const setupStatus = dashboard.setupStatus || {};
-
-      renderBranding(projectSettings);
-      renderSetupChecks(setupStatus);
-
-      const registeredCount = sortedTeams.length;
-      const maxTeams = Number(registrationSettings.maxTeams || 16);
-      const availableCount = Math.max(maxTeams - registeredCount, 0);
-      const registrationClosed = registeredCount >= maxTeams;
-
-      document.getElementById('statMatch').textContent = dashboard.currentMatch || 1;
-      document.getElementById('statTeams').textContent = dashboard.stats?.teamCount || 0;
-      document.getElementById('statPending').textContent = dashboard.stats?.pendingCount || 0;
-      document.getElementById('statFragger').textContent = fraggers.length ? fraggers[0].name : '-';
-      document.getElementById('statRegistrationState').textContent = registrationClosed ? 'PIENO' : 'APERTO';
-
-      document.getElementById('matchInput').value = dashboard.currentMatch || 1;
-      document.getElementById('registerPanelChannel').value = botConfig.registerPanelChannelId || '';
-      document.getElementById('resultsPanelChannel').value = botConfig.resultsPanelChannelId || '';
-      document.getElementById('roomsCategoryId').value = botConfig.roomsCategoryId || botConfig.categoryId || '';
-
-      document.getElementById('registrationStatusTitle').value = registrationSettings.title || '';
-      document.getElementById('registrationStatusText').value = registrationSettings.text || '';
-      document.getElementById('registrationMaxTeams').value = registrationSettings.maxTeams || 16;
+      document.getElementById('publicStatusPill').textContent = registrationClosed
+        ? 'Registrazioni chiuse'
+        : 'Registrazioni aperte';
 
       document.getElementById('registeredTeamsSummaryPill').textContent = `${registeredCount} / ${maxTeams} team`;
       document.getElementById('registeredTeamsCount').textContent = String(registeredCount);
       document.getElementById('availableTeamsCount').textContent = String(availableCount);
       document.getElementById('maxTeamsCount').textContent = String(maxTeams);
-      document.getElementById('registrationStateText').textContent = registrationClosed ? 'PIENO' : 'APERTO';
+      document.getElementById('registrationStateText').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = leaderboard.length
+        ? leaderboard.map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.team)}</td>
+              <td><strong>${row.punti}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>`;
+
+      const fraggerBody = document.getElementById('fraggerBody');
+      fraggerBody.innerHTML = fraggers.length
+        ? fraggers.slice(0, 15).map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.nome)}</td>
+              <td><strong>${row.uccisioni}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>`;
 
       const registeredTeamsBody = document.getElementById('registeredTeamsBody');
       registeredTeamsBody.innerHTML = sortedTeams.length
@@ -1688,643 +1008,26 @@
             </div>
           `).join('')
         : `<div class="empty">Nessun team registrato</div>`;
-
-      const leaderboardMarkup = leaderboard.length
-        ? leaderboard.map(row => `
-            <tr>
-              <td><span class="rank">${row.rank}</span></td>
-              <td>${escapeHtml(row.team)}</td>
-              <td><strong>${row.points}</strong></td>
-            </tr>
-          `).join('')
-        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
-
-      document.getElementById('leaderboardBody').innerHTML = leaderboardMarkup;
-      document.getElementById('leaderboardBodyClone').innerHTML = leaderboardMarkup;
-
-      const fraggerMarkup = fraggers.length
-        ? fraggers.slice(0, 15).map(row => `
-            <tr>
-              <td><span class="rank">${row.rank}</span></td>
-              <td>${escapeHtml(row.name)}</td>
-              <td><strong>${row.kills}</strong></td>
-            </tr>
-          `).join('')
-        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
-
-      document.getElementById('fraggerBody').innerHTML = fraggerMarkup;
-      document.getElementById('fraggerBodyClone').innerHTML = fraggerMarkup;
-
-      const optionMarkup = [
-        `<option value="">Seleziona</option>`,
-        ...sortedTeams.map(team => `
-          <option value="${escapeHtml(team.team)}">#${team.slot || '-'} • ${escapeHtml(team.team)}</option>
-        `)
-      ].join('');
-
-      document.getElementById('teamSelect').innerHTML = optionMarkup;
-      document.getElementById('scoreTeam').innerHTML = optionMarkup;
-      document.getElementById('webResultTeam').innerHTML = optionMarkup;
-
-      const fraggerSelect = document.getElementById('fraggerSelect');
-      const fraggerEntries = Object.keys(dashboard.fragger || {}).sort((a, b) => a.localeCompare(b, 'it'));
-      fraggerSelect.innerHTML = [
-        `<option value="">Seleziona player</option>`,
-        ...fraggerEntries.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
-      ].join('');
-
-      const pendingList = document.getElementById('pendingList');
-      pendingList.innerHTML = pending.length
-        ? pending.map(item => `
-            <div class="pending-card">
-              <div class="pending-top">
-                <div>
-                  <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
-                  <div class="muted">In attesa di approvazione staff • ${escapeHtml(item.submittedBy || '-')}</div>
-                </div>
-                <div class="status-badge status-pending">IN ATTESA</div>
-              </div>
-
-              <div class="pending-grid">
-                <div class="box">
-                  <span>Kill totali</span>
-                  <strong>${item.total}</strong>
-                </div>
-                <div class="box">
-                  <span>Posizione</span>
-                  <strong>${item.pos}</strong>
-                </div>
-                <div class="box">
-                  <span>ID risultato</span>
-                  <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
-                </div>
-              </div>
-
-              <div class="players">
-                ${(item.kills || []).map((k, i) => `
-                  <div class="player-card">
-                    <b>${escapeHtml(item.players?.[i] || `Player ${i + 1}`)}</b>
-                    <div>${Number(k || 0)} kill</div>
-                  </div>
-                `).join('')}
-              </div>
-
-              ${item.image ? `
-                <div class="img-box">
-                  <img src="${escapeHtml(item.image)}" alt="screenshot">
-                </div>
-              ` : ''}
-
-              <div class="row">
-                <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
-                <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
-              </div>
-            </div>
-          `).join('')
-        : `<div class="empty">Nessun risultato in attesa</div>`;
     }
 
-    async function saveProjectSettings(customSetupCompleted = null) {
-      const brandName = document.getElementById('projectBrandName').value.trim();
-      const tournamentName = document.getElementById('projectTournamentName').value.trim();
-      const supportContact = document.getElementById('projectSupportContact').value.trim();
-
-      const payload = {
-        brandName,
-        tournamentName,
-        supportContact,
-        premiumMode: true,
-        setupCompleted: customSetupCompleted === null
-          ? Boolean(dashboard?.projectSettings?.setupCompleted)
-          : Boolean(customSetupCompleted)
-      };
-
-      const result = await api('/api/project-settings/save', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-
-      if (!result) return false;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio branding');
-        return false;
-      }
-
-      await refreshDashboard();
-      setStatus('Branding progetto salvato');
-      return true;
-    }
-
-    async function completeSetup() {
-      const ok = await saveProjectSettings(true);
-      if (!ok) return;
-      setStatus('Setup segnato come completato');
-    }
-
-    function loadSelectedTeam() {
-      if (!dashboard) return;
-      const selected = document.getElementById('teamSelect').value;
-      const team = dashboard.teams?.[selected];
-
-      if (!team) {
-        newTeamForm();
-        return;
-      }
-
-      document.getElementById('teamName').value = selected;
-      document.getElementById('teamP1').value = team.players?.[0] || '';
-      document.getElementById('teamP2').value = team.players?.[1] || '';
-      document.getElementById('teamP3').value = team.players?.[2] || '';
-    }
-
-    function newTeamForm() {
-      document.getElementById('teamSelect').value = '';
-      document.getElementById('teamName').value = '';
-      document.getElementById('teamP1').value = '';
-      document.getElementById('teamP2').value = '';
-      document.getElementById('teamP3').value = '';
-    }
-
-    async function saveBotSettings() {
-      const registerPanelChannelId = document.getElementById('registerPanelChannel').value.trim();
-      const resultsPanelChannelId = document.getElementById('resultsPanelChannel').value.trim();
-      const roomsCategoryId = document.getElementById('roomsCategoryId').value.trim();
-
-      const result = await api('/api/bot/settings/save', {
-        method: 'POST',
-        body: JSON.stringify({
-          registerPanelChannelId,
-          resultsPanelChannelId,
-          roomsCategoryId
-        })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio impostazioni bot');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Impostazioni bot salvate');
-    }
-
-    async function saveTeam() {
-      const oldTeamName = document.getElementById('teamSelect').value;
-      const teamName = document.getElementById('teamName').value.trim();
-      const p1 = document.getElementById('teamP1').value.trim();
-      const p2 = document.getElementById('teamP2').value.trim();
-      const p3 = document.getElementById('teamP3').value.trim();
-
-      const result = await api('/api/teams/save', {
-        method: 'POST',
-        body: JSON.stringify({ oldTeamName, teamName, p1, p2, p3 })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio team');
-        return;
-      }
-
-      await refreshDashboard();
-      document.getElementById('teamSelect').value = teamName;
-      loadSelectedTeam();
-      setStatus('Team salvato correttamente');
-    }
-
-    async function deleteTeam() {
-      const teamName = document.getElementById('teamSelect').value || document.getElementById('teamName').value.trim();
-      if (!teamName) {
-        alert('Seleziona un team');
-        return;
-      }
-
-      if (!confirm('Confermi eliminazione team?')) return;
-
-      const result = await api('/api/teams/delete', {
-        method: 'POST',
-        body: JSON.stringify({ teamName })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore eliminazione team');
-        return;
-      }
-
-      newTeamForm();
-      await refreshDashboard();
-      setStatus('Team eliminato');
-    }
-
-    function loadSelectedFragger() {
-      if (!dashboard) return;
-      const name = document.getElementById('fraggerSelect').value;
-      document.getElementById('fraggerName').value = name || '';
-      document.getElementById('fraggerKills').value = name ? Number(dashboard.fragger?.[name] || 0) : '';
-    }
-
-    async function saveFragger() {
-      const player = document.getElementById('fraggerName').value.trim();
-      const kills = Number(document.getElementById('fraggerKills').value || 0);
-
-      const result = await api('/api/fragger/set', {
-        method: 'POST',
-        body: JSON.stringify({ player, kills })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio fragger');
-        return;
-      }
-
-      await refreshDashboard();
-      document.getElementById('fraggerSelect').value = player;
-      loadSelectedFragger();
-      setStatus('Fragger salvato correttamente');
-    }
-
-    async function deleteFragger() {
-      const player = document.getElementById('fraggerSelect').value || document.getElementById('fraggerName').value.trim();
-      if (!player) {
-        alert('Seleziona un player');
-        return;
-      }
-
-      if (!confirm('Confermi eliminazione fragger?')) return;
-
-      const result = await api('/api/fragger/delete', {
-        method: 'POST',
-        body: JSON.stringify({ player })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore eliminazione fragger');
-        return;
-      }
-
-      document.getElementById('fraggerName').value = '';
-      document.getElementById('fraggerKills').value = '';
-      await refreshDashboard();
-      setStatus('Fragger eliminato');
-    }
-
-    async function setMatch() {
-      const match = Number(document.getElementById('matchInput').value || 1);
-
-      const result = await api('/api/match/set', {
-        method: 'POST',
-        body: JSON.stringify({ match })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore set match');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Match aggiornato');
-    }
-
-    async function nextMatch() {
-      const result = await api('/api/match/next', { method: 'POST' });
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore next match');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Match avanzato');
-    }
-
-    async function addPoints() {
-      const team = document.getElementById('scoreTeam').value;
-      const points = Number(document.getElementById('scorePoints').value || 0);
-
-      const result = await api('/api/scores/add', {
-        method: 'POST',
-        body: JSON.stringify({ team, points })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore aggiunta punti');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Punti aggiunti');
-    }
-
-    async function setPoints() {
-      const team = document.getElementById('scoreTeam').value;
-      const points = Number(document.getElementById('scorePoints').value || 0);
-
-      const result = await api('/api/scores/set', {
-        method: 'POST',
-        body: JSON.stringify({ team, points })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore set punti');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Punti impostati');
-    }
-
-    async function resetTeamScore() {
-      const team = document.getElementById('scoreTeam').value;
-      if (!team) {
-        alert('Seleziona un team');
-        return;
-      }
-
-      if (!confirm('Confermi reset punti team?')) return;
-
-      const result = await api('/api/scores/reset-team', {
-        method: 'POST',
-        body: JSON.stringify({ team })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore reset team');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Punti team resettati');
-    }
-
-    async function approvePending(id) {
-      const result = await api('/api/approve/' + id, { method: 'POST' });
-      if (!result) return;
-      await refreshDashboard();
-      setStatus('Risultato approvato');
-    }
-
-    async function rejectPending(id) {
-      const result = await api('/api/reject/' + id, { method: 'POST' });
-      if (!result) return;
-      await refreshDashboard();
-      setStatus('Risultato rifiutato');
-    }
-
-    async function resetTeams() {
-      if (!confirm('Confermi RESET TEAM registrati?')) return;
-
-      const result = await api('/api/reset-teams', { method: 'POST' });
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore reset team');
-        return;
-      }
-
-      newTeamForm();
-      await refreshDashboard();
-      setStatus('Team registrati resettati');
-    }
-
-    async function resetData() {
-      if (!confirm('Confermi RESET classifica / fragger / match?')) return;
-
-      const result = await api('/api/reset-data', { method: 'POST' });
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore reset dati');
-        return;
-      }
-
-      document.getElementById('fraggerName').value = '';
-      document.getElementById('fraggerKills').value = '';
-      await refreshDashboard();
-      setStatus('Classifica e fragger resettati');
-    }
-
-    async function saveRegistrationSettings() {
-      const title = document.getElementById('registrationStatusTitle').value.trim();
-      const text = document.getElementById('registrationStatusText').value.trim();
-      const maxTeams = Number(document.getElementById('registrationMaxTeams').value || 16);
-
-      const result = await api('/api/registration-settings/save', {
-        method: 'POST',
-        body: JSON.stringify({ title, text, maxTeams })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio messaggio slot');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Messaggio slot aggiornato');
-    }
-
-    async function forceRegistrationMessage() {
-      const result = await api('/api/registration-settings/refresh', {
-        method: 'POST'
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore aggiornamento messaggio slot');
-        return;
-      }
-
-      setStatus('Messaggio slot aggiornato su Discord');
-    }
-
-    async function spawnRegisterPanel() {
-      const channelId = document.getElementById('registerPanelChannel').value.trim();
-
-      const result = await api('/api/bot/spawn-register-panel', {
-        method: 'POST',
-        body: JSON.stringify({ channelId })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore spawn register panel');
-        return;
-      }
-
-      await refreshDashboard();
-
-      if (result.data.updated) {
-        setStatus('Register panel aggiornato nel canale salvato');
-      } else if (result.data.created) {
-        setStatus('Register panel inviato');
-      } else {
-        setStatus('Register panel gestito correttamente');
+    async function loadPublicData() {
+      try {
+        const result = await api('/api/public/dashboard');
+        if (!result.response.ok || !result.data.ok) {
+          document.getElementById('publicStatusPill').textContent = 'Errore caricamento';
+          return;
+        }
+
+        publicData = result.data;
+        renderPublicPage();
+      } catch (error) {
+        console.error(error);
+        document.getElementById('publicStatusPill').textContent = 'Errore connessione';
       }
     }
 
-    async function spawnResultsPanel() {
-      const channelId = document.getElementById('resultsPanelChannel').value.trim();
-
-      const result = await api('/api/bot/spawn-results-panel', {
-        method: 'POST',
-        body: JSON.stringify({ channelId })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore spawn results panel');
-        return;
-      }
-
-      await refreshDashboard();
-
-      if (result.data.updated) {
-        setStatus('Results panel aggiornato nel canale salvato');
-      } else if (result.data.created) {
-        setStatus('Results panel inviato');
-      } else {
-        setStatus('Results panel gestito correttamente');
-      }
-    }
-
-    async function createRooms() {
-      const categoryId = document.getElementById('roomsCategoryId').value.trim();
-
-      const result = await api('/api/bot/create-rooms', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore creazione stanze');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus(`Stanze create: ${Number(result.data.created || 0)} • già esistenti saltate: ${Number(result.data.skipped || 0)}`);
-    }
-
-    async function deleteRooms() {
-      const categoryId = document.getElementById('roomsCategoryId').value.trim();
-
-      const result = await api('/api/bot/delete-rooms', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore eliminazione stanze');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus(`Stanze eliminate: ${Number(result.data.deleted || 0)}`);
-    }
-
-    async function forceLeaderboard() {
-      const result = await api('/api/bot/update-leaderboard', { method: 'POST' });
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore update leaderboard');
-        return;
-      }
-
-      setStatus('Classifica Discord inviata manualmente');
-    }
-
-    async function submitWebResult() {
-      const team = document.getElementById('webResultTeam').value;
-      const k1 = Number(document.getElementById('webK1').value || 0);
-      const k2 = Number(document.getElementById('webK2').value || 0);
-      const k3 = Number(document.getElementById('webK3').value || 0);
-      const pos = Number(document.getElementById('webPos').value || 0);
-      const file = document.getElementById('webScreenshot').files[0];
-
-      if (!team) {
-        alert('Seleziona un team');
-        return;
-      }
-
-      let imageData = '';
-      if (file) {
-        imageData = await fileToBase64(file);
-      }
-
-      const result = await api('/api/web-submit-result', {
-        method: 'POST',
-        body: JSON.stringify({ team, k1, k2, k3, pos, imageData })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore invio risultato web');
-        return;
-      }
-
-      document.getElementById('webK1').value = '';
-      document.getElementById('webK2').value = '';
-      document.getElementById('webK3').value = '';
-      document.getElementById('webPos').value = '';
-      document.getElementById('webScreenshot').value = '';
-
-      await refreshDashboard();
-      setStatus('Risultato web inviato allo staff');
-    }
-
-    async function logout() {
-      await api('/api/logout', { method: 'POST' });
-      location.href = '/login';
-    }
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchPage(btn.dataset.page));
-    });
-
-    document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    window.saveProjectSettings = saveProjectSettings;
-    window.completeSetup = completeSetup;
-    window.saveBotSettings = saveBotSettings;
-    window.saveTeam = saveTeam;
-    window.deleteTeam = deleteTeam;
-    window.newTeamForm = newTeamForm;
-    window.loadSelectedTeam = loadSelectedTeam;
-    window.loadSelectedFragger = loadSelectedFragger;
-    window.saveFragger = saveFragger;
-    window.deleteFragger = deleteFragger;
-    window.setMatch = setMatch;
-    window.nextMatch = nextMatch;
-    window.addPoints = addPoints;
-    window.setPoints = setPoints;
-    window.resetTeamScore = resetTeamScore;
-    window.approvePending = approvePending;
-    window.rejectPending = rejectPending;
-    window.resetTeams = resetTeams;
-    window.resetData = resetData;
-    window.saveRegistrationSettings = saveRegistrationSettings;
-    window.forceRegistrationMessage = forceRegistrationMessage;
-    window.spawnRegisterPanel = spawnRegisterPanel;
-    window.spawnResultsPanel = spawnResultsPanel;
-    window.createRooms = createRooms;
-    window.deleteRooms = deleteRooms;
-    window.forceLeaderboard = forceLeaderboard;
-    window.submitWebResult = submitWebResult;
-
-    switchPage('page-overview');
-    refreshDashboard();
-
-    setInterval(() => {
-      if (!loading) refreshDashboard();
-    }, 10000);
+    loadPublicData();
+    setInterval(loadPublicData, 15000);
   </script>
 </body>
 </html>
