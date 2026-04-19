@@ -408,12 +408,20 @@ function buildPublicPayload(req) {
   };
 }
 
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use(express.static(PUBLIC_DIR, { index: false }));
+
+/* PAGINE */
 app.get('/', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-app.get('/admin', authRequired, (req, res) => {
-  return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+app.get('/home', (req, res) => {
+  return res.redirect('/');
+});
+
+app.get('/home.html', (req, res) => {
+  return res.redirect('/');
 });
 
 app.get('/login', (req, res) => {
@@ -425,9 +433,19 @@ app.get('/login', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
 
-app.use('/uploads', express.static(UPLOADS_DIR));
-app.use(express.static(PUBLIC_DIR, { index: false }));
+app.get('/admin', authRequired, (req, res) => {
+  return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
 
+app.get('/dashboard', authRequired, (req, res) => {
+  return res.redirect('/admin');
+});
+
+app.get('/admin.html', authRequired, (req, res) => {
+  return res.redirect('/admin');
+});
+
+/* API PUBBLICHE */
 app.get('/api/public/dashboard', (req, res) => {
   return res.json(buildPublicPayload(req));
 });
@@ -496,8 +514,9 @@ app.post('/api/public/register-team', async (req, res) => {
   }
 });
 
+/* AUTH */
 app.post('/api/login', (req, res) => {
-  const email = sanitizeText(req.body.email);
+  const email = sanitizeText(req.body.email || req.body.username);
   const password = String(req.body.password || '');
 
   if (email !== DASHBOARD_EMAIL || password !== DASHBOARD_PASSWORD) {
@@ -509,7 +528,7 @@ app.post('/api/login', (req, res) => {
   res.setHeader('Set-Cookie', buildCookie(token));
 
   logAudit(email, 'web', 'login_riuscito', {});
-  return res.json({ ok: true, email });
+  return res.json({ ok: true, email, redirectTo: '/admin' });
 });
 
 app.get('/api/session', (req, res) => {
@@ -518,13 +537,19 @@ app.get('/api/session', (req, res) => {
   const session = verifyToken(token);
 
   if (!session) {
-    return res.status(401).json({ ok: false, autenticato: false });
+    return res.status(401).json({
+      ok: false,
+      autenticato: false,
+      username: null,
+      email: null
+    });
   }
 
   return res.json({
     ok: true,
     autenticato: true,
-    email: session.email
+    email: session.email,
+    username: session.email
   });
 });
 
@@ -541,6 +566,7 @@ app.post('/api/logout', (req, res) => {
   return res.json({ ok: true });
 });
 
+/* API DASHBOARD PRIVATE */
 app.get('/api/dashboard', authRequired, (req, res) => {
   return res.json(buildDashboardPayload());
 });
