@@ -1,20 +1,25 @@
 const fs = require('fs');
 const path = require('path');
 
-const APP_ROOT = __dirname;
-const DATA_ROOT = path.resolve(process.env.DATA_DIR || APP_ROOT);
+const ROOT = __dirname;
+const STORAGE_DIR = process.env.STORAGE_DIR || path.join(ROOT, 'storage-data');
 
-const DATA_FILE = path.join(DATA_ROOT, 'data.json');
-const TEAMS_FILE = path.join(DATA_ROOT, 'teams.json');
-const BACKUP_DIR = path.join(DATA_ROOT, 'backups');
+const DATA_FILE = path.join(STORAGE_DIR, 'data.json');
+const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
+const BACKUP_DIR = path.join(STORAGE_DIR, 'backups');
 const DATA_BACKUP_FILE = path.join(BACKUP_DIR, 'data.latest.json');
 const TEAMS_BACKUP_FILE = path.join(BACKUP_DIR, 'teams.latest.json');
 
-const AUDIT_LOG_FILE = path.join(DATA_ROOT, 'audit-log.json');
+const AUDIT_LOG_FILE = path.join(STORAGE_DIR, 'audit-log.json');
 const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 
-const ARCHIVES_DIR = path.join(DATA_ROOT, 'archives');
-const UPLOADS_DIR = path.join(DATA_ROOT, 'uploads');
+const ARCHIVES_DIR = path.join(STORAGE_DIR, 'archives');
+const UPLOADS_DIR = path.join(ROOT, 'public', 'uploads');
+
+console.log('RAILWAY_VOLUME_MOUNT_PATH:', process.env.RAILWAY_VOLUME_MOUNT_PATH || '(non presente)');
+console.log('STORAGE_DIR attuale:', STORAGE_DIR);
+console.log('DATA_FILE attuale:', DATA_FILE);
+console.log('TEAMS_FILE attuale:', TEAMS_FILE);
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -202,30 +207,14 @@ function normalizeAuditLog(value) {
     .slice(-1000);
 }
 
-function normalizeArchivePayload(payload) {
-  if (!isObject(payload)) return null;
-
-  return {
-    archiveId: String(payload.archiveId || '').trim() || `archive-${Date.now()}`,
-    createdAt: String(payload.createdAt || new Date().toISOString()).trim(),
-    meta: {
-      label: String(payload.meta?.label || '').trim() || 'Archivio torneo',
-      actor: String(payload.meta?.actor || 'system').trim() || 'system',
-      note: String(payload.meta?.note || '').trim(),
-      source: String(payload.meta?.source || 'system').trim() || 'system'
-    },
-    data: normalizeData(payload.data),
-    teams: normalizeTeams(payload.teams)
-  };
-}
-
 function readJsonSafe(filePath) {
   try {
     if (!fs.existsSync(filePath)) return null;
     const raw = fs.readFileSync(filePath, 'utf8');
     if (!raw || !raw.trim()) return null;
     return JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    console.error(`Errore lettura JSON ${filePath}:`, error.message);
     return null;
   }
 }
@@ -243,7 +232,7 @@ function writeBackup(filePath, backupPath, data) {
 }
 
 function initializeFiles() {
-  ensureDir(DATA_ROOT);
+  ensureDir(STORAGE_DIR);
   ensureDir(BACKUP_DIR);
   ensureDir(ARCHIVES_DIR);
   ensureDir(UPLOADS_DIR);
@@ -262,6 +251,8 @@ function initializeFiles() {
   writeBackup(DATA_FILE, DATA_BACKUP_FILE, safeData);
   writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safeTeams);
   writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safeAudit);
+
+  console.log('Storage inizializzato correttamente');
 }
 
 function loadData() {
@@ -390,16 +381,16 @@ function listTournamentArchives() {
   const archives = [];
 
   for (const file of files.slice(0, 100)) {
-    const payload = normalizeArchivePayload(readJsonSafe(path.join(ARCHIVES_DIR, file)));
-    if (!payload) continue;
+    const payload = readJsonSafe(path.join(ARCHIVES_DIR, file));
+    if (!payload || !isObject(payload)) continue;
 
     archives.push({
-      archiveId: payload.archiveId,
-      createdAt: payload.createdAt,
-      label: payload.meta.label,
-      actor: payload.meta.actor,
-      note: payload.meta.note,
-      source: payload.meta.source,
+      archiveId: String(payload.archiveId || file.replace(/\.json$/i, '')).trim(),
+      createdAt: String(payload.createdAt || '').trim(),
+      label: String(payload.meta?.label || '').trim(),
+      actor: String(payload.meta?.actor || '').trim(),
+      note: String(payload.meta?.note || '').trim(),
+      source: String(payload.meta?.source || '').trim(),
       teamCount: Object.keys(payload.teams || {}).length,
       pendingCount: Object.keys(payload.data?.pending || {}).length,
       currentMatch: Number(payload.data?.currentMatch || 1)
@@ -409,23 +400,14 @@ function listTournamentArchives() {
   return archives;
 }
 
-function getTournamentArchive(archiveId) {
-  const safeArchiveId = String(archiveId || '').trim();
-  if (!safeArchiveId) return null;
-
-  const archivePath = path.join(ARCHIVES_DIR, `${safeArchiveId}.json`);
-  return normalizeArchivePayload(readJsonSafe(archivePath));
-}
-
 module.exports = {
-  APP_ROOT,
-  DATA_ROOT,
+  STORAGE_DIR,
   BACKUP_DIR,
   ARCHIVES_DIR,
-  UPLOADS_DIR,
   DATA_FILE,
   TEAMS_FILE,
   AUDIT_LOG_FILE,
+  UPLOADS_DIR,
   initializeFiles,
   loadData,
   loadTeams,
@@ -437,7 +419,6 @@ module.exports = {
   appendAuditLog,
   createTournamentArchive,
   listTournamentArchives,
-  getTournamentArchive,
   getDefaultData,
   getDefaultTeams,
   getDefaultProjectSettings,
