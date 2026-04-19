@@ -343,10 +343,8 @@ function buildRegistrationTextPages() {
       const p3 = sanitizeText(team.players?.[2]) || 'Player 3';
 
       return (
-        `**#${team.slot} ${team.teamName}**\n` +
-        `👤 ${p1}\n` +
-        `👤 ${p2}\n` +
-        `👤 ${p3}`
+        `🏆 **#${team.slot} • ${team.teamName}**\n` +
+        `👤 ${p1} • ${p2} • ${p3}`
       );
     });
 
