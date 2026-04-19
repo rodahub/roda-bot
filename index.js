@@ -10,13 +10,11 @@ const {
   TextInputStyle,
   StringSelectMenuBuilder,
   EmbedBuilder,
-  AttachmentBuilder,
   ChannelType
 } = require('discord.js');
 
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 
 const {
   loadData,
@@ -63,21 +61,6 @@ let registrationStatusUpdateQueue = Promise.resolve();
 
 function sanitizeText(value) {
   return String(value || '').trim();
-}
-
-function escapeXml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function truncateText(value, maxLength = 32) {
-  const text = sanitizeText(value);
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
 function normalizeBaseUrl(value) {
@@ -193,11 +176,11 @@ function getDisplayTeams() {
 }
 
 function chunkArray(list, size) {
-  const out = [];
+  const chunks = [];
   for (let i = 0; i < list.length; i += size) {
-    out.push(list.slice(i, i + size));
+    chunks.push(list.slice(i, i + size));
   }
-  return out;
+  return chunks;
 }
 
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
@@ -241,6 +224,16 @@ function logAudit(actor, source, action, details = {}) {
   } catch (error) {
     console.error('Errore audit log:', error);
   }
+}
+
+function getLogoUrl() {
+  const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
+  if (!fs.existsSync(logoPath)) return null;
+
+  const baseUrl = getPublicBaseUrl();
+  if (!baseUrl) return null;
+
+  return `${baseUrl}/roda-logo.png`;
 }
 
 function createRegisterPanelPayload() {
@@ -316,201 +309,76 @@ async function maybeAnnounceTournamentFull() {
   }
 }
 
-function getLogoDataUri() {
-  try {
-    const logoPath = path.join(__dirname, 'public', 'roda-logo.png');
-    if (!fs.existsSync(logoPath)) return '';
-    const buffer = fs.readFileSync(logoPath);
-    return `data:image/png;base64,${buffer.toString('base64')}`;
-  } catch {
-    return '';
-  }
-}
-
-function buildRegistrationPageSvg(pageTeams, pageIndex, totalPages) {
-  const project = getProjectSettings();
-  const allTeams = getDisplayTeams();
-  const limit = getRegistrationLimit();
-  const freeSpots = Math.max(limit - allTeams.length, 0);
-  const isFull = allTeams.length >= limit;
-  const logoDataUri = getLogoDataUri();
-  const title = sanitizeText(data.registrationStatusTitle) || 'TEAM REGISTRATI';
-  const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
-
-  const width = 3000;
-  const rowCount = Math.max(pageTeams.length, 1);
-  const rowHeight = 160;
-  const headerTop = 36;
-  const tableTop = 255;
-  const tableHeaderHeight = 92;
-  const tableBodyTop = tableTop + tableHeaderHeight;
-  const totalTableHeight = rowCount * rowHeight;
-  const height = tableBodyTop + totalTableHeight + 92;
-
-  const rowLines = Array.from({ length: rowCount }, (_, index) => {
-    const y = tableBodyTop + (index + 1) * rowHeight;
-    return `<line x1="44" y1="${y}" x2="${width - 44}" y2="${y}" stroke="rgba(163,111,255,0.22)" stroke-width="3"/>`;
-  }).join('');
-
-  const rowsMarkup = pageTeams.length
-    ? pageTeams.map((team, index) => {
-        const y = tableBodyTop + index * rowHeight;
-        const rowCenterY = y + 102;
-
-        return `
-          <rect x="58" y="${y + 14}" width="${width - 116}" height="${rowHeight - 28}" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(147,101,255,0.12)" stroke-width="1.5"/>
-          <rect x="76" y="${y + 38}" width="150" height="78" rx="22" fill="rgba(58,112,255,0.14)" stroke="rgba(92,195,255,0.42)" stroke-width="2"/>
-          <text x="108" y="${rowCenterY - 4}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="900">#${escapeXml(team.slot)}</text>
-
-          <text x="300" y="${rowCenterY}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="900">${escapeXml(truncateText(team.teamName, 24))}</text>
-          <text x="1048" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[0] || '-', 18))}</text>
-          <text x="1708" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[1] || '-', 18))}</text>
-          <text x="2338" y="${rowCenterY}" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800">${escapeXml(truncateText(team.players?.[2] || '-', 18))}</text>
-        `;
-      }).join('')
-    : `
-        <text x="1090" y="${tableBodyTop + 104}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900">NESSUN TEAM REGISTRATO</text>
-      `;
-
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#05070f"/>
-          <stop offset="40%" stop-color="#0a0d1b"/>
-          <stop offset="100%" stop-color="#101426"/>
-        </linearGradient>
-
-        <linearGradient id="frame" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#9c53ff"/>
-          <stop offset="50%" stop-color="#714fff"/>
-          <stop offset="100%" stop-color="#4194ff"/>
-        </linearGradient>
-
-        <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#ff5cf2"/>
-          <stop offset="100%" stop-color="#b85dff"/>
-        </linearGradient>
-
-        <linearGradient id="tableHead" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ef52ff"/>
-          <stop offset="100%" stop-color="#bb61ff"/>
-        </linearGradient>
-
-        <filter id="outerGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="16" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="8" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
-      <rect width="${width}" height="${height}" fill="url(#bg)"/>
-      <circle cx="120" cy="90" r="180" fill="rgba(172,77,255,0.16)" filter="url(#outerGlow)"/>
-      <circle cx="${width - 120}" cy="92" r="180" fill="rgba(65,148,255,0.10)" filter="url(#outerGlow)"/>
-
-      <rect x="16" y="16" width="${width - 32}" height="${height - 32}" rx="28" fill="rgba(6,8,18,0.92)" stroke="url(#frame)" stroke-width="4" filter="url(#softGlow)"/>
-
-      <rect x="42" y="${headerTop}" width="${width - 84}" height="155" rx="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
-
-      <polygon points="42,36 190,36 96,191 42,191" fill="rgba(196,82,255,0.18)"/>
-      <polygon points="${width - 42},36 ${width - 220},36 ${width - 132},191 ${width - 42},191" fill="rgba(84,103,255,0.12)"/>
-
-      ${logoDataUri ? `<image href="${logoDataUri}" x="84" y="72" width="88" height="88"/>` : ''}
-
-      <text x="205" y="92" fill="#cdd4ea" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(project.brandName)}</text>
-      <text x="205" y="146" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="1000">${escapeXml(truncateText(project.tournamentName, 24))}</text>
-
-      <text x="980" y="110" fill="url(#hero)" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="1000" text-anchor="middle">TEAM REGISTRATI</text>
-      <text x="980" y="150" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" text-anchor="middle">${escapeXml(truncateText(intro, 86))}</text>
-
-      <rect x="${width - 520}" y="62" width="390" height="54" rx="16" fill="${isFull ? 'rgba(255,77,109,0.18)' : 'rgba(145,81,255,0.18)'}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-      <text x="${width - 455}" y="98" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800">${isFull ? 'ISCRIZIONI CHIUSE' : 'ISCRIZIONI APERTE'}</text>
-
-      <text x="${width - 390}" y="150" fill="#e9eeff" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800">PAG ${pageIndex + 1}/${totalPages}</text>
-
-      <rect x="44" y="${tableTop}" width="${width - 88}" height="${tableHeaderHeight}" rx="18" fill="url(#tableHead)" filter="url(#softGlow)"/>
-      <rect x="44" y="${tableBodyTop}" width="${width - 88}" height="${totalTableHeight}" rx="18" fill="rgba(14,18,34,0.96)" stroke="rgba(176,102,255,0.20)" stroke-width="2"/>
-
-      <line x1="260" y1="${tableTop}" x2="260" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
-      <line x1="940" y1="${tableTop}" x2="940" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
-      <line x1="1630" y1="${tableTop}" x2="1630" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
-      <line x1="2260" y1="${tableTop}" x2="2260" y2="${tableBodyTop + totalTableHeight}" stroke="rgba(176,102,255,0.18)" stroke-width="3"/>
-
-      <text x="92" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">SLOT</text>
-      <text x="368" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">TEAM</text>
-      <text x="1045" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 1</text>
-      <text x="1710" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 2</text>
-      <text x="2340" y="${tableTop + 58}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900">PLAYER 3</text>
-
-      ${rowLines}
-      ${rowsMarkup}
-
-      <text x="56" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">TEAM: ${allTeams.length}/${limit}</text>
-      <text x="300" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">POSTI: ${freeSpots}</text>
-      <text x="520" y="${height - 28}" fill="#d8def2" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">${escapeXml(title)}</text>
-    </svg>
-  `;
-}
-
-async function generateRegistrationPageBuffer(pageTeams, pageIndex, totalPages) {
-  const svg = buildRegistrationPageSvg(pageTeams, pageIndex, totalPages);
-  return sharp(Buffer.from(svg)).png().toBuffer();
-}
-
-async function saveRegistrationDebugFile(panelBuffers) {
-  try {
-    const firstBuffer = Array.isArray(panelBuffers) ? panelBuffers[0] : panelBuffers;
-    if (!firstBuffer) {
-      return { ok: false, filePath: '', url: '' };
-    }
-
-    const debugFileName = 'registration-debug.png';
-    const debugFilePath = path.join(UPLOADS_DIR, debugFileName);
-    fs.writeFileSync(debugFilePath, firstBuffer);
-
-    const debugUrl = buildPublicUploadUrl(debugFileName);
-    console.log(`DEBUG registration panel salvato: ${debugFilePath}`);
-    console.log(`DEBUG registration panel URL: ${debugUrl}`);
-
-    return { ok: true, filePath: debugFilePath, url: debugUrl };
-  } catch (error) {
-    console.error('Errore salvataggio debug pannello:', error);
-    return { ok: false, filePath: '', url: '' };
-  }
-}
-
-async function buildRegistrationStatusMessagePayload() {
+function buildRegistrationTextPages() {
   refreshStateFromDisk();
 
+  const project = getProjectSettings();
   const displayTeams = getDisplayTeams();
-  const pages = chunkArray(displayTeams, 2);
-  const effectivePages = pages.length ? pages : [[]];
+  const title = sanitizeText(data.registrationStatusTitle) || '🏆 TEAM REGISTRATI';
+  const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
+  const limit = getRegistrationLimit();
+  const freeSpots = Math.max(limit - displayTeams.length, 0);
+  const isFull = displayTeams.length >= limit;
 
-  const files = [];
-  const buffers = [];
+  const pages = [];
+  const pageTeams = chunkArray(displayTeams, 10);
 
-  for (let i = 0; i < effectivePages.length; i++) {
-    const buffer = await generateRegistrationPageBuffer(effectivePages[i], i, effectivePages.length);
-    buffers.push(buffer);
-    files.push(new AttachmentBuilder(buffer, { name: `registration-panel-${i + 1}-${Date.now()}.png` }));
+  const header =
+    `# ${title}\n` +
+    `**Torneo:** ${project.tournamentName}\n` +
+    `${intro}\n\n` +
+    `**Team registrati:** ${displayTeams.length}/${limit}\n` +
+    `**Posti disponibili:** ${freeSpots}\n` +
+    `**Stato:** ${isFull ? 'Iscrizioni chiuse' : 'Iscrizioni aperte'}\n`;
+
+  if (!pageTeams.length) {
+    pages.push(`${header}\n**Nessun team registrato al momento.**`);
+    return pages;
   }
 
-  await saveRegistrationDebugFile(buffers);
+  pageTeams.forEach((teamsChunk, pageIndex) => {
+    const lines = teamsChunk.map(team => {
+      const p1 = sanitizeText(team.players?.[0]) || 'Player 1';
+      const p2 = sanitizeText(team.players?.[1]) || 'Player 2';
+      const p3 = sanitizeText(team.players?.[2]) || 'Player 3';
 
-  return {
-    content: '',
-    files
-  };
+      return (
+        `**#${team.slot} ${team.teamName}**\n` +
+        `👤 ${p1}\n` +
+        `👤 ${p2}\n` +
+        `👤 ${p3}`
+      );
+    });
+
+    const pageHeader = pageTeams.length > 1
+      ? `${header}\n**Pagina ${pageIndex + 1}/${pageTeams.length}**\n`
+      : header;
+
+    pages.push(`${pageHeader}\n${lines.join('\n\n')}`);
+  });
+
+  return pages;
+}
+
+function buildRegistrationEmbeds() {
+  const project = getProjectSettings();
+  const logoUrl = getLogoUrl();
+  const pages = buildRegistrationTextPages();
+
+  const embeds = pages.map((pageText, index) => {
+    const embed = new EmbedBuilder()
+      .setColor(0x7b2cff)
+      .setTitle(index === 0 ? `🏆 ${project.tournamentName}` : `📑 Elenco team • Pagina ${index + 1}/${pages.length}`)
+      .setDescription(pageText);
+
+    if (logoUrl) {
+      embed.setThumbnail(logoUrl);
+    }
+
+    return embed;
+  });
+
+  return embeds;
 }
 
 function queueRegistrationStatusUpdate() {
@@ -520,29 +388,34 @@ function queueRegistrationStatusUpdate() {
       refreshStateFromDisk();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const payload = await buildRegistrationStatusMessagePayload();
+      const embeds = buildRegistrationEmbeds();
 
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
           await msg.edit({
-            content: payload.content,
-            files: payload.files,
+            content: '',
+            embeds,
+            components: [],
             attachments: []
           });
           return true;
         } catch (error) {
-          console.error('Errore edit pannello slot, invio nuovo messaggio:', error);
+          console.error('Errore update messaggio slot team:', error);
         }
       }
 
-      const msg = await channel.send(payload);
+      const msg = await channel.send({
+        content: '',
+        embeds
+      });
+
       data.registrationStatusMessageId = msg.id;
       saveState();
       return true;
     })
     .catch(error => {
-      console.error('Errore update messaggio slot team:', error);
+      console.error('Errore queue pannello slot team:', error);
     });
 
   return registrationStatusUpdateQueue;
