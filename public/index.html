@@ -72,7 +72,7 @@
     .wrap{
       max-width:var(--container);
       margin:0 auto;
-      padding:0 20px 28px 20px;
+      padding:0 20px 30px 20px;
     }
 
     .topbar{
@@ -167,6 +167,8 @@
 
     .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
     .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
+    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
 
     .hero{
       padding:34px 0 20px 0;
@@ -197,7 +199,7 @@
 
     .hero-grid{
       display:grid;
-      grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);
+      grid-template-columns:minmax(0,1.3fr) minmax(320px,.7fr);
       gap:18px;
       align-items:stretch;
     }
@@ -223,7 +225,7 @@
     }
 
     .hero-title{
-      font-size:52px;
+      font-size:54px;
       line-height:1.02;
       font-weight:1000;
       margin:0 0 12px 0;
@@ -347,7 +349,7 @@
     }
 
     .section{
-      margin-top:18px;
+      margin-top:20px;
     }
 
     .section-header{
@@ -578,7 +580,7 @@
     }
 
     .footer{
-      margin-top:26px;
+      margin-top:28px;
       padding:20px 0 8px 0;
       color:var(--muted);
       font-size:13px;
@@ -664,7 +666,7 @@
 
       <div class="nav-right">
         <div class="pill" id="publicStatusPill">Caricamento...</div>
-        <a href="/login" class="btn btn-purple">Accesso Admin</a>
+        <a href="/login" class="btn btn-purple">Accesso admin</a>
       </div>
     </div>
   </div>
@@ -677,7 +679,7 @@
             <div class="eyebrow">🏆 Torneo pubblico live</div>
             <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
             <div class="hero-text" id="heroTournamentText">
-              Segui la classifica live, i team registrati, i top fragger e lo stato delle registrazioni direttamente dal sito ufficiale del torneo.
+              Segui classifica, top fragger e team registrati direttamente dal sito ufficiale del torneo.
             </div>
 
             <div class="hero-actions">
@@ -699,8 +701,8 @@
                 <strong id="heroFragger">-</strong>
               </div>
               <div class="mini-stat">
-                <span>Risultati in attesa</span>
-                <strong id="heroPending">0</strong>
+                <span>Posti disponibili</span>
+                <strong id="heroFreeSlotsStat">0</strong>
               </div>
             </div>
           </div>
@@ -709,7 +711,7 @@
             <div class="side-card">
               <h3>📢 Stato torneo</h3>
               <p id="heroStateText">
-                Tutti i dati mostrati qui sono sincronizzati con il sistema del torneo.
+                Tutti i dati mostrati qui sono aggiornati in base allo stato attuale del torneo.
               </p>
             </div>
 
@@ -735,15 +737,15 @@
     <section class="section" id="classifica">
       <div class="section-header">
         <div>
-          <h2 class="section-title">🏆 Classifica Live</h2>
-          <p class="section-subtitle">Punti aggiornati in tempo reale dal sistema del torneo.</p>
+          <h2 class="section-title">🏆 Classifica live</h2>
+          <p class="section-subtitle">La classifica dei team con i punti aggiornati del torneo.</p>
         </div>
       </div>
 
       <div class="grid-2">
         <div class="card">
           <h3>Classifica team</h3>
-          <div class="card-note">Classifica generale del torneo ordinata per punteggio.</div>
+          <div class="card-note">Ordine generale dei team in base ai punti totali.</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -761,15 +763,15 @@
         </div>
 
         <div class="card">
-          <h3>🔥 Top Fragger</h3>
-          <div class="card-note">Player con più kill registrate nel torneo.</div>
+          <h3>🔥 Top fragger</h3>
+          <div class="card-note">I giocatori con più uccisioni registrate nel torneo.</div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Player</th>
-                  <th>Kill</th>
+                  <th>Giocatore</th>
+                  <th>Uccisioni</th>
                 </tr>
               </thead>
               <tbody id="fraggerBody">
@@ -784,7 +786,7 @@
     <section class="section" id="team-registrati">
       <div class="section-header">
         <div>
-          <h2 class="section-title">👥 Team Registrati</h2>
+          <h2 class="section-title">👥 Team registrati</h2>
           <p class="section-subtitle">Elenco pubblico dei team iscritti con slot assegnato e giocatori.</p>
         </div>
         <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
@@ -800,7 +802,7 @@
                 <tr>
                   <th>Slot</th>
                   <th>Team</th>
-                  <th>Players</th>
+                  <th>Giocatori</th>
                 </tr>
               </thead>
               <tbody id="registeredTeamsBody">
@@ -828,7 +830,7 @@
               </div>
               <div class="summary-mini">
                 <span>Stato</span>
-                <strong id="registrationStateText">APERTO</strong>
+                <strong id="registrationStateText">APERTE</strong>
               </div>
             </div>
           </div>
@@ -852,23 +854,23 @@
         </div>
 
         <div class="card">
-          <h3>📨 Risultati in attesa</h3>
-          <div class="card-note">Risultati ancora in attesa di approvazione staff.</div>
-          <div style="font-size:36px; font-weight:1000" id="bottomPending">0</div>
+          <h3>📈 Stato iscrizioni</h3>
+          <div class="card-note">Situazione attuale delle registrazioni del torneo.</div>
+          <div style="font-size:36px; font-weight:1000" id="bottomRegistrationState">APERTE</div>
         </div>
 
         <div class="card">
-          <h3>🔐 Area staff</h3>
+          <h3>🔐 Accesso amministratore</h3>
           <div class="card-note">
-            Per modifiche, gestione team, risultati, Discord e impostazioni usa l’accesso amministratore.
+            Area riservata per gestione team, risultati, Discord e impostazioni.
           </div>
-          <a href="/login" class="btn btn-purple" style="margin-top:8px">Vai al login admin</a>
+          <a href="/login" class="btn btn-purple" style="margin-top:8px">Apri accesso admin</a>
         </div>
       </div>
     </section>
 
     <div class="footer">
-      Portale pubblico torneo • <a class="public-admin-link" href="/login">Accesso Admin</a>
+      Portale pubblico torneo • <a class="public-admin-link" href="/login">Accesso admin</a>
     </div>
   </div>
 
@@ -924,14 +926,14 @@
       document.getElementById('heroTournamentText').textContent =
         supportContact
           ? `Segui classifica, team registrati e top fragger dal sito pubblico ufficiale. Supporto: ${supportContact}.`
-          : 'Segui la classifica live, i team registrati, i top fragger e lo stato delle registrazioni direttamente dal sito ufficiale del torneo.';
+          : 'Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.';
 
       document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
       document.getElementById('heroTeams').textContent = registeredCount;
       document.getElementById('heroFragger').textContent = fraggers.length ? fraggers[0].nome : '-';
-      document.getElementById('heroPending').textContent = 'Live';
+      document.getElementById('heroFreeSlotsStat').textContent = availableCount;
       document.getElementById('bottomMatch').textContent = torneo.matchCorrente || 1;
-      document.getElementById('bottomPending').textContent = 'Staff';
+      document.getElementById('bottomRegistrationState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
 
       document.getElementById('heroTeamsCountLine').textContent = `${registeredCount} / ${maxTeams}`;
       document.getElementById('heroFreeSlotsLine').textContent = String(availableCount);
@@ -985,7 +987,7 @@
                 <div class="team-players-list">
                   ${(team.players || []).map(player => `
                     <span class="mini-chip">${escapeHtml(player || '-')}</span>
-                  `).join('') || '<span class="mini-chip">Nessun player</span>'}
+                  `).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
                 </div>
               </td>
             </tr>
@@ -1001,7 +1003,7 @@
                 <div class="slot-card-players">
                   ${(team.players || []).map(player => `
                     <span class="mini-chip">${escapeHtml(player || '-')}</span>
-                  `).join('') || '<span class="mini-chip">Nessun player</span>'}
+                  `).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
                 </div>
               </div>
               <div class="slot-badge">SLOT ${team.slot || '-'}</div>
