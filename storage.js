@@ -3,16 +3,13 @@ const path = require('path');
 
 const ROOT = __dirname;
 
-const VOLUME_BASE =
+const STORAGE_DIR =
   process.env.STORAGE_DIR ||
   process.env.RAILWAY_VOLUME_MOUNT_PATH ||
   path.join(ROOT, 'storage-data');
 
-const STORAGE_DIR = path.join(VOLUME_BASE, 'app-storage');
-
 const DATA_FILE = path.join(STORAGE_DIR, 'data.json');
 const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
-
 const BACKUP_DIR = path.join(STORAGE_DIR, 'backups');
 const DATA_BACKUP_FILE = path.join(BACKUP_DIR, 'data.latest.json');
 const TEAMS_BACKUP_FILE = path.join(BACKUP_DIR, 'teams.latest.json');
@@ -23,8 +20,7 @@ const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 const ARCHIVES_DIR = path.join(STORAGE_DIR, 'archives');
 
 /*
-  IMPORTANTE:
-  gli screenshot devono stare nel volume, non in public/uploads diretto del container.
+  Screenshot e upload salvati nel volume persistente
 */
 const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
 
@@ -202,7 +198,6 @@ function normalizeData(data) {
   base.tempSubmit = normalizeTempSubmit(safe.tempSubmit);
   base.scores = normalizeScores(safe.scores);
   base.fragger = normalizeFragger(safe.fragger);
-
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
