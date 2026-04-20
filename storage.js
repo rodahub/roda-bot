@@ -2,10 +2,17 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const STORAGE_DIR = process.env.STORAGE_DIR || path.join(ROOT, 'storage-data');
+
+const VOLUME_BASE =
+  process.env.STORAGE_DIR ||
+  process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+  path.join(ROOT, 'storage-data');
+
+const STORAGE_DIR = path.join(VOLUME_BASE, 'app-storage');
 
 const DATA_FILE = path.join(STORAGE_DIR, 'data.json');
 const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
+
 const BACKUP_DIR = path.join(STORAGE_DIR, 'backups');
 const DATA_BACKUP_FILE = path.join(BACKUP_DIR, 'data.latest.json');
 const TEAMS_BACKUP_FILE = path.join(BACKUP_DIR, 'teams.latest.json');
@@ -14,12 +21,18 @@ const AUDIT_LOG_FILE = path.join(STORAGE_DIR, 'audit-log.json');
 const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 
 const ARCHIVES_DIR = path.join(STORAGE_DIR, 'archives');
-const UPLOADS_DIR = path.join(ROOT, 'public', 'uploads');
+
+/*
+  IMPORTANTE:
+  gli screenshot devono stare nel volume, non in public/uploads diretto del container.
+*/
+const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
 
 console.log('RAILWAY_VOLUME_MOUNT_PATH:', process.env.RAILWAY_VOLUME_MOUNT_PATH || '(non presente)');
 console.log('STORAGE_DIR attuale:', STORAGE_DIR);
 console.log('DATA_FILE attuale:', DATA_FILE);
 console.log('TEAMS_FILE attuale:', TEAMS_FILE);
+console.log('UPLOADS_DIR attuale:', UPLOADS_DIR);
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -103,6 +116,80 @@ function normalizeBotSettings(value) {
   return base;
 }
 
+function normalizePending(pendingValue) {
+  const safePending = isObject(pendingValue) ? pendingValue : {};
+  const out = {};
+
+  for (const [id, entry] of Object.entries(safePending)) {
+    if (!isObject(entry)) continue;
+
+    const kills = Array.isArray(entry.kills) ? entry.kills : [];
+
+    out[String(id)] = {
+      team: String(entry.team || '').trim(),
+      kills: [
+        Number(kills[0] || 0),
+        Number(kills[1] || 0),
+        Number(kills[2] || 0)
+      ],
+      total: Number(entry.total || 0),
+      pos: Number(entry.pos || 0),
+      image: String(entry.image || '').trim(),
+      source: String(entry.source || '').trim(),
+      submittedBy: String(entry.submittedBy || '').trim(),
+      staffMessageId: entry.staffMessageId || null
+    };
+  }
+
+  return out;
+}
+
+function normalizeTempSubmit(tempValue) {
+  const safeTemp = isObject(tempValue) ? tempValue : {};
+  const out = {};
+
+  for (const [userId, entry] of Object.entries(safeTemp)) {
+    if (!isObject(entry)) continue;
+
+    const kills = Array.isArray(entry.kills) ? entry.kills : [];
+
+    out[String(userId)] = {
+      team: String(entry.team || '').trim(),
+      kills: [
+        Number(kills[0] || 0),
+        Number(kills[1] || 0),
+        Number(kills[2] || 0)
+      ],
+      total: Number(entry.total || 0),
+      pos: Number(entry.pos || 0)
+    };
+  }
+
+  return out;
+}
+
+function normalizeScores(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [key, points] of Object.entries(safe)) {
+    out[String(key)] = Number(points || 0);
+  }
+
+  return out;
+}
+
+function normalizeFragger(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [key, kills] of Object.entries(safe)) {
+    out[String(key)] = Number(kills || 0);
+  }
+
+  return out;
+}
+
 function normalizeData(data) {
   const base = getDefaultData();
   const safe = isObject(data) ? data : {};
@@ -111,10 +198,11 @@ function normalizeData(data) {
     ? Number(safe.currentMatch)
     : 1;
 
-  base.pending = isObject(safe.pending) ? safe.pending : {};
-  base.tempSubmit = isObject(safe.tempSubmit) ? safe.tempSubmit : {};
-  base.scores = isObject(safe.scores) ? safe.scores : {};
-  base.fragger = isObject(safe.fragger) ? safe.fragger : {};
+  base.pending = normalizePending(safe.pending);
+  base.tempSubmit = normalizeTempSubmit(safe.tempSubmit);
+  base.scores = normalizeScores(safe.scores);
+  base.fragger = normalizeFragger(safe.fragger);
+
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
@@ -400,6 +488,29 @@ function listTournamentArchives() {
   return archives;
 }
 
+function getTournamentArchive(archiveId) {
+  const safeId = String(archiveId || '').trim();
+  if (!safeId) return null;
+
+  const archivePath = path.join(ARCHIVES_DIR, `${safeId}.json`);
+  const payload = readJsonSafe(archivePath);
+
+  if (!payload || !isObject(payload)) return null;
+
+  return {
+    archiveId: String(payload.archiveId || safeId).trim(),
+    createdAt: String(payload.createdAt || '').trim(),
+    meta: {
+      label: String(payload.meta?.label || '').trim(),
+      actor: String(payload.meta?.actor || '').trim(),
+      note: String(payload.meta?.note || '').trim(),
+      source: String(payload.meta?.source || '').trim()
+    },
+    data: normalizeData(payload.data),
+    teams: normalizeTeams(payload.teams)
+  };
+}
+
 module.exports = {
   STORAGE_DIR,
   BACKUP_DIR,
@@ -419,6 +530,7 @@ module.exports = {
   appendAuditLog,
   createTournamentArchive,
   listTournamentArchives,
+  getTournamentArchive,
   getDefaultData,
   getDefaultTeams,
   getDefaultProjectSettings,
