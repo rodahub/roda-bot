@@ -952,12 +952,12 @@
         <img src="/roda-logo.png" alt="RØDA Logo" />
         <div class="brand-text">
           <div class="brand-title" id="brandTitle">RØDA CUP</div>
-          <div class="brand-subtitle" id="brandSubtitle">Portale pubblico torneo</div>
+          <div class="brand-subtitle" id="brandSubtitle">Portale pubblico ufficiale</div>
         </div>
       </div>
 
       <div class="nav-right">
-        <div class="pill" id="publicStatusPill">Caricamento...</div>
+        <div class="pill" id="publicStatusPill">Stato caricamento...</div>
         <a href="/login" class="btn btn-purple">Accesso admin</a>
       </div>
     </div>
@@ -973,7 +973,7 @@
             <span class="accent">ESPORTS TOURNAMENT</span>
           </h1>
           <div class="hero-text" id="heroTournamentText">
-            Segui il torneo live, controlla le classifiche, scopri i team registrati e iscriviti subito con il tuo trio.
+            Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte direttamente dal portale ufficiale.
           </div>
 
           <div class="hero-actions">
@@ -1055,7 +1055,7 @@
       <div class="home-quick">
         <div class="quick-card">
           <div class="quick-icon">📝</div>
-          <h3>Iscrivi il tuo trio</h3>
+          <h3>Iscrivi il tuo team</h3>
           <p>Registra il tuo team direttamente dal sito pubblico e occupa subito uno slot disponibile.</p>
           <button class="btn btn-green" data-go-page="page-register">Vai alla registrazione</button>
         </div>
@@ -1503,7 +1503,6 @@
       const fraggers = publicData.classificaFragger || [];
       const sortedTeams = publicData.teamRegistrati || [];
       const torneo = publicData.torneo || {};
-      const registrationMessage = publicData.messaggioRegistrazione || {};
 
       const brandName = torneo.brandName || 'RØDA';
       const tournamentName = torneo.tournamentName || 'RØDA CUP';
@@ -1516,7 +1515,7 @@
 
       document.title = tournamentName;
       document.getElementById('brandTitle').textContent = tournamentName;
-      document.getElementById('brandSubtitle').textContent = registrationMessage.titolo || 'Portale pubblico torneo';
+      document.getElementById('brandSubtitle').textContent = 'Portale pubblico ufficiale';
       document.getElementById('heroTournamentTitle').textContent = tournamentName;
       document.getElementById('heroTournamentText').textContent =
         supportContact
