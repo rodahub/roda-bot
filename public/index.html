@@ -172,6 +172,7 @@
     .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
     .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
     .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
+    .btn-live{ background:linear-gradient(135deg,#9146ff,#c86bff); }
 
     .wrap{
       max-width:var(--container);
@@ -501,8 +502,7 @@
     .glow-card{
       position:relative;
       overflow:hidden;
-      background:
-        linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
       border:1px solid rgba(164,118,255,.22);
       box-shadow:0 0 0 1px rgba(164,118,255,.08), 0 0 36px rgba(123,44,255,.14);
     }
@@ -973,12 +973,13 @@
             <span class="accent">ESPORTS TOURNAMENT</span>
           </h1>
           <div class="hero-text" id="heroTournamentText">
-            Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte direttamente dal portale ufficiale.
+            Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale.
           </div>
 
           <div class="hero-actions">
             <button class="btn btn-green" data-go-page="page-register">Iscrivi il tuo team</button>
             <button class="btn btn-purple" data-go-page="page-rankings">Guarda classifiche</button>
+            <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Guarda la live</a>
             <button class="btn btn-blue" data-go-page="page-rules">Leggi regolamento</button>
           </div>
 
@@ -1026,8 +1027,11 @@
           </div>
 
           <div class="side-card">
-            <h3>⚔️ Accesso rapido</h3>
-            <p>Muoviti velocemente tra registrazione, classifiche, team registrati e regolamento completo.</p>
+            <h3>📺 Diretta ufficiale</h3>
+            <p>Segui il torneo in live su Twitch con la trasmissione ufficiale.</p>
+            <div style="margin-top:14px;">
+              <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Apri Twitch</a>
+            </div>
           </div>
         </div>
       </div>
@@ -1068,10 +1072,10 @@
         </div>
 
         <div class="quick-card">
-          <div class="quick-icon">👥</div>
-          <h3>Guarda i team registrati</h3>
-          <p>Vedi tutti i team iscritti con slot assegnato e nomi dei giocatori.</p>
-          <button class="btn btn-blue" data-go-page="page-teams">Apri lista team</button>
+          <div class="quick-icon">📺</div>
+          <h3>Guarda la diretta</h3>
+          <p>Segui la live ufficiale del torneo su Twitch e resta aggiornato in tempo reale.</p>
+          <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Apri la live</a>
         </div>
 
         <div class="quick-card">
@@ -1519,15 +1523,13 @@
       document.getElementById('heroTournamentTitle').textContent = tournamentName;
       document.getElementById('heroTournamentText').textContent =
         supportContact
-          ? `Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte. Supporto: ${supportContact}.`
-          : 'Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte direttamente dal portale ufficiale.';
+          ? `Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale. Supporto: ${supportContact}.`
+          : 'Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale dal portale pubblico.';
 
       document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
       document.getElementById('heroTeams').textContent = registeredCount;
       document.getElementById('heroFragger').textContent = fraggers.length ? fraggers[0].nome : '-';
       document.getElementById('heroFreeSlotsStat').textContent = availableCount;
-      document.getElementById('bottomMatch').textContent = torneo.matchCorrente || 1;
-      document.getElementById('bottomRegistrationState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
 
       document.getElementById('heroTeamsCountLine').textContent = `${registeredCount} / ${maxTeams}`;
       document.getElementById('heroFreeSlotsLine').textContent = String(availableCount);
