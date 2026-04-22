@@ -22,7 +22,6 @@
       --blue:#57b7ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 28px rgba(123,44,255,.14);
       --radius:24px;
-      --radius-sm:16px;
       --container:1450px;
     }
 
@@ -653,6 +652,47 @@
       color:#d9f2ff;
     }
 
+    .rules-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .rule-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:20px;
+      padding:18px;
+    }
+
+    .rule-card h3{
+      margin:0 0 10px 0;
+      font-size:18px;
+    }
+
+    .rule-card ul{
+      margin:0;
+      padding-left:18px;
+      color:#ece6ff;
+      line-height:1.65;
+      font-size:14px;
+    }
+
+    .rule-card li{
+      margin-bottom:6px;
+    }
+
+    .rule-highlight{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px 16px;
+      margin-top:12px;
+      color:#f3edff;
+      line-height:1.6;
+      font-size:14px;
+    }
+
     .empty{
       color:var(--muted);
       font-size:14px;
@@ -674,7 +714,8 @@
 
     @media (max-width: 1280px){
       .hero-grid,
-      .registered-layout{
+      .registered-layout,
+      .rules-grid{
         grid-template-columns:1fr;
       }
     }
@@ -709,10 +750,7 @@
         font-size:20px;
       }
 
-      .summary-stats{
-        grid-template-columns:1fr;
-      }
-
+      .summary-stats,
       .hero-stats{
         grid-template-columns:1fr;
       }
@@ -769,7 +807,7 @@
             <div class="hero-actions">
               <a href="#registrazione-team" class="btn btn-green">Iscrivi il tuo team</a>
               <a href="#classifica" class="btn btn-purple">Vai alla classifica</a>
-              <a href="#team-registrati" class="btn btn-blue">Vedi i team registrati</a>
+              <a href="#regolamento" class="btn btn-blue">Leggi il regolamento</a>
             </div>
 
             <div class="hero-stats">
@@ -934,6 +972,138 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="regolamento">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📜 Regolamento torneo</h2>
+          <p class="section-subtitle">Leggi con attenzione tutte le regole prima di giocare e prima di inviare i risultati.</p>
+        </div>
+      </div>
+
+      <div class="rules-grid">
+        <div class="rule-card">
+          <h3>👥 Formato torneo</h3>
+          <ul>
+            <li>Il torneo si svolge in modalità <strong>Terzetti (Trio)</strong>.</li>
+            <li>Ogni squadra deve essere composta da <strong>3 giocatori titolari</strong>.</li>
+            <li>Non sono ammessi quartetti o cambi non autorizzati dallo staff.</li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>🎮 Obbligo utilizzo Discord</h3>
+          <ul>
+            <li>Utilizzare le <strong>stanze vocali Discord ufficiali</strong>.</li>
+            <li>Aprire una <strong>stanza temporanea Trio</strong> nella sezione <strong>RØDA HUB</strong>.</li>
+            <li>Restare presenti in vocale per tutto il torneo.</li>
+          </ul>
+          <div class="rule-highlight">
+            ⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🚫 Restrizioni equipaggiamento</h3>
+          <ul>
+            <li>❌ Mine</li>
+            <li>❌ Claymore</li>
+            <li>❌ Psicogranate</li>
+            <li>❌ Granate stordenti</li>
+            <li>❌ Lacrimogeni</li>
+            <li>❌ Scarica elettrica</li>
+            <li>❌ Skin Terminator</li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>⚖️ Sistema disciplinare</h3>
+          <ul>
+            <li>1ª infrazione → <strong>Richiamo ufficiale</strong></li>
+            <li>2ª infrazione → <strong>Sottrazione punti</strong></li>
+            <li>3ª infrazione → <strong>Squalifica dal torneo</strong></li>
+          </ul>
+          <div class="rule-highlight">
+            Lo staff può applicare sanzioni immediate in caso di violazioni gravi.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🔫 Armi consentite</h3>
+          <ul>
+            <li>✅ Solo <strong>armi meta approvate dallo staff</strong>.</li>
+            <li>🎯 È ammesso <strong>1 solo cecchino per team</strong>.</li>
+          </ul>
+          <div class="rule-highlight">
+            ⚠️ Utilizzo di 2 cecchini → penalità immediata.<br>
+            ⚠️ Uso di armi non consentite → kill annullate o sottrazione punti.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🏆 Sistema di punteggio</h3>
+          <ul>
+            <li>Le <strong>kill del team si sommano tutte</strong>.</li>
+            <li>Formula ufficiale: <strong>Kill totali di squadra + Bonus Posizionamento</strong></li>
+          </ul>
+          <div class="rule-highlight">
+            🥇 1° posto → 10 punti<br>
+            🥈 2° posto → 6 punti<br>
+            🥉 3° posto → 5 punti<br>
+            4° posto → 4 punti<br>
+            5° posto → 3 punti<br>
+            6° posto → 2 punti<br>
+            7° posto → 1 punto<br>
+            8° posto → 1 punto
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>📸 Validazione risultati</h3>
+          <ul>
+            <li>Ogni team deve caricare lo <strong>screen nel canale dedicato</strong>.</li>
+            <li>Lo screen deve mostrare chiaramente:
+              <ul>
+                <li>classifica finale</li>
+                <li>numero totale kill di squadra</li>
+                <li>posizionamento</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>📝 Invio corretto del risultato</h3>
+          <ul>
+            <li>Nel messaggio è obbligatorio scrivere:
+              <ul>
+                <li>Nome Team</li>
+                <li>Posizione ottenuta</li>
+                <li>Kill totali di squadra</li>
+              </ul>
+            </li>
+            <li>Se una di queste informazioni manca, il risultato <strong>non verrà convalidato</strong>.</li>
+          </ul>
+          <div class="rule-highlight">
+            ✅ Esempio corretto:<br><br>
+            Team: RØDA Black<br>
+            Posizione: 2° Posto<br>
+            Kill Totali Squadra: 18<br><br>
+            Allegare screenshot sotto il messaggio.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>⚖️ Fair play</h3>
+          <ul>
+            <li>Vietato glitch, exploit o vantaggi illeciti.</li>
+            <li>Vietato comportamento tossico o antisportivo.</li>
+            <li>Rispetto obbligatorio verso staff e avversari.</li>
+            <li>Le decisioni dello staff sono definitive.</li>
+          </ul>
         </div>
       </div>
     </section>
