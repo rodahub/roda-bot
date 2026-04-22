@@ -165,6 +165,12 @@
       transform:translateY(-1px);
     }
 
+    .btn:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+      transform:none;
+    }
+
     .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
     .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
     .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
@@ -573,6 +579,80 @@
       gap:8px;
     }
 
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
+    }
+
+    input, textarea{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      outline:none;
+      font-size:14px;
+    }
+
+    input{
+      height:46px;
+    }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .row > *{
+      flex:1 1 auto;
+    }
+
+    .message-box{
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:14px;
+      font-weight:700;
+      margin-bottom:14px;
+      border:1px solid rgba(255,255,255,.08);
+      display:none;
+    }
+
+    .message-box.show{
+      display:block;
+    }
+
+    .message-success{
+      background:rgba(24,201,100,.10);
+      border-color:rgba(24,201,100,.24);
+      color:#b6ffd4;
+    }
+
+    .message-error{
+      background:rgba(255,77,109,.10);
+      border-color:rgba(255,77,109,.24);
+      color:#ffd0d9;
+    }
+
+    .message-info{
+      background:rgba(87,183,255,.10);
+      border-color:rgba(87,183,255,.24);
+      color:#d9f2ff;
+    }
+
     .empty{
       color:var(--muted);
       font-size:14px;
@@ -650,6 +730,10 @@
       .hero-actions .btn{
         width:100%;
       }
+
+      .row > *{
+        width:100%;
+      }
     }
   </style>
 </head>
@@ -679,10 +763,11 @@
             <div class="eyebrow">🏆 Torneo pubblico live</div>
             <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
             <div class="hero-text" id="heroTournamentText">
-              Segui classifica, top fragger e team registrati direttamente dal sito ufficiale del torneo.
+              Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.
             </div>
 
             <div class="hero-actions">
+              <a href="#registrazione-team" class="btn btn-green">Iscrivi il tuo team</a>
               <a href="#classifica" class="btn btn-purple">Vai alla classifica</a>
               <a href="#team-registrati" class="btn btn-blue">Vedi i team registrati</a>
             </div>
@@ -729,6 +814,76 @@
                 <strong id="heroFreeSlotsLine">0</strong>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="registrazione-team">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📝 Iscrivi il tuo team</h2>
+          <p class="section-subtitle">Compila i campi qui sotto per registrare il team al torneo.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Registrazione team</h3>
+          <div class="card-note">Il team verrà registrato solo se ci sono ancora posti disponibili e il nome non è già presente.</div>
+
+          <div id="registerMessage" class="message-box"></div>
+
+          <div class="field">
+            <label>Nome team</label>
+            <input type="text" id="registerTeamName" placeholder="Inserisci il nome del team" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 1</label>
+            <input type="text" id="registerP1" placeholder="Nome giocatore 1" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 2</label>
+            <input type="text" id="registerP2" placeholder="Nome giocatore 2" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 3</label>
+            <input type="text" id="registerP3" placeholder="Nome giocatore 3" />
+          </div>
+
+          <div class="row">
+            <button class="btn btn-green" id="registerTeamBtn">Registra team</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Informazioni registrazione</h3>
+          <div class="card-note">Controlla lo stato attuale prima di inviare la richiesta.</div>
+
+          <div class="summary-stats">
+            <div class="summary-mini">
+              <span>Registrazioni</span>
+              <strong id="registerInfoState">APERTE</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Team registrati</span>
+              <strong id="registerInfoTeams">0</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Massimo team</span>
+              <strong id="registerInfoMaxTeams">0</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Posti disponibili</span>
+              <strong id="registerInfoFreeTeams">0</strong>
+            </div>
+          </div>
+
+          <div class="card-note" style="margin-top:14px; margin-bottom:0" id="registerInfoText">
+            Se le registrazioni sono aperte puoi iscrivere subito il tuo team.
           </div>
         </div>
       </div>
@@ -876,6 +1031,7 @@
 
   <script>
     let publicData = null;
+    let isRegistering = false;
 
     function escapeHtml(text) {
       return String(text ?? '')
@@ -901,6 +1057,31 @@
 
       const data = await response.json();
       return { response, data };
+    }
+
+    function showRegisterMessage(type, text) {
+      const box = document.getElementById('registerMessage');
+      box.className = `message-box show ${type}`;
+      box.textContent = text;
+    }
+
+    function clearRegisterMessage() {
+      const box = document.getElementById('registerMessage');
+      box.className = 'message-box';
+      box.textContent = '';
+    }
+
+    function setRegisterButtonState(disabled, label = 'Registra team') {
+      const btn = document.getElementById('registerTeamBtn');
+      btn.disabled = disabled;
+      btn.textContent = label;
+    }
+
+    function clearRegisterForm() {
+      document.getElementById('registerTeamName').value = '';
+      document.getElementById('registerP1').value = '';
+      document.getElementById('registerP2').value = '';
+      document.getElementById('registerP3').value = '';
     }
 
     function renderPublicPage() {
@@ -954,6 +1135,18 @@
       document.getElementById('availableTeamsCount').textContent = String(availableCount);
       document.getElementById('maxTeamsCount').textContent = String(maxTeams);
       document.getElementById('registrationStateText').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      document.getElementById('registerInfoState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      document.getElementById('registerInfoTeams').textContent = String(registeredCount);
+      document.getElementById('registerInfoMaxTeams').textContent = String(maxTeams);
+      document.getElementById('registerInfoFreeTeams').textContent = String(availableCount);
+      document.getElementById('registerInfoText').textContent = registrationClosed
+        ? 'Le registrazioni sono chiuse perché il torneo è pieno.'
+        : 'Le registrazioni sono aperte. Puoi iscrivere il tuo team compilando il modulo.';
+
+      if (!isRegistering) {
+        setRegisterButtonState(registrationClosed, registrationClosed ? 'Registrazioni chiuse' : 'Registra team');
+      }
 
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = leaderboard.length
@@ -1027,6 +1220,53 @@
         document.getElementById('publicStatusPill').textContent = 'Errore connessione';
       }
     }
+
+    async function registerTeam() {
+      if (isRegistering) return;
+
+      const teamName = document.getElementById('registerTeamName').value.trim();
+      const p1 = document.getElementById('registerP1').value.trim();
+      const p2 = document.getElementById('registerP2').value.trim();
+      const p3 = document.getElementById('registerP3').value.trim();
+
+      if (!teamName || !p1 || !p2 || !p3) {
+        showRegisterMessage('message-error', 'Compila tutti i campi richiesti.');
+        return;
+      }
+
+      isRegistering = true;
+      clearRegisterMessage();
+      setRegisterButtonState(true, 'Registrazione in corso...');
+
+      try {
+        const result = await api('/api/public/register-team', {
+          method: 'POST',
+          body: JSON.stringify({ teamName, p1, p2, p3 })
+        });
+
+        if (!result.response.ok || !result.data.ok) {
+          showRegisterMessage('message-error', result.data.message || 'Errore durante la registrazione del team.');
+          return;
+        }
+
+        showRegisterMessage(
+          'message-success',
+          result.data.message || `Team registrato correttamente nello slot #${result.data.slot || '-'}.`
+        );
+
+        clearRegisterForm();
+        await loadPublicData();
+      } catch (error) {
+        console.error(error);
+        showRegisterMessage('message-error', 'Errore di connessione durante la registrazione.');
+      } finally {
+        isRegistering = false;
+        const registrationClosed = !Boolean(publicData?.torneo?.registrazioniAperte);
+        setRegisterButtonState(registrationClosed, registrationClosed ? 'Registrazioni chiuse' : 'Registra team');
+      }
+    }
+
+    document.getElementById('registerTeamBtn').addEventListener('click', registerTeam);
 
     loadPublicData();
     setInterval(loadPublicData, 15000);
