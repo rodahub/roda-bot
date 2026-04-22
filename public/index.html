@@ -10,19 +10,23 @@
       --bg-2:#090911;
       --panel:#11111b;
       --panel-2:#171726;
+      --panel-3:#1b1b2a;
       --line:rgba(160,110,255,.16);
       --line-strong:rgba(180,130,255,.28);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
       --purple-2:#9c5cff;
+      --purple-3:#b77dff;
       --green:#18c964;
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
+      --cyan:#4de2ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 28px rgba(123,44,255,.14);
+      --shadow-strong:0 0 0 1px rgba(162,109,255,.16), 0 0 40px rgba(123,44,255,.22);
       --radius:24px;
-      --container:1450px;
+      --container:1480px;
     }
 
     *{
@@ -52,8 +56,8 @@
       min-height:100vh;
       font-family:Inter,Arial,sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(123,44,255,.18), transparent 28%),
-        radial-gradient(circle at top right, rgba(123,44,255,.10), transparent 24%),
+        radial-gradient(circle at top left, rgba(123,44,255,.20), transparent 28%),
+        radial-gradient(circle at top right, rgba(87,183,255,.10), transparent 24%),
         radial-gradient(circle at bottom center, rgba(123,44,255,.10), transparent 30%),
         linear-gradient(180deg, #050507 0%, #090910 100%);
       color:var(--text);
@@ -73,7 +77,7 @@
       top:0;
       z-index:40;
       backdrop-filter:blur(14px);
-      background:linear-gradient(180deg, rgba(9,9,15,.88), rgba(9,9,15,.56));
+      background:linear-gradient(180deg, rgba(9,9,15,.90), rgba(9,9,15,.60));
       border-bottom:1px solid rgba(255,255,255,.05);
     }
 
@@ -179,31 +183,51 @@
       position:relative;
       overflow:hidden;
       background:
-        radial-gradient(circle at top left, rgba(123,44,255,.20), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(87,183,255,.12), transparent 26%),
-        linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+        radial-gradient(circle at 10% 10%, rgba(123,44,255,.26), transparent 28%),
+        radial-gradient(circle at 90% 20%, rgba(77,226,255,.10), transparent 22%),
+        radial-gradient(circle at 50% 100%, rgba(123,44,255,.14), transparent 35%),
+        linear-gradient(180deg, rgba(18,18,31,.98), rgba(10,10,18,.99));
       border:1px solid var(--line);
-      border-radius:32px;
-      padding:28px;
-      box-shadow:var(--shadow);
+      border-radius:34px;
+      padding:34px;
+      box-shadow:var(--shadow-strong);
       margin-bottom:18px;
+      isolation:isolate;
     }
 
     .hero::before{
       content:"";
       position:absolute;
-      inset:auto -120px -140px auto;
+      top:-120px;
+      right:-120px;
+      width:360px;
+      height:360px;
+      background:radial-gradient(circle, rgba(123,44,255,.18), transparent 70%);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      bottom:-140px;
+      left:-100px;
       width:320px;
       height:320px;
-      background:radial-gradient(circle, rgba(123,44,255,.16), transparent 70%);
+      background:radial-gradient(circle, rgba(87,183,255,.12), transparent 70%);
       pointer-events:none;
+      z-index:-1;
     }
 
     .hero-grid{
       display:grid;
-      grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);
+      grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);
       gap:18px;
       align-items:stretch;
+    }
+
+    .hero-left{
+      min-width:0;
     }
 
     .eyebrow{
@@ -212,30 +236,36 @@
       gap:8px;
       padding:10px 14px;
       border-radius:999px;
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.06);
-      color:#e6ddff;
+      color:#efe6ff;
       font-size:12px;
-      font-weight:800;
-      letter-spacing:.6px;
+      font-weight:900;
+      letter-spacing:.7px;
       text-transform:uppercase;
       margin-bottom:16px;
+      box-shadow:0 0 22px rgba(123,44,255,.12);
     }
 
     .hero-title{
-      font-size:54px;
-      line-height:1.02;
+      font-size:66px;
+      line-height:0.98;
       font-weight:1000;
       margin:0 0 12px 0;
-      letter-spacing:-1px;
+      letter-spacing:-1.8px;
+      text-shadow:0 0 20px rgba(123,44,255,.14);
+    }
+
+    .hero-title .accent{
+      color:#d9c1ff;
     }
 
     .hero-text{
       color:var(--muted);
       font-size:15px;
-      line-height:1.65;
+      line-height:1.75;
       max-width:760px;
-      margin-bottom:20px;
+      margin-bottom:22px;
     }
 
     .hero-actions{
@@ -252,11 +282,21 @@
     }
 
     .mini-stat{
-      background:rgba(255,255,255,.03);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
       border:1px solid rgba(255,255,255,.06);
-      border-radius:18px;
+      border-radius:20px;
       padding:16px;
       min-width:0;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .mini-stat::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(123,44,255,.08), transparent 60%);
+      pointer-events:none;
     }
 
     .mini-stat span{
@@ -267,6 +307,8 @@
       letter-spacing:.7px;
       margin-bottom:8px;
       font-weight:800;
+      position:relative;
+      z-index:1;
     }
 
     .mini-stat strong{
@@ -274,10 +316,17 @@
       font-weight:1000;
       display:block;
       word-break:break-word;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero-right{
+      display:grid;
+      gap:14px;
     }
 
     .side-card{
-      background:rgba(255,255,255,.03);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
       border:1px solid rgba(255,255,255,.06);
       border-radius:22px;
       padding:18px;
@@ -421,6 +470,12 @@
       gap:18px;
     }
 
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+    }
+
     .card{
       background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
       border:1px solid var(--line);
@@ -441,6 +496,25 @@
       font-size:13px;
       line-height:1.5;
       margin-bottom:14px;
+    }
+
+    .glow-card{
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid rgba(164,118,255,.22);
+      box-shadow:0 0 0 1px rgba(164,118,255,.08), 0 0 36px rgba(123,44,255,.14);
+    }
+
+    .glow-card::before{
+      content:"";
+      position:absolute;
+      inset:-40% auto auto -10%;
+      width:180px;
+      height:180px;
+      background:radial-gradient(circle, rgba(123,44,255,.12), transparent 72%);
+      pointer-events:none;
     }
 
     .table-wrap{
@@ -519,6 +593,76 @@
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.06);
       color:#e9e4fb;
+    }
+
+    .home-banner{
+      padding:18px 20px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .home-banner strong{
+      font-size:16px;
+    }
+
+    .home-quick{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .quick-card{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .quick-card::before{
+      content:"";
+      position:absolute;
+      inset:auto -30px -50px auto;
+      width:140px;
+      height:140px;
+      background:radial-gradient(circle, rgba(123,44,255,.10), transparent 70%);
+      pointer-events:none;
+    }
+
+    .quick-icon{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:24px;
+      margin-bottom:14px;
+      background:rgba(123,44,255,.12);
+      border:1px solid rgba(164,118,255,.20);
+      box-shadow:0 0 18px rgba(123,44,255,.12);
+    }
+
+    .quick-card h3{
+      margin:0 0 8px 0;
+      font-size:18px;
+    }
+
+    .quick-card p{
+      margin:0 0 14px 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
     }
 
     .field{
@@ -734,11 +878,16 @@
       .rules-grid{
         grid-template-columns:1fr;
       }
+
+      .home-quick{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
     }
 
     @media (max-width: 1100px){
       .grid-2,
-      .grid-3{
+      .grid-3,
+      .grid-4{
         grid-template-columns:1fr;
       }
 
@@ -755,11 +904,11 @@
       }
 
       .hero{
-        padding:20px;
+        padding:22px;
       }
 
       .hero-title{
-        font-size:34px;
+        font-size:40px;
       }
 
       .brand-title{
@@ -767,7 +916,8 @@
       }
 
       .summary-stats,
-      .hero-stats{
+      .hero-stats,
+      .home-quick{
         grid-template-columns:1fr;
       }
 
@@ -816,17 +966,20 @@
   <div class="wrap">
     <section class="hero">
       <div class="hero-grid">
-        <div>
-          <div class="eyebrow">🏆 Torneo pubblico live</div>
-          <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
+        <div class="hero-left">
+          <div class="eyebrow">🔥 Evento competitivo live</div>
+          <h1 class="hero-title">
+            <span id="heroTournamentTitle">RØDA CUP</span><br>
+            <span class="accent">ESPORTS TOURNAMENT</span>
+          </h1>
           <div class="hero-text" id="heroTournamentText">
-            Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.
+            Segui il torneo live, controlla le classifiche, scopri i team registrati e iscriviti subito con il tuo trio.
           </div>
 
           <div class="hero-actions">
             <button class="btn btn-green" data-go-page="page-register">Iscrivi il tuo team</button>
-            <button class="btn btn-purple" data-go-page="page-rankings">Vai alle classifiche</button>
-            <button class="btn btn-blue" data-go-page="page-rules">Leggi il regolamento</button>
+            <button class="btn btn-purple" data-go-page="page-rankings">Guarda classifiche</button>
+            <button class="btn btn-blue" data-go-page="page-rules">Leggi regolamento</button>
           </div>
 
           <div class="hero-stats">
@@ -849,7 +1002,7 @@
           </div>
         </div>
 
-        <div>
+        <div class="hero-right">
           <div class="side-card">
             <h3>📢 Stato torneo</h3>
             <p id="heroStateText">
@@ -871,6 +1024,11 @@
               </div>
             </div>
           </div>
+
+          <div class="side-card">
+            <h3>⚔️ Accesso rapido</h3>
+            <p>Muoviti velocemente tra registrazione, classifiche, team registrati e regolamento completo.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -884,32 +1042,73 @@
     </div>
 
     <section class="page active" id="page-home">
-      <div class="section-header">
+      <div class="home-banner">
         <div>
-          <h2 class="section-title">Panoramica torneo</h2>
-          <p class="section-subtitle">Qui trovi le informazioni principali del torneo in tempo reale.</p>
+          <strong id="homeBannerTitle">Registrazioni aperte</strong>
+          <div class="card-note" id="homeBannerText" style="margin:6px 0 0 0">
+            Il torneo sta accettando nuove squadre.
+          </div>
+        </div>
+        <div class="status-badge status-open" id="homeBannerBadge">APERTE</div>
+      </div>
+
+      <div class="home-quick">
+        <div class="quick-card">
+          <div class="quick-icon">📝</div>
+          <h3>Iscrivi il tuo trio</h3>
+          <p>Registra il tuo team direttamente dal sito pubblico e occupa subito uno slot disponibile.</p>
+          <button class="btn btn-green" data-go-page="page-register">Vai alla registrazione</button>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">🏆</div>
+          <h3>Segui la classifica live</h3>
+          <p>Controlla i punti dei team e il top fragger aggiornato del torneo.</p>
+          <button class="btn btn-purple" data-go-page="page-rankings">Apri classifiche</button>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">👥</div>
+          <h3>Guarda i team registrati</h3>
+          <p>Vedi tutti i team iscritti con slot assegnato e nomi dei giocatori.</p>
+          <button class="btn btn-blue" data-go-page="page-teams">Apri lista team</button>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">📜</div>
+          <h3>Leggi il regolamento</h3>
+          <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
+          <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
         </div>
       </div>
 
-      <div class="grid-3">
-        <div class="card">
-          <h3>📌 Match corrente</h3>
-          <div class="card-note">Numero del match attualmente attivo nel torneo.</div>
-          <div style="font-size:36px; font-weight:1000" id="bottomMatch">1</div>
-        </div>
-
-        <div class="card">
-          <h3>📈 Stato iscrizioni</h3>
-          <div class="card-note">Situazione attuale delle registrazioni del torneo.</div>
-          <div style="font-size:36px; font-weight:1000" id="bottomRegistrationState">APERTE</div>
-        </div>
-
-        <div class="card">
-          <h3>🔐 Accesso amministratore</h3>
+      <div class="grid-4">
+        <div class="card glow-card">
+          <h3>👥 Modalità Trio</h3>
           <div class="card-note">
-            Area riservata per gestione team, risultati, Discord e impostazioni.
+            Il torneo si gioca solo in modalità terzetti. Ogni squadra deve avere 3 titolari.
           </div>
-          <a href="/login" class="btn btn-purple" style="margin-top:8px">Apri accesso admin</a>
+        </div>
+
+        <div class="card glow-card">
+          <h3>🎮 Discord obbligatorio</h3>
+          <div class="card-note">
+            Tutti i team devono restare in vocale nelle stanze ufficiali per tutta la durata dell’evento.
+          </div>
+        </div>
+
+        <div class="card glow-card">
+          <h3>📸 Screenshot obbligatorio</h3>
+          <div class="card-note">
+            Ogni risultato deve essere inviato con screen chiaro di classifica, kill e posizione.
+          </div>
+        </div>
+
+        <div class="card glow-card">
+          <h3>⚖️ Fair play</h3>
+          <div class="card-note">
+            Vietati exploit, comportamenti tossici e vantaggi illeciti. Le decisioni dello staff sono definitive.
+          </div>
         </div>
       </div>
     </section>
@@ -1321,8 +1520,8 @@
       document.getElementById('heroTournamentTitle').textContent = tournamentName;
       document.getElementById('heroTournamentText').textContent =
         supportContact
-          ? `Segui classifica, team registrati e top fragger dal sito pubblico ufficiale. Supporto: ${supportContact}.`
-          : 'Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.';
+          ? `Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte. Supporto: ${supportContact}.`
+          : 'Segui il torneo live, controlla classifiche, team registrati e registrazioni aperte direttamente dal portale ufficiale.';
 
       document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
       document.getElementById('heroTeams').textContent = registeredCount;
@@ -1344,6 +1543,17 @@
       document.getElementById('publicStatusPill').textContent = registrationClosed
         ? 'Registrazioni chiuse'
         : 'Registrazioni aperte';
+
+      document.getElementById('homeBannerTitle').textContent = registrationClosed
+        ? 'Registrazioni chiuse'
+        : 'Registrazioni aperte';
+      document.getElementById('homeBannerText').textContent = registrationClosed
+        ? 'Il torneo ha raggiunto il numero massimo di squadre registrate.'
+        : `Sono disponibili ancora ${availableCount} posti per nuove squadre.`;
+
+      const homeBannerBadge = document.getElementById('homeBannerBadge');
+      homeBannerBadge.textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      homeBannerBadge.className = `status-badge ${registrationClosed ? 'status-full' : 'status-open'}`;
 
       document.getElementById('registeredTeamsSummaryPill').textContent = `${registeredCount} / ${maxTeams} team`;
       document.getElementById('registeredTeamsCount').textContent = String(registeredCount);
