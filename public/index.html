@@ -68,16 +68,10 @@
       text-decoration:none;
     }
 
-    .wrap{
-      max-width:var(--container);
-      margin:0 auto;
-      padding:0 20px 30px 20px;
-    }
-
     .topbar{
       position:sticky;
       top:0;
-      z-index:30;
+      z-index:40;
       backdrop-filter:blur(14px);
       background:linear-gradient(180deg, rgba(9,9,15,.88), rgba(9,9,15,.56));
       border-bottom:1px solid rgba(255,255,255,.05);
@@ -175,11 +169,13 @@
     .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
     .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
 
-    .hero{
-      padding:34px 0 20px 0;
+    .wrap{
+      max-width:var(--container);
+      margin:0 auto;
+      padding:22px 20px 30px 20px;
     }
 
-    .hero-box{
+    .hero{
       position:relative;
       overflow:hidden;
       background:
@@ -188,11 +184,12 @@
         linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
       border:1px solid var(--line);
       border-radius:32px;
-      padding:30px;
+      padding:28px;
       box-shadow:var(--shadow);
+      margin-bottom:18px;
     }
 
-    .hero-box::before{
+    .hero::before{
       content:"";
       position:absolute;
       inset:auto -120px -140px auto;
@@ -204,13 +201,9 @@
 
     .hero-grid{
       display:grid;
-      grid-template-columns:minmax(0,1.3fr) minmax(320px,.7fr);
+      grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);
       gap:18px;
       align-items:stretch;
-    }
-
-    .hero-left{
-      min-width:0;
     }
 
     .eyebrow{
@@ -283,11 +276,6 @@
       word-break:break-word;
     }
 
-    .hero-right{
-      display:grid;
-      gap:14px;
-    }
-
     .side-card{
       background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.06);
@@ -310,6 +298,7 @@
     .status-box{
       display:grid;
       gap:10px;
+      margin-top:14px;
     }
 
     .status-line{
@@ -353,8 +342,49 @@
       border-color:rgba(255,77,109,.28);
     }
 
-    .section{
-      margin-top:20px;
+    .tabbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .tab-btn{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#f2ecff;
+      border-radius:14px;
+      min-height:46px;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .tab-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(160,110,255,.22);
+    }
+
+    .tab-btn.active{
+      background:linear-gradient(135deg, rgba(123,44,255,.22), rgba(156,92,255,.16));
+      border-color:rgba(160,110,255,.30);
+      box-shadow:var(--shadow);
+    }
+
+    .page{
+      display:none;
+      animation:fadeIn .18s ease;
+    }
+
+    .page.active{
+      display:block;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:.45; transform:translateY(4px);}
+      to{opacity:1; transform:none;}
     }
 
     .section-header{
@@ -491,93 +521,6 @@
       color:#e9e4fb;
     }
 
-    .registered-layout{
-      display:grid;
-      grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr);
-      gap:18px;
-      align-items:start;
-    }
-
-    .registered-summary{
-      display:grid;
-      gap:12px;
-    }
-
-    .summary-box{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:20px;
-      padding:16px;
-    }
-
-    .summary-box h4{
-      margin:0 0 10px 0;
-      font-size:15px;
-    }
-
-    .summary-stats{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:10px;
-    }
-
-    .summary-mini{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:14px;
-      padding:12px;
-    }
-
-    .summary-mini span{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-    }
-
-    .summary-mini strong{
-      font-size:22px;
-    }
-
-    .slot-preview{
-      display:grid;
-      gap:10px;
-      max-height:520px;
-      overflow:auto;
-      padding-right:2px;
-    }
-
-    .slot-card{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      padding:14px;
-      border-radius:18px;
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.06);
-    }
-
-    .slot-card-left{
-      min-width:0;
-      flex:1;
-    }
-
-    .slot-card-title{
-      font-size:16px;
-      font-weight:900;
-      margin-bottom:8px;
-      word-break:break-word;
-    }
-
-    .slot-card-players{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-
     .field{
       display:grid;
       gap:8px;
@@ -590,7 +533,7 @@
       font-weight:700;
     }
 
-    input, textarea{
+    input{
       width:100%;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
@@ -599,15 +542,7 @@
       padding:12px 14px;
       outline:none;
       font-size:14px;
-    }
-
-    input{
       height:46px;
-    }
-
-    textarea{
-      min-height:100px;
-      resize:vertical;
     }
 
     .row{
@@ -646,10 +581,91 @@
       color:#ffd0d9;
     }
 
-    .message-info{
-      background:rgba(87,183,255,.10);
-      border-color:rgba(87,183,255,.24);
-      color:#d9f2ff;
+    .summary-stats{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .summary-mini{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .summary-mini span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .summary-mini strong{
+      font-size:22px;
+    }
+
+    .registered-layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    .registered-summary{
+      display:grid;
+      gap:12px;
+    }
+
+    .summary-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:20px;
+      padding:16px;
+    }
+
+    .summary-box h4{
+      margin:0 0 10px 0;
+      font-size:15px;
+    }
+
+    .slot-preview{
+      display:grid;
+      gap:10px;
+      max-height:520px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .slot-card{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .slot-card-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .slot-card-title{
+      font-size:16px;
+      font-weight:900;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .slot-card-players{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
     }
 
     .rules-grid{
@@ -732,13 +748,13 @@
     }
 
     @media (max-width: 760px){
-      .wrap,
-      .topbar-inner{
+      .topbar-inner,
+      .wrap{
         padding-left:14px;
         padding-right:14px;
       }
 
-      .hero-box{
+      .hero{
         padding:20px;
       }
 
@@ -772,6 +788,10 @@
       .row > *{
         width:100%;
       }
+
+      .tab-btn{
+        width:100%;
+      }
     }
   </style>
 </head>
@@ -795,50 +815,48 @@
 
   <div class="wrap">
     <section class="hero">
-      <div class="hero-box">
-        <div class="hero-grid">
-          <div class="hero-left">
-            <div class="eyebrow">🏆 Torneo pubblico live</div>
-            <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
-            <div class="hero-text" id="heroTournamentText">
-              Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.
-            </div>
-
-            <div class="hero-actions">
-              <a href="#registrazione-team" class="btn btn-green">Iscrivi il tuo team</a>
-              <a href="#classifica" class="btn btn-purple">Vai alla classifica</a>
-              <a href="#regolamento" class="btn btn-blue">Leggi il regolamento</a>
-            </div>
-
-            <div class="hero-stats">
-              <div class="mini-stat">
-                <span>Match corrente</span>
-                <strong id="heroMatch">1</strong>
-              </div>
-              <div class="mini-stat">
-                <span>Team registrati</span>
-                <strong id="heroTeams">0</strong>
-              </div>
-              <div class="mini-stat">
-                <span>Top fragger</span>
-                <strong id="heroFragger">-</strong>
-              </div>
-              <div class="mini-stat">
-                <span>Posti disponibili</span>
-                <strong id="heroFreeSlotsStat">0</strong>
-              </div>
-            </div>
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">🏆 Torneo pubblico live</div>
+          <h1 class="hero-title" id="heroTournamentTitle">RØDA CUP</h1>
+          <div class="hero-text" id="heroTournamentText">
+            Segui classifica, team registrati e top fragger direttamente dal sito ufficiale del torneo.
           </div>
 
-          <div class="hero-right">
-            <div class="side-card">
-              <h3>📢 Stato torneo</h3>
-              <p id="heroStateText">
-                Tutti i dati mostrati qui sono aggiornati in base allo stato attuale del torneo.
-              </p>
-            </div>
+          <div class="hero-actions">
+            <button class="btn btn-green" data-go-page="page-register">Iscrivi il tuo team</button>
+            <button class="btn btn-purple" data-go-page="page-rankings">Vai alle classifiche</button>
+            <button class="btn btn-blue" data-go-page="page-rules">Leggi il regolamento</button>
+          </div>
 
-            <div class="side-card status-box">
+          <div class="hero-stats">
+            <div class="mini-stat">
+              <span>Match corrente</span>
+              <strong id="heroMatch">1</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Team registrati</span>
+              <strong id="heroTeams">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Top fragger</span>
+              <strong id="heroFragger">-</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Posti disponibili</span>
+              <strong id="heroFreeSlotsStat">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-card">
+            <h3>📢 Stato torneo</h3>
+            <p id="heroStateText">
+              Tutti i dati mostrati qui sono aggiornati in base allo stato attuale del torneo.
+            </p>
+
+            <div class="status-box">
               <div class="status-line">
                 <span>Registrazioni</span>
                 <strong id="heroRegistrationBadge" class="status-badge status-open">APERTE</strong>
@@ -857,17 +875,105 @@
       </div>
     </section>
 
-    <section class="section" id="registrazione-team">
+    <div class="tabbar">
+      <button class="tab-btn active" data-page="page-home">🏠 Home</button>
+      <button class="tab-btn" data-page="page-rankings">🏆 Classifiche</button>
+      <button class="tab-btn" data-page="page-register">📝 Registrazione</button>
+      <button class="tab-btn" data-page="page-teams">👥 Team registrati</button>
+      <button class="tab-btn" data-page="page-rules">📜 Regolamento</button>
+    </div>
+
+    <section class="page active" id="page-home">
       <div class="section-header">
         <div>
-          <h2 class="section-title">📝 Iscrivi il tuo team</h2>
-          <p class="section-subtitle">Compila i campi qui sotto per registrare il team al torneo.</p>
+          <h2 class="section-title">Panoramica torneo</h2>
+          <p class="section-subtitle">Qui trovi le informazioni principali del torneo in tempo reale.</p>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>📌 Match corrente</h3>
+          <div class="card-note">Numero del match attualmente attivo nel torneo.</div>
+          <div style="font-size:36px; font-weight:1000" id="bottomMatch">1</div>
+        </div>
+
+        <div class="card">
+          <h3>📈 Stato iscrizioni</h3>
+          <div class="card-note">Situazione attuale delle registrazioni del torneo.</div>
+          <div style="font-size:36px; font-weight:1000" id="bottomRegistrationState">APERTE</div>
+        </div>
+
+        <div class="card">
+          <h3>🔐 Accesso amministratore</h3>
+          <div class="card-note">
+            Area riservata per gestione team, risultati, Discord e impostazioni.
+          </div>
+          <a href="/login" class="btn btn-purple" style="margin-top:8px">Apri accesso admin</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-rankings">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">🏆 Classifiche</h2>
+          <p class="section-subtitle">Classifica live dei team e top fragger del torneo.</p>
         </div>
       </div>
 
       <div class="grid-2">
         <div class="card">
-          <h3>Registrazione team</h3>
+          <h3>Classifica team</h3>
+          <div class="card-note">Ordine generale dei team in base ai punti totali.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team</th>
+                  <th>Punti</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🔥 Top fragger</h3>
+          <div class="card-note">I giocatori con più uccisioni registrate nel torneo.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Giocatore</th>
+                  <th>Uccisioni</th>
+                </tr>
+              </thead>
+              <tbody id="fraggerBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-register">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📝 Registrazione team</h2>
+          <p class="section-subtitle">Compila il modulo per iscrivere il tuo team al torneo.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Iscrivi il tuo team</h3>
           <div class="card-note">Il team verrà registrato solo se ci sono ancora posti disponibili e il nome non è già presente.</div>
 
           <div id="registerMessage" class="message-box"></div>
@@ -927,56 +1033,69 @@
       </div>
     </section>
 
-    <section class="section" id="classifica">
+    <section class="page" id="page-teams">
       <div class="section-header">
         <div>
-          <h2 class="section-title">🏆 Classifica live</h2>
-          <p class="section-subtitle">La classifica dei team con i punti aggiornati del torneo.</p>
+          <h2 class="section-title">👥 Team registrati</h2>
+          <p class="section-subtitle">Elenco pubblico dei team iscritti con slot assegnato e giocatori.</p>
         </div>
+        <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
       </div>
 
-      <div class="grid-2">
+      <div class="registered-layout">
         <div class="card">
-          <h3>Classifica team</h3>
-          <div class="card-note">Ordine generale dei team in base ai punti totali.</div>
+          <h3>Lista team</h3>
+          <div class="card-note">Situazione completa dei team registrati al torneo.</div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th>Slot</th>
                   <th>Team</th>
-                  <th>Punti</th>
+                  <th>Giocatori</th>
                 </tr>
               </thead>
-              <tbody id="leaderboardBody">
-                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              <tbody id="registeredTeamsBody">
+                <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="card">
-          <h3>🔥 Top fragger</h3>
-          <div class="card-note">I giocatori con più uccisioni registrate nel torneo.</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Giocatore</th>
-                  <th>Uccisioni</th>
-                </tr>
-              </thead>
-              <tbody id="fraggerBody">
-                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
-              </tbody>
-            </table>
+        <div class="registered-summary">
+          <div class="summary-box">
+            <h4>📊 Stato registrazioni</h4>
+            <div class="summary-stats">
+              <div class="summary-mini">
+                <span>Registrati</span>
+                <strong id="registeredTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Disponibili</span>
+                <strong id="availableTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Massimo team</span>
+                <strong id="maxTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Stato</span>
+                <strong id="registrationStateText">APERTE</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h4>🏷️ Anteprima slot</h4>
+            <div class="slot-preview" id="slotPreviewList">
+              <div class="empty">Nessun team registrato</div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="regolamento">
+    <section class="page" id="page-rules">
       <div class="section-header">
         <div>
           <h2 class="section-title">📜 Regolamento torneo</h2>
@@ -1108,92 +1227,6 @@
       </div>
     </section>
 
-    <section class="section" id="team-registrati">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">👥 Team registrati</h2>
-          <p class="section-subtitle">Elenco pubblico dei team iscritti con slot assegnato e giocatori.</p>
-        </div>
-        <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
-      </div>
-
-      <div class="registered-layout">
-        <div class="card">
-          <h3>Lista team</h3>
-          <div class="card-note">Situazione completa dei team registrati al torneo.</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Slot</th>
-                  <th>Team</th>
-                  <th>Giocatori</th>
-                </tr>
-              </thead>
-              <tbody id="registeredTeamsBody">
-                <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="registered-summary">
-          <div class="summary-box">
-            <h4>📊 Stato registrazioni</h4>
-            <div class="summary-stats">
-              <div class="summary-mini">
-                <span>Registrati</span>
-                <strong id="registeredTeamsCount">0</strong>
-              </div>
-              <div class="summary-mini">
-                <span>Disponibili</span>
-                <strong id="availableTeamsCount">0</strong>
-              </div>
-              <div class="summary-mini">
-                <span>Massimo team</span>
-                <strong id="maxTeamsCount">0</strong>
-              </div>
-              <div class="summary-mini">
-                <span>Stato</span>
-                <strong id="registrationStateText">APERTE</strong>
-              </div>
-            </div>
-          </div>
-
-          <div class="summary-box">
-            <h4>🏷️ Anteprima slot</h4>
-            <div class="slot-preview" id="slotPreviewList">
-              <div class="empty">Nessun team registrato</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="grid-3">
-        <div class="card">
-          <h3>📌 Match corrente</h3>
-          <div class="card-note">Numero del match attualmente attivo nel torneo.</div>
-          <div style="font-size:36px; font-weight:1000" id="bottomMatch">1</div>
-        </div>
-
-        <div class="card">
-          <h3>📈 Stato iscrizioni</h3>
-          <div class="card-note">Situazione attuale delle registrazioni del torneo.</div>
-          <div style="font-size:36px; font-weight:1000" id="bottomRegistrationState">APERTE</div>
-        </div>
-
-        <div class="card">
-          <h3>🔐 Accesso amministratore</h3>
-          <div class="card-note">
-            Area riservata per gestione team, risultati, Discord e impostazioni.
-          </div>
-          <a href="/login" class="btn btn-purple" style="margin-top:8px">Apri accesso admin</a>
-        </div>
-      </div>
-    </section>
-
     <div class="footer">
       Portale pubblico torneo • <a class="public-admin-link" href="/login">Accesso admin</a>
     </div>
@@ -1210,6 +1243,18 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+    }
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.toggle('active', page.id === pageId);
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === pageId);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function api(url, options = {}) {
@@ -1426,6 +1471,7 @@
 
         clearRegisterForm();
         await loadPublicData();
+        switchPage('page-register');
       } catch (error) {
         console.error(error);
         showRegisterMessage('message-error', 'Errore di connessione durante la registrazione.');
@@ -1436,8 +1482,17 @@
       }
     }
 
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.page));
+    });
+
+    document.querySelectorAll('[data-go-page]').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.goPage));
+    });
+
     document.getElementById('registerTeamBtn').addEventListener('click', registerTeam);
 
+    switchPage('page-home');
     loadPublicData();
     setInterval(loadPublicData, 15000);
   </script>
