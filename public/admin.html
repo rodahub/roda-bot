@@ -325,7 +325,7 @@
       font-weight:700;
     }
 
-    input, select, textarea{
+    input, textarea{
       width:100%;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
@@ -336,24 +336,16 @@
       font-size:14px;
     }
 
-    input, select{ height:46px; }
+    input{ height:46px; }
+
     textarea{
       min-height:100px;
       resize:vertical;
     }
+
     input[type="file"]{
       padding:10px 14px;
       height:auto;
-    }
-
-    select{
-      color:#fff;
-      background:#11111a;
-    }
-
-    option{
-      color:#111;
-      background:#fff;
     }
 
     .row{
@@ -912,6 +904,160 @@
       z-index:3;
     }
 
+    /* Dropdown personalizzati */
+    .custom-dropdown{
+      position:relative;
+      width:100%;
+    }
+
+    .custom-dropdown.disabled{
+      opacity:.6;
+      pointer-events:none;
+    }
+
+    .dropdown-trigger{
+      width:100%;
+      min-height:46px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      cursor:pointer;
+      transition:.18s ease;
+      user-select:none;
+    }
+
+    .dropdown-trigger:hover{
+      border-color:rgba(160,110,255,.22);
+      background:rgba(255,255,255,.045);
+    }
+
+    .custom-dropdown.open .dropdown-trigger,
+    .dropdown-trigger:focus-visible{
+      border-color:rgba(160,110,255,.35);
+      box-shadow:0 0 0 3px rgba(123,44,255,.12);
+      outline:none;
+    }
+
+    .dropdown-trigger-text{
+      min-width:0;
+      flex:1;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .dropdown-trigger-icon{
+      flex-shrink:0;
+      color:#d4c4ff;
+      transition:transform .18s ease;
+      font-size:12px;
+    }
+
+    .custom-dropdown.open .dropdown-trigger-icon{
+      transform:rotate(180deg);
+    }
+
+    .dropdown-menu{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      right:0;
+      z-index:1200;
+      background:linear-gradient(180deg, rgba(19,19,31,.98), rgba(10,10,18,.98));
+      border:1px solid rgba(160,110,255,.20);
+      border-radius:18px;
+      box-shadow:0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(162,109,255,.08);
+      padding:10px;
+      display:none;
+    }
+
+    .custom-dropdown.open .dropdown-menu{
+      display:block;
+    }
+
+    .dropdown-search-wrap{
+      margin-bottom:8px;
+    }
+
+    .dropdown-search{
+      width:100%;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+    }
+
+    .dropdown-search:focus{
+      border-color:rgba(160,110,255,.35);
+      box-shadow:0 0 0 3px rgba(123,44,255,.12);
+    }
+
+    .dropdown-options{
+      max-height:240px;
+      overflow:auto;
+      display:grid;
+      gap:6px;
+      padding-right:2px;
+    }
+
+    .dropdown-option{
+      width:100%;
+      border:1px solid transparent;
+      background:rgba(255,255,255,.03);
+      color:#f7f4ff;
+      border-radius:12px;
+      padding:11px 12px;
+      text-align:left;
+      cursor:pointer;
+      font-size:13px;
+      line-height:1.35;
+      transition:.16s ease;
+    }
+
+    .dropdown-option:hover{
+      background:rgba(123,44,255,.12);
+      border-color:rgba(160,110,255,.18);
+    }
+
+    .dropdown-option.active{
+      background:linear-gradient(135deg, rgba(123,44,255,.18), rgba(156,92,255,.12));
+      border-color:rgba(160,110,255,.26);
+    }
+
+    .dropdown-option-empty{
+      padding:12px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+      background:rgba(255,255,255,.02);
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .dropdown-option-title{
+      font-weight:800;
+      margin-bottom:3px;
+      word-break:break-word;
+    }
+
+    .dropdown-option-subtitle{
+      color:var(--muted);
+      font-size:12px;
+      word-break:break-word;
+    }
+
     @media (max-width: 1450px){
       .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
       .grid-4, .quick-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -1215,7 +1361,7 @@
 
               <div class="field">
                 <label>Seleziona team esistente</label>
-                <select id="teamSelect" onchange="loadSelectedTeam()"></select>
+                <div id="teamSelectDropdown"></div>
               </div>
 
               <div class="field">
@@ -1288,7 +1434,7 @@
 
               <div class="field">
                 <label>Team</label>
-                <select id="webResultTeam"></select>
+                <div id="webResultTeamDropdown"></div>
               </div>
 
               <div class="field">
@@ -1329,7 +1475,7 @@
 
               <div class="field">
                 <label>Seleziona giocatore</label>
-                <select id="fraggerSelect" onchange="loadSelectedFragger()"></select>
+                <div id="fraggerSelectDropdown"></div>
               </div>
 
               <div class="field">
@@ -1567,6 +1713,7 @@
   <script>
     let dashboard = null;
     let loading = false;
+    let customDropdowns = {};
 
     const pageMeta = {
       'page-overview': {
@@ -1679,8 +1826,205 @@
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         closeImageModal();
+        closeAllDropdowns();
       }
     });
+
+    document.addEventListener('click', (event) => {
+      const insideDropdown = event.target.closest('.custom-dropdown');
+      if (!insideDropdown) {
+        closeAllDropdowns();
+      }
+    });
+
+    function closeAllDropdowns(exceptId = null) {
+      Object.values(customDropdowns).forEach(dropdown => {
+        if (dropdown.id !== exceptId) {
+          dropdown.root.classList.remove('open');
+        }
+      });
+    }
+
+    function createCustomDropdown({
+      mountId,
+      dropdownId,
+      placeholder = 'Seleziona',
+      searchable = true,
+      onChange = null
+    }) {
+      const mount = document.getElementById(mountId);
+      if (!mount) return null;
+
+      mount.innerHTML = `
+        <div class="custom-dropdown" data-dropdown-id="${escapeHtml(dropdownId)}">
+          <button type="button" class="dropdown-trigger">
+            <span class="dropdown-trigger-text">${escapeHtml(placeholder)}</span>
+            <span class="dropdown-trigger-icon">⌄</span>
+          </button>
+          <div class="dropdown-menu">
+            ${searchable ? `
+              <div class="dropdown-search-wrap">
+                <input type="text" class="dropdown-search" placeholder="Cerca..." />
+              </div>
+            ` : ''}
+            <div class="dropdown-options"></div>
+          </div>
+        </div>
+      `;
+
+      const root = mount.querySelector('.custom-dropdown');
+      const trigger = root.querySelector('.dropdown-trigger');
+      const triggerText = root.querySelector('.dropdown-trigger-text');
+      const menu = root.querySelector('.dropdown-menu');
+      const searchInput = root.querySelector('.dropdown-search');
+      const optionsWrap = root.querySelector('.dropdown-options');
+
+      const dropdown = {
+        id: dropdownId,
+        mountId,
+        root,
+        trigger,
+        triggerText,
+        menu,
+        searchInput,
+        optionsWrap,
+        placeholder,
+        searchable,
+        options: [],
+        filteredOptions: [],
+        value: '',
+        onChange
+      };
+
+      trigger.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willOpen = !root.classList.contains('open');
+        closeAllDropdowns(willOpen ? dropdownId : null);
+        root.classList.toggle('open', willOpen);
+        if (willOpen && searchInput) {
+          setTimeout(() => searchInput.focus(), 0);
+        }
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('click', (event) => event.stopPropagation());
+        searchInput.addEventListener('input', () => {
+          renderDropdownOptions(dropdown, searchInput.value);
+        });
+      }
+
+      customDropdowns[dropdownId] = dropdown;
+      renderDropdownOptions(dropdown, '');
+      return dropdown;
+    }
+
+    function setDropdownOptions(dropdownId, options = []) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+
+      dropdown.options = Array.isArray(options) ? options.slice() : [];
+      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
+
+      const hasCurrent = dropdown.options.some(option => option.value === dropdown.value);
+      if (!hasCurrent) {
+        dropdown.value = '';
+        dropdown.triggerText.textContent = dropdown.placeholder;
+      } else {
+        updateDropdownTrigger(dropdown);
+      }
+    }
+
+    function renderDropdownOptions(dropdown, searchTerm = '') {
+      const term = String(searchTerm || '').trim().toLowerCase();
+
+      dropdown.filteredOptions = dropdown.options.filter(option => {
+        if (!term) return true;
+        const title = String(option.label || '').toLowerCase();
+        const subtitle = String(option.subtitle || '').toLowerCase();
+        return title.includes(term) || subtitle.includes(term);
+      });
+
+      if (!dropdown.filteredOptions.length) {
+        dropdown.optionsWrap.innerHTML = `<div class="dropdown-option-empty">Nessun elemento trovato</div>`;
+        return;
+      }
+
+      dropdown.optionsWrap.innerHTML = dropdown.filteredOptions.map(option => `
+        <button
+          type="button"
+          class="dropdown-option ${option.value === dropdown.value ? 'active' : ''}"
+          data-value="${escapeHtml(option.value)}"
+        >
+          <div class="dropdown-option-title">${escapeHtml(option.label)}</div>
+          ${option.subtitle ? `<div class="dropdown-option-subtitle">${escapeHtml(option.subtitle)}</div>` : ''}
+        </button>
+      `).join('');
+
+      dropdown.optionsWrap.querySelectorAll('.dropdown-option').forEach(button => {
+        button.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const value = button.dataset.value || '';
+          setDropdownValue(dropdown.id, value, true);
+          dropdown.root.classList.remove('open');
+        });
+      });
+    }
+
+    function updateDropdownTrigger(dropdown) {
+      const selected = dropdown.options.find(option => option.value === dropdown.value);
+      dropdown.triggerText.textContent = selected ? selected.label : dropdown.placeholder;
+    }
+
+    function setDropdownValue(dropdownId, value, triggerChange = false) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+
+      dropdown.value = value || '';
+      updateDropdownTrigger(dropdown);
+      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
+
+      if (triggerChange && typeof dropdown.onChange === 'function') {
+        dropdown.onChange(dropdown.value);
+      }
+    }
+
+    function getDropdownValue(dropdownId) {
+      return customDropdowns[dropdownId]?.value || '';
+    }
+
+    function resetDropdownSearch(dropdownId) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+      if (dropdown.searchInput) {
+        dropdown.searchInput.value = '';
+      }
+      renderDropdownOptions(dropdown, '');
+    }
+
+    function initializeDropdowns() {
+      createCustomDropdown({
+        mountId: 'teamSelectDropdown',
+        dropdownId: 'teamSelect',
+        placeholder: 'Seleziona team',
+        searchable: true,
+        onChange: loadSelectedTeam
+      });
+
+      createCustomDropdown({
+        mountId: 'webResultTeamDropdown',
+        dropdownId: 'webResultTeam',
+        placeholder: 'Seleziona team',
+        searchable: true
+      });
+
+      createCustomDropdown({
+        mountId: 'fraggerSelectDropdown',
+        dropdownId: 'fraggerSelect',
+        placeholder: 'Seleziona giocatore',
+        searchable: true,
+        onChange: loadSelectedFragger
+      });
+    }
 
     function renderSetupChecks(statoSetup) {
       const controlli = statoSetup?.controlli || {};
@@ -1914,23 +2258,24 @@
           `).join('')
         : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
 
-      const optionMarkup = [
-        `<option value="">Seleziona</option>`,
-        ...teamOrdinati.map(team => `<option value="${escapeHtml(team.team)}">#${team.slot || '-'} • ${escapeHtml(team.team)}</option>`)
-      ].join('');
+      const teamOptions = teamOrdinati.map(team => ({
+        value: team.team,
+        label: `#${team.slot || '-'} • ${team.team}`,
+        subtitle: (team.players || []).join(' • ')
+      }));
 
-      document.getElementById('teamSelect').innerHTML = optionMarkup;
-      document.getElementById('webResultTeam').innerHTML = optionMarkup;
+      setDropdownOptions('teamSelect', teamOptions);
+      setDropdownOptions('webResultTeam', teamOptions);
 
-      const scoreTeamSelect = document.getElementById('scoreTeam');
-      if (scoreTeamSelect) scoreTeamSelect.innerHTML = optionMarkup;
+      const fraggerOptions = classificaFragger
+        .map(item => ({
+          value: item.nome,
+          label: item.nome,
+          subtitle: `${Number(item.uccisioni || 0)} uccisioni`
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'it'));
 
-      const fraggerSelect = document.getElementById('fraggerSelect');
-      const fraggerEntries = classificaFragger.map(item => item.nome).sort((a, b) => a.localeCompare(b, 'it'));
-      fraggerSelect.innerHTML = [
-        `<option value="">Seleziona giocatore</option>`,
-        ...fraggerEntries.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
-      ].join('');
+      setDropdownOptions('fraggerSelect', fraggerOptions);
 
       const pendingList = document.getElementById('pendingList');
       pendingList.innerHTML = risultatiInAttesa.length
@@ -2029,7 +2374,7 @@
 
     function loadSelectedTeam() {
       if (!dashboard) return;
-      const selected = document.getElementById('teamSelect').value;
+      const selected = getDropdownValue('teamSelect');
       const team = dashboard.teams?.[selected];
 
       if (!team) {
@@ -2044,7 +2389,8 @@
     }
 
     function newTeamForm() {
-      document.getElementById('teamSelect').value = '';
+      setDropdownValue('teamSelect', '');
+      resetDropdownSearch('teamSelect');
       document.getElementById('teamName').value = '';
       document.getElementById('teamP1').value = '';
       document.getElementById('teamP2').value = '';
@@ -2076,7 +2422,7 @@
     }
 
     async function saveTeam() {
-      const oldTeamName = document.getElementById('teamSelect').value;
+      const oldTeamName = getDropdownValue('teamSelect');
       const teamName = document.getElementById('teamName').value.trim();
       const p1 = document.getElementById('teamP1').value.trim();
       const p2 = document.getElementById('teamP2').value.trim();
@@ -2094,13 +2440,13 @@
       }
 
       await refreshDashboard();
-      document.getElementById('teamSelect').value = teamName;
+      setDropdownValue('teamSelect', teamName);
       loadSelectedTeam();
       setStatus('Team salvato correttamente');
     }
 
     async function deleteTeam() {
-      const teamName = document.getElementById('teamSelect').value || document.getElementById('teamName').value.trim();
+      const teamName = getDropdownValue('teamSelect') || document.getElementById('teamName').value.trim();
       if (!teamName) {
         alert('Seleziona un team');
         return;
@@ -2126,7 +2472,7 @@
 
     function loadSelectedFragger() {
       if (!dashboard) return;
-      const name = document.getElementById('fraggerSelect').value;
+      const name = getDropdownValue('fraggerSelect');
       const found = (dashboard.classificaFragger || []).find(item => item.nome === name);
 
       document.getElementById('fraggerName').value = name || '';
@@ -2149,13 +2495,13 @@
       }
 
       await refreshDashboard();
-      document.getElementById('fraggerSelect').value = player;
+      setDropdownValue('fraggerSelect', player);
       loadSelectedFragger();
       setStatus('Giocatore salvato correttamente');
     }
 
     async function deleteFragger() {
-      const player = document.getElementById('fraggerSelect').value || document.getElementById('fraggerName').value.trim();
+      const player = getDropdownValue('fraggerSelect') || document.getElementById('fraggerName').value.trim();
       if (!player) {
         alert('Seleziona un giocatore');
         return;
@@ -2176,6 +2522,8 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
+      setDropdownValue('fraggerSelect', '');
+      resetDropdownSearch('fraggerSelect');
       await refreshDashboard();
       setStatus('Giocatore eliminato');
     }
@@ -2245,6 +2593,8 @@
       }
 
       newTeamForm();
+      setDropdownValue('webResultTeam', '');
+      resetDropdownSearch('webResultTeam');
       await refreshDashboard();
       setStatus('Team registrati azzerati');
     }
@@ -2261,6 +2611,8 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
+      setDropdownValue('fraggerSelect', '');
+      resetDropdownSearch('fraggerSelect');
       await refreshDashboard();
       setStatus('Classifica e fragger azzerati');
     }
@@ -2467,7 +2819,7 @@
     }
 
     async function submitWebResult() {
-      const team = document.getElementById('webResultTeam').value;
+      const team = getDropdownValue('webResultTeam');
       const k1 = Number(document.getElementById('webK1').value || 0);
       const k2 = Number(document.getElementById('webK2').value || 0);
       const k3 = Number(document.getElementById('webK3').value || 0);
@@ -2500,6 +2852,8 @@
       document.getElementById('webK3').value = '';
       document.getElementById('webPos').value = '';
       document.getElementById('webScreenshot').value = '';
+      setDropdownValue('webResultTeam', '');
+      resetDropdownSearch('webResultTeam');
 
       await refreshDashboard();
       setStatus('Risultato inviato alla coda risultati in attesa');
@@ -2598,6 +2952,7 @@
     window.createArchive = createArchive;
     window.restoreArchive = restoreArchive;
 
+    initializeDropdowns();
     switchPage('page-overview');
     refreshDashboard();
 
