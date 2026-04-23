@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RØDA CUP</title>
+
+  <link rel="icon" type="image/png" href="/rodasitologo.png" />
+  <link rel="shortcut icon" href="/rodasitologo.png" />
+  <link rel="apple-touch-icon" href="/rodasitologo.png" />
+
+  <style>
+    :root{
+      --bg:#050507;
+      --bg-2:#090911;
+      --panel:#11111b;
+      --panel-2:#171726;
+      --panel-3:#1b1b2a;
+      --line:rgba(160,110,255,.16);
+      --line-strong:rgba(180,130,255,.28);
+      --text:#f7f4ff;
+      --muted:#aaa6c5;
+      --purple:#7b2cff;
+      --purple-2:#9c5cff;
+      --purple-3:#b77dff;
+      --green:#18c964;
+      --red:#ff4d6d;
+      --yellow:#ffd166;
+      --blue:#57b7ff;
+      --cyan:#4de2ff;
+      --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 28px rgba(123,44,255,.14);
+      --shadow-strong:0 0 0 1px rgba(162,109,255,.16), 0 0 40px rgba(123,44,255,.22);
+      --radius:24px;
+      --container:1480px;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(160,110,255,.35) transparent;
+    }
+
+    *::-webkit-scrollbar{
+      width:9px;
+      height:9px;
+    }
+
+    *::-webkit-scrollbar-thumb{
+      background:rgba(160,110,255,.35);
+      border-radius:999px;
+    }
+
+    *::-webkit-scrollbar-track{
+      background:transparent;
+    }
+
+    html,body{
+      margin:0;
+      padding:0;
+      min-height:100vh;
+      font-family:Inter,Arial,sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(123,44,255,.20), transparent 28%),
+        radial-gradient(circle at top right, rgba(87,183,255,.10), transparent 24%),
+        radial-gradient(circle at bottom center, rgba(123,44,255,.10), transparent 30%),
+        linear-gradient(180deg, #050507 0%, #090910 100%);
+      color:var(--text);
+    }
+
+    body{
+      overflow-x:hidden;
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:40;
+      backdrop-filter:blur(14px);
+      background:linear-gradient(180deg, rgba(9,9,15,.90), rgba(9,9,15,.60));
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+
+    .topbar-inner{
+      max-width:var(--container);
+      margin:0 auto;
+      padding:16px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
+
+    .brand img{
+      width:58px;
+      height:58px;
+      object-fit:contain;
+      border-radius:18px;
+      flex-shrink:0;
+      filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
+    }
+
+    .brand-text{
+      min-width:0;
+    }
+
+    .brand-title{
+      font-size:24px;
+      font-weight:900;
+      line-height:1.05;
+      margin-bottom:4px;
+    }
+
+    .brand-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+
+    .nav-right{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .pill{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      color:#ddd7f2;
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:13px;
+      box-shadow:var(--shadow);
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 18px;
+      font-weight:800;
+      font-size:14px;
+      color:#fff;
+      transition:.18s ease;
+      min-height:46px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .btn:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
+    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
+    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
+    .btn-live{ background:linear-gradient(135deg,#9146ff,#c86bff); }
+
+    .wrap{
+      max-width:var(--container);
+      margin:0 auto;
+      padding:22px 20px 30px 20px;
+    }
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(123,44,255,.26), transparent 28%),
+        radial-gradient(circle at 90% 20%, rgba(77,226,255,.10), transparent 22%),
+        radial-gradient(circle at 50% 100%, rgba(123,44,255,.14), transparent 35%),
+        linear-gradient(180deg, rgba(18,18,31,.98), rgba(10,10,18,.99));
+      border:1px solid var(--line);
+      border-radius:34px;
+      padding:34px;
+      box-shadow:var(--shadow-strong);
+      margin-bottom:18px;
+      isolation:isolate;
+    }
+
+    .hero::before{
+      content:"";
+      position:absolute;
+      top:-120px;
+      right:-120px;
+      width:360px;
+      height:360px;
+      background:radial-gradient(circle, rgba(123,44,255,.18), transparent 70%);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      bottom:-140px;
+      left:-100px;
+      width:320px;
+      height:320px;
+      background:radial-gradient(circle, rgba(87,183,255,.12), transparent 70%);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .hero-left{
+      min-width:0;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+      color:#efe6ff;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+      margin-bottom:16px;
+      box-shadow:0 0 22px rgba(123,44,255,.12);
+    }
+
+    .hero-title{
+      font-size:66px;
+      line-height:0.98;
+      font-weight:1000;
+      margin:0 0 12px 0;
+      letter-spacing:-1.8px;
+      text-shadow:0 0 20px rgba(123,44,255,.14);
+    }
+
+    .hero-title .accent{
+      color:#d9c1ff;
+    }
+
+    .hero-text{
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.75;
+      max-width:760px;
+      margin-bottom:22px;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:22px;
+    }
+
+    .hero-stats{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .mini-stat{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:20px;
+      padding:16px;
+      min-width:0;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .mini-stat::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(123,44,255,.08), transparent 60%);
+      pointer-events:none;
+    }
+
+    .mini-stat span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      margin-bottom:8px;
+      font-weight:800;
+      position:relative;
+      z-index:1;
+    }
+
+    .mini-stat strong{
+      font-size:30px;
+      font-weight:1000;
+      display:block;
+      word-break:break-word;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero-right{
+      display:grid;
+      gap:14px;
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:22px;
+      padding:18px;
+    }
+
+    .side-card h3{
+      margin:0 0 8px 0;
+      font-size:18px;
+    }
+
+    .side-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .status-box{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .status-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      font-size:14px;
+    }
+
+    .status-line strong{
+      font-size:14px;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .status-open{
+      background:rgba(24,201,100,.12);
+      color:#b6ffd4;
+      border-color:rgba(24,201,100,.28);
+    }
+
+    .status-full{
+      background:rgba(255,77,109,.12);
+      color:#ffd0d9;
+      border-color:rgba(255,77,109,.28);
+    }
+
+    .tabbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .tab-btn{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#f2ecff;
+      border-radius:14px;
+      min-height:46px;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .tab-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(160,110,255,.22);
+    }
+
+    .tab-btn.active{
+      background:linear-gradient(135deg, rgba(123,44,255,.22), rgba(156,92,255,.16));
+      border-color:rgba(160,110,255,.30);
+      box-shadow:var(--shadow);
+    }
+
+    .page{
+      display:none;
+      animation:fadeIn .18s ease;
+    }
+
+    .page.active{
+      display:block;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:.45; transform:translateY(4px);}
+      to{opacity:1; transform:none;}
+    }
+
+    .section-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .section-title{
+      font-size:24px;
+      font-weight:900;
+      margin:0 0 6px 0;
+    }
+
+    .section-subtitle{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+      margin:0;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid var(--line);
+      border-radius:26px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      min-width:0;
+      overflow:hidden;
+    }
+
+    .card h3{
+      margin:0 0 6px 0;
+      font-size:19px;
+    }
+
+    .card-note{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+      margin-bottom:14px;
+    }
+
+    .glow-card{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid rgba(164,118,255,.22);
+      box-shadow:0 0 0 1px rgba(164,118,255,.08), 0 0 36px rgba(123,44,255,.14);
+    }
+
+    .glow-card::before{
+      content:"";
+      position:absolute;
+      inset:-40% auto auto -10%;
+      width:180px;
+      height:180px;
+      background:radial-gradient(circle, rgba(123,44,255,.12), transparent 72%);
+      pointer-events:none;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.02);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      text-align:left;
+      padding:12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:14px;
+      vertical-align:top;
+    }
+
+    th{
+      color:#d6c9ff;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      background:rgba(255,255,255,.02);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tbody tr:hover{
+      background:rgba(255,255,255,.02);
+    }
+
+    .rank{
+      width:30px;
+      height:30px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(169,120,255,.25);
+      font-weight:900;
+    }
+
+    .slot-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:44px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:900;
+      background:rgba(87,183,255,.12);
+      border:1px solid rgba(87,183,255,.26);
+      color:#dff3ff;
+    }
+
+    .team-players-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .mini-chip{
+      display:inline-flex;
+      align-items:center;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e9e4fb;
+    }
+
+    .home-banner{
+      padding:18px 20px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .home-banner strong{
+      font-size:16px;
+    }
+
+    .home-quick{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .quick-card{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .quick-card::before{
+      content:"";
+      position:absolute;
+      inset:auto -30px -50px auto;
+      width:140px;
+      height:140px;
+      background:radial-gradient(circle, rgba(123,44,255,.10), transparent 70%);
+      pointer-events:none;
+    }
+
+    .quick-icon{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:24px;
+      margin-bottom:14px;
+      background:rgba(123,44,255,.12);
+      border:1px solid rgba(164,118,255,.20);
+      box-shadow:0 0 18px rgba(123,44,255,.12);
+    }
+
+    .quick-card h3{
+      margin:0 0 8px 0;
+      font-size:18px;
+    }
+
+    .quick-card p{
+      margin:0 0 14px 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
+    }
+
+    input{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      outline:none;
+      font-size:14px;
+      height:46px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .row > *{
+      flex:1 1 auto;
+    }
+
+    .message-box{
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:14px;
+      font-weight:700;
+      margin-bottom:14px;
+      border:1px solid rgba(255,255,255,.08);
+      display:none;
+    }
+
+    .message-box.show{
+      display:block;
+    }
+
+    .message-success{
+      background:rgba(24,201,100,.10);
+      border-color:rgba(24,201,100,.24);
+      color:#b6ffd4;
+    }
+
+    .message-error{
+      background:rgba(255,77,109,.10);
+      border-color:rgba(255,77,109,.24);
+      color:#ffd0d9;
+    }
+
+    .summary-stats{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .summary-mini{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .summary-mini span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .summary-mini strong{
+      font-size:22px;
+    }
+
+    .registered-layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    .registered-summary{
+      display:grid;
+      gap:12px;
+    }
+
+    .summary-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:20px;
+      padding:16px;
+    }
+
+    .summary-box h4{
+      margin:0 0 10px 0;
+      font-size:15px;
+    }
+
+    .slot-preview{
+      display:grid;
+      gap:10px;
+      max-height:520px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .slot-card{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .slot-card-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .slot-card-title{
+      font-size:16px;
+      font-weight:900;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .slot-card-players{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .rules-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+    }
+
+    .rule-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:20px;
+      padding:18px;
+    }
+
+    .rule-card h3{
+      margin:0 0 10px 0;
+      font-size:18px;
+    }
+
+    .rule-card ul{
+      margin:0;
+      padding-left:18px;
+      color:#ece6ff;
+      line-height:1.65;
+      font-size:14px;
+    }
+
+    .rule-card li{
+      margin-bottom:6px;
+    }
+
+    .rule-highlight{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px 16px;
+      margin-top:12px;
+      color:#f3edff;
+      line-height:1.6;
+      font-size:14px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:14px;
+      padding:14px;
+    }
+
+    .footer{
+      margin-top:28px;
+      padding:20px 0 8px 0;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+    }
+
+    .public-admin-link{
+      font-weight:900;
+      color:#f1e7ff;
+    }
+
+    @media (max-width: 1280px){
+      .hero-grid,
+      .registered-layout,
+      .rules-grid{
+        grid-template-columns:1fr;
+      }
+
+      .home-quick{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 1100px){
+      .grid-2,
+      .grid-4{
+        grid-template-columns:1fr;
+      }
+
+      .hero-stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 760px){
+      .topbar-inner,
+      .wrap{
+        padding-left:14px;
+        padding-right:14px;
+      }
+
+      .hero{
+        padding:22px;
+      }
+
+      .hero-title{
+        font-size:40px;
+      }
+
+      .brand-title{
+        font-size:20px;
+      }
+
+      .summary-stats,
+      .hero-stats,
+      .home-quick{
+        grid-template-columns:1fr;
+      }
+
+      .slot-card{
+        flex-direction:column;
+      }
+
+      .nav-right,
+      .hero-actions{
+        width:100%;
+      }
+
+      .nav-right .btn,
+      .hero-actions .btn{
+        width:100%;
+      }
+
+      .row > *{
+        width:100%;
+      }
+
+      .tab-btn{
+        width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="/roda-logo.png" alt="RØDA Logo" />
+        <div class="brand-text">
+          <div class="brand-title" id="brandTitle">RØDA CUP</div>
+          <div class="brand-subtitle" id="brandSubtitle">Portale pubblico ufficiale</div>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <div class="pill" id="publicStatusPill">Stato caricamento...</div>
+        <a href="/login" class="btn btn-purple">Accesso admin</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <div class="eyebrow">🔥 Evento competitivo live</div>
+          <h1 class="hero-title">
+            <span id="heroTournamentTitle">RØDA CUP</span><br>
+            <span class="accent">ESPORTS TOURNAMENT</span>
+          </h1>
+          <div class="hero-text" id="heroTournamentText">
+            Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale.
+          </div>
+
+          <div class="hero-actions">
+            <button class="btn btn-green" data-go-page="page-register">Iscrivi il tuo team</button>
+            <button class="btn btn-purple" data-go-page="page-rankings">Guarda classifiche</button>
+            <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Guarda la live</a>
+            <button class="btn btn-blue" data-go-page="page-rules">Leggi regolamento</button>
+          </div>
+
+          <div class="hero-stats">
+            <div class="mini-stat">
+              <span>Match corrente</span>
+              <strong id="heroMatch">1</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Team registrati</span>
+              <strong id="heroTeams">0</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Top fragger</span>
+              <strong id="heroFragger">-</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Posti disponibili</span>
+              <strong id="heroFreeSlotsStat">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="side-card">
+            <h3>📢 Stato torneo</h3>
+            <p id="heroStateText">
+              Tutti i dati mostrati qui sono aggiornati in base allo stato attuale del torneo.
+            </p>
+
+            <div class="status-box">
+              <div class="status-line">
+                <span>Registrazioni</span>
+                <strong id="heroRegistrationBadge" class="status-badge status-open">APERTE</strong>
+              </div>
+              <div class="status-line">
+                <span>Team / limite</span>
+                <strong id="heroTeamsCountLine">0 / 0</strong>
+              </div>
+              <div class="status-line">
+                <span>Posti disponibili</span>
+                <strong id="heroFreeSlotsLine">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="side-card">
+            <h3>📺 Diretta ufficiale</h3>
+            <p>Segui il torneo in live su Twitch con la trasmissione ufficiale.</p>
+            <div style="margin-top:14px;">
+              <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Apri Twitch</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="tabbar">
+      <button class="tab-btn active" data-page="page-home">🏠 Home</button>
+      <button class="tab-btn" data-page="page-rankings">🏆 Classifiche</button>
+      <button class="tab-btn" data-page="page-register">📝 Registrazione</button>
+      <button class="tab-btn" data-page="page-teams">👥 Team registrati</button>
+      <button class="tab-btn" data-page="page-rules">📜 Regolamento</button>
+    </div>
+
+    <section class="page active" id="page-home">
+      <div class="home-banner">
+        <div>
+          <strong id="homeBannerTitle">Registrazioni aperte</strong>
+          <div class="card-note" id="homeBannerText" style="margin:6px 0 0 0">
+            Il torneo sta accettando nuove squadre.
+          </div>
+        </div>
+        <div class="status-badge status-open" id="homeBannerBadge">APERTE</div>
+      </div>
+
+      <div class="home-quick">
+        <div class="quick-card">
+          <div class="quick-icon">📝</div>
+          <h3>Iscrivi il tuo team</h3>
+          <p>Registra il tuo team direttamente dal sito pubblico e occupa subito uno slot disponibile.</p>
+          <button class="btn btn-green" data-go-page="page-register">Vai alla registrazione</button>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">🏆</div>
+          <h3>Segui la classifica live</h3>
+          <p>Controlla i punti dei team e il top fragger aggiornato del torneo.</p>
+          <button class="btn btn-purple" data-go-page="page-rankings">Apri classifiche</button>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">📺</div>
+          <h3>Guarda la diretta</h3>
+          <p>Segui la live ufficiale del torneo su Twitch e resta aggiornato in tempo reale.</p>
+          <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Apri la live</a>
+        </div>
+
+        <div class="quick-card">
+          <div class="quick-icon">📜</div>
+          <h3>Leggi il regolamento</h3>
+          <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
+          <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
+        </div>
+      </div>
+
+      <div class="grid-4">
+        <div class="card glow-card">
+          <h3>👥 Modalità Trio</h3>
+          <div class="card-note">
+            Il torneo si gioca solo in modalità terzetti. Ogni squadra deve avere 3 titolari.
+          </div>
+        </div>
+
+        <div class="card glow-card">
+          <h3>🎮 Discord obbligatorio</h3>
+          <div class="card-note">
+            Tutti i team devono restare in vocale nelle stanze ufficiali per tutta la durata dell’evento.
+          </div>
+        </div>
+
+        <div class="card glow-card">
+          <h3>📸 Screenshot obbligatorio</h3>
+          <div class="card-note">
+            Ogni risultato deve essere inviato con screen chiaro di classifica, kill e posizione.
+          </div>
+        </div>
+
+        <div class="card glow-card">
+          <h3>⚖️ Fair play</h3>
+          <div class="card-note">
+            Vietati exploit, comportamenti tossici e vantaggi illeciti. Le decisioni dello staff sono definitive.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-rankings">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">🏆 Classifiche</h2>
+          <p class="section-subtitle">Classifica live dei team e top fragger del torneo.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Classifica team</h3>
+          <div class="card-note">Ordine generale dei team in base ai punti totali.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team</th>
+                  <th>Punti</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🔥 Top fragger</h3>
+          <div class="card-note">I giocatori con più uccisioni registrate nel torneo.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Giocatore</th>
+                  <th>Uccisioni</th>
+                </tr>
+              </thead>
+              <tbody id="fraggerBody">
+                <tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-register">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📝 Registrazione team</h2>
+          <p class="section-subtitle">Compila il modulo per iscrivere il tuo team al torneo.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Iscrivi il tuo team</h3>
+          <div class="card-note">Il team verrà registrato solo se ci sono ancora posti disponibili e il nome non è già presente.</div>
+
+          <div id="registerMessage" class="message-box"></div>
+
+          <div class="field">
+            <label>Nome team</label>
+            <input type="text" id="registerTeamName" placeholder="Inserisci il nome del team" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 1</label>
+            <input type="text" id="registerP1" placeholder="Nome giocatore 1" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 2</label>
+            <input type="text" id="registerP2" placeholder="Nome giocatore 2" />
+          </div>
+
+          <div class="field">
+            <label>Giocatore 3</label>
+            <input type="text" id="registerP3" placeholder="Nome giocatore 3" />
+          </div>
+
+          <div class="row">
+            <button class="btn btn-green" id="registerTeamBtn">Registra team</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Informazioni registrazione</h3>
+          <div class="card-note">Controlla lo stato attuale prima di inviare la richiesta.</div>
+
+          <div class="summary-stats">
+            <div class="summary-mini">
+              <span>Registrazioni</span>
+              <strong id="registerInfoState">APERTE</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Team registrati</span>
+              <strong id="registerInfoTeams">0</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Massimo team</span>
+              <strong id="registerInfoMaxTeams">0</strong>
+            </div>
+            <div class="summary-mini">
+              <span>Posti disponibili</span>
+              <strong id="registerInfoFreeTeams">0</strong>
+            </div>
+          </div>
+
+          <div class="card-note" style="margin-top:14px; margin-bottom:0" id="registerInfoText">
+            Se le registrazioni sono aperte puoi iscrivere subito il tuo team.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-teams">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">👥 Team registrati</h2>
+          <p class="section-subtitle">Elenco pubblico dei team iscritti con slot assegnato e giocatori.</p>
+        </div>
+        <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
+      </div>
+
+      <div class="registered-layout">
+        <div class="card">
+          <h3>Lista team</h3>
+          <div class="card-note">Situazione completa dei team registrati al torneo.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>Team</th>
+                  <th>Giocatori</th>
+                </tr>
+              </thead>
+              <tbody id="registeredTeamsBody">
+                <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="registered-summary">
+          <div class="summary-box">
+            <h4>📊 Stato registrazioni</h4>
+            <div class="summary-stats">
+              <div class="summary-mini">
+                <span>Registrati</span>
+                <strong id="registeredTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Disponibili</span>
+                <strong id="availableTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Massimo team</span>
+                <strong id="maxTeamsCount">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Stato</span>
+                <strong id="registrationStateText">APERTE</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h4>🏷️ Anteprima slot</h4>
+            <div class="slot-preview" id="slotPreviewList">
+              <div class="empty">Nessun team registrato</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-rules">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📜 Regolamento torneo</h2>
+          <p class="section-subtitle">Leggi con attenzione tutte le regole prima di giocare e prima di inviare i risultati.</p>
+        </div>
+      </div>
+
+      <div class="rules-grid">
+        <div class="rule-card">
+          <h3>👥 Formato torneo</h3>
+          <ul>
+            <li>Il torneo si svolge in modalità <strong>Terzetti (Trio)</strong>.</li>
+            <li>Ogni squadra deve essere composta da <strong>3 giocatori titolari</strong>.</li>
+            <li>Non sono ammessi quartetti o cambi non autorizzati dallo staff.</li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>🎮 Obbligo utilizzo Discord</h3>
+          <ul>
+            <li>Utilizzare le <strong>stanze vocali Discord ufficiali</strong>.</li>
+            <li>Aprire una <strong>stanza temporanea Trio</strong> nella sezione <strong>RØDA HUB</strong>.</li>
+            <li>Restare presenti in vocale per tutto il torneo.</li>
+          </ul>
+          <div class="rule-highlight">
+            ⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🚫 Restrizioni equipaggiamento</h3>
+          <ul>
+            <li>❌ Mine</li>
+            <li>❌ Claymore</li>
+            <li>❌ Psicogranate</li>
+            <li>❌ Granate stordenti</li>
+            <li>❌ Lacrimogeni</li>
+            <li>❌ Scarica elettrica</li>
+            <li>❌ Skin Terminator</li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>⚖️ Sistema disciplinare</h3>
+          <ul>
+            <li>1ª infrazione → <strong>Richiamo ufficiale</strong></li>
+            <li>2ª infrazione → <strong>Sottrazione punti</strong></li>
+            <li>3ª infrazione → <strong>Squalifica dal torneo</strong></li>
+          </ul>
+          <div class="rule-highlight">
+            Lo staff può applicare sanzioni immediate in caso di violazioni gravi.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🔫 Armi consentite</h3>
+          <ul>
+            <li>✅ Solo <strong>armi meta approvate dallo staff</strong>.</li>
+            <li>🎯 È ammesso <strong>1 solo cecchino per team</strong>.</li>
+          </ul>
+          <div class="rule-highlight">
+            ⚠️ Utilizzo di 2 cecchini → penalità immediata.<br>
+            ⚠️ Uso di armi non consentite → kill annullate o sottrazione punti.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>🏆 Sistema di punteggio</h3>
+          <ul>
+            <li>Le <strong>kill del team si sommano tutte</strong>.</li>
+            <li>Formula ufficiale: <strong>Kill totali di squadra + Bonus Posizionamento</strong></li>
+          </ul>
+          <div class="rule-highlight">
+            🥇 1° posto → 10 punti<br>
+            🥈 2° posto → 6 punti<br>
+            🥉 3° posto → 5 punti<br>
+            4° posto → 4 punti<br>
+            5° posto → 3 punti<br>
+            6° posto → 2 punti<br>
+            7° posto → 1 punto<br>
+            8° posto → 1 punto
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>📸 Validazione risultati</h3>
+          <ul>
+            <li>Ogni team deve caricare lo <strong>screen nel canale dedicato</strong>.</li>
+            <li>Lo screen deve mostrare chiaramente:
+              <ul>
+                <li>classifica finale</li>
+                <li>numero totale kill di squadra</li>
+                <li>posizionamento</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-card">
+          <h3>📝 Invio corretto del risultato</h3>
+          <ul>
+            <li>Nel messaggio è obbligatorio scrivere:
+              <ul>
+                <li>Nome Team</li>
+                <li>Posizione ottenuta</li>
+                <li>Kill totali di squadra</li>
+              </ul>
+            </li>
+            <li>Se una di queste informazioni manca, il risultato <strong>non verrà convalidato</strong>.</li>
+          </ul>
+          <div class="rule-highlight">
+            ✅ Esempio corretto:<br><br>
+            Team: RØDA Black<br>
+            Posizione: 2° Posto<br>
+            Kill Totali Squadra: 18<br><br>
+            Allegare screenshot sotto il messaggio.
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <h3>⚖️ Fair play</h3>
+          <ul>
+            <li>Vietato glitch, exploit o vantaggi illeciti.</li>
+            <li>Vietato comportamento tossico o antisportivo.</li>
+            <li>Rispetto obbligatorio verso staff e avversari.</li>
+            <li>Le decisioni dello staff sono definitive.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      Portale pubblico torneo • <a class="public-admin-link" href="/login">Accesso admin</a>
+    </div>
+  </div>
+
+  <script>
+    let publicData = null;
+    let isRegistering = false;
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.toggle('active', page.id === pageId);
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === pageId);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function api(url, options = {}) {
+      const headers = { ...(options.headers || {}) };
+      const hasBody = typeof options.body !== 'undefined';
+      if (hasBody && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers
+      });
+
+      const data = await response.json();
+      return { response, data };
+    }
+
+    function showRegisterMessage(type, text) {
+      const box = document.getElementById('registerMessage');
+      box.className = `message-box show ${type}`;
+      box.textContent = text;
+    }
+
+    function clearRegisterMessage() {
+      const box = document.getElementById('registerMessage');
+      box.className = 'message-box';
+      box.textContent = '';
+    }
+
+    function setRegisterButtonState(disabled, label = 'Registra team') {
+      const btn = document.getElementById('registerTeamBtn');
+      btn.disabled = disabled;
+      btn.textContent = label;
+    }
+
+    function clearRegisterForm() {
+      document.getElementById('registerTeamName').value = '';
+      document.getElementById('registerP1').value = '';
+      document.getElementById('registerP2').value = '';
+      document.getElementById('registerP3').value = '';
+    }
+
+    function renderPublicPage() {
+      const leaderboard = publicData.classificaTeam || [];
+      const fraggers = publicData.classificaFragger || [];
+      const sortedTeams = publicData.teamRegistrati || [];
+      const torneo = publicData.torneo || {};
+
+      const brandName = torneo.brandName || 'RØDA';
+      const tournamentName = torneo.tournamentName || 'RØDA CUP';
+      const supportContact = torneo.supportContact || '';
+
+      const registeredCount = Number(torneo.teamRegistrati || 0);
+      const maxTeams = Number(torneo.maxTeams || 16);
+      const availableCount = Number(torneo.postiDisponibili || 0);
+      const registrationClosed = !Boolean(torneo.registrazioniAperte);
+
+      document.title = tournamentName;
+      document.getElementById('brandTitle').textContent = tournamentName;
+      document.getElementById('brandSubtitle').textContent = 'Portale pubblico ufficiale';
+      document.getElementById('heroTournamentTitle').textContent = tournamentName;
+      document.getElementById('heroTournamentText').textContent =
+        supportContact
+          ? `Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale. Supporto: ${supportContact}.`
+          : 'Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale dal portale pubblico.';
+
+      document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
+      document.getElementById('heroTeams').textContent = registeredCount;
+      document.getElementById('heroFragger').textContent = fraggers.length ? fraggers[0].nome : '-';
+      document.getElementById('heroFreeSlotsStat').textContent = availableCount;
+
+      document.getElementById('heroTeamsCountLine').textContent = `${registeredCount} / ${maxTeams}`;
+      document.getElementById('heroFreeSlotsLine').textContent = String(availableCount);
+      document.getElementById('heroStateText').textContent = registrationClosed
+        ? `${brandName} ha raggiunto il numero massimo di team registrati.`
+        : `${brandName} ha ancora posti disponibili per nuove registrazioni.`;
+
+      const registrationBadge = document.getElementById('heroRegistrationBadge');
+      registrationBadge.textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      registrationBadge.className = `status-badge ${registrationClosed ? 'status-full' : 'status-open'}`;
+
+      document.getElementById('publicStatusPill').textContent = registrationClosed
+        ? 'Registrazioni chiuse'
+        : 'Registrazioni aperte';
+
+      document.getElementById('homeBannerTitle').textContent = registrationClosed
+        ? 'Registrazioni chiuse'
+        : 'Registrazioni aperte';
+      document.getElementById('homeBannerText').textContent = registrationClosed
+        ? 'Il torneo ha raggiunto il numero massimo di squadre registrate.'
+        : `Sono disponibili ancora ${availableCount} posti per nuove squadre.`;
+
+      const homeBannerBadge = document.getElementById('homeBannerBadge');
+      homeBannerBadge.textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      homeBannerBadge.className = `status-badge ${registrationClosed ? 'status-full' : 'status-open'}`;
+
+      document.getElementById('registeredTeamsSummaryPill').textContent = `${registeredCount} / ${maxTeams} team`;
+      document.getElementById('registeredTeamsCount').textContent = String(registeredCount);
+      document.getElementById('availableTeamsCount').textContent = String(availableCount);
+      document.getElementById('maxTeamsCount').textContent = String(maxTeams);
+      document.getElementById('registrationStateText').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      document.getElementById('registerInfoState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+      document.getElementById('registerInfoTeams').textContent = String(registeredCount);
+      document.getElementById('registerInfoMaxTeams').textContent = String(maxTeams);
+      document.getElementById('registerInfoFreeTeams').textContent = String(availableCount);
+      document.getElementById('registerInfoText').textContent = registrationClosed
+        ? 'Le registrazioni sono chiuse perché il torneo è pieno.'
+        : 'Le registrazioni sono aperte. Puoi iscrivere il tuo team compilando il modulo.';
+
+      if (!isRegistering) {
+        setRegisterButtonState(registrationClosed, registrationClosed ? 'Registrazioni chiuse' : 'Registra team');
+      }
+
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = leaderboard.length
+        ? leaderboard.map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.team)}</td>
+              <td><strong>${row.punti}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>`;
+
+      const fraggerBody = document.getElementById('fraggerBody');
+      fraggerBody.innerHTML = fraggers.length
+        ? fraggers.slice(0, 15).map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.nome)}</td>
+              <td><strong>${row.uccisioni}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato disponibile</td></tr>`;
+
+      const registeredTeamsBody = document.getElementById('registeredTeamsBody');
+      registeredTeamsBody.innerHTML = sortedTeams.length
+        ? sortedTeams.map(team => `
+            <tr>
+              <td><span class="slot-badge">#${team.slot || '-'}</span></td>
+              <td><strong>${escapeHtml(team.team)}</strong></td>
+              <td>
+                <div class="team-players-list">
+                  ${(team.players || []).map(player => `
+                    <span class="mini-chip">${escapeHtml(player || '-')}</span>
+                  `).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+                </div>
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
+
+      const slotPreviewList = document.getElementById('slotPreviewList');
+      slotPreviewList.innerHTML = sortedTeams.length
+        ? sortedTeams.map(team => `
+            <div class="slot-card">
+              <div class="slot-card-left">
+                <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
+                <div class="slot-card-players">
+                  ${(team.players || []).map(player => `
+                    <span class="mini-chip">${escapeHtml(player || '-')}</span>
+                  `).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+                </div>
+              </div>
+              <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun team registrato</div>`;
+    }
+
+    async function loadPublicData() {
+      try {
+        const result = await api('/api/public/dashboard');
+        if (!result.response.ok || !result.data.ok) {
+          document.getElementById('publicStatusPill').textContent = 'Errore caricamento';
+          return;
+        }
+
+        publicData = result.data;
+        renderPublicPage();
+      } catch (error) {
+        console.error(error);
+        document.getElementById('publicStatusPill').textContent = 'Errore connessione';
+      }
+    }
+
+    async function registerTeam() {
+      if (isRegistering) return;
+
+      const teamName = document.getElementById('registerTeamName').value.trim();
+      const p1 = document.getElementById('registerP1').value.trim();
+      const p2 = document.getElementById('registerP2').value.trim();
+      const p3 = document.getElementById('registerP3').value.trim();
+
+      if (!teamName || !p1 || !p2 || !p3) {
+        showRegisterMessage('message-error', 'Compila tutti i campi richiesti.');
+        return;
+      }
+
+      isRegistering = true;
+      clearRegisterMessage();
+      setRegisterButtonState(true, 'Registrazione in corso...');
+
+      try {
+        const result = await api('/api/public/register-team', {
+          method: 'POST',
+          body: JSON.stringify({ teamName, p1, p2, p3 })
+        });
+
+        if (!result.response.ok || !result.data.ok) {
+          showRegisterMessage('message-error', result.data.message || 'Errore durante la registrazione del team.');
+          return;
+        }
+
+        showRegisterMessage(
+          'message-success',
+          result.data.message || `Team registrato correttamente nello slot #${result.data.slot || '-'}.`
+        );
+
+        clearRegisterForm();
+        await loadPublicData();
+        switchPage('page-register');
+      } catch (error) {
+        console.error(error);
+        showRegisterMessage('message-error', 'Errore di connessione durante la registrazione.');
+      } finally {
+        isRegistering = false;
+        const registrationClosed = !Boolean(publicData?.torneo?.registrazioniAperte);
+        setRegisterButtonState(registrationClosed, registrationClosed ? 'Registrazioni chiuse' : 'Registra team');
+      }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.page));
+    });
+
+    document.querySelectorAll('[data-go-page]').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.goPage));
+    });
+
+    document.getElementById('registerTeamBtn').addEventListener('click', registerTeam);
+
+    switchPage('page-home');
+    loadPublicData();
+    setInterval(loadPublicData, 15000);
+  </script>
+</body>
+</html>

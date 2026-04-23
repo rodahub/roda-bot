@@ -1,0 +1,2964 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin</title>
+  <style>
+    :root{
+      --bg:#050507;
+      --bg2:#0b0b12;
+      --panel:#10101a;
+      --panel2:#151525;
+      --panel3:#1a1a2b;
+      --line:rgba(160,110,255,.16);
+      --line-strong:rgba(180,130,255,.30);
+      --text:#f7f4ff;
+      --muted:#aaa6c5;
+      --purple:#7b2cff;
+      --purple2:#9c5cff;
+      --green:#18c964;
+      --red:#ff4d6d;
+      --yellow:#ffd166;
+      --blue:#57b7ff;
+      --cyan:#4de2ff;
+      --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 30px rgba(123,44,255,.14);
+      --radius:22px;
+      --sidebar-width:280px;
+      --content-max:1800px;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(160,110,255,.35) transparent;
+    }
+
+    *::-webkit-scrollbar{ width:9px; height:9px; }
+    *::-webkit-scrollbar-thumb{
+      background:rgba(160,110,255,.35);
+      border-radius:999px;
+    }
+    *::-webkit-scrollbar-track{ background:transparent; }
+
+    html,body{
+      margin:0;
+      padding:0;
+      min-height:100vh;
+      font-family:Inter,Arial,sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(123,44,255,.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(87,183,255,.08), transparent 20%),
+        radial-gradient(circle at bottom center, rgba(123,44,255,.08), transparent 30%),
+        linear-gradient(180deg, #050507 0%, #09090e 100%);
+      color:var(--text);
+    }
+
+    body{ overflow:hidden; }
+
+    .app{
+      display:grid;
+      grid-template-columns:var(--sidebar-width) 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(14,14,24,.98), rgba(8,8,14,.98));
+      border-right:1px solid rgba(255,255,255,.05);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-width:0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:8px 8px 14px 8px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .brand img.logo{
+      width:56px;
+      height:56px;
+      object-fit:contain;
+      border-radius:16px;
+      flex-shrink:0;
+      filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
+    }
+
+    .brand-text{ min-width:0; }
+    .brand-title{
+      font-size:22px;
+      font-weight:900;
+      line-height:1.05;
+      margin-bottom:4px;
+    }
+    .brand-subtitle{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+
+    .nav-group{ display:grid; gap:8px; }
+    .nav-label{
+      padding:0 8px;
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.8px;
+      font-weight:800;
+    }
+
+    .nav-btn{
+      width:100%;
+      border:1px solid transparent;
+      background:rgba(255,255,255,.03);
+      color:#f2ecff;
+      border-radius:16px;
+      min-height:50px;
+      text-align:left;
+      padding:12px 14px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s ease;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .nav-btn:hover{
+      transform:translateX(2px);
+      border-color:rgba(160,110,255,.16);
+      background:rgba(255,255,255,.05);
+    }
+
+    .nav-btn.active{
+      background:linear-gradient(135deg, rgba(123,44,255,.20), rgba(156,92,255,.14));
+      border-color:rgba(160,110,255,.28);
+      box-shadow:var(--shadow);
+    }
+
+    .nav-btn small{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .sidebar-footer{
+      margin-top:auto;
+      display:grid;
+      gap:10px;
+    }
+
+    .pill{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      color:#ddd7f2;
+      border-radius:999px;
+      padding:11px 14px;
+      font-size:13px;
+      box-shadow:var(--shadow);
+      text-align:center;
+    }
+
+    .sidebar-actions{ display:grid; gap:10px; }
+
+    .main{
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+      min-height:100vh;
+    }
+
+    .topbar{
+      padding:18px 22px;
+      border-bottom:1px solid rgba(255,255,255,.05);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      background:linear-gradient(180deg, rgba(14,14,24,.72), rgba(10,10,18,.40));
+      backdrop-filter:blur(12px);
+    }
+
+    .topbar-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .page-title{
+      font-size:30px;
+      font-weight:900;
+      line-height:1.05;
+      margin-bottom:6px;
+    }
+
+    .page-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .topbar-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .content{
+      flex:1;
+      overflow:auto;
+      padding:22px;
+    }
+
+    .page{
+      display:none;
+      animation:fadeIn .18s ease;
+      max-width:var(--content-max);
+    }
+
+    .page.active{ display:block; }
+
+    @keyframes fadeIn{
+      from{ opacity:.45; transform:translateY(4px); }
+      to{ opacity:1; transform:none; }
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(11,11,19,.98));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-width:0;
+    }
+
+    .section-card{ margin-bottom:18px; }
+
+    .card-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .card-header-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .card h3{
+      margin:0 0 6px 0;
+      font-size:20px;
+      line-height:1.2;
+    }
+
+    .section-note{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .stat-label{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      margin-bottom:10px;
+      font-weight:700;
+    }
+
+    .stat-value{
+      font-size:30px;
+      font-weight:900;
+      word-break:break-word;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
+    }
+
+    input, textarea{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      outline:none;
+      font-size:14px;
+    }
+
+    input{ height:46px; }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    input[type="file"]{
+      padding:10px 14px;
+      height:auto;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .row > *{
+      flex:1 1 auto;
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:800;
+      font-size:14px;
+      color:#fff;
+      transition:.18s ease;
+      min-height:46px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple2)); }
+    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
+    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
+    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
+    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+
+    .helper{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+      margin-top:6px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:14px;
+      padding:12px;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.02);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      text-align:left;
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:14px;
+      vertical-align:top;
+    }
+
+    th{
+      color:#d6c9ff;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      background:rgba(255,255,255,.02);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tbody tr:hover{
+      background:rgba(255,255,255,.02);
+    }
+
+    .rank{
+      width:30px;
+      height:30px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(169,120,255,.25);
+      font-weight:900;
+    }
+
+    .slot-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:44px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:900;
+      background:rgba(87,183,255,.12);
+      border:1px solid rgba(87,183,255,.26);
+      color:#dff3ff;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .status-open{
+      background:rgba(24,201,100,.12);
+      color:#b6ffd4;
+      border-color:rgba(24,201,100,.28);
+    }
+
+    .status-full{
+      background:rgba(255,77,109,.12);
+      color:#ffd0d9;
+      border-color:rgba(255,77,109,.28);
+    }
+
+    .status-waiting{
+      background:rgba(255,209,102,.12);
+      color:#ffe7a6;
+      border-color:rgba(255,209,102,.26);
+    }
+
+    .status-premium{
+      background:rgba(123,44,255,.12);
+      color:#ead8ff;
+      border-color:rgba(123,44,255,.28);
+    }
+
+    .team-players-list,
+    .slot-card-players{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .mini-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e9e4fb;
+    }
+
+    .quick-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
+    }
+
+    .quick-item{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .quick-item h4{
+      margin:0 0 8px 0;
+      font-size:15px;
+    }
+
+    .quick-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    .registered-layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.3fr) minmax(330px,.7fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    .registered-summary{
+      display:grid;
+      gap:12px;
+    }
+
+    .summary-box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .summary-box h4{
+      margin:0 0 10px 0;
+      font-size:15px;
+    }
+
+    .summary-stats{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .summary-mini{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .summary-mini span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .summary-mini strong{
+      font-size:22px;
+    }
+
+    .slot-preview{
+      display:grid;
+      gap:10px;
+      max-height:520px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .slot-card{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .slot-card-left{
+      min-width:0;
+      flex:1;
+    }
+
+    .slot-card-title{
+      font-size:16px;
+      font-weight:900;
+      margin-bottom:8px;
+      word-break:break-word;
+    }
+
+    .list{
+      display:grid;
+      gap:12px;
+    }
+
+    .pending-card{
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .pending-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .pending-team{
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .pending-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .box{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .box span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .box strong{
+      font-size:20px;
+    }
+
+    .players{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .player-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .player-card b{
+      display:block;
+      margin-bottom:8px;
+    }
+
+    .img-box{
+      margin-bottom:12px;
+      overflow:hidden;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:#09090d;
+    }
+
+    .result-image-button{
+      display:block;
+      width:100%;
+      border:0;
+      padding:0;
+      background:transparent;
+      cursor:zoom-in;
+    }
+
+    .result-image-button img{
+      width:100%;
+      max-height:340px;
+      object-fit:cover;
+      display:block;
+    }
+
+    .image-modal{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.84);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      z-index:9999;
+    }
+
+    .image-modal.show{ display:flex; }
+
+    .image-modal-content{
+      position:relative;
+      max-width:min(1400px,96vw);
+      max-height:92vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .image-modal-content img{
+      max-width:100%;
+      max-height:92vh;
+      object-fit:contain;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 0 40px rgba(0,0,0,.45);
+      background:#050507;
+    }
+
+    .image-modal-close{
+      position:absolute;
+      top:-14px;
+      right:-14px;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(15,15,25,.95);
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 0 20px rgba(0,0,0,.35);
+    }
+
+    .section-stack{
+      display:grid;
+      gap:18px;
+    }
+
+    .subsection{
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .subsection h4{
+      margin:0 0 8px 0;
+      font-size:16px;
+    }
+
+    .check-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .check-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
+      font-size:14px;
+    }
+
+    .check-ok{
+      color:#9ff0bf;
+      font-weight:900;
+    }
+
+    .check-no{
+      color:#ffb0bf;
+      font-weight:900;
+    }
+
+    .danger-zone{
+      border-color:rgba(255,77,109,.22);
+      box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 26px rgba(255,77,109,.08);
+    }
+
+    .log-list,
+    .archive-list{
+      display:grid;
+      gap:12px;
+      max-height:540px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .log-card,
+    .archive-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .log-card-top,
+    .archive-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .log-action,
+    .archive-title{
+      font-size:16px;
+      font-weight:900;
+      word-break:break-word;
+    }
+
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:12px;
+      color:#ded6ff;
+      word-break:break-word;
+    }
+
+    .detail-grid{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .detail-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:12px;
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:#e9e4fb;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+
+    .archive-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .status-bar{
+      position:sticky;
+      bottom:0;
+      margin-top:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color:#ddd7f2;
+      border-radius:16px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+      font-size:13px;
+      z-index:3;
+    }
+
+    /* Dropdown personalizzati */
+    .custom-dropdown{
+      position:relative;
+      width:100%;
+    }
+
+    .custom-dropdown.disabled{
+      opacity:.6;
+      pointer-events:none;
+    }
+
+    .dropdown-trigger{
+      width:100%;
+      min-height:46px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      cursor:pointer;
+      transition:.18s ease;
+      user-select:none;
+    }
+
+    .dropdown-trigger:hover{
+      border-color:rgba(160,110,255,.22);
+      background:rgba(255,255,255,.045);
+    }
+
+    .custom-dropdown.open .dropdown-trigger,
+    .dropdown-trigger:focus-visible{
+      border-color:rgba(160,110,255,.35);
+      box-shadow:0 0 0 3px rgba(123,44,255,.12);
+      outline:none;
+    }
+
+    .dropdown-trigger-text{
+      min-width:0;
+      flex:1;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .dropdown-trigger-icon{
+      flex-shrink:0;
+      color:#d4c4ff;
+      transition:transform .18s ease;
+      font-size:12px;
+    }
+
+    .custom-dropdown.open .dropdown-trigger-icon{
+      transform:rotate(180deg);
+    }
+
+    .dropdown-menu{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      right:0;
+      z-index:1200;
+      background:linear-gradient(180deg, rgba(19,19,31,.98), rgba(10,10,18,.98));
+      border:1px solid rgba(160,110,255,.20);
+      border-radius:18px;
+      box-shadow:0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(162,109,255,.08);
+      padding:10px;
+      display:none;
+    }
+
+    .custom-dropdown.open .dropdown-menu{
+      display:block;
+    }
+
+    .dropdown-search-wrap{
+      margin-bottom:8px;
+    }
+
+    .dropdown-search{
+      width:100%;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+    }
+
+    .dropdown-search:focus{
+      border-color:rgba(160,110,255,.35);
+      box-shadow:0 0 0 3px rgba(123,44,255,.12);
+    }
+
+    .dropdown-options{
+      max-height:240px;
+      overflow:auto;
+      display:grid;
+      gap:6px;
+      padding-right:2px;
+    }
+
+    .dropdown-option{
+      width:100%;
+      border:1px solid transparent;
+      background:rgba(255,255,255,.03);
+      color:#f7f4ff;
+      border-radius:12px;
+      padding:11px 12px;
+      text-align:left;
+      cursor:pointer;
+      font-size:13px;
+      line-height:1.35;
+      transition:.16s ease;
+    }
+
+    .dropdown-option:hover{
+      background:rgba(123,44,255,.12);
+      border-color:rgba(160,110,255,.18);
+    }
+
+    .dropdown-option.active{
+      background:linear-gradient(135deg, rgba(123,44,255,.18), rgba(156,92,255,.12));
+      border-color:rgba(160,110,255,.26);
+    }
+
+    .dropdown-option-empty{
+      padding:12px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+      background:rgba(255,255,255,.02);
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .dropdown-option-title{
+      font-weight:800;
+      margin-bottom:3px;
+      word-break:break-word;
+    }
+
+    .dropdown-option-subtitle{
+      color:var(--muted);
+      font-size:12px;
+      word-break:break-word;
+    }
+
+    @media (max-width: 1450px){
+      .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .grid-4, .quick-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+
+    @media (max-width: 1280px){
+      .registered-layout{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 1180px){
+      .app{ grid-template-columns:1fr; }
+      .sidebar{
+        border-right:0;
+        border-bottom:1px solid rgba(255,255,255,.05);
+      }
+      .grid-2, .grid-3{ grid-template-columns:1fr; }
+      body{ overflow:auto; }
+    }
+
+    @media (max-width: 760px){
+      .content{ padding:14px; }
+      .topbar{ padding:14px; }
+      .stats, .grid-4, .quick-grid, .pending-grid, .players, .summary-stats{
+        grid-template-columns:1fr;
+      }
+      .brand-title{ font-size:20px; }
+      .page-title{ font-size:24px; }
+      .row > *{ width:100%; }
+      .slot-card{ flex-direction:column; }
+      .topbar-actions, .btn, .pill{ width:100%; }
+      .image-modal{ padding:14px; }
+      .image-modal-close{ top:8px; right:8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="/roda-logo.png" alt="Logo" class="logo" />
+        <div class="brand-text">
+          <div class="brand-title" id="brandTitle">Dashboard Admin</div>
+          <div class="brand-subtitle" id="brandSubtitle">Gestione torneo, lobby e approvazioni</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Pagine</div>
+
+        <button class="nav-btn active" data-page="page-overview">
+          <span>📊 Panoramica</span>
+          <small>Stato generale</small>
+        </button>
+
+        <button class="nav-btn" data-page="page-teams">
+          <span>👥 Team</span>
+          <small>Registrazioni</small>
+        </button>
+
+        <button class="nav-btn" data-page="page-results">
+          <span>📸 Risultati</span>
+          <small>Approvazioni</small>
+        </button>
+
+        <button class="nav-btn" data-page="page-discord">
+          <span>🤖 Discord</span>
+          <small>Stanze e pannelli</small>
+        </button>
+
+        <button class="nav-btn" data-page="page-system">
+          <span>🗂️ Sistema</span>
+          <small>Archivi e reset</small>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="pill" id="staffInfo">Connesso</div>
+        <div class="sidebar-actions">
+          <button class="btn btn-blue" id="publicSiteBtn">Vai al sito pubblico</button>
+          <button class="btn btn-purple" id="refreshBtn">Aggiorna dashboard</button>
+          <button class="btn btn-red" id="logoutBtn">Esci</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title" id="topbarTitle">Panoramica</div>
+          <div class="page-subtitle" id="topbarSubtitle">Controlla lo stato del torneo, dei match e delle funzioni principali.</div>
+        </div>
+        <div class="topbar-actions">
+          <div class="pill" id="setupPill">Configurazione non completata</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <section class="page active" id="page-overview">
+          <div class="stats">
+            <div class="card">
+              <div class="stat-label">Match corrente</div>
+              <div class="stat-value" id="statMatch">1</div>
+            </div>
+            <div class="card">
+              <div class="stat-label">Team registrati</div>
+              <div class="stat-value" id="statTeams">0</div>
+            </div>
+            <div class="card">
+              <div class="stat-label">Risultati in attesa</div>
+              <div class="stat-value" id="statPending">0</div>
+            </div>
+            <div class="card">
+              <div class="stat-label">Top fragger</div>
+              <div class="stat-value" id="statFragger">-</div>
+            </div>
+            <div class="card">
+              <div class="stat-label">Registrazioni</div>
+              <div class="stat-value" id="statRegistrationState">APERTE</div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>⚡ Azioni rapide</h3>
+                <div class="section-note">Qui hai subito le operazioni principali del torneo senza cercare in tutta la dashboard.</div>
+              </div>
+            </div>
+
+            <div class="quick-grid">
+              <div class="quick-item">
+                <h4>🎮 Match</h4>
+                <p>Quando cambi match si aggiornano anche i pannelli risultati nelle stanze team e la classifica Discord.</p>
+                <div class="field" style="margin-top:12px;">
+                  <label>Match corrente</label>
+                  <input type="number" id="matchInput" min="1" />
+                </div>
+                <div class="row">
+                  <button class="btn btn-purple" onclick="setMatch()">Salva match</button>
+                  <button class="btn btn-green" onclick="nextMatch()">Match successivo</button>
+                </div>
+              </div>
+
+              <div class="quick-item">
+                <h4>🏆 Classifica Discord</h4>
+                <p>La classifica si aggiorna anche in automatico quando approvi, ma puoi forzarla qui quando vuoi.</p>
+                <div class="row" style="margin-top:12px;">
+                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica</button>
+                </div>
+              </div>
+
+              <div class="quick-item">
+                <h4>📨 Pannelli torneo</h4>
+                <p>Un pannello iscrizioni pubblico e pannelli risultati locali nelle stanze dei team.</p>
+                <div class="row" style="margin-top:12px;">
+                  <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
+                  <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
+                </div>
+              </div>
+
+              <div class="quick-item">
+                <h4>🎮 Codice lobby</h4>
+                <p>Invia in un click il codice lobby in tutte le stanze vocali dei team del torneo.</p>
+                <div class="field" style="margin-top:12px;">
+                  <label>Codice lobby</label>
+                  <input type="text" id="lobbyCodeQuick" placeholder="Inserisci il codice lobby" />
+                </div>
+                <button class="btn btn-green" onclick="sendLobbyCodeQuick()">Invia codice lobby</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🏆 Classifica team</h3>
+                  <div class="section-note">Vista rapida della classifica generale aggiornata.</div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Team</th>
+                      <th>Punti</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboardBody">
+                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🔥 Classifica fragger</h3>
+                  <div class="section-note">Vista rapida dei giocatori con più uccisioni.</div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Giocatore</th>
+                      <th>Uccisioni</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fraggerBody">
+                    <tr><td colspan="3" class="empty">Nessun dato</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>✅ Controllo configurazione</h3>
+                <div class="section-note">Controllo rapido delle impostazioni base del progetto e dei canali Discord importanti.</div>
+              </div>
+            </div>
+            <div class="check-list" id="setupChecks">
+              <div class="check-item"><span>Caricamento...</span><span class="check-no">...</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-teams">
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>📋 Team registrati e slot assegnati</h3>
+                <div class="section-note">Lista completa dei team iscritti con slot e giocatori.</div>
+              </div>
+              <div class="pill" id="registeredTeamsSummaryPill">0 / 0 team</div>
+            </div>
+
+            <div class="registered-layout">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Slot</th>
+                      <th>Team</th>
+                      <th>Giocatori</th>
+                    </tr>
+                  </thead>
+                  <tbody id="registeredTeamsBody">
+                    <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="registered-summary">
+                <div class="summary-box">
+                  <h4>📊 Stato registrazioni</h4>
+                  <div class="summary-stats">
+                    <div class="summary-mini">
+                      <span>Registrati</span>
+                      <strong id="registeredTeamsCount">0</strong>
+                    </div>
+                    <div class="summary-mini">
+                      <span>Disponibili</span>
+                      <strong id="availableTeamsCount">0</strong>
+                    </div>
+                    <div class="summary-mini">
+                      <span>Massimo team</span>
+                      <strong id="maxTeamsCount">0</strong>
+                    </div>
+                    <div class="summary-mini">
+                      <span>Stato</span>
+                      <strong id="registrationStateText">APERTE</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-box">
+                  <h4>🏷️ Anteprima slot</h4>
+                  <div class="slot-preview" id="slotPreviewList">
+                    <div class="empty">Nessun team registrato</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>✏️ Modifica team</h3>
+                  <div class="section-note">Crea, modifica o elimina i team registrati.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Seleziona team esistente</label>
+                <div id="teamSelectDropdown"></div>
+              </div>
+
+              <div class="field">
+                <label>Nome team</label>
+                <input type="text" id="teamName" />
+              </div>
+
+              <div class="field">
+                <label>Giocatore 1</label>
+                <input type="text" id="teamP1" />
+              </div>
+
+              <div class="field">
+                <label>Giocatore 2</label>
+                <input type="text" id="teamP2" />
+              </div>
+
+              <div class="field">
+                <label>Giocatore 3</label>
+                <input type="text" id="teamP3" />
+              </div>
+
+              <div class="row">
+                <button class="btn btn-green" onclick="saveTeam()">Salva team</button>
+                <button class="btn btn-purple" onclick="newTeamForm()">Nuovo team</button>
+                <button class="btn btn-red" onclick="deleteTeam()">Elimina team</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>📝 Messaggio registrazioni Discord</h3>
+                  <div class="section-note">Personalizza il messaggio slot pubblico del torneo.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Titolo messaggio</label>
+                <input type="text" id="registrationStatusTitle" />
+              </div>
+
+              <div class="field">
+                <label>Testo sopra la lista</label>
+                <textarea id="registrationStatusText"></textarea>
+              </div>
+
+              <div class="field">
+                <label>Numero massimo team</label>
+                <input type="number" id="registrationMaxTeams" min="1" />
+              </div>
+
+              <div class="row">
+                <button class="btn btn-purple" onclick="saveRegistrationSettings()">Salva impostazioni</button>
+                <button class="btn btn-yellow" onclick="forceRegistrationMessage()">Aggiorna messaggio ora</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-results">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>📤 Invio risultato manuale</h3>
+                  <div class="section-note">Invia manualmente un risultato alla coda staff, se devi farlo dalla dashboard.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Team</label>
+                <div id="webResultTeamDropdown"></div>
+              </div>
+
+              <div class="field">
+                <label>Uccisioni giocatore 1</label>
+                <input type="number" id="webK1" />
+              </div>
+
+              <div class="field">
+                <label>Uccisioni giocatore 2</label>
+                <input type="number" id="webK2" />
+              </div>
+
+              <div class="field">
+                <label>Uccisioni giocatore 3</label>
+                <input type="number" id="webK3" />
+              </div>
+
+              <div class="field">
+                <label>Posizione</label>
+                <input type="number" id="webPos" />
+              </div>
+
+              <div class="field">
+                <label>Screenshot opzionale</label>
+                <input type="file" id="webScreenshot" accept="image/*" />
+              </div>
+
+              <button class="btn btn-green" onclick="submitWebResult()">Invia risultato</button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🔥 Gestione fragger</h3>
+                  <div class="section-note">Correggi o elimina manualmente i dati dei giocatori.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Seleziona giocatore</label>
+                <div id="fraggerSelectDropdown"></div>
+              </div>
+
+              <div class="field">
+                <label>Nome giocatore</label>
+                <input type="text" id="fraggerName" />
+              </div>
+
+              <div class="field">
+                <label>Uccisioni</label>
+                <input type="number" id="fraggerKills" />
+              </div>
+
+              <div class="row">
+                <button class="btn btn-green" onclick="saveFragger()">Salva giocatore</button>
+                <button class="btn btn-red" onclick="deleteFragger()">Elimina giocatore</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>📸 Risultati in attesa</h3>
+                <div class="section-note">Apri l’immagine, controlla i dati del match e approva o rifiuta.</div>
+              </div>
+            </div>
+
+            <div id="pendingList" class="list">
+              <div class="empty">Nessun risultato in attesa</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-discord">
+          <div class="section-stack">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>⚙️ Impostazioni Discord</h3>
+                  <div class="section-note">Salva una volta canali e categoria, così la dashboard li riusa automaticamente.</div>
+                </div>
+              </div>
+
+              <div class="grid-3">
+                <div class="subsection">
+                  <h4>Canali e categoria</h4>
+                  <div class="field">
+                    <label>ID canale pannello registrazione</label>
+                    <input type="text" id="registerPanelChannel" placeholder="ID canale registrazione" />
+                  </div>
+                  <div class="field">
+                    <label>ID canale risultati salvato</label>
+                    <input type="text" id="resultsPanelChannel" placeholder="Facoltativo, per compatibilità" />
+                  </div>
+                  <div class="field">
+                    <label>ID categoria stanze team</label>
+                    <input type="text" id="roomsCategoryId" placeholder="ID categoria stanze vocali" />
+                  </div>
+                  <button class="btn btn-blue" onclick="saveBotSettings()">Salva impostazioni Discord</button>
+                </div>
+
+                <div class="subsection">
+                  <h4>Pannelli torneo</h4>
+                  <div class="helper" style="margin-bottom:12px;">
+                    Il pannello registrazione è pubblico. I pannelli risultati vengono creati e aggiornati direttamente nelle stanze dei team.
+                  </div>
+                  <div class="row">
+                    <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
+                    <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
+                  </div>
+                </div>
+
+                <div class="subsection">
+                  <h4>Classifica Discord</h4>
+                  <div class="helper" style="margin-bottom:12px;">
+                    La classifica viene aggiornata anche quando approvi un risultato, ma puoi forzarla quando vuoi.
+                  </div>
+                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica Discord</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-header-left">
+                    <h3>🎙️ Stanze vocali team</h3>
+                    <div class="section-note">Crea o elimina tutte le stanze vocali ordinate per slot.</div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <button class="btn btn-green" onclick="createRooms()">Crea stanze team</button>
+                  <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze team</button>
+                </div>
+
+                <div class="helper">
+                  Dopo la creazione, puoi generare i pannelli risultati team e inviare il codice lobby.
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-header-left">
+                    <h3>🎮 Codice lobby</h3>
+                    <div class="section-note">Invia in un click il codice lobby in tutte le stanze vocali dei team.</div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Codice lobby</label>
+                  <input type="text" id="lobbyCode" placeholder="Inserisci il codice lobby" />
+                </div>
+
+                <button class="btn btn-green" onclick="sendLobbyCode()">Invia codice a tutte le stanze team</button>
+
+                <div class="helper">
+                  Messaggio inviato dal bot:<br>
+                  <strong>🎮 CODICE LOBBY</strong><br>
+                  Codice: <strong>...</strong><br><br>
+                  Buon game 🔥
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-system">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🛠️ Configurazione progetto</h3>
+                  <div class="section-note">Impostazioni generali usate dal sito pubblico, dai pannelli Discord e dalla dashboard.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Nome brand</label>
+                <input type="text" id="projectBrandName" placeholder="Es. RØDA" />
+              </div>
+
+              <div class="field">
+                <label>Nome torneo</label>
+                <input type="text" id="projectTournamentName" placeholder="Es. RØDA CUP" />
+              </div>
+
+              <div class="field">
+                <label>Contatto supporto</label>
+                <input type="text" id="projectSupportContact" placeholder="Es. Discord, Telegram o email" />
+              </div>
+
+              <div class="field">
+                <label class="helper" style="margin:0;">
+                  <input type="checkbox" id="projectPremiumMode" style="width:auto;height:auto;margin-right:8px;" />
+                  Modalità premium attiva
+                </label>
+              </div>
+
+              <div class="row">
+                <button class="btn btn-blue" onclick="saveProjectSettings()">Salva impostazioni progetto</button>
+                <button class="btn btn-green" onclick="completeSetup()">Segna configurazione completata</button>
+              </div>
+            </div>
+
+            <div class="card danger-zone">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🧹 Reset sistema</h3>
+                  <div class="section-note">Usa questi pulsanti solo quando vuoi pulire dati o registrazioni.</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn btn-red" onclick="resetTeams()">Reset team</button>
+                <button class="btn btn-yellow" onclick="resetData()">Reset classifica e fragger</button>
+              </div>
+
+              <div class="helper">Prima dei reset viene creato automaticamente un archivio di sicurezza.</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🧾 Registro attività staff</h3>
+                  <div class="section-note">Storico delle azioni eseguite da staff, sito e bot.</div>
+                </div>
+              </div>
+              <div id="auditLogList" class="log-list">
+                <div class="empty">Nessun log disponibile</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <h3>🗂️ Archivi torneo</h3>
+                  <div class="section-note">Crea snapshot manuali e ripristina uno stato precedente in sicurezza.</div>
+                </div>
+              </div>
+
+              <div class="subsection" style="margin-bottom:12px;">
+                <div class="field">
+                  <label>Etichetta archivio</label>
+                  <input type="text" id="archiveLabel" placeholder="Es. Fine match 4 / Backup staff / Pre reset" />
+                </div>
+                <div class="field">
+                  <label>Nota archivio</label>
+                  <textarea id="archiveNote" placeholder="Nota opzionale archivio"></textarea>
+                </div>
+                <button class="btn btn-blue" onclick="createArchive()">Crea archivio adesso</button>
+              </div>
+
+              <div id="archiveList" class="archive-list">
+                <div class="empty">Nessun archivio disponibile</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="status-bar" id="statusBar">Dashboard pronta</div>
+      </div>
+    </main>
+  </div>
+
+  <div id="imageModal" class="image-modal" onclick="handleImageModalBackdrop(event)">
+    <div class="image-modal-content">
+      <button type="button" class="image-modal-close" onclick="closeImageModal()">×</button>
+      <img id="imageModalPreview" src="" alt="Anteprima screenshot risultato" />
+    </div>
+  </div>
+
+  <script>
+    let dashboard = null;
+    let loading = false;
+    let customDropdowns = {};
+
+    const pageMeta = {
+      'page-overview': {
+        title: 'Panoramica',
+        subtitle: 'Controlla lo stato del torneo, dei match e delle funzioni principali.'
+      },
+      'page-teams': {
+        title: 'Team',
+        subtitle: 'Gestisci team, giocatori, slot assegnati e messaggio registrazioni.'
+      },
+      'page-results': {
+        title: 'Risultati',
+        subtitle: 'Controlla gli screenshot, approva o rifiuta e gestisci i dati manuali.'
+      },
+      'page-discord': {
+        title: 'Discord',
+        subtitle: 'Gestisci pannello iscrizioni, pannelli risultati team, stanze vocali e codice lobby.'
+      },
+      'page-system': {
+        title: 'Sistema',
+        subtitle: 'Configura il progetto, consulta i log e gestisci archivi e reset.'
+      }
+    };
+
+    function setStatus(text) {
+      document.getElementById('statusBar').textContent = text;
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function formatDateTime(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value || '-';
+      return date.toLocaleString('it-IT');
+    }
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.toggle('active', page.id === pageId);
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === pageId);
+      });
+
+      const meta = pageMeta[pageId] || pageMeta['page-overview'];
+      document.getElementById('topbarTitle').textContent = meta.title;
+      document.getElementById('topbarSubtitle').textContent = meta.subtitle;
+    }
+
+    async function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function api(url, options = {}) {
+      const baseHeaders = options.body ? { 'Content-Type': 'application/json' } : {};
+
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          ...baseHeaders,
+          ...(options.headers || {})
+        },
+        ...options
+      });
+
+      if (response.status === 401) {
+        location.href = '/login';
+        return null;
+      }
+
+      const data = await response.json();
+      return { response, data };
+    }
+
+    function openImageModal(src) {
+      const modal = document.getElementById('imageModal');
+      const preview = document.getElementById('imageModalPreview');
+      preview.src = src || '';
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      const preview = document.getElementById('imageModalPreview');
+      modal.classList.remove('show');
+      preview.src = '';
+      document.body.style.overflow = '';
+    }
+
+    function handleImageModalBackdrop(event) {
+      if (event.target && event.target.id === 'imageModal') {
+        closeImageModal();
+      }
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeImageModal();
+        closeAllDropdowns();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const insideDropdown = event.target.closest('.custom-dropdown');
+      if (!insideDropdown) {
+        closeAllDropdowns();
+      }
+    });
+
+    function closeAllDropdowns(exceptId = null) {
+      Object.values(customDropdowns).forEach(dropdown => {
+        if (dropdown.id !== exceptId) {
+          dropdown.root.classList.remove('open');
+        }
+      });
+    }
+
+    function createCustomDropdown({
+      mountId,
+      dropdownId,
+      placeholder = 'Seleziona',
+      searchable = true,
+      onChange = null
+    }) {
+      const mount = document.getElementById(mountId);
+      if (!mount) return null;
+
+      mount.innerHTML = `
+        <div class="custom-dropdown" data-dropdown-id="${escapeHtml(dropdownId)}">
+          <button type="button" class="dropdown-trigger">
+            <span class="dropdown-trigger-text">${escapeHtml(placeholder)}</span>
+            <span class="dropdown-trigger-icon">⌄</span>
+          </button>
+          <div class="dropdown-menu">
+            ${searchable ? `
+              <div class="dropdown-search-wrap">
+                <input type="text" class="dropdown-search" placeholder="Cerca..." />
+              </div>
+            ` : ''}
+            <div class="dropdown-options"></div>
+          </div>
+        </div>
+      `;
+
+      const root = mount.querySelector('.custom-dropdown');
+      const trigger = root.querySelector('.dropdown-trigger');
+      const triggerText = root.querySelector('.dropdown-trigger-text');
+      const menu = root.querySelector('.dropdown-menu');
+      const searchInput = root.querySelector('.dropdown-search');
+      const optionsWrap = root.querySelector('.dropdown-options');
+
+      const dropdown = {
+        id: dropdownId,
+        mountId,
+        root,
+        trigger,
+        triggerText,
+        menu,
+        searchInput,
+        optionsWrap,
+        placeholder,
+        searchable,
+        options: [],
+        filteredOptions: [],
+        value: '',
+        onChange
+      };
+
+      trigger.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const willOpen = !root.classList.contains('open');
+        closeAllDropdowns(willOpen ? dropdownId : null);
+        root.classList.toggle('open', willOpen);
+        if (willOpen && searchInput) {
+          setTimeout(() => searchInput.focus(), 0);
+        }
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('click', (event) => event.stopPropagation());
+        searchInput.addEventListener('input', () => {
+          renderDropdownOptions(dropdown, searchInput.value);
+        });
+      }
+
+      customDropdowns[dropdownId] = dropdown;
+      renderDropdownOptions(dropdown, '');
+      return dropdown;
+    }
+
+    function setDropdownOptions(dropdownId, options = []) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+
+      dropdown.options = Array.isArray(options) ? options.slice() : [];
+      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
+
+      const hasCurrent = dropdown.options.some(option => option.value === dropdown.value);
+      if (!hasCurrent) {
+        dropdown.value = '';
+        dropdown.triggerText.textContent = dropdown.placeholder;
+      } else {
+        updateDropdownTrigger(dropdown);
+      }
+    }
+
+    function renderDropdownOptions(dropdown, searchTerm = '') {
+      const term = String(searchTerm || '').trim().toLowerCase();
+
+      dropdown.filteredOptions = dropdown.options.filter(option => {
+        if (!term) return true;
+        const title = String(option.label || '').toLowerCase();
+        const subtitle = String(option.subtitle || '').toLowerCase();
+        return title.includes(term) || subtitle.includes(term);
+      });
+
+      if (!dropdown.filteredOptions.length) {
+        dropdown.optionsWrap.innerHTML = `<div class="dropdown-option-empty">Nessun elemento trovato</div>`;
+        return;
+      }
+
+      dropdown.optionsWrap.innerHTML = dropdown.filteredOptions.map(option => `
+        <button
+          type="button"
+          class="dropdown-option ${option.value === dropdown.value ? 'active' : ''}"
+          data-value="${escapeHtml(option.value)}"
+        >
+          <div class="dropdown-option-title">${escapeHtml(option.label)}</div>
+          ${option.subtitle ? `<div class="dropdown-option-subtitle">${escapeHtml(option.subtitle)}</div>` : ''}
+        </button>
+      `).join('');
+
+      dropdown.optionsWrap.querySelectorAll('.dropdown-option').forEach(button => {
+        button.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const value = button.dataset.value || '';
+          setDropdownValue(dropdown.id, value, true);
+          dropdown.root.classList.remove('open');
+        });
+      });
+    }
+
+    function updateDropdownTrigger(dropdown) {
+      const selected = dropdown.options.find(option => option.value === dropdown.value);
+      dropdown.triggerText.textContent = selected ? selected.label : dropdown.placeholder;
+    }
+
+    function setDropdownValue(dropdownId, value, triggerChange = false) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+
+      dropdown.value = value || '';
+      updateDropdownTrigger(dropdown);
+      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
+
+      if (triggerChange && typeof dropdown.onChange === 'function') {
+        dropdown.onChange(dropdown.value);
+      }
+    }
+
+    function getDropdownValue(dropdownId) {
+      return customDropdowns[dropdownId]?.value || '';
+    }
+
+    function resetDropdownSearch(dropdownId) {
+      const dropdown = customDropdowns[dropdownId];
+      if (!dropdown) return;
+      if (dropdown.searchInput) {
+        dropdown.searchInput.value = '';
+      }
+      renderDropdownOptions(dropdown, '');
+    }
+
+    function initializeDropdowns() {
+      createCustomDropdown({
+        mountId: 'teamSelectDropdown',
+        dropdownId: 'teamSelect',
+        placeholder: 'Seleziona team',
+        searchable: true,
+        onChange: loadSelectedTeam
+      });
+
+      createCustomDropdown({
+        mountId: 'webResultTeamDropdown',
+        dropdownId: 'webResultTeam',
+        placeholder: 'Seleziona team',
+        searchable: true
+      });
+
+      createCustomDropdown({
+        mountId: 'fraggerSelectDropdown',
+        dropdownId: 'fraggerSelect',
+        placeholder: 'Seleziona giocatore',
+        searchable: true,
+        onChange: loadSelectedFragger
+      });
+    }
+
+    function renderSetupChecks(statoSetup) {
+      const controlli = statoSetup?.controlli || {};
+      const entries = [
+        ['Nome brand', controlli.nomeBrand],
+        ['Nome torneo', controlli.nomeTorneo],
+        ['Canale pannello registrazione', controlli.canalePannelloRegistrazione],
+        ['Categoria stanze vocali', controlli.categoriaStanze]
+      ];
+
+      document.getElementById('setupChecks').innerHTML = entries.map(([label, ok]) => `
+        <div class="check-item">
+          <span>${escapeHtml(label)}</span>
+          <span class="${ok ? 'check-ok' : 'check-no'}">${ok ? 'OK' : 'MANCANTE'}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('setupPill').textContent = statoSetup?.completato
+        ? 'Configurazione completata'
+        : 'Configurazione non completata';
+    }
+
+    function renderBranding(impostazioniProgetto) {
+      const brandName = impostazioniProgetto?.brandName || 'RØDA';
+      const tournamentName = impostazioniProgetto?.tournamentName || 'RØDA CUP';
+      const premiumMode = Boolean(impostazioniProgetto?.premiumMode);
+      const modeLabel = premiumMode ? 'Dashboard Admin Premium' : 'Dashboard Admin';
+
+      document.title = `${brandName} ${modeLabel}`;
+      document.getElementById('brandTitle').textContent = `${brandName} ${modeLabel}`;
+      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione torneo, lobby e approvazioni${premiumMode ? ' • premium attivo' : ''}`;
+
+      document.getElementById('projectBrandName').value = brandName;
+      document.getElementById('projectTournamentName').value = tournamentName;
+      document.getElementById('projectSupportContact').value = impostazioniProgetto?.supportContact || '';
+      document.getElementById('projectPremiumMode').checked = premiumMode;
+    }
+
+    function renderAuditLog(auditLog) {
+      const list = document.getElementById('auditLogList');
+
+      list.innerHTML = auditLog.length
+        ? auditLog.map(item => `
+            <div class="log-card">
+              <div class="log-card-top">
+                <div>
+                  <div class="log-action">${escapeHtml(item.action || 'azione_sconosciuta')}</div>
+                  <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
+                </div>
+                <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
+              </div>
+              <div class="detail-grid">
+                <div class="mono">${escapeHtml(item.id || '')}</div>
+                ${Object.keys(item.details || {}).length
+                  ? `<div>${Object.entries(item.details).map(([key, value]) => `
+                        <span class="detail-chip"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
+                     `).join('')}</div>`
+                  : `<div class="muted">Nessun dettaglio aggiuntivo</div>`}
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun log disponibile</div>`;
+    }
+
+    function renderArchives(archivi) {
+      const list = document.getElementById('archiveList');
+
+      list.innerHTML = archivi.length
+        ? archivi.map(item => `
+            <div class="archive-card">
+              <div class="archive-card-top">
+                <div>
+                  <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
+                  <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
+                </div>
+                <div class="status-badge status-premium">ARCHIVIO</div>
+              </div>
+              <div class="detail-grid">
+                <div>
+                  <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
+                  <span class="detail-chip">Autore: ${escapeHtml(item.actor || '-')}</span>
+                  <span class="detail-chip">Origine: ${escapeHtml(item.source || '-')}</span>
+                </div>
+                <div>
+                  <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
+                  <span class="detail-chip">In attesa: ${Number(item.pendingCount || 0)}</span>
+                  <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
+                </div>
+                <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
+              </div>
+              <div class="archive-actions">
+                <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina archivio</button>
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun archivio disponibile</div>`;
+    }
+
+    async function refreshDashboard() {
+      if (loading) return;
+      loading = true;
+
+      document.getElementById('refreshBtn').disabled = true;
+      document.getElementById('refreshBtn').textContent = 'Aggiornamento...';
+      setStatus('Caricamento dati dashboard...');
+
+      try {
+        const sessionResult = await api('/api/session');
+        if (!sessionResult) return;
+
+        if (!sessionResult.response.ok || !sessionResult.data.ok) {
+          location.href = '/login';
+          return;
+        }
+
+        document.getElementById('staffInfo').textContent = 'Connesso come ' + (sessionResult.data.email || '-');
+
+        const result = await api('/api/dashboard');
+        if (!result) return;
+
+        if (!result.response.ok || !result.data.ok) {
+          setStatus(result.data.message || 'Errore caricamento dashboard');
+          return;
+        }
+
+        dashboard = result.data;
+        renderDashboard();
+        setStatus('Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT'));
+      } catch (error) {
+        console.error(error);
+        setStatus('Errore di connessione');
+      } finally {
+        loading = false;
+        document.getElementById('refreshBtn').disabled = false;
+        document.getElementById('refreshBtn').textContent = 'Aggiorna dashboard';
+      }
+    }
+
+    function renderDashboard() {
+      const classificaTeam = dashboard.classificaTeam || [];
+      const classificaFragger = dashboard.classificaFragger || [];
+      const risultatiInAttesa = dashboard.risultatiInAttesa || [];
+      const teamOrdinati = dashboard.teamOrdinati || [];
+      const botConfig = dashboard.botConfig || {};
+      const impostazioniRegistrazione = dashboard.impostazioniRegistrazione || {};
+      const impostazioniProgetto = dashboard.impostazioniProgetto || {};
+      const statoSetup = dashboard.statoSetup || {};
+      const auditLog = dashboard.auditLog || [];
+      const archivi = dashboard.archivi || [];
+
+      renderBranding(impostazioniProgetto);
+      renderSetupChecks(statoSetup);
+      renderAuditLog(auditLog);
+      renderArchives(archivi);
+
+      const registeredCount = teamOrdinati.length;
+      const maxTeams = Number(impostazioniRegistrazione.maxTeams || 16);
+      const availableCount = Math.max(maxTeams - registeredCount, 0);
+      const registrationClosed = registeredCount >= maxTeams;
+
+      document.getElementById('statMatch').textContent = dashboard.matchCorrente || 1;
+      document.getElementById('statTeams').textContent = dashboard.statistiche?.totaleTeam || 0;
+      document.getElementById('statPending').textContent = dashboard.statistiche?.totalePending || 0;
+      document.getElementById('statFragger').textContent = classificaFragger.length ? classificaFragger[0].nome : '-';
+      document.getElementById('statRegistrationState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      document.getElementById('matchInput').value = dashboard.matchCorrente || 1;
+      document.getElementById('registerPanelChannel').value = botConfig.registerPanelChannelId || '';
+      document.getElementById('resultsPanelChannel').value = botConfig.resultsPanelChannelId || '';
+      document.getElementById('roomsCategoryId').value = botConfig.roomsCategoryId || botConfig.categoryId || '';
+
+      document.getElementById('registrationStatusTitle').value = impostazioniRegistrazione.titolo || '';
+      document.getElementById('registrationStatusText').value = impostazioniRegistrazione.testo || '';
+      document.getElementById('registrationMaxTeams').value = impostazioniRegistrazione.maxTeams || 16;
+
+      document.getElementById('registeredTeamsSummaryPill').textContent = `${registeredCount} / ${maxTeams} team`;
+      document.getElementById('registeredTeamsCount').textContent = String(registeredCount);
+      document.getElementById('availableTeamsCount').textContent = String(availableCount);
+      document.getElementById('maxTeamsCount').textContent = String(maxTeams);
+      document.getElementById('registrationStateText').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      const registeredTeamsBody = document.getElementById('registeredTeamsBody');
+      registeredTeamsBody.innerHTML = teamOrdinati.length
+        ? teamOrdinati.map(team => `
+            <tr>
+              <td><span class="slot-badge">#${team.slot || '-'}</span></td>
+              <td><strong>${escapeHtml(team.team)}</strong></td>
+              <td>
+                <div class="team-players-list">
+                  ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+                </div>
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
+
+      const slotPreviewList = document.getElementById('slotPreviewList');
+      slotPreviewList.innerHTML = teamOrdinati.length
+        ? teamOrdinati.map(team => `
+            <div class="slot-card">
+              <div class="slot-card-left">
+                <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
+                <div class="slot-card-players">
+                  ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+                </div>
+              </div>
+              <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun team registrato</div>`;
+
+      const leaderboardBody = document.getElementById('leaderboardBody');
+      leaderboardBody.innerHTML = classificaTeam.length
+        ? classificaTeam.map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.team)}</td>
+              <td><strong>${row.punti}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+
+      const fraggerBody = document.getElementById('fraggerBody');
+      fraggerBody.innerHTML = classificaFragger.length
+        ? classificaFragger.slice(0, 20).map(row => `
+            <tr>
+              <td><span class="rank">${row.posizione}</span></td>
+              <td>${escapeHtml(row.nome)}</td>
+              <td><strong>${row.uccisioni}</strong></td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+
+      const teamOptions = teamOrdinati.map(team => ({
+        value: team.team,
+        label: `#${team.slot || '-'} • ${team.team}`,
+        subtitle: (team.players || []).join(' • ')
+      }));
+
+      setDropdownOptions('teamSelect', teamOptions);
+      setDropdownOptions('webResultTeam', teamOptions);
+
+      const fraggerOptions = classificaFragger
+        .map(item => ({
+          value: item.nome,
+          label: item.nome,
+          subtitle: `${Number(item.uccisioni || 0)} uccisioni`
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'it'));
+
+      setDropdownOptions('fraggerSelect', fraggerOptions);
+
+      const pendingList = document.getElementById('pendingList');
+      pendingList.innerHTML = risultatiInAttesa.length
+        ? risultatiInAttesa.map(item => `
+            <div class="pending-card">
+              <div class="pending-top">
+                <div>
+                  <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
+                  <div class="muted">Inviato da: ${escapeHtml(item.inviatoDa || '-')}</div>
+                </div>
+                <div class="status-badge status-waiting">IN ATTESA</div>
+              </div>
+
+              <div class="pending-grid">
+                <div class="box">
+                  <span>Match</span>
+                  <strong>${Number(item.matchNumber || 1)}</strong>
+                </div>
+                <div class="box">
+                  <span>Uccisioni totali</span>
+                  <strong>${item.totaleUccisioni}</strong>
+                </div>
+                <div class="box">
+                  <span>Posizione</span>
+                  <strong>${item.posizione}</strong>
+                </div>
+                <div class="box">
+                  <span>ID risultato</span>
+                  <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
+                </div>
+              </div>
+
+              <div class="players">
+                ${(item.uccisioni || []).map((k, i) => `
+                  <div class="player-card">
+                    <b>${escapeHtml(item.players?.[i] || `Player ${i + 1}`)}</b>
+                    <div>${Number(k || 0)} uccisioni</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              ${item.immagine ? `
+                <div class="img-box">
+                  <button class="result-image-button" type="button" onclick="openImageModal('${escapeHtml(item.immagine)}')">
+                    <img src="${escapeHtml(item.immagine)}" alt="screenshot risultato">
+                  </button>
+                </div>
+              ` : ''}
+
+              <div class="row">
+                <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
+                <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
+              </div>
+            </div>
+          `).join('')
+        : `<div class="empty">Nessun risultato in attesa</div>`;
+    }
+
+    async function saveProjectSettings(customSetupCompleted = null) {
+      const brandName = document.getElementById('projectBrandName').value.trim();
+      const tournamentName = document.getElementById('projectTournamentName').value.trim();
+      const supportContact = document.getElementById('projectSupportContact').value.trim();
+      const premiumMode = document.getElementById('projectPremiumMode').checked;
+
+      const payload = {
+        brandName,
+        tournamentName,
+        supportContact,
+        premiumMode,
+        setupCompleted: customSetupCompleted === null
+          ? Boolean(dashboard?.impostazioniProgetto?.setupCompleted)
+          : Boolean(customSetupCompleted)
+      };
+
+      const result = await api('/api/project-settings/save', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (!result) return false;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio impostazioni progetto');
+        return false;
+      }
+
+      await refreshDashboard();
+      setStatus('Impostazioni progetto salvate');
+      return true;
+    }
+
+    async function completeSetup() {
+      const ok = await saveProjectSettings(true);
+      if (!ok) return;
+      setStatus('Configurazione segnata come completata');
+    }
+
+    function loadSelectedTeam() {
+      if (!dashboard) return;
+      const selected = getDropdownValue('teamSelect');
+      const team = dashboard.teams?.[selected];
+
+      if (!team) {
+        newTeamForm();
+        return;
+      }
+
+      document.getElementById('teamName').value = selected;
+      document.getElementById('teamP1').value = team.players?.[0] || '';
+      document.getElementById('teamP2').value = team.players?.[1] || '';
+      document.getElementById('teamP3').value = team.players?.[2] || '';
+    }
+
+    function newTeamForm() {
+      setDropdownValue('teamSelect', '');
+      resetDropdownSearch('teamSelect');
+      document.getElementById('teamName').value = '';
+      document.getElementById('teamP1').value = '';
+      document.getElementById('teamP2').value = '';
+      document.getElementById('teamP3').value = '';
+    }
+
+    async function saveBotSettings() {
+      const registerPanelChannelId = document.getElementById('registerPanelChannel').value.trim();
+      const resultsPanelChannelId = document.getElementById('resultsPanelChannel').value.trim();
+      const roomsCategoryId = document.getElementById('roomsCategoryId').value.trim();
+
+      const result = await api('/api/bot/settings/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          registerPanelChannelId,
+          resultsPanelChannelId,
+          roomsCategoryId
+        })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio impostazioni Discord');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Impostazioni Discord salvate');
+    }
+
+    async function saveTeam() {
+      const oldTeamName = getDropdownValue('teamSelect');
+      const teamName = document.getElementById('teamName').value.trim();
+      const p1 = document.getElementById('teamP1').value.trim();
+      const p2 = document.getElementById('teamP2').value.trim();
+      const p3 = document.getElementById('teamP3').value.trim();
+
+      const result = await api('/api/teams/save', {
+        method: 'POST',
+        body: JSON.stringify({ oldTeamName, teamName, p1, p2, p3 })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio team');
+        return;
+      }
+
+      await refreshDashboard();
+      setDropdownValue('teamSelect', teamName);
+      loadSelectedTeam();
+      setStatus('Team salvato correttamente');
+    }
+
+    async function deleteTeam() {
+      const teamName = getDropdownValue('teamSelect') || document.getElementById('teamName').value.trim();
+      if (!teamName) {
+        alert('Seleziona un team');
+        return;
+      }
+
+      if (!confirm('Confermi eliminazione team?')) return;
+
+      const result = await api('/api/teams/delete', {
+        method: 'POST',
+        body: JSON.stringify({ teamName })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione team');
+        return;
+      }
+
+      newTeamForm();
+      await refreshDashboard();
+      setStatus('Team eliminato');
+    }
+
+    function loadSelectedFragger() {
+      if (!dashboard) return;
+      const name = getDropdownValue('fraggerSelect');
+      const found = (dashboard.classificaFragger || []).find(item => item.nome === name);
+
+      document.getElementById('fraggerName').value = name || '';
+      document.getElementById('fraggerKills').value = found ? Number(found.uccisioni || 0) : '';
+    }
+
+    async function saveFragger() {
+      const player = document.getElementById('fraggerName').value.trim();
+      const kills = Number(document.getElementById('fraggerKills').value || 0);
+
+      const result = await api('/api/fragger/set', {
+        method: 'POST',
+        body: JSON.stringify({ player, kills })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio giocatore');
+        return;
+      }
+
+      await refreshDashboard();
+      setDropdownValue('fraggerSelect', player);
+      loadSelectedFragger();
+      setStatus('Giocatore salvato correttamente');
+    }
+
+    async function deleteFragger() {
+      const player = getDropdownValue('fraggerSelect') || document.getElementById('fraggerName').value.trim();
+      if (!player) {
+        alert('Seleziona un giocatore');
+        return;
+      }
+
+      if (!confirm('Confermi eliminazione giocatore?')) return;
+
+      const result = await api('/api/fragger/delete', {
+        method: 'POST',
+        body: JSON.stringify({ player })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione giocatore');
+        return;
+      }
+
+      document.getElementById('fraggerName').value = '';
+      document.getElementById('fraggerKills').value = '';
+      setDropdownValue('fraggerSelect', '');
+      resetDropdownSearch('fraggerSelect');
+      await refreshDashboard();
+      setStatus('Giocatore eliminato');
+    }
+
+    async function setMatch() {
+      const match = Number(document.getElementById('matchInput').value || 1);
+
+      const result = await api('/api/match/set', {
+        method: 'POST',
+        body: JSON.stringify({ match })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiornamento match');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus(`Match impostato su ${Number(result.data.currentMatch || match)}`);
+    }
+
+    async function nextMatch() {
+      const result = await api('/api/match/next', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore passaggio match');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus(`Passato al match ${Number(result.data.currentMatch || 1)}`);
+    }
+
+    async function approvePending(id) {
+      const result = await api('/api/approve/' + id, { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore approvazione risultato');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Risultato approvato e classifica aggiornata');
+    }
+
+    async function rejectPending(id) {
+      const result = await api('/api/reject/' + id, { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore rifiuto risultato');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Risultato rifiutato');
+    }
+
+    async function resetTeams() {
+      if (!confirm('Confermi reset team registrati? Verrà creato automaticamente un archivio di sicurezza.')) return;
+
+      const result = await api('/api/reset-teams', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore reset team');
+        return;
+      }
+
+      newTeamForm();
+      setDropdownValue('webResultTeam', '');
+      resetDropdownSearch('webResultTeam');
+      await refreshDashboard();
+      setStatus('Team registrati azzerati');
+    }
+
+    async function resetData() {
+      if (!confirm('Confermi reset classifica, fragger e match? Verrà creato automaticamente un archivio di sicurezza.')) return;
+
+      const result = await api('/api/reset-data', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore reset dati');
+        return;
+      }
+
+      document.getElementById('fraggerName').value = '';
+      document.getElementById('fraggerKills').value = '';
+      setDropdownValue('fraggerSelect', '');
+      resetDropdownSearch('fraggerSelect');
+      await refreshDashboard();
+      setStatus('Classifica e fragger azzerati');
+    }
+
+    async function saveRegistrationSettings() {
+      const title = document.getElementById('registrationStatusTitle').value.trim();
+      const text = document.getElementById('registrationStatusText').value.trim();
+      const maxTeams = Number(document.getElementById('registrationMaxTeams').value || 16);
+
+      const result = await api('/api/registration-settings/save', {
+        method: 'POST',
+        body: JSON.stringify({ title, text, maxTeams })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio impostazioni registrazione');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Impostazioni registrazione aggiornate');
+    }
+
+    async function forceRegistrationMessage() {
+      const result = await api('/api/registration-settings/refresh', { method: 'POST' });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiornamento messaggio registrazioni');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Messaggio registrazioni aggiornato su Discord');
+    }
+
+    async function spawnRegisterPanel() {
+      const typedChannelId = document.getElementById('registerPanelChannel').value.trim();
+      const savedChannelId = dashboard?.botConfig?.registerPanelChannelId || '';
+      const channelId = typedChannelId || savedChannelId;
+
+      if (!channelId) {
+        alert('Inserisci o salva prima l’ID del canale del pannello registrazione');
+        return;
+      }
+
+      const result = await api('/api/bot/spawn-register-panel', {
+        method: 'POST',
+        body: JSON.stringify({ channelId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore invio pannello registrazione');
+        return;
+      }
+
+      await refreshDashboard();
+
+      if (result.data.updated) setStatus('Pannello registrazione aggiornato');
+      else if (result.data.created) setStatus('Pannello registrazione inviato');
+      else setStatus('Pannello registrazione gestito correttamente');
+    }
+
+    async function refreshTeamResultPanels() {
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return;
+      }
+
+      const result = await api('/api/bot/refresh-team-result-panels', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiornamento pannelli risultati team');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus(
+        `Pannelli team aggiornati • creati: ${Number(result.data.created || 0)} • aggiornati: ${Number(result.data.updated || 0)} • stanze mancanti: ${Number(result.data.missingRooms || 0)}`
+      );
+    }
+
+    async function createRooms() {
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return;
+      }
+
+      const result = await api('/api/bot/create-rooms', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore creazione stanze');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus(`Stanze create: ${Number(result.data.created || 0)} • già presenti: ${Number(result.data.skipped || 0)}`);
+    }
+
+    async function deleteRooms() {
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return;
+      }
+
+      const result = await api('/api/bot/delete-rooms', {
+        method: 'POST',
+        body: JSON.stringify({ categoryId })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore eliminazione stanze');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus(`Stanze eliminate: ${Number(result.data.deleted || 0)}`);
+    }
+
+    async function sendLobbyCodeWithValue(lobbyCode) {
+      const code = String(lobbyCode || '').trim();
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!code) {
+        alert('Inserisci il codice lobby');
+        return false;
+      }
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return false;
+      }
+
+      const result = await api('/api/bot/send-lobby-code', {
+        method: 'POST',
+        body: JSON.stringify({ lobbyCode: code, categoryId })
+      });
+
+      if (!result) return false;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore invio codice lobby');
+        return false;
+      }
+
+      const inviate = Number(result.data.sent || 0);
+      const fallite = Number(result.data.failed || 0);
+      const totale = Number(result.data.total || 0);
+
+      setStatus(`Codice lobby inviato • riuscite: ${inviate}/${totale} • fallite: ${fallite}`);
+      return true;
+    }
+
+    async function sendLobbyCode() {
+      const input = document.getElementById('lobbyCode');
+      const ok = await sendLobbyCodeWithValue(input.value);
+      if (!ok) return;
+      input.value = '';
+      document.getElementById('lobbyCodeQuick').value = '';
+    }
+
+    async function sendLobbyCodeQuick() {
+      const input = document.getElementById('lobbyCodeQuick');
+      const ok = await sendLobbyCodeWithValue(input.value);
+      if (!ok) return;
+      input.value = '';
+      document.getElementById('lobbyCode').value = '';
+    }
+
+    async function forceLeaderboard() {
+      const result = await api('/api/bot/update-leaderboard', { method: 'POST' });
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore aggiornamento classifica Discord');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Classifica Discord aggiornata');
+    }
+
+    async function submitWebResult() {
+      const team = getDropdownValue('webResultTeam');
+      const k1 = Number(document.getElementById('webK1').value || 0);
+      const k2 = Number(document.getElementById('webK2').value || 0);
+      const k3 = Number(document.getElementById('webK3').value || 0);
+      const pos = Number(document.getElementById('webPos').value || 0);
+      const file = document.getElementById('webScreenshot').files[0];
+
+      if (!team) {
+        alert('Seleziona un team');
+        return;
+      }
+
+      let imageData = '';
+      if (file) {
+        imageData = await fileToBase64(file);
+      }
+
+      const result = await api('/api/web-submit-result', {
+        method: 'POST',
+        body: JSON.stringify({ team, k1, k2, k3, pos, imageData })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore invio risultato');
+        return;
+      }
+
+      document.getElementById('webK1').value = '';
+      document.getElementById('webK2').value = '';
+      document.getElementById('webK3').value = '';
+      document.getElementById('webPos').value = '';
+      document.getElementById('webScreenshot').value = '';
+      setDropdownValue('webResultTeam', '');
+      resetDropdownSearch('webResultTeam');
+
+      await refreshDashboard();
+      setStatus('Risultato inviato alla coda risultati in attesa');
+    }
+
+    async function createArchive() {
+      const label = document.getElementById('archiveLabel').value.trim();
+      const note = document.getElementById('archiveNote').value.trim();
+
+      const result = await api('/api/archivi/crea', {
+        method: 'POST',
+        body: JSON.stringify({ label, note })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore creazione archivio');
+        return;
+      }
+
+      document.getElementById('archiveLabel').value = '';
+      document.getElementById('archiveNote').value = '';
+      await refreshDashboard();
+      setStatus('Archivio creato correttamente');
+    }
+
+    async function restoreArchive(archiveId) {
+      if (!archiveId) {
+        alert('Archivio non valido');
+        return;
+      }
+
+      if (!confirm('Confermi il ripristino di questo archivio? Verrà creato automaticamente un backup dello stato attuale.')) {
+        return;
+      }
+
+      const result = await api('/api/archivi/ripristina', {
+        method: 'POST',
+        body: JSON.stringify({ archiveId: decodeURIComponent(archiveId) })
+      });
+
+      if (!result) return;
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore ripristino archivio');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Archivio ripristinato correttamente');
+    }
+
+    async function logout() {
+      await api('/api/logout', { method: 'POST' });
+      location.href = '/login';
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.page));
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('publicSiteBtn').addEventListener('click', () => {
+      location.href = '/';
+    });
+
+    window.openImageModal = openImageModal;
+    window.closeImageModal = closeImageModal;
+    window.handleImageModalBackdrop = handleImageModalBackdrop;
+    window.saveProjectSettings = saveProjectSettings;
+    window.completeSetup = completeSetup;
+    window.saveBotSettings = saveBotSettings;
+    window.saveTeam = saveTeam;
+    window.deleteTeam = deleteTeam;
+    window.newTeamForm = newTeamForm;
+    window.loadSelectedTeam = loadSelectedTeam;
+    window.loadSelectedFragger = loadSelectedFragger;
+    window.saveFragger = saveFragger;
+    window.deleteFragger = deleteFragger;
+    window.setMatch = setMatch;
+    window.nextMatch = nextMatch;
+    window.approvePending = approvePending;
+    window.rejectPending = rejectPending;
+    window.resetTeams = resetTeams;
+    window.resetData = resetData;
+    window.saveRegistrationSettings = saveRegistrationSettings;
+    window.forceRegistrationMessage = forceRegistrationMessage;
+    window.spawnRegisterPanel = spawnRegisterPanel;
+    window.refreshTeamResultPanels = refreshTeamResultPanels;
+    window.createRooms = createRooms;
+    window.deleteRooms = deleteRooms;
+    window.sendLobbyCode = sendLobbyCode;
+    window.sendLobbyCodeQuick = sendLobbyCodeQuick;
+    window.forceLeaderboard = forceLeaderboard;
+    window.submitWebResult = submitWebResult;
+    window.createArchive = createArchive;
+    window.restoreArchive = restoreArchive;
+
+    initializeDropdowns();
+    switchPage('page-overview');
+    refreshDashboard();
+
+    setInterval(() => {
+      if (!loading) refreshDashboard();
+    }, 10000);
+  </script>
+</body>
+</html>
