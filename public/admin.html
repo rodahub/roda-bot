@@ -24,7 +24,6 @@
       --cyan:#4de2ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 30px rgba(123,44,255,.14);
       --radius:22px;
-      --radius-sm:16px;
       --sidebar-width:280px;
       --content-max:1800px;
     }
@@ -36,19 +35,12 @@
       scrollbar-color:rgba(160,110,255,.35) transparent;
     }
 
-    *::-webkit-scrollbar{
-      width:9px;
-      height:9px;
-    }
-
+    *::-webkit-scrollbar{ width:9px; height:9px; }
     *::-webkit-scrollbar-thumb{
       background:rgba(160,110,255,.35);
       border-radius:999px;
     }
-
-    *::-webkit-scrollbar-track{
-      background:transparent;
-    }
+    *::-webkit-scrollbar-track{ background:transparent; }
 
     html,body{
       margin:0;
@@ -63,9 +55,7 @@
       color:var(--text);
     }
 
-    body{
-      overflow:hidden;
-    }
+    body{ overflow:hidden; }
 
     .app{
       display:grid;
@@ -100,28 +90,20 @@
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
     }
 
-    .brand-text{
-      min-width:0;
-    }
-
+    .brand-text{ min-width:0; }
     .brand-title{
       font-size:22px;
       font-weight:900;
       line-height:1.05;
       margin-bottom:4px;
     }
-
     .brand-subtitle{
       color:var(--muted);
       font-size:12px;
       line-height:1.35;
     }
 
-    .nav-group{
-      display:grid;
-      gap:8px;
-    }
-
+    .nav-group{ display:grid; gap:8px; }
     .nav-label{
       padding:0 8px;
       font-size:11px;
@@ -185,10 +167,7 @@
       text-align:center;
     }
 
-    .sidebar-actions{
-      display:grid;
-      gap:10px;
-    }
+    .sidebar-actions{ display:grid; gap:10px; }
 
     .main{
       display:flex;
@@ -246,13 +225,11 @@
       max-width:var(--content-max);
     }
 
-    .page.active{
-      display:block;
-    }
+    .page.active{ display:block; }
 
     @keyframes fadeIn{
-      from{opacity:.45; transform:translateY(4px);}
-      to{opacity:1; transform:none;}
+      from{ opacity:.45; transform:translateY(4px); }
+      to{ opacity:1; transform:none; }
     }
 
     .stats{
@@ -293,9 +270,7 @@
       min-width:0;
     }
 
-    .section-card{
-      margin-bottom:18px;
-    }
+    .section-card{ margin-bottom:18px; }
 
     .card-header{
       display:flex;
@@ -336,6 +311,101 @@
       font-size:30px;
       font-weight:900;
       word-break:break-word;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .field label{
+      font-size:13px;
+      color:#ddd7f2;
+      font-weight:700;
+    }
+
+    input, select, textarea{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      padding:12px 14px;
+      outline:none;
+      font-size:14px;
+    }
+
+    input, select{ height:46px; }
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+    input[type="file"]{
+      padding:10px 14px;
+      height:auto;
+    }
+
+    select{
+      color:#fff;
+      background:#11111a;
+    }
+
+    option{
+      color:#111;
+      background:#fff;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .row > *{
+      flex:1 1 auto;
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:800;
+      font-size:14px;
+      color:#fff;
+      transition:.18s ease;
+      min-height:46px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple2)); }
+    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
+    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
+    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
+    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+
+    .helper{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+      margin-top:6px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:14px;
+      padding:12px;
     }
 
     .table-wrap{
@@ -436,7 +506,8 @@
       border-color:rgba(123,44,255,.28);
     }
 
-    .team-players-list{
+    .team-players-list,
+    .slot-card-players{
       display:flex;
       flex-wrap:wrap;
       gap:8px;
@@ -452,108 +523,6 @@
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.06);
       color:#e9e4fb;
-    }
-
-    .field{
-      display:grid;
-      gap:8px;
-      margin-bottom:12px;
-    }
-
-    .field label{
-      font-size:13px;
-      color:#ddd7f2;
-      font-weight:700;
-    }
-
-    input, select, textarea{
-      width:100%;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      color:#fff;
-      padding:12px 14px;
-      outline:none;
-      font-size:14px;
-    }
-
-    input, select{
-      height:46px;
-    }
-
-    textarea{
-      min-height:100px;
-      resize:vertical;
-    }
-
-    input[type="file"]{
-      padding:10px 14px;
-      height:auto;
-    }
-
-    select{
-      color:#fff;
-      background:#11111a;
-    }
-
-    option{
-      color:#111;
-      background:#fff;
-    }
-
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .row > *{
-      flex:1 1 auto;
-    }
-
-    .btn{
-      border:0;
-      cursor:pointer;
-      border-radius:14px;
-      padding:12px 16px;
-      font-weight:800;
-      font-size:14px;
-      color:#fff;
-      transition:.18s ease;
-      min-height:46px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-    }
-
-    .btn:hover{
-      transform:translateY(-1px);
-    }
-
-    .btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple2)); }
-    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
-    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
-    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
-    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
-
-    .helper{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.5;
-      margin-top:6px;
-    }
-
-    .empty{
-      color:var(--muted);
-      font-size:14px;
-      padding:12px;
     }
 
     .quick-grid{
@@ -662,12 +631,6 @@
       word-break:break-word;
     }
 
-    .slot-card-players{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-
     .list{
       display:grid;
       gap:12px;
@@ -700,7 +663,7 @@
 
     .pending-grid{
       display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:10px;
       margin-bottom:12px;
     }
@@ -752,13 +715,6 @@
       background:#09090d;
     }
 
-    .img-box img{
-      width:100%;
-      max-height:340px;
-      object-fit:cover;
-      display:block;
-    }
-
     .result-image-button{
       display:block;
       width:100%;
@@ -786,9 +742,7 @@
       z-index:9999;
     }
 
-    .image-modal.show{
-      display:flex;
-    }
+    .image-modal.show{ display:flex; }
 
     .image-modal-content{
       position:relative;
@@ -1000,7 +954,7 @@
         <img src="/roda-logo.png" alt="Logo" class="logo" />
         <div class="brand-text">
           <div class="brand-title" id="brandTitle">Dashboard Admin</div>
-          <div class="brand-subtitle" id="brandSubtitle">Gestione torneo e bot Discord</div>
+          <div class="brand-subtitle" id="brandSubtitle">Gestione torneo, lobby e approvazioni</div>
         </div>
       </div>
 
@@ -1024,7 +978,7 @@
 
         <button class="nav-btn" data-page="page-discord">
           <span>🤖 Discord</span>
-          <small>Pannelli e lobby</small>
+          <small>Stanze e pannelli</small>
         </button>
 
         <button class="nav-btn" data-page="page-system">
@@ -1047,7 +1001,7 @@
       <div class="topbar">
         <div class="topbar-left">
           <div class="page-title" id="topbarTitle">Panoramica</div>
-          <div class="page-subtitle" id="topbarSubtitle">Controlla lo stato del torneo, dei team e delle funzioni principali.</div>
+          <div class="page-subtitle" id="topbarSubtitle">Controlla lo stato del torneo, dei match e delle funzioni principali.</div>
         </div>
         <div class="topbar-actions">
           <div class="pill" id="setupPill">Configurazione non completata</div>
@@ -1083,14 +1037,14 @@
             <div class="card-header">
               <div class="card-header-left">
                 <h3>⚡ Azioni rapide</h3>
-                <div class="section-note">Le operazioni più usate raccolte qui, senza cercare in tutta la dashboard.</div>
+                <div class="section-note">Qui hai subito le operazioni principali del torneo senza cercare in tutta la dashboard.</div>
               </div>
             </div>
 
             <div class="quick-grid">
               <div class="quick-item">
                 <h4>🎮 Match</h4>
-                <p>Imposta subito il match corrente oppure passa al successivo.</p>
+                <p>Quando cambi match si aggiornano anche i pannelli risultati nelle stanze team e la classifica Discord.</p>
                 <div class="field" style="margin-top:12px;">
                   <label>Match corrente</label>
                   <input type="number" id="matchInput" min="1" />
@@ -1102,38 +1056,30 @@
               </div>
 
               <div class="quick-item">
-                <h4>🏆 Classifica</h4>
-                <p>Aggiungi o correggi velocemente i punti del team selezionato.</p>
-                <div class="field" style="margin-top:12px;">
-                  <label>Team</label>
-                  <select id="scoreTeam"></select>
-                </div>
-                <div class="field">
-                  <label>Punti</label>
-                  <input type="number" id="scorePoints" />
-                </div>
-                <div class="row">
-                  <button class="btn btn-green" onclick="addPoints()">Aggiungi</button>
-                  <button class="btn btn-yellow" onclick="setPoints()">Imposta</button>
-                </div>
-              </div>
-
-              <div class="quick-item">
-                <h4>📨 Pannelli Discord</h4>
-                <p>Invia o aggiorna i pannelli principali senza entrare nella sezione Discord.</p>
-                <div class="row" style="margin-top:12px;">
-                  <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
-                  <button class="btn btn-purple" onclick="spawnResultsPanel()">Pannello risultati</button>
-                </div>
-              </div>
-
-              <div class="quick-item">
-                <h4>📢 Messaggi torneo</h4>
-                <p>Aggiorna la classifica Discord e il messaggio slot registrazioni.</p>
+                <h4>🏆 Classifica Discord</h4>
+                <p>La classifica si aggiorna anche in automatico quando approvi, ma puoi forzarla qui quando vuoi.</p>
                 <div class="row" style="margin-top:12px;">
                   <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica</button>
-                  <button class="btn btn-blue" onclick="forceRegistrationMessage()">Aggiorna messaggio slot</button>
                 </div>
+              </div>
+
+              <div class="quick-item">
+                <h4>📨 Pannelli torneo</h4>
+                <p>Un pannello iscrizioni pubblico e pannelli risultati locali nelle stanze dei team.</p>
+                <div class="row" style="margin-top:12px;">
+                  <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
+                  <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
+                </div>
+              </div>
+
+              <div class="quick-item">
+                <h4>🎮 Codice lobby</h4>
+                <p>Invia in un click il codice lobby in tutte le stanze vocali dei team del torneo.</p>
+                <div class="field" style="margin-top:12px;">
+                  <label>Codice lobby</label>
+                  <input type="text" id="lobbyCodeQuick" placeholder="Inserisci il codice lobby" />
+                </div>
+                <button class="btn btn-green" onclick="sendLobbyCodeQuick()">Invia codice lobby</button>
               </div>
             </div>
           </div>
@@ -1143,7 +1089,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>🏆 Classifica team</h3>
-                  <div class="section-note">Vista rapida della classifica generale del torneo.</div>
+                  <div class="section-note">Vista rapida della classifica generale aggiornata.</div>
                 </div>
               </div>
               <div class="table-wrap">
@@ -1190,7 +1136,7 @@
             <div class="card-header">
               <div class="card-header-left">
                 <h3>✅ Controllo configurazione</h3>
-                <div class="section-note">Controllo rapido delle impostazioni principali del sistema.</div>
+                <div class="section-note">Controllo rapido delle impostazioni base del progetto e dei canali Discord importanti.</div>
               </div>
             </div>
             <div class="check-list" id="setupChecks">
@@ -1263,7 +1209,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>✏️ Modifica team</h3>
-                  <div class="section-note">Qui puoi creare, modificare o eliminare i team registrati.</div>
+                  <div class="section-note">Crea, modifica o elimina i team registrati.</div>
                 </div>
               </div>
 
@@ -1303,7 +1249,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>📝 Messaggio registrazioni Discord</h3>
-                  <div class="section-note">Personalizza titolo, testo e numero massimo team del messaggio slot.</div>
+                  <div class="section-note">Personalizza il messaggio slot pubblico del torneo.</div>
                 </div>
               </div>
 
@@ -1336,7 +1282,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>📤 Invio risultato manuale</h3>
-                  <div class="section-note">Invia manualmente un risultato alla coda da approvare.</div>
+                  <div class="section-note">Invia manualmente un risultato alla coda staff, se devi farlo dalla dashboard.</div>
                 </div>
               </div>
 
@@ -1407,9 +1353,10 @@
             <div class="card-header">
               <div class="card-header-left">
                 <h3>📸 Risultati in attesa</h3>
-                <div class="section-note">Apri lo screenshot grande, controlla i dati e poi approva o rifiuta.</div>
+                <div class="section-note">Apri l’immagine, controlla i dati del match e approva o rifiuta.</div>
               </div>
             </div>
+
             <div id="pendingList" class="list">
               <div class="empty">Nessun risultato in attesa</div>
             </div>
@@ -1422,7 +1369,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>⚙️ Impostazioni Discord</h3>
-                  <div class="section-note">Salva una volta gli ID principali, così la dashboard li riusa automaticamente.</div>
+                  <div class="section-note">Salva una volta canali e categoria, così la dashboard li riusa automaticamente.</div>
                 </div>
               </div>
 
@@ -1434,8 +1381,8 @@
                     <input type="text" id="registerPanelChannel" placeholder="ID canale registrazione" />
                   </div>
                   <div class="field">
-                    <label>ID canale pannello risultati</label>
-                    <input type="text" id="resultsPanelChannel" placeholder="ID canale risultati" />
+                    <label>ID canale risultati salvato</label>
+                    <input type="text" id="resultsPanelChannel" placeholder="Facoltativo, per compatibilità" />
                   </div>
                   <div class="field">
                     <label>ID categoria stanze team</label>
@@ -1445,17 +1392,21 @@
                 </div>
 
                 <div class="subsection">
-                  <h4>Pannelli</h4>
-                  <div class="helper" style="margin-bottom:12px;">Usa questi pulsanti per inviare o aggiornare i pannelli già salvati.</div>
+                  <h4>Pannelli torneo</h4>
+                  <div class="helper" style="margin-bottom:12px;">
+                    Il pannello registrazione è pubblico. I pannelli risultati vengono creati e aggiornati direttamente nelle stanze dei team.
+                  </div>
                   <div class="row">
                     <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
-                    <button class="btn btn-purple" onclick="spawnResultsPanel()">Pannello risultati</button>
+                    <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
                   </div>
                 </div>
 
                 <div class="subsection">
                   <h4>Classifica Discord</h4>
-                  <div class="helper" style="margin-bottom:12px;">Invia o aggiorna manualmente il messaggio classifica nel canale Discord.</div>
+                  <div class="helper" style="margin-bottom:12px;">
+                    La classifica viene aggiornata anche quando approvi un risultato, ma puoi forzarla quando vuoi.
+                  </div>
                   <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica Discord</button>
                 </div>
               </div>
@@ -1466,7 +1417,7 @@
                 <div class="card-header">
                   <div class="card-header-left">
                     <h3>🎙️ Stanze vocali team</h3>
-                    <div class="section-note">Crea o elimina tutte le stanze vocali dei team in base agli slot registrati.</div>
+                    <div class="section-note">Crea o elimina tutte le stanze vocali ordinate per slot.</div>
                   </div>
                 </div>
 
@@ -1476,7 +1427,7 @@
                 </div>
 
                 <div class="helper">
-                  Le stanze vengono ordinate per slot con formato <strong>🏆・#SLOT NOME TEAM</strong>.
+                  Dopo la creazione, puoi generare i pannelli risultati team e inviare il codice lobby.
                 </div>
               </div>
 
@@ -1484,7 +1435,7 @@
                 <div class="card-header">
                   <div class="card-header-left">
                     <h3>🎮 Codice lobby</h3>
-                    <div class="section-note">Invia con un click il codice lobby in tutte le stanze vocali dei team del torneo.</div>
+                    <div class="section-note">Invia in un click il codice lobby in tutte le stanze vocali dei team.</div>
                   </div>
                 </div>
 
@@ -1512,7 +1463,7 @@
               <div class="card-header">
                 <div class="card-header-left">
                   <h3>🛠️ Configurazione progetto</h3>
-                  <div class="section-note">Impostazioni generali del torneo, del sito pubblico e dei pannelli Discord.</div>
+                  <div class="section-note">Impostazioni generali usate dal sito pubblico, dai pannelli Discord e dalla dashboard.</div>
                 </div>
               </div>
 
@@ -1620,7 +1571,7 @@
     const pageMeta = {
       'page-overview': {
         title: 'Panoramica',
-        subtitle: 'Controlla lo stato del torneo, dei team e delle funzioni principali.'
+        subtitle: 'Controlla lo stato del torneo, dei match e delle funzioni principali.'
       },
       'page-teams': {
         title: 'Team',
@@ -1628,11 +1579,11 @@
       },
       'page-results': {
         title: 'Risultati',
-        subtitle: 'Invia risultati, controlla gli screenshot e approva o rifiuta le richieste.'
+        subtitle: 'Controlla gli screenshot, approva o rifiuta e gestisci i dati manuali.'
       },
       'page-discord': {
         title: 'Discord',
-        subtitle: 'Gestisci pannelli, stanze vocali e invio codice lobby.'
+        subtitle: 'Gestisci pannello iscrizioni, pannelli risultati team, stanze vocali e codice lobby.'
       },
       'page-system': {
         title: 'Sistema',
@@ -1706,7 +1657,6 @@
     function openImageModal(src) {
       const modal = document.getElementById('imageModal');
       const preview = document.getElementById('imageModalPreview');
-
       preview.src = src || '';
       modal.classList.add('show');
       document.body.style.overflow = 'hidden';
@@ -1715,7 +1665,6 @@
     function closeImageModal() {
       const modal = document.getElementById('imageModal');
       const preview = document.getElementById('imageModalPreview');
-
       modal.classList.remove('show');
       preview.src = '';
       document.body.style.overflow = '';
@@ -1739,7 +1688,6 @@
         ['Nome brand', controlli.nomeBrand],
         ['Nome torneo', controlli.nomeTorneo],
         ['Canale pannello registrazione', controlli.canalePannelloRegistrazione],
-        ['Canale pannello risultati', controlli.canalePannelloRisultati],
         ['Categoria stanze vocali', controlli.categoriaStanze]
       ];
 
@@ -1763,7 +1711,7 @@
 
       document.title = `${brandName} ${modeLabel}`;
       document.getElementById('brandTitle').textContent = `${brandName} ${modeLabel}`;
-      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione torneo, sito e Discord${premiumMode ? ' • premium attivo' : ''}`;
+      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione torneo, lobby e approvazioni${premiumMode ? ' • premium attivo' : ''}`;
 
       document.getElementById('projectBrandName').value = brandName;
       document.getElementById('projectTournamentName').value = tournamentName;
@@ -1972,8 +1920,10 @@
       ].join('');
 
       document.getElementById('teamSelect').innerHTML = optionMarkup;
-      document.getElementById('scoreTeam').innerHTML = optionMarkup;
       document.getElementById('webResultTeam').innerHTML = optionMarkup;
+
+      const scoreTeamSelect = document.getElementById('scoreTeam');
+      if (scoreTeamSelect) scoreTeamSelect.innerHTML = optionMarkup;
 
       const fraggerSelect = document.getElementById('fraggerSelect');
       const fraggerEntries = classificaFragger.map(item => item.nome).sort((a, b) => a.localeCompare(b, 'it'));
@@ -1995,6 +1945,10 @@
               </div>
 
               <div class="pending-grid">
+                <div class="box">
+                  <span>Match</span>
+                  <strong>${Number(item.matchNumber || 1)}</strong>
+                </div>
                 <div class="box">
                   <span>Uccisioni totali</span>
                   <strong>${item.totaleUccisioni}</strong>
@@ -2236,12 +2190,12 @@
 
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore salvataggio match');
+        alert(result.data.message || 'Errore aggiornamento match');
         return;
       }
 
       await refreshDashboard();
-      setStatus('Match aggiornato');
+      setStatus(`Match impostato su ${Number(result.data.currentMatch || match)}`);
     }
 
     async function nextMatch() {
@@ -2253,45 +2207,7 @@
       }
 
       await refreshDashboard();
-      setStatus('Match avanzato');
-    }
-
-    async function addPoints() {
-      const team = document.getElementById('scoreTeam').value;
-      const points = Number(document.getElementById('scorePoints').value || 0);
-
-      const result = await api('/api/scores/add', {
-        method: 'POST',
-        body: JSON.stringify({ team, points })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore aggiunta punti');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Punti aggiunti');
-    }
-
-    async function setPoints() {
-      const team = document.getElementById('scoreTeam').value;
-      const points = Number(document.getElementById('scorePoints').value || 0);
-
-      const result = await api('/api/scores/set', {
-        method: 'POST',
-        body: JSON.stringify({ team, points })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore impostazione punti');
-        return;
-      }
-
-      await refreshDashboard();
-      setStatus('Punti impostati');
+      setStatus(`Passato al match ${Number(result.data.currentMatch || 1)}`);
     }
 
     async function approvePending(id) {
@@ -2301,8 +2217,9 @@
         alert(result.data.message || 'Errore approvazione risultato');
         return;
       }
+
       await refreshDashboard();
-      setStatus('Risultato approvato');
+      setStatus('Risultato approvato e classifica aggiornata');
     }
 
     async function rejectPending(id) {
@@ -2312,6 +2229,7 @@
         alert(result.data.message || 'Errore rifiuto risultato');
         return;
       }
+
       await refreshDashboard();
       setStatus('Risultato rifiutato');
     }
@@ -2368,13 +2286,11 @@
     }
 
     async function forceRegistrationMessage() {
-      const result = await api('/api/registration-settings/refresh', {
-        method: 'POST'
-      });
+      const result = await api('/api/registration-settings/refresh', { method: 'POST' });
 
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore aggiornamento messaggio registrazione');
+        alert(result.data.message || 'Errore aggiornamento messaggio registrazioni');
         return;
       }
 
@@ -2410,32 +2326,31 @@
       else setStatus('Pannello registrazione gestito correttamente');
     }
 
-    async function spawnResultsPanel() {
-      const typedChannelId = document.getElementById('resultsPanelChannel').value.trim();
-      const savedChannelId = dashboard?.botConfig?.resultsPanelChannelId || '';
-      const channelId = typedChannelId || savedChannelId;
+    async function refreshTeamResultPanels() {
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
 
-      if (!channelId) {
-        alert('Inserisci o salva prima l’ID del canale del pannello risultati');
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
         return;
       }
 
-      const result = await api('/api/bot/spawn-results-panel', {
+      const result = await api('/api/bot/refresh-team-result-panels', {
         method: 'POST',
-        body: JSON.stringify({ channelId })
+        body: JSON.stringify({ categoryId })
       });
 
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore invio pannello risultati');
+        alert(result.data.message || 'Errore aggiornamento pannelli risultati team');
         return;
       }
 
       await refreshDashboard();
-
-      if (result.data.updated) setStatus('Pannello risultati aggiornato');
-      else if (result.data.created) setStatus('Pannello risultati inviato');
-      else setStatus('Pannello risultati gestito correttamente');
+      setStatus(
+        `Pannelli team aggiornati • creati: ${Number(result.data.created || 0)} • aggiornati: ${Number(result.data.updated || 0)} • stanze mancanti: ${Number(result.data.missingRooms || 0)}`
+      );
     }
 
     async function createRooms() {
@@ -2488,31 +2403,31 @@
       setStatus(`Stanze eliminate: ${Number(result.data.deleted || 0)}`);
     }
 
-    async function sendLobbyCode() {
-      const lobbyCode = document.getElementById('lobbyCode').value.trim();
+    async function sendLobbyCodeWithValue(lobbyCode) {
+      const code = String(lobbyCode || '').trim();
       const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
       const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
       const categoryId = typedCategoryId || savedCategoryId;
 
-      if (!lobbyCode) {
+      if (!code) {
         alert('Inserisci il codice lobby');
-        return;
+        return false;
       }
 
       if (!categoryId) {
         alert('Inserisci o salva prima l’ID della categoria delle stanze team');
-        return;
+        return false;
       }
 
       const result = await api('/api/bot/send-lobby-code', {
         method: 'POST',
-        body: JSON.stringify({ lobbyCode, categoryId })
+        body: JSON.stringify({ lobbyCode: code, categoryId })
       });
 
-      if (!result) return;
+      if (!result) return false;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore invio codice lobby');
-        return;
+        return false;
       }
 
       const inviate = Number(result.data.sent || 0);
@@ -2520,6 +2435,22 @@
       const totale = Number(result.data.total || 0);
 
       setStatus(`Codice lobby inviato • riuscite: ${inviate}/${totale} • fallite: ${fallite}`);
+      return true;
+    }
+
+    async function sendLobbyCode() {
+      const input = document.getElementById('lobbyCode');
+      const ok = await sendLobbyCodeWithValue(input.value);
+      if (!ok) return;
+      input.value = '';
+      document.getElementById('lobbyCodeQuick').value = '';
+    }
+
+    async function sendLobbyCodeQuick() {
+      const input = document.getElementById('lobbyCodeQuick');
+      const ok = await sendLobbyCodeWithValue(input.value);
+      if (!ok) return;
+      input.value = '';
       document.getElementById('lobbyCode').value = '';
     }
 
@@ -2532,7 +2463,7 @@
       }
 
       await refreshDashboard();
-      setStatus('Classifica Discord aggiornata manualmente');
+      setStatus('Classifica Discord aggiornata');
     }
 
     async function submitWebResult() {
@@ -2638,7 +2569,6 @@
     window.openImageModal = openImageModal;
     window.closeImageModal = closeImageModal;
     window.handleImageModalBackdrop = handleImageModalBackdrop;
-
     window.saveProjectSettings = saveProjectSettings;
     window.completeSetup = completeSetup;
     window.saveBotSettings = saveBotSettings;
@@ -2651,8 +2581,6 @@
     window.deleteFragger = deleteFragger;
     window.setMatch = setMatch;
     window.nextMatch = nextMatch;
-    window.addPoints = addPoints;
-    window.setPoints = setPoints;
     window.approvePending = approvePending;
     window.rejectPending = rejectPending;
     window.resetTeams = resetTeams;
@@ -2660,10 +2588,11 @@
     window.saveRegistrationSettings = saveRegistrationSettings;
     window.forceRegistrationMessage = forceRegistrationMessage;
     window.spawnRegisterPanel = spawnRegisterPanel;
-    window.spawnResultsPanel = spawnResultsPanel;
+    window.refreshTeamResultPanels = refreshTeamResultPanels;
     window.createRooms = createRooms;
     window.deleteRooms = deleteRooms;
     window.sendLobbyCode = sendLobbyCode;
+    window.sendLobbyCodeQuick = sendLobbyCodeQuick;
     window.forceLeaderboard = forceLeaderboard;
     window.submitWebResult = submitWebResult;
     window.createArchive = createArchive;
