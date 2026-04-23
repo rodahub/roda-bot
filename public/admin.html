@@ -23,7 +23,6 @@
       --blue:#57b7ff;
       --cyan:#4de2ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 30px rgba(123,44,255,.14);
-      --shadow-strong:0 0 0 1px rgba(162,109,255,.16), 0 0 36px rgba(123,44,255,.20);
       --radius:22px;
       --radius-sm:16px;
       --sidebar-width:280px;
@@ -2384,7 +2383,14 @@
     }
 
     async function spawnRegisterPanel() {
-      const channelId = document.getElementById('registerPanelChannel').value.trim();
+      const typedChannelId = document.getElementById('registerPanelChannel').value.trim();
+      const savedChannelId = dashboard?.botConfig?.registerPanelChannelId || '';
+      const channelId = typedChannelId || savedChannelId;
+
+      if (!channelId) {
+        alert('Inserisci o salva prima l’ID del canale del pannello registrazione');
+        return;
+      }
 
       const result = await api('/api/bot/spawn-register-panel', {
         method: 'POST',
@@ -2405,7 +2411,14 @@
     }
 
     async function spawnResultsPanel() {
-      const channelId = document.getElementById('resultsPanelChannel').value.trim();
+      const typedChannelId = document.getElementById('resultsPanelChannel').value.trim();
+      const savedChannelId = dashboard?.botConfig?.resultsPanelChannelId || '';
+      const channelId = typedChannelId || savedChannelId;
+
+      if (!channelId) {
+        alert('Inserisci o salva prima l’ID del canale del pannello risultati');
+        return;
+      }
 
       const result = await api('/api/bot/spawn-results-panel', {
         method: 'POST',
@@ -2426,7 +2439,14 @@
     }
 
     async function createRooms() {
-      const categoryId = document.getElementById('roomsCategoryId').value.trim();
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return;
+      }
 
       const result = await api('/api/bot/create-rooms', {
         method: 'POST',
@@ -2444,7 +2464,14 @@
     }
 
     async function deleteRooms() {
-      const categoryId = document.getElementById('roomsCategoryId').value.trim();
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
+        return;
+      }
 
       const result = await api('/api/bot/delete-rooms', {
         method: 'POST',
@@ -2463,10 +2490,17 @@
 
     async function sendLobbyCode() {
       const lobbyCode = document.getElementById('lobbyCode').value.trim();
-      const categoryId = document.getElementById('roomsCategoryId').value.trim();
+      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
+      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
+      const categoryId = typedCategoryId || savedCategoryId;
 
       if (!lobbyCode) {
         alert('Inserisci il codice lobby');
+        return;
+      }
+
+      if (!categoryId) {
+        alert('Inserisci o salva prima l’ID della categoria delle stanze team');
         return;
       }
 
