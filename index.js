@@ -788,6 +788,8 @@ async function createTeamRooms(customCategoryId) {
     throw new Error('Nessun team registrato');
   }
 
+  await guild.channels.fetch();
+
   const existingNames = new Set(
     guild.channels.cache
       .filter(c => c.parentId === categoryIdToUse && c.type === ChannelType.GuildVoice)
@@ -832,6 +834,8 @@ async function deleteTeamRooms(customCategoryId) {
   const guild = await client.guilds.fetch(GUILD_ID);
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
+  await guild.channels.fetch();
+
   const channels = guild.channels.cache.filter(c =>
     c.parentId === categoryIdToUse &&
     c.type === ChannelType.GuildVoice &&
@@ -856,6 +860,87 @@ async function deleteTeamRooms(customCategoryId) {
   });
 
   return { ok: true, deleted };
+}
+
+function buildLobbyCodeMessage(lobbyCode) {
+  const cleanCode = sanitizeText(lobbyCode);
+  return `🎮 **CODICE LOBBY**
+
+Codice: **${cleanCode}**
+
+Buon game 🔥`;
+}
+
+async function sendLobbyCodeToTeamRooms(lobbyCode, customCategoryId) {
+  await waitReady();
+
+  const cleanCode = sanitizeText(lobbyCode);
+  if (!cleanCode) {
+    throw new Error('Codice lobby non valido');
+  }
+
+  const guild = await client.guilds.fetch(GUILD_ID);
+  const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
+
+  if (!categoryIdToUse) {
+    throw new Error('Categoria non valida');
+  }
+
+  const categoryChannel = await guild.channels.fetch(categoryIdToUse).catch(() => null);
+  if (!categoryChannel) {
+    throw new Error('Categoria non trovata');
+  }
+
+  if (categoryChannel.type !== ChannelType.GuildCategory) {
+    throw new Error('Il channel selezionato non è una categoria');
+  }
+
+  await guild.channels.fetch();
+
+  const channels = guild.channels.cache
+    .filter(c =>
+      c.parentId === categoryIdToUse &&
+      c.type === ChannelType.GuildVoice &&
+      c.name.startsWith('🏆・#')
+    )
+    .sort((a, b) => a.rawPosition - b.rawPosition);
+
+  if (!channels.size) {
+    throw new Error('Nessuna stanza team trovata nella categoria selezionata');
+  }
+
+  const content = buildLobbyCodeMessage(cleanCode);
+
+  let sent = 0;
+  let failed = 0;
+  const failedChannels = [];
+
+  for (const channel of channels.values()) {
+    try {
+      await channel.send({ content });
+      sent++;
+    } catch (error) {
+      failed++;
+      failedChannels.push(channel.name);
+      console.error(`Errore invio codice lobby in ${channel.name}:`, error);
+    }
+  }
+
+  logAudit('dashboard', 'web', 'lobby_code_sent_to_team_rooms', {
+    categoryId: categoryIdToUse,
+    lobbyCode: cleanCode,
+    sent,
+    failed,
+    failedChannels
+  });
+
+  return {
+    ok: true,
+    sent,
+    failed,
+    total: channels.size,
+    failedChannels
+  };
 }
 
 async function saveDiscordAttachmentLocally(attachment) {
@@ -1216,6 +1301,7 @@ module.exports = {
   updateSavedRegisterPanelIfExists,
   createTeamRooms,
   deleteTeamRooms,
+  sendLobbyCodeToTeamRooms,
   nextMatch,
   setCurrentMatch,
   submitWebResult,
