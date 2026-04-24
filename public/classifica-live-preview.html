@@ -2,215 +2,237 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1672, height=941, initial-scale=1.0" />
+  <meta name="viewport" content="width=1672, initial-scale=1.0" />
   <title>Classifica Live Preview</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Oxanium:wght@500;600;700;800&display=swap" rel="stylesheet">
-
   <style>
-    html, body {
+    :root {
+      --canvas-width: 1672px;
+      --canvas-height: 941px;
+
+      --table-left: 100px;
+      --table-top: 248px;
+      --table-width: 1440px;
+
+      --col-pos: 300px;
+      --col-team: 820px;
+      --col-points: 320px;
+
+      --header-height: 44px;
+      --row-height: 28px;
+      --header-gap: 10px;
+      --row-gap: 8px;
+
+      --purple-main: #7d35ff;
+      --purple-dark: #5720c7;
+      --purple-border: rgba(165, 108, 255, 0.95);
+      --purple-soft: rgba(180, 130, 255, 0.9);
+      --text-dark: #3d168c;
+      --text-light: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
       margin: 0;
       padding: 0;
-      width: 1672px;
-      height: 941px;
+      width: var(--canvas-width);
+      height: var(--canvas-height);
       overflow: hidden;
-      background: #111;
+      background: #ece9f0;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     body {
-      font-family: 'Oxanium', sans-serif;
+      position: relative;
     }
 
     .canvas {
       position: relative;
-      width: 1672px;
-      height: 941px;
+      width: var(--canvas-width);
+      height: var(--canvas-height);
       overflow: hidden;
-      background-image: url("/classifica-live-1672x941.png");
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      background-position: center;
     }
 
-    /* POSIZIONE ATTUALE DELLA TABELLA - LASCIATA STABILE */
+    .background {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      pointer-events: none;
+      user-select: none;
+    }
+
     .table-wrap {
       position: absolute;
-      left: 100px;
-      top: 245px;
-      width: 1444px;
-      height: 620px;
+      left: var(--table-left);
+      top: var(--table-top);
+      width: var(--table-width);
       z-index: 2;
     }
 
-    table {
+    .grid-row {
+      display: grid;
+      grid-template-columns: var(--col-pos) var(--col-team) var(--col-points);
+      column-gap: 0;
+      align-items: center;
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 8px;
-      table-layout: fixed;
     }
 
-    col.col-pos { width: 21%; }
-    col.col-team { width: 57%; }
-    col.col-points { width: 22%; }
+    .header-row {
+      height: var(--header-height);
+      margin-bottom: var(--header-gap);
+    }
 
-    thead th {
-      height: 50px;
+    .body-row {
+      height: var(--row-height);
+      margin-bottom: var(--row-gap);
+    }
+
+    .cell {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      vertical-align: middle;
-      color: #ffffff;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-cell {
+      background: linear-gradient(180deg, #8c49ff 0%, #732be8 45%, #5d1fcf 100%);
+      border: 2px solid rgba(174, 125, 255, 0.95);
+      color: var(--text-light);
+      font-weight: 900;
+      font-size: 21px;
       letter-spacing: 1px;
       text-transform: uppercase;
-      background: linear-gradient(
-        180deg,
-        rgba(160, 95, 255, 0.98) 0%,
-        rgba(120, 48, 242, 0.97) 45%,
-        rgba(88, 28, 194, 0.97) 100%
-      );
-      border: 2px solid rgba(225, 205, 255, 0.35);
-      border-radius: 16px;
-      box-shadow:
-        0 0 10px rgba(163, 98, 255, 0.75),
-        0 0 22px rgba(163, 98, 255, 0.45),
-        0 0 36px rgba(163, 98, 255, 0.22),
-        inset 0 0 10px rgba(255,255,255,0.10);
       text-shadow:
-        0 0 6px rgba(255,255,255,0.20),
-        0 0 16px rgba(214, 180, 255, 0.55),
-        0 0 28px rgba(176, 110, 255, 0.30);
-      box-sizing: border-box;
-    }
-
-    tbody td {
-      height: 28px;
-      text-align: center;
-      vertical-align: middle;
-      border-radius: 12px;
-      box-sizing: border-box;
-      background: rgba(255,255,255,0.025);
-      border: 2px solid rgba(185, 134, 255, 0.82);
-      color: #4b1e7d;
+        0 0 6px rgba(255, 255, 255, 0.35),
+        0 0 12px rgba(146, 80, 255, 0.45);
       box-shadow:
-        0 0 6px rgba(170, 115, 255, 0.22),
-        0 0 14px rgba(170, 115, 255, 0.08),
-        inset 0 0 6px rgba(255,255,255,0.05);
-      text-shadow:
-        0 0 4px rgba(255,255,255,0.12),
-        0 0 10px rgba(210, 175, 255, 0.18);
+        0 0 10px rgba(123, 65, 255, 0.45),
+        0 0 18px rgba(176, 120, 255, 0.22),
+        inset 0 0 12px rgba(255, 255, 255, 0.10);
     }
 
-    tbody td.pos-cell,
-    tbody td.points-cell {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-
-    tbody td.team-cell {
-      font-family: 'Oxanium', sans-serif;
-      font-size: 19px;
-      font-weight: 700;
-      padding: 0 14px;
+    .body-cell {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(182, 136, 255, 0.92);
+      color: var(--text-dark);
+      font-weight: 900;
+      font-size: 18px;
       letter-spacing: 0.2px;
-    }
-
-    /* TOP 3 PIU' EVIDENTI */
-    tbody tr.top-3 td {
-      color: #3f126c;
-      border-color: rgba(178, 116, 255, 0.98);
-      background: rgba(255,255,255,0.035);
-      box-shadow:
-        0 0 8px rgba(176, 110, 255, 0.34),
-        0 0 18px rgba(176, 110, 255, 0.14),
-        inset 0 0 8px rgba(255,255,255,0.08);
       text-shadow:
-        0 0 6px rgba(255,255,255,0.14),
-        0 0 10px rgba(210, 175, 255, 0.20);
-    }
-
-    /* RIGHE VUOTE: PIU' VISIBILI, NON SBIADITE */
-    tbody tr.empty-row td {
-      border-color: rgba(180, 128, 255, 0.78);
-      background: rgba(255,255,255,0.018);
+        0 0 5px rgba(255, 255, 255, 0.35),
+        0 0 8px rgba(160, 98, 255, 0.18);
       box-shadow:
-        0 0 5px rgba(174, 118, 255, 0.16),
-        inset 0 0 4px rgba(255,255,255,0.03);
+        0 0 8px rgba(166, 105, 255, 0.18),
+        inset 0 0 10px rgba(255, 255, 255, 0.05);
     }
 
-    /* DAL 4° IN POI LA POSIZIONE DEVE RESTARE LEGGIBILE */
-    tbody tr.empty-row td.pos-cell {
-      color: rgba(94, 48, 150, 0.58);
-      text-shadow:
-        0 0 4px rgba(255,255,255,0.08),
-        0 0 8px rgba(192, 156, 255, 0.14);
+    .body-row.has-data .body-cell {
+      border-color: rgba(160, 102, 255, 1);
+      box-shadow:
+        0 0 10px rgba(157, 93, 255, 0.22),
+        inset 0 0 10px rgba(255, 255, 255, 0.06);
     }
 
-    /* CELLE VUOTE TEAM/PUNTI RESTANO VUOTE MA CON GRIGLIA VISIBILE */
-    tbody tr.empty-row td.team-cell,
-    tbody tr.empty-row td.points-cell {
-      color: transparent;
+    .pos-cell,
+    .points-cell {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .team-cell {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase; /* QUI li mostra sempre in maiuscolo */
+    }
+
+    .empty {
+      color: rgba(78, 27, 152, 0.34);
       text-shadow: none;
     }
   </style>
 </head>
 <body>
   <div class="canvas">
+    <img
+      class="background"
+      src="/classifica-live-1672x941.png"
+      alt="Classifica Live Background"
+    />
+
     <div class="table-wrap">
-      <table>
-        <colgroup>
-          <col class="col-pos" />
-          <col class="col-team" />
-          <col class="col-points" />
-        </colgroup>
+      <div class="grid-row header-row">
+        <div class="cell header-cell">POSIZIONE</div>
+        <div class="cell header-cell">TEAM</div>
+        <div class="cell header-cell">PUNTI</div>
+      </div>
 
-        <thead>
-          <tr>
-            <th>POSIZIONE</th>
-            <th>TEAM</th>
-            <th>PUNTI</th>
-          </tr>
-        </thead>
-
-        <tbody id="ranking-body"></tbody>
-      </table>
+      <div id="table-body"></div>
     </div>
   </div>
 
   <script>
-    const previewData = [
-      { team: 'roda red', points: 45 },
-      { team: 'roda black', points: 32 },
-      { team: 'roda white', points: 23 }
+    // Se in futuro vuoi passare dati dinamici, puoi usare window.CLASSIFICA_DATA
+    // Esempio:
+    // window.CLASSIFICA_DATA = [
+    //   { team: "roda red", points: 45 },
+    //   { team: "roda black", points: 32 },
+    //   { team: "roda white", points: 23 }
+    // ];
+
+    const defaultData = [
+      { team: "roda red", points: 45 },
+      { team: "roda black", points: 32 },
+      { team: "roda white", points: 23 }
     ];
 
-    const TOTAL_ROWS = 16;
-    const tbody = document.getElementById('ranking-body');
+    const rowsCount = 16;
+    const data = Array.isArray(window.CLASSIFICA_DATA) ? window.CLASSIFICA_DATA : defaultData;
+    const tbody = document.getElementById("table-body");
 
-    for (let i = 0; i < TOTAL_ROWS; i++) {
-      const tr = document.createElement('tr');
-      const entry = previewData[i] || null;
-
-      if (i < 3 && entry) {
-        tr.classList.add('top-3');
-      }
-
-      if (!entry) {
-        tr.classList.add('empty-row');
-      }
-
-      tr.innerHTML = `
-        <td class="pos-cell">${i + 1}°</td>
-        <td class="team-cell">${entry ? entry.team : ''}</td>
-        <td class="points-cell">${entry ? entry.points : ''}</td>
-      `;
-
-      tbody.appendChild(tr);
+    function formatPosition(index) {
+      return `${index + 1}°`;
     }
+
+    function renderTable() {
+      tbody.innerHTML = "";
+
+      for (let i = 0; i < rowsCount; i++) {
+        const item = data[i] || null;
+        const row = document.createElement("div");
+        row.className = `grid-row body-row ${item ? "has-data" : ""}`;
+
+        const pos = document.createElement("div");
+        pos.className = `cell body-cell pos-cell ${item ? "" : "empty"}`;
+        pos.textContent = formatPosition(i);
+
+        const team = document.createElement("div");
+        team.className = `cell body-cell team-cell ${item ? "" : "empty"}`;
+        team.textContent = item?.team ? String(item.team).toUpperCase() : "";
+
+        const points = document.createElement("div");
+        points.className = `cell body-cell points-cell ${item ? "" : "empty"}`;
+        points.textContent = item?.points !== undefined && item?.points !== null ? item.points : "";
+
+        row.appendChild(pos);
+        row.appendChild(team);
+        row.appendChild(points);
+
+        tbody.appendChild(row);
+      }
+    }
+
+    renderTable();
   </script>
 </body>
 </html>
