@@ -8,22 +8,24 @@
   <style>
     :root{
       --bg:#050508;
-      --bg-soft:#0a0a13;
+      --bg2:#090914;
       --panel:#111120;
-      --panel-2:#17172a;
-      --panel-3:#20203a;
+      --panel2:#17172b;
+      --panel3:#20203a;
       --text:#faf7ff;
       --muted:#aaa6c5;
+      --soft:#d8ccff;
       --line:rgba(170,120,255,.18);
-      --line-strong:rgba(190,145,255,.38);
+      --line2:rgba(190,145,255,.38);
       --purple:#7b2cff;
-      --purple-2:#a963ff;
+      --purple2:#a963ff;
       --green:#18c964;
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
-      --shadow:0 0 0 1px rgba(170,120,255,.10),0 26px 70px rgba(0,0,0,.42),0 0 38px rgba(123,44,255,.16);
-      --glow:0 0 32px rgba(123,44,255,.22);
+      --cyan:#4de2ff;
+      --shadow:0 0 0 1px rgba(170,120,255,.10),0 24px 70px rgba(0,0,0,.42),0 0 38px rgba(123,44,255,.14);
+      --glow:0 0 34px rgba(123,44,255,.22);
       --radius:26px;
       --sidebar:292px;
     }
@@ -45,18 +47,18 @@
       font-family:Inter,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at 8% 8%,rgba(123,44,255,.22),transparent 28%),
-        radial-gradient(circle at 82% 14%,rgba(87,183,255,.11),transparent 24%),
-        radial-gradient(circle at 50% 100%,rgba(123,44,255,.10),transparent 36%),
+        radial-gradient(circle at 8% 8%,rgba(123,44,255,.24),transparent 28%),
+        radial-gradient(circle at 88% 8%,rgba(87,183,255,.12),transparent 26%),
+        radial-gradient(circle at 55% 100%,rgba(123,44,255,.12),transparent 36%),
         linear-gradient(180deg,#050507 0%,#090910 100%);
     }
 
     body{overflow:auto;}
-
     button,input,textarea,select{font-family:inherit;}
 
     .app{
       min-height:100vh;
+      width:100%;
       display:grid;
       grid-template-columns:var(--sidebar) minmax(0,1fr);
     }
@@ -72,6 +74,7 @@
       display:flex;
       flex-direction:column;
       gap:16px;
+      z-index:80;
     }
 
     .brand{
@@ -143,13 +146,13 @@
     }
 
     .nav button.active{
-      background:linear-gradient(135deg,rgba(123,44,255,.28),rgba(169,99,255,.16));
-      border-color:rgba(190,145,255,.36);
+      background:linear-gradient(135deg,rgba(123,44,255,.30),rgba(169,99,255,.17));
+      border-color:rgba(190,145,255,.38);
       box-shadow:var(--glow);
     }
 
     .nav small{
-      color:var(--muted);
+      color:var(--soft);
       font-size:11px;
       font-weight:850;
       white-space:nowrap;
@@ -164,14 +167,15 @@
     .main{
       min-width:0;
       min-height:100vh;
+      width:100%;
     }
 
     .topbar{
       position:sticky;
       top:0;
       z-index:70;
-      padding:18px 24px;
-      background:linear-gradient(180deg,rgba(13,13,24,.92),rgba(9,9,17,.72));
+      padding:18px 28px;
+      background:linear-gradient(180deg,rgba(13,13,24,.94),rgba(9,9,17,.76));
       border-bottom:1px solid rgba(255,255,255,.07);
       backdrop-filter:blur(16px);
       display:flex;
@@ -182,11 +186,11 @@
     }
 
     .page-title{
-      font-size:32px;
+      font-size:34px;
       font-weight:950;
       line-height:1;
       margin-bottom:7px;
-      letter-spacing:-.4px;
+      letter-spacing:-.5px;
     }
 
     .page-sub{
@@ -203,11 +207,16 @@
     }
 
     .content{
-      padding:22px;
-      max-width:1860px;
+      width:100%;
+      max-width:none;
+      padding:24px 28px 28px;
     }
 
-    .page{display:none;}
+    .page{
+      display:none;
+      width:100%;
+    }
+
     .page.active{
       display:block;
       animation:fade .18s ease;
@@ -219,14 +228,15 @@
     }
 
     .hero{
-      border:1px solid rgba(190,145,255,.22);
+      width:100%;
+      border:1px solid rgba(190,145,255,.24);
       border-radius:34px;
       padding:24px;
       margin-bottom:18px;
       background:
-        radial-gradient(circle at top left,rgba(123,44,255,.20),transparent 34%),
-        radial-gradient(circle at bottom right,rgba(87,183,255,.09),transparent 30%),
-        linear-gradient(180deg,rgba(20,20,37,.96),rgba(10,10,18,.98));
+        radial-gradient(circle at top left,rgba(123,44,255,.22),transparent 34%),
+        radial-gradient(circle at bottom right,rgba(87,183,255,.10),transparent 30%),
+        linear-gradient(180deg,rgba(20,20,37,.97),rgba(10,10,18,.99));
       box-shadow:var(--shadow);
       overflow:hidden;
       position:relative;
@@ -242,17 +252,17 @@
 
     .hero-inner{
       position:relative;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
       gap:18px;
-      flex-wrap:wrap;
+      align-items:start;
+      width:100%;
     }
 
     .hero h2{
       margin:0 0 8px;
-      font-size:34px;
-      letter-spacing:-.6px;
+      font-size:38px;
+      letter-spacing:-.7px;
       line-height:1;
     }
 
@@ -268,6 +278,72 @@
       gap:10px;
       flex-wrap:wrap;
       align-items:center;
+      justify-content:flex-end;
+      max-width:720px;
+    }
+
+    .flow-actions{
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:18px;
+      width:100%;
+    }
+
+    .flow-btn{
+      border:1px solid rgba(170,120,255,.18);
+      border-radius:23px;
+      background:linear-gradient(180deg,rgba(18,18,33,.97),rgba(10,10,18,.98));
+      box-shadow:var(--shadow);
+      padding:16px;
+      color:var(--text);
+      cursor:pointer;
+      min-height:112px;
+      text-align:left;
+      transition:.16s ease;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .flow-btn:hover{
+      transform:translateY(-2px);
+      border-color:rgba(190,145,255,.36);
+      box-shadow:0 0 0 1px rgba(170,120,255,.12),0 28px 80px rgba(0,0,0,.45),0 0 48px rgba(123,44,255,.20);
+    }
+
+    .flow-btn.disabled{
+      opacity:.42;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .flow-btn strong{
+      display:block;
+      font-size:16px;
+      line-height:1.2;
+      font-weight:950;
+    }
+
+    .flow-btn span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+      font-weight:700;
+    }
+
+    .flow-icon{
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:16px;
+      background:rgba(123,44,255,.18);
+      border:1px solid rgba(190,145,255,.24);
+      box-shadow:0 0 20px rgba(123,44,255,.18);
     }
 
     .grid-2{
@@ -275,6 +351,7 @@
       grid-template-columns:1fr 1fr;
       gap:18px;
       margin-bottom:18px;
+      width:100%;
     }
 
     .grid-3{
@@ -282,6 +359,7 @@
       grid-template-columns:repeat(3,minmax(0,1fr));
       gap:18px;
       margin-bottom:18px;
+      width:100%;
     }
 
     .grid-4{
@@ -289,9 +367,11 @@
       grid-template-columns:repeat(4,minmax(0,1fr));
       gap:14px;
       margin-bottom:18px;
+      width:100%;
     }
 
     .card{
+      width:100%;
       background:linear-gradient(180deg,rgba(18,18,33,.97),rgba(10,10,18,.98));
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -323,6 +403,7 @@
     }
 
     .stat{
+      width:100%;
       background:linear-gradient(180deg,rgba(18,18,33,.97),rgba(10,10,18,.98));
       border:1px solid var(--line);
       border-radius:23px;
@@ -359,7 +440,7 @@
 
     .stat strong{
       display:block;
-      font-size:31px;
+      font-size:32px;
       font-weight:950;
       word-break:break-word;
       position:relative;
@@ -368,6 +449,7 @@
 
     .progress-shell{
       width:100%;
+      max-width:700px;
       height:16px;
       border-radius:999px;
       overflow:hidden;
@@ -380,7 +462,7 @@
       height:100%;
       width:0%;
       border-radius:999px;
-      background:linear-gradient(90deg,var(--purple),var(--purple-2),var(--blue));
+      background:linear-gradient(90deg,var(--purple),var(--purple2),var(--blue));
       box-shadow:0 0 20px rgba(123,44,255,.45);
       transition:.2s ease;
     }
@@ -422,7 +504,7 @@
     .btn:hover{transform:translateY(-1px);}
     .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
 
-    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple-2));}
+    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple2));}
     .btn-green{background:linear-gradient(135deg,#12b75a,#1ed760);color:#06120b;}
     .btn-red{background:linear-gradient(135deg,#c92b4b,#ff4d6d);}
     .btn-yellow{background:linear-gradient(135deg,#e8b600,#ffd166);color:#191100;}
@@ -491,7 +573,7 @@
     }
 
     input:focus,textarea:focus,select:focus{
-      border-color:var(--line-strong);
+      border-color:var(--line2);
       box-shadow:0 0 0 3px rgba(123,44,255,.13);
     }
 
@@ -504,6 +586,7 @@
     .row > *{flex:1 1 auto;}
 
     .table-wrap{
+      width:100%;
       overflow:auto;
       border-radius:18px;
       border:1px solid rgba(255,255,255,.065);
@@ -603,6 +686,7 @@
     .state-warn{background:rgba(255,209,102,.13);border-color:rgba(255,209,102,.29);color:#ffe8aa;}
     .state-bad{background:rgba(255,77,109,.13);border-color:rgba(255,77,109,.30);color:#ffd0d9;}
     .state-muted{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.13);color:#ddd7f2;}
+    .state-purple{background:rgba(123,44,255,.15);border-color:rgba(190,145,255,.30);color:#eadcff;}
 
     .section{margin-bottom:18px;}
 
@@ -779,6 +863,7 @@
       box-shadow:var(--shadow);
       font-size:13px;
       backdrop-filter:blur(12px);
+      width:100%;
     }
 
     .modal{
@@ -796,7 +881,7 @@
     .modal.show{display:flex;}
 
     .modal-card{
-      width:min(700px,96vw);
+      width:min(720px,96vw);
       max-height:92vh;
       overflow:auto;
       background:linear-gradient(180deg,rgba(18,18,33,.99),rgba(8,8,14,.99));
@@ -870,9 +955,15 @@
       display:none !important;
     }
 
+    @media(max-width:1600px){
+      .flow-actions{grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+
     @media(max-width:1320px){
       .grid-4{grid-template-columns:repeat(2,minmax(0,1fr));}
       .boxes{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .hero-inner{grid-template-columns:1fr;}
+      .hero-actions{justify-content:flex-start;max-width:none;}
     }
 
     @media(max-width:1120px){
@@ -892,7 +983,7 @@
       .topbar{padding:14px;}
       .hero{padding:18px;border-radius:26px;}
       .hero h2{font-size:26px;}
-      .grid-4,.boxes,.players{grid-template-columns:1fr;}
+      .flow-actions,.grid-4,.boxes,.players{grid-template-columns:1fr;}
       .manual-row{grid-template-columns:1fr;}
       .page-title{font-size:24px;}
       .row > *,.btn,.pill{width:100%;}
@@ -993,19 +1084,69 @@
 
               <div class="hero-actions">
                 <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
-                <button class="btn btn-purple" onclick="nextMatch()">Passa match</button>
+                <button class="btn btn-yellow" onclick="forceNextMatch()">Forza prossimo match</button>
                 <button class="btn btn-blue" onclick="forceLeaderboard()">Aggiorna Discord</button>
               </div>
             </div>
+          </div>
+
+          <div class="flow-actions">
+            <button class="flow-btn" id="btnNewTournament" onclick="openNewTournamentModal()">
+              <div class="flow-icon">🆕</div>
+              <div>
+                <strong>Archivia e crea nuovo</strong>
+                <span>Salva tutto e riparte da torneo pulito.</span>
+              </div>
+            </button>
+
+            <button class="flow-btn" id="btnOpenRegistrations" onclick="openRegistrations()">
+              <div class="flow-icon">🟢</div>
+              <div>
+                <strong>Apri iscrizioni</strong>
+                <span>Il bot avvisa in generale con @everyone.</span>
+              </div>
+            </button>
+
+            <button class="flow-btn" id="btnCloseRegistrations" onclick="closeRegistrations()">
+              <div class="flow-icon">🔒</div>
+              <div>
+                <strong>Chiudi iscrizioni</strong>
+                <span>Blocca nuovi team e conferma la lista.</span>
+              </div>
+            </button>
+
+            <button class="flow-btn" id="btnStartTournament" onclick="startTournament()">
+              <div class="flow-icon">🏁</div>
+              <div>
+                <strong>Inizia torneo</strong>
+                <span>Parte dal match 1 e aggiorna i pannelli.</span>
+              </div>
+            </button>
+
+            <button class="flow-btn" id="btnForceNext" onclick="forceNextMatch()">
+              <div class="flow-icon">⏭️</div>
+              <div>
+                <strong>Forza prossimo match</strong>
+                <span>I mancanti diventano assenti e si va avanti.</span>
+              </div>
+            </button>
+
+            <button class="flow-btn" id="btnFinishTournament" onclick="finishTournament()">
+              <div class="flow-icon">🏆</div>
+              <div>
+                <strong>Termina torneo</strong>
+                <span>Chiude la RØDA CUP e prepara archivio.</span>
+              </div>
+            </button>
           </div>
 
           <div class="complete-banner" id="completeBanner">
             <div class="card-head" style="margin:0;">
               <div>
                 <h3 class="card-title">✅ Match completato</h3>
-                <div class="note">Tutti i team hanno un risultato valido per questo match. Puoi passare al match successivo quando vuoi.</div>
+                <div class="note">Tutti i team hanno un risultato valido. Con auto-match attivo il sistema passa avanti da solo; puoi anche forzare manualmente.</div>
               </div>
-              <button class="btn btn-green" onclick="nextMatch()">Passa al match successivo</button>
+              <button class="btn btn-green" onclick="forceNextMatch()">Passa al match successivo</button>
             </div>
           </div>
 
@@ -1045,7 +1186,7 @@
               <div class="card-head">
                 <div>
                   <h3 class="card-title">🚨 Mancanti</h3>
-                  <div class="note">Team che non hanno ancora un risultato valido nel match corrente.</div>
+                  <div class="note">Team senza risultato valido nel match corrente.</div>
                 </div>
               </div>
               <div class="mini-list" id="missingList">
@@ -1249,6 +1390,13 @@
 
               <div class="field">
                 <label>
+                  <input type="checkbox" id="autoNextMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />
+                  Passaggio automatico match attivo
+                </label>
+              </div>
+
+              <div class="field">
+                <label>
                   <input type="checkbox" id="resetMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />
                   Riporta al match 1
                 </label>
@@ -1276,18 +1424,28 @@
               <div class="card-head">
                 <div>
                   <h3 class="card-title">💬 Messaggi bot</h3>
-                  <div class="note">Questi messaggi sono modificabili dal pannello.</div>
+                  <div class="note">Messaggi modificabili dal pannello. Il regolamento resta fisso.</div>
                 </div>
               </div>
 
               <div class="field">
-                <label>Messaggio generale torneo</label>
-                <textarea id="generalMessageInput"></textarea>
+                <label>Messaggio apertura iscrizioni</label>
+                <textarea id="openRegistrationsMessageInput"></textarea>
+              </div>
+
+              <div class="field">
+                <label>Messaggio inizio torneo</label>
+                <textarea id="startTournamentMessageInput"></textarea>
               </div>
 
               <div class="field">
                 <label>Messaggio codice lobby</label>
                 <textarea id="lobbyMessageInput"></textarea>
+              </div>
+
+              <div class="field">
+                <label>Promemoria generale</label>
+                <textarea id="generalReminderInput"></textarea>
               </div>
 
               <button class="btn btn-purple" onclick="saveTournamentMessages()">Salva messaggi</button>
@@ -1358,6 +1516,11 @@
               <div class="row" style="margin-top:10px;">
                 <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello iscrizioni</button>
                 <button class="btn btn-blue" onclick="refreshTeamPanels()">Aggiorna pannelli risultati</button>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <button class="btn btn-yellow" onclick="sendReminder()">Manda promemoria</button>
+                <button class="btn btn-blue" onclick="forceLeaderboard()">Aggiorna classifica</button>
               </div>
 
               <div class="field" style="margin-top:16px;">
@@ -1488,6 +1651,45 @@
         <div class="status-bar" id="statusBar">Dashboard pronta</div>
       </div>
     </main>
+  </div>
+
+  <div class="modal" id="newTournamentModal" onclick="newTournamentBackdrop(event)">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">🆕 Archivia e crea nuovo torneo</div>
+          <div class="note">Il torneo attuale viene sempre archiviato prima di pulire i dati.</div>
+        </div>
+        <button class="close" onclick="closeNewTournamentModal()">×</button>
+      </div>
+
+      <div class="field">
+        <label>Nome archivio</label>
+        <input id="newTournamentArchiveLabel" type="text" placeholder="Es. Backup prima nuova RØDA CUP" />
+      </div>
+
+      <div class="field">
+        <label>Nota archivio</label>
+        <textarea id="newTournamentArchiveNote" placeholder="Nota opzionale"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Numero match nuovo torneo</label>
+        <input id="newTournamentTotalMatches" type="number" min="1" max="50" value="3" />
+      </div>
+
+      <div class="field">
+        <label>
+          <input type="checkbox" id="newTournamentAutoNext" checked style="width:auto;min-height:auto;margin-right:8px;" />
+          Passaggio automatico match attivo
+        </label>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-red" onclick="closeNewTournamentModal()">Annulla</button>
+        <button class="btn btn-green" onclick="createNewTournament()">Archivia e crea</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal" id="editModal" onclick="editBackdrop(event)">
@@ -1655,9 +1857,15 @@
       sistema: ['Sistema', 'Reset e registro attività.']
     };
 
-    function qs(id){
-      return document.getElementById(id);
-    }
+    const stateLabels = {
+      bozza: 'Bozza',
+      iscrizioni_aperte: 'Iscrizioni aperte',
+      iscrizioni_chiuse: 'Iscrizioni chiuse',
+      torneo_in_corso: 'Torneo in corso',
+      torneo_finito: 'Torneo finito'
+    };
+
+    function qs(id){ return document.getElementById(id); }
 
     function html(value){
       return String(value ?? '')
@@ -1668,9 +1876,7 @@
         .replaceAll("'",'&#039;');
     }
 
-    function setStatus(text){
-      qs('statusBar').textContent = text;
-    }
+    function setStatus(text){ qs('statusBar').textContent = text; }
 
     function formatDate(value){
       const date = new Date(value);
@@ -1682,6 +1888,7 @@
       if(status === 'approvato' || status === 'inserito_manualmente') return 'state-ok';
       if(status === 'in_attesa') return 'state-warn';
       if(status === 'rifiutato') return 'state-bad';
+      if(status === 'assente') return 'state-bad';
       return 'state-muted';
     }
 
@@ -1770,7 +1977,6 @@
     function renderDashboard(){
       const data = dashboard || {};
       const teams = data.teamOrdinati || [];
-      const pending = data.risultatiInAttesa || [];
       const leaderboard = data.classificaTeam || [];
       const fraggers = data.classificaFragger || [];
       const match = data.statoMatchCorrente || {};
@@ -1783,6 +1989,8 @@
       const archives = data.archivi || [];
       const audit = data.auditLog || [];
       const session = data.session || {};
+      const lifecycle = data.statoTorneo || {};
+      const state = lifecycle.state || 'bozza';
       const isOwner = session.role === 'proprietario';
 
       document.querySelectorAll('.staff-only').forEach(item => {
@@ -1798,13 +2006,18 @@
       const completed = Number(match.chiusi || 0);
       const totalTeams = Number(match.totaleTeam || teams.length || 0);
       const progress = totalTeams > 0 ? Math.round((completed / totalTeams) * 100) : 0;
+      const autoNext = tournament.autoNextMatch !== false;
 
-      qs('topPill').textContent = `RØDA CUP • Match ${current}/${total}`;
-      qs('heroTitle').textContent = `RØDA CUP • Match ${current} di ${total}`;
-      qs('heroSub').textContent = `${completed} / ${totalTeams} team completati • ${Number(match.inAttesa || 0)} da controllare • ${Number(match.nonInviati || 0)} mancanti`;
+      qs('topPill').textContent = `RØDA CUP • ${stateLabels[state] || state} • Match ${current}/${total}`;
+      qs('heroTitle').textContent = state === 'torneo_in_corso'
+        ? `RØDA CUP • Match ${current} di ${total}`
+        : `RØDA CUP • ${stateLabels[state] || state}`;
+      qs('heroSub').textContent = state === 'torneo_in_corso'
+        ? `${completed} / ${totalTeams} team completati • ${Number(match.inAttesa || 0)} da controllare • ${Number(match.nonInviati || 0)} mancanti • auto match ${autoNext ? 'attivo' : 'spento'}`
+        : `Team iscritti: ${teams.length} / 16 • match configurati: ${total} • auto match ${autoNext ? 'attivo' : 'spento'}`;
       qs('heroProgress').style.width = `${progress}%`;
 
-      qs('completeBanner').classList.toggle('show', Boolean(match.completato && current < total));
+      qs('completeBanner').classList.toggle('show', Boolean(match.completato && current < total && state === 'torneo_in_corso'));
 
       qs('statTeams').textContent = teams.length;
       qs('statReceived').textContent = Number(match.inviati || 0);
@@ -1812,8 +2025,11 @@
       qs('statMissing').textContent = Number(match.nonInviati || 0);
 
       qs('totalMatchesInput').value = total;
-      qs('generalMessageInput').value = messages.generalAnnouncement || '';
+      qs('autoNextMatchInput').checked = autoNext;
+      qs('openRegistrationsMessageInput').value = messages.openRegistrationsAnnouncement || '';
+      qs('startTournamentMessageInput').value = messages.tournamentStartAnnouncement || '';
       qs('lobbyMessageInput').value = messages.lobbyInfoMessage || '';
+      qs('generalReminderInput').value = messages.generalReminder || '';
       qs('rulesBox').textContent = messages.regulationText || 'Regolamento non disponibile.';
 
       qs('teamsPill').textContent = `${teams.length} / 16`;
@@ -1826,6 +2042,7 @@
       qs('rulesInput').value = botConfig.rulesChannelId || '';
       qs('registerChannelInput').value = botConfig.registerPanelChannelId || '';
 
+      updateFlowButtons(state);
       renderControlLists(match.righe || []);
       renderLeaderboards(leaderboard, fraggers);
       renderPoints(points);
@@ -1836,6 +2053,24 @@
       renderStaff(data.adminUsers || []);
       renderAudit(audit);
       renderManualSelectors();
+    }
+
+    function updateFlowButtons(state){
+      const map = {
+        btnNewTournament: true,
+        btnOpenRegistrations: state === 'bozza' || state === 'torneo_finito',
+        btnCloseRegistrations: state === 'iscrizioni_aperte',
+        btnStartTournament: state === 'iscrizioni_chiuse',
+        btnForceNext: state === 'torneo_in_corso',
+        btnFinishTournament: state === 'torneo_in_corso'
+      };
+
+      Object.entries(map).forEach(([id, enabled]) => {
+        const btn = qs(id);
+        if(!btn) return;
+        btn.classList.toggle('disabled', !enabled);
+        btn.disabled = !enabled;
+      });
     }
 
     function renderControlLists(rows){
@@ -1858,7 +2093,10 @@
             <strong>#${row.slot || '-'} • ${html(row.team)}</strong>
             <div class="note">${html(row.statoTesto || 'Non inviato')}</div>
           </div>
-          <button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci</button>
+          <div class="row" style="flex:0 0 auto;">
+            <button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci</button>
+            <button class="btn btn-red" onclick="markAbsent('${html(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Assente</button>
+          </div>
         </div>
       `).join('') : `<div class="empty">Nessun team mancante</div>`;
     }
@@ -1978,10 +2216,10 @@
       const rows = selectedMatchRows || [];
 
       qs('matchRowsBody').innerHTML = rows.length ? rows.map(row => {
-        const pending = row.risultato || null;
-        const kills = pending ? Number(pending.totaleUccisioni || 0) : '-';
-        const pos = pending ? `${Number(pending.posizione || 0)}°` : '-';
-        const points = '-';
+        const result = row.risultato || null;
+        const kills = result ? Number(result.totaleUccisioni || 0) : Number(row.kills || 0) || '-';
+        const pos = result ? `${Number(result.posizione || 0)}°` : row.placement ? `${Number(row.placement)}°` : '-';
+        const points = Number(row.points || 0) || '-';
 
         return `
           <tr>
@@ -1996,7 +2234,7 @@
                 ? `<button class="btn btn-blue" onclick="openPendingById('${html(row.pendingId || '')}')">Apri risultato</button>`
                 : row.stato === 'approvato' || row.stato === 'inserito_manualmente'
                   ? `<button class="btn btn-ghost" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Modifica</button>`
-                  : `<button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Inserisci</button>`}
+                  : `<div class="row"><button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Inserisci</button><button class="btn btn-red" onclick="markAbsent('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Assente</button></div>`}
             </td>
           </tr>
         `;
@@ -2111,6 +2349,113 @@
 
     function getTeamData(teamName){
       return dashboard?.teams?.[teamName] || null;
+    }
+
+    function openNewTournamentModal(){
+      qs('newTournamentArchiveLabel').value = '';
+      qs('newTournamentArchiveNote').value = '';
+      qs('newTournamentTotalMatches').value = dashboard?.impostazioniTorneo?.totalMatches || 3;
+      qs('newTournamentAutoNext').checked = true;
+      qs('newTournamentModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeNewTournamentModal(){
+      qs('newTournamentModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function newTournamentBackdrop(event){
+      if(event.target.id === 'newTournamentModal') closeNewTournamentModal();
+    }
+
+    async function createNewTournament(){
+      if(!confirm('Confermi? Il torneo attuale verrà archiviato e poi verrà creato un torneo nuovo pulito.')) return;
+
+      const result = await api('/api/tournament/new', {
+        method:'POST',
+        body:JSON.stringify({
+          archiveLabel:qs('newTournamentArchiveLabel').value.trim(),
+          archiveNote:qs('newTournamentArchiveNote').value.trim(),
+          totalMatches:Number(qs('newTournamentTotalMatches').value || 3),
+          autoNextMatch:qs('newTournamentAutoNext').checked
+        })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore nuovo torneo');
+
+      closeNewTournamentModal();
+      await refreshDashboard();
+      setStatus('Torneo archiviato e nuovo torneo creato');
+    }
+
+    async function openRegistrations(){
+      const result = await api('/api/tournament/open-registrations', { method:'POST' });
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore apertura iscrizioni');
+
+      await refreshDashboard();
+      setStatus('Iscrizioni aperte');
+    }
+
+    async function closeRegistrations(){
+      const result = await api('/api/tournament/close-registrations', { method:'POST' });
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore chiusura iscrizioni');
+
+      await refreshDashboard();
+      setStatus('Iscrizioni chiuse');
+    }
+
+    async function startTournament(){
+      const result = await api('/api/tournament/start', { method:'POST' });
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore avvio torneo');
+
+      await refreshDashboard();
+      setStatus('Torneo iniziato');
+    }
+
+    async function finishTournament(){
+      if(!confirm('Confermi termine torneo?')) return;
+
+      const result = await api('/api/tournament/finish', { method:'POST' });
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore termine torneo');
+
+      await refreshDashboard();
+      setStatus('Torneo terminato');
+    }
+
+    async function forceNextMatch(){
+      if(!confirm('Confermi prossimo match? I team mancanti verranno segnati assenti per questo match.')) return;
+
+      const result = await api('/api/match/next', {
+        method:'POST',
+        body:JSON.stringify({ forceMissingAbsent:true })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore passaggio match');
+
+      await refreshDashboard();
+      setStatus(result.data.finished ? 'Torneo finito' : 'Passato al match successivo');
+    }
+
+    async function markAbsent(team, matchNumber){
+      if(!confirm(`Segnare ${team} assente per il match ${matchNumber}?`)) return;
+
+      const result = await api('/api/match/mark-absent', {
+        method:'POST',
+        body:JSON.stringify({ team, matchNumber })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore segna assente');
+
+      await refreshDashboard();
+      setStatus('Team segnato assente');
     }
 
     function openEditTeamName(teamName){
@@ -2246,9 +2591,7 @@
         });
 
         if(!result) return;
-        if(!result.response.ok || !result.data.ok) {
-          return alert(result.data.message || 'Endpoint punti non disponibile. Va aggiunto nel server.js.');
-        }
+        if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica punti');
       }
 
       if(type === 'fragger'){
@@ -2444,7 +2787,8 @@
         method:'POST',
         body:JSON.stringify({
           totalMatches:Number(qs('totalMatchesInput').value || 3),
-          resetCurrentMatch:qs('resetMatchInput').checked
+          resetCurrentMatch:qs('resetMatchInput').checked,
+          autoNextMatch:qs('autoNextMatchInput').checked
         })
       });
 
@@ -2460,8 +2804,10 @@
       const result = await api('/api/tournament/messages/save', {
         method:'POST',
         body:JSON.stringify({
-          generalAnnouncement:qs('generalMessageInput').value,
-          lobbyInfoMessage:qs('lobbyMessageInput').value
+          openRegistrationsAnnouncement:qs('openRegistrationsMessageInput').value,
+          tournamentStartAnnouncement:qs('startTournamentMessageInput').value,
+          lobbyInfoMessage:qs('lobbyMessageInput').value,
+          generalReminder:qs('generalReminderInput').value
         })
       });
 
@@ -2539,17 +2885,6 @@
       closeReviewModal();
       await refreshDashboard();
       setStatus('Risultato rifiutato');
-    }
-
-    async function nextMatch(){
-      if(!confirm('Vuoi passare al match successivo?')) return;
-
-      const result = await api('/api/match/next', { method:'POST' });
-      if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore passaggio match');
-
-      await refreshDashboard();
-      setStatus('Match aggiornato');
     }
 
     async function forceLeaderboard(){
@@ -2644,6 +2979,15 @@
 
       await refreshDashboard();
       setStatus(`Pannelli risultati aggiornati • creati: ${Number(result.data.created || 0)} • modificati: ${Number(result.data.updated || 0)}`);
+    }
+
+    async function sendReminder(){
+      const result = await api('/api/tournament/send-reminder', { method:'POST' });
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore invio promemoria');
+
+      await refreshDashboard();
+      setStatus('Promemoria inviato');
     }
 
     async function sendLobbyCode(){
@@ -2821,6 +3165,7 @@
 
     document.addEventListener('keydown', event => {
       if(event.key === 'Escape'){
+        closeNewTournamentModal();
         closeEditModal();
         closeTeamModal();
         closeManualModal();
