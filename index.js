@@ -15,7 +15,7 @@ const {
 
 const fs = require('fs');
 const path = require('path');
-const { createCanvas, loadImage } = require('canvas');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 
 const {
   loadData,
@@ -49,6 +49,17 @@ const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '
 const LEADERBOARD_TEMPLATE_PATH = path.join(__dirname, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
 
+const FONT_REGULAR_PATH = path.join(__dirname, 'assets', 'fonts', 'NotoSans-Regular.ttf');
+const FONT_BOLD_PATH = path.join(__dirname, 'assets', 'fonts', 'NotoSans-Bold.ttf');
+
+if (fs.existsSync(FONT_REGULAR_PATH)) {
+  registerFont(FONT_REGULAR_PATH, { family: 'NotoSans' });
+}
+
+if (fs.existsSync(FONT_BOLD_PATH)) {
+  registerFont(FONT_BOLD_PATH, { family: 'NotoSansBold' });
+}
+
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -65,6 +76,14 @@ let registrationStatusUpdateQueue = Promise.resolve();
 
 function sanitizeText(value) {
   return String(value || '').trim();
+}
+
+function sanitizeGraphicText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[^\w\sÀ-ÿ#.\-]/g, '')
+    .trim();
 }
 
 function normalizeBaseUrl(value) {
@@ -330,11 +349,11 @@ function clearTextShadow(ctx) {
   ctx.shadowOffsetY = 0;
 }
 
-function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = 'Arial') {
+function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = 'NotoSans') {
   let size = startSize;
 
   while (size >= minSize) {
-    ctx.font = `${weight} ${size}px ${family}`;
+    ctx.font = `${size}px ${family}`;
     if (ctx.measureText(text).width <= maxWidth) {
       return size;
     }
@@ -379,14 +398,16 @@ async function generateLeaderboardGraphicBuffer() {
 
     const y = startY + (i * rowHeight);
     const isTop3 = i < 3;
+    const safeTeamName = sanitizeGraphicText(row.teamName) || 'Team';
 
     const teamFontSize = fitText(
       ctx,
-      row.teamName,
+      safeTeamName,
       maxTeamWidth,
       isTop3 ? 31 : 28,
       18,
-      isTop3 ? '800' : '700'
+      isTop3 ? '800' : '700',
+      isTop3 ? 'NotoSansBold' : 'NotoSans'
     );
 
     applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.22)' : 'rgba(79, 61, 131, 0.12)', isTop3 ? 10 : 6);
@@ -394,12 +415,12 @@ async function generateLeaderboardGraphicBuffer() {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = isTop3 ? '#2d184a' : '#362258';
-    ctx.font = `${isTop3 ? '800' : '700'} ${teamFontSize}px Arial`;
-    ctx.fillText(row.teamName, teamX, y);
+    ctx.font = `${teamFontSize}px ${isTop3 ? 'NotoSansBold' : 'NotoSans'}`;
+    ctx.fillText(safeTeamName, teamX, y);
 
     ctx.textAlign = 'center';
     ctx.fillStyle = isTop3 ? '#251441' : '#33204f';
-    ctx.font = `${isTop3 ? '900' : '800'} ${isTop3 ? 30 : 28}px Arial`;
+    ctx.font = `${isTop3 ? 30 : 28}px NotoSansBold`;
     ctx.fillText(String(row.points), pointsX, y);
 
     clearTextShadow(ctx);
@@ -409,7 +430,7 @@ async function generateLeaderboardGraphicBuffer() {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#372257';
-  ctx.font = '700 24px Arial';
+  ctx.font = '24px NotoSansBold';
   ctx.fillText(`Match ${matchNumber}`, 170, 1010);
 
   ctx.textAlign = 'right';
@@ -444,14 +465,16 @@ async function generateTopFraggerGraphicBuffer() {
 
     const y = startY + (i * rowHeight);
     const isTop3 = i < 3;
+    const safePlayerName = sanitizeGraphicText(row.playerName) || 'Giocatore';
 
     const playerFontSize = fitText(
       ctx,
-      row.playerName,
+      safePlayerName,
       maxPlayerWidth,
       isTop3 ? 34 : 31,
       18,
-      isTop3 ? '800' : '700'
+      isTop3 ? '800' : '700',
+      isTop3 ? 'NotoSansBold' : 'NotoSans'
     );
 
     applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.22)' : 'rgba(79, 61, 131, 0.12)', isTop3 ? 10 : 6);
@@ -459,12 +482,12 @@ async function generateTopFraggerGraphicBuffer() {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = isTop3 ? '#2d184a' : '#362258';
-    ctx.font = `${isTop3 ? '800' : '700'} ${playerFontSize}px Arial`;
-    ctx.fillText(row.playerName, playerX, y);
+    ctx.font = `${playerFontSize}px ${isTop3 ? 'NotoSansBold' : 'NotoSans'}`;
+    ctx.fillText(safePlayerName, playerX, y);
 
     ctx.textAlign = 'center';
     ctx.fillStyle = isTop3 ? '#251441' : '#33204f';
-    ctx.font = `${isTop3 ? '900' : '800'} ${isTop3 ? 33 : 30}px Arial`;
+    ctx.font = `${isTop3 ? 33 : 30}px NotoSansBold`;
     ctx.fillText(String(row.kills), killsX, y);
 
     clearTextShadow(ctx);
@@ -474,7 +497,7 @@ async function generateTopFraggerGraphicBuffer() {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#372257';
-  ctx.font = '700 24px Arial';
+  ctx.font = '24px NotoSansBold';
   ctx.fillText(`Match ${matchNumber}`, 170, 1010);
 
   ctx.textAlign = 'right';
