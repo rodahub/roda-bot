@@ -48,17 +48,11 @@ const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '
 
 const LEADERBOARD_TEMPLATE_PATH = path.join(__dirname, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
+const CUSTOM_FONT_PATH = path.join(__dirname, 'NeltridetrialRegular-q2nmr.otf');
+const CUSTOM_FONT_FAMILY = 'NeltriTrial';
 
-const FONT_REGULAR_PATH = path.join(__dirname, 'assets', 'fonts', 'NotoSans-Regular.ttf');
-const FONT_BOLD_PATH = path.join(__dirname, 'assets', 'fonts', 'NotoSans-Bold.ttf');
-
-if (fs.existsSync(FONT_REGULAR_PATH)) {
-  registerFont(FONT_REGULAR_PATH, { family: 'NotoSans' });
-}
-
-if (fs.existsSync(FONT_BOLD_PATH)) {
-  registerFont(FONT_BOLD_PATH, { family: 'NotoSansBold' });
-}
+const LEADERBOARD_GRAPHIC_PREFIX = '🏆 **CLASSIFICA LIVE**';
+const TOP_FRAGGER_GRAPHIC_PREFIX = '🔥 **TOP FRAGGER**';
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -73,17 +67,10 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
+let customFontRegistered = false;
 
 function sanitizeText(value) {
   return String(value || '').trim();
-}
-
-function sanitizeGraphicText(value) {
-  return String(value || '')
-    .normalize('NFKC')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .replace(/[^\w\sÀ-ÿ#.\-]/g, '')
-    .trim();
 }
 
 function normalizeBaseUrl(value) {
@@ -163,14 +150,6 @@ function ensureDataStructures() {
 
   if (!data.fragger || typeof data.fragger !== 'object') {
     data.fragger = {};
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(data, 'leaderboardGraphicMessageId')) {
-    data.leaderboardGraphicMessageId = null;
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(data, 'topFraggerGraphicMessageId')) {
-    data.topFraggerGraphicMessageId = null;
   }
 }
 
@@ -335,7 +314,7 @@ function formatGraphicUpdateTime(date = new Date()) {
   });
 }
 
-function applyTextShadow(ctx, color = 'rgba(255,255,255,0.18)', blur = 8) {
+function applyTextShadow(ctx, color = 'rgba(122, 44, 255, 0.18)', blur = 8) {
   ctx.shadowColor = color;
   ctx.shadowBlur = blur;
   ctx.shadowOffsetX = 0;
@@ -349,11 +328,41 @@ function clearTextShadow(ctx) {
   ctx.shadowOffsetY = 0;
 }
 
-function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = 'NotoSans') {
+function normalizeGraphicText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function registerCustomGraphicFont() {
+  if (customFontRegistered) return;
+
+  if (!fileExists(CUSTOM_FONT_PATH)) {
+    console.warn(`Font custom non trovato: ${CUSTOM_FONT_PATH}`);
+    return;
+  }
+
+  try {
+    registerFont(CUSTOM_FONT_PATH, { family: CUSTOM_FONT_FAMILY });
+    customFontRegistered = true;
+    console.log(`Font registrato correttamente: ${CUSTOM_FONT_FAMILY}`);
+  } catch (error) {
+    console.error('Errore registrazione font custom:', error);
+  }
+}
+
+function buildCanvasFont(size, weight = 'normal') {
+  const family = customFontRegistered ? `"${CUSTOM_FONT_FAMILY}"` : 'Arial';
+  return `${weight} ${size}px ${family}`;
+}
+
+function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = 'normal') {
   let size = startSize;
 
   while (size >= minSize) {
-    ctx.font = `${size}px ${family}`;
+    ctx.font = buildCanvasFont(size, weight);
     if (ctx.measureText(text).width <= maxWidth) {
       return size;
     }
@@ -375,53 +384,55 @@ function ensureGraphicTemplates() {
 
 async function generateLeaderboardGraphicBuffer() {
   ensureGraphicTemplates();
+  registerCustomGraphicFont();
 
   const template = await loadImage(LEADERBOARD_TEMPLATE_PATH);
   const canvas = createCanvas(template.width, template.height);
   const ctx = canvas.getContext('2d');
 
+  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedScores().slice(0, 16);
   const updatedAt = formatGraphicUpdateTime();
   const matchNumber = Number(data.currentMatch || 1);
 
-  const teamX = 460;
-  const pointsX = 1575;
+  const teamX = 470;
+  const pointsX = 1578;
   const startY = 266;
   const rowHeight = 43;
-  const maxTeamWidth = 900;
+  const maxTeamWidth = 920;
 
   for (let i = 0; i < 16; i++) {
     const row = rows[i];
     if (!row) continue;
 
+    const teamName = normalizeGraphicText(row.teamName);
+    const points = String(Number(row.points || 0));
     const y = startY + (i * rowHeight);
     const isTop3 = i < 3;
-    const safeTeamName = sanitizeGraphicText(row.teamName) || 'Team';
 
     const teamFontSize = fitText(
       ctx,
-      safeTeamName,
+      teamName,
       maxTeamWidth,
-      isTop3 ? 31 : 28,
-      18,
-      isTop3 ? '800' : '700',
-      isTop3 ? 'NotoSansBold' : 'NotoSans'
+      isTop3 ? 30 : 27,
+      16,
+      isTop3 ? 'bold' : 'normal'
     );
 
-    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.22)' : 'rgba(79, 61, 131, 0.12)', isTop3 ? 10 : 6);
+    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.18)' : 'rgba(79, 61, 131, 0.10)', isTop3 ? 10 : 6);
 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = isTop3 ? '#2d184a' : '#362258';
-    ctx.font = `${teamFontSize}px ${isTop3 ? 'NotoSansBold' : 'NotoSans'}`;
-    ctx.fillText(safeTeamName, teamX, y);
+    ctx.fillStyle = isTop3 ? '#311b56' : '#3c2963';
+    ctx.font = buildCanvasFont(teamFontSize, isTop3 ? 'bold' : 'normal');
+    ctx.fillText(teamName, teamX, y);
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = isTop3 ? '#251441' : '#33204f';
-    ctx.font = `${isTop3 ? 30 : 28}px NotoSansBold`;
-    ctx.fillText(String(row.points), pointsX, y);
+    ctx.fillStyle = isTop3 ? '#241241' : '#33204f';
+    ctx.font = buildCanvasFont(isTop3 ? 28 : 26, 'bold');
+    ctx.fillText(points, pointsX, y);
 
     clearTextShadow(ctx);
   }
@@ -430,10 +441,11 @@ async function generateLeaderboardGraphicBuffer() {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#372257';
-  ctx.font = '24px NotoSansBold';
+  ctx.font = buildCanvasFont(24, 'bold');
   ctx.fillText(`Match ${matchNumber}`, 170, 1010);
 
   ctx.textAlign = 'right';
+  ctx.font = buildCanvasFont(22, 'normal');
   ctx.fillText(`Aggiornato alle ${updatedAt}`, 1750, 1010);
   clearTextShadow(ctx);
 
@@ -442,11 +454,13 @@ async function generateLeaderboardGraphicBuffer() {
 
 async function generateTopFraggerGraphicBuffer() {
   ensureGraphicTemplates();
+  registerCustomGraphicFont();
 
   const template = await loadImage(TOP_FRAGGER_TEMPLATE_PATH);
   const canvas = createCanvas(template.width, template.height);
   const ctx = canvas.getContext('2d');
 
+  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedFraggers().slice(0, 10);
@@ -463,32 +477,32 @@ async function generateTopFraggerGraphicBuffer() {
     const row = rows[i];
     if (!row) continue;
 
+    const playerName = normalizeGraphicText(row.playerName);
+    const kills = String(Number(row.kills || 0));
     const y = startY + (i * rowHeight);
     const isTop3 = i < 3;
-    const safePlayerName = sanitizeGraphicText(row.playerName) || 'Giocatore';
 
     const playerFontSize = fitText(
       ctx,
-      safePlayerName,
+      playerName,
       maxPlayerWidth,
-      isTop3 ? 34 : 31,
-      18,
-      isTop3 ? '800' : '700',
-      isTop3 ? 'NotoSansBold' : 'NotoSans'
+      isTop3 ? 34 : 30,
+      16,
+      isTop3 ? 'bold' : 'normal'
     );
 
-    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.22)' : 'rgba(79, 61, 131, 0.12)', isTop3 ? 10 : 6);
+    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.18)' : 'rgba(79, 61, 131, 0.10)', isTop3 ? 10 : 6);
 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = isTop3 ? '#2d184a' : '#362258';
-    ctx.font = `${playerFontSize}px ${isTop3 ? 'NotoSansBold' : 'NotoSans'}`;
-    ctx.fillText(safePlayerName, playerX, y);
+    ctx.fillStyle = isTop3 ? '#311b56' : '#3c2963';
+    ctx.font = buildCanvasFont(playerFontSize, isTop3 ? 'bold' : 'normal');
+    ctx.fillText(playerName, playerX, y);
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = isTop3 ? '#251441' : '#33204f';
-    ctx.font = `${isTop3 ? 33 : 30}px NotoSansBold`;
-    ctx.fillText(String(row.kills), killsX, y);
+    ctx.fillStyle = isTop3 ? '#241241' : '#33204f';
+    ctx.font = buildCanvasFont(isTop3 ? 31 : 28, 'bold');
+    ctx.fillText(kills, killsX, y);
 
     clearTextShadow(ctx);
   }
@@ -497,44 +511,60 @@ async function generateTopFraggerGraphicBuffer() {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#372257';
-  ctx.font = '24px NotoSansBold';
+  ctx.font = buildCanvasFont(24, 'bold');
   ctx.fillText(`Match ${matchNumber}`, 170, 1010);
 
   ctx.textAlign = 'right';
+  ctx.font = buildCanvasFont(22, 'normal');
   ctx.fillText(`Aggiornato alle ${updatedAt}`, 1750, 1010);
   clearTextShadow(ctx);
 
   return canvas.toBuffer('image/png');
 }
 
-async function sendOrUpdateGraphicMessage({
+async function findBotMessageByPrefix(channel, prefix) {
+  try {
+    const messages = await channel.messages.fetch({ limit: 50 });
+
+    for (const message of messages.values()) {
+      if (message.author?.id !== client.user?.id) continue;
+      if (String(message.content || '').startsWith(prefix)) {
+        return message;
+      }
+    }
+  } catch (error) {
+    console.error(`Errore ricerca messaggio con prefix "${prefix}":`, error);
+  }
+
+  return null;
+}
+
+async function sendOrReplaceGraphicMessage({
   channel,
-  messageId,
+  prefix,
   fileName,
   buffer,
   content
 }) {
-  const attachment = new AttachmentBuilder(buffer, { name: fileName });
+  const oldMessage = await findBotMessageByPrefix(channel, prefix);
 
-  if (messageId) {
-    try {
-      const msg = await channel.messages.fetch(messageId);
-      await msg.edit({
-        content,
-        files: [attachment]
-      });
-      return { updated: true, messageId: msg.id };
-    } catch (error) {
-      console.error(`Errore update messaggio grafico ${fileName}:`, error);
-    }
+  if (oldMessage) {
+    await oldMessage.delete().catch(() => {});
   }
+
+  const attachment = new AttachmentBuilder(buffer, { name: fileName });
 
   const sent = await channel.send({
     content,
     files: [attachment]
   });
 
-  return { created: true, messageId: sent.id };
+  return {
+    ok: true,
+    replaced: Boolean(oldMessage),
+    created: !oldMessage,
+    messageId: sent.id
+  };
 }
 
 async function updateLeaderboardGraphics() {
@@ -547,26 +577,27 @@ async function updateLeaderboardGraphics() {
   const leaderboardBuffer = await generateLeaderboardGraphicBuffer();
   const topFraggerBuffer = await generateTopFraggerGraphicBuffer();
 
-  const leaderboardGraphicResult = await sendOrUpdateGraphicMessage({
+  const leaderboardGraphicResult = await sendOrReplaceGraphicMessage({
     channel,
-    messageId: data.leaderboardGraphicMessageId,
+    prefix: LEADERBOARD_GRAPHIC_PREFIX,
     fileName: 'classifica-live-output.png',
     buffer: leaderboardBuffer,
-    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`
+    content: `${LEADERBOARD_GRAPHIC_PREFIX} • Match ${matchNumber}`
   });
 
-  data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
-
-  const topFraggerGraphicResult = await sendOrUpdateGraphicMessage({
+  const topFraggerGraphicResult = await sendOrReplaceGraphicMessage({
     channel,
-    messageId: data.topFraggerGraphicMessageId,
+    prefix: TOP_FRAGGER_GRAPHIC_PREFIX,
     fileName: 'top-fragger-output.png',
     buffer: topFraggerBuffer,
-    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`
+    content: `${TOP_FRAGGER_GRAPHIC_PREFIX} • Match ${matchNumber}`
   });
 
-  data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
-  saveState();
+  logAudit('bot', 'discord', 'leaderboard_graphics_updated', {
+    currentMatch: matchNumber,
+    leaderboardGraphicMessageId: leaderboardGraphicResult.messageId,
+    topFraggerGraphicMessageId: topFraggerGraphicResult.messageId
+  });
 
   return {
     ok: true,
@@ -1073,9 +1104,7 @@ async function updateLeaderboard() {
   logAudit('bot', 'discord', updated ? 'leaderboard_updated' : 'leaderboard_created', {
     currentMatch: data.currentMatch,
     updated,
-    created,
-    leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
-    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
+    created
   });
 
   return {
@@ -1591,12 +1620,14 @@ client.once('ready', async () => {
   if (readyResolver) readyResolver(client);
 
   refreshStateFromDisk();
+  registerCustomGraphicFont();
 
   logAudit('bot', 'discord', 'bot_ready', {
     guildId: GUILD_ID
   });
 
   await handleRegistrationStateChange();
+
   await updateLeaderboard().catch(error => {
     console.error('Errore aggiornamento classifica al ready:', error);
   });
