@@ -50,6 +50,10 @@ const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
 const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
 const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '1482050564375318579';
 
+const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
+const MAX_TEAMS = 16;
+const PLAYERS_PER_TEAM = 3;
+
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -100,10 +104,37 @@ function getProjectSettings() {
   const safe = data?.projectSettings || {};
   return {
     brandName: sanitizeText(safe.brandName) || 'RØDA',
-    tournamentName: sanitizeText(safe.tournamentName) || 'RØDA CUP',
+    tournamentName: FIXED_TOURNAMENT_NAME,
     supportContact: sanitizeText(safe.supportContact),
     premiumMode: Boolean(safe.premiumMode),
     setupCompleted: Boolean(safe.setupCompleted)
+  };
+}
+
+function getTournamentSettings() {
+  const safe = data?.tournamentSettings || {};
+  return {
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    totalMatches: sanitizePositiveInteger(safe.totalMatches, 3, 50),
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    createdAt: safe.createdAt || null,
+    createdBy: sanitizeText(safe.createdBy),
+    lastConfiguredAt: safe.lastConfiguredAt || null,
+    lastConfiguredBy: sanitizeText(safe.lastConfiguredBy)
+  };
+}
+
+function getTournamentMessages() {
+  const defaults = getDefaultData().tournamentMessages || {};
+  const safe = data?.tournamentMessages || {};
+
+  return {
+    generalAnnouncement: sanitizeText(safe.generalAnnouncement) || defaults.generalAnnouncement || '',
+    lobbyInfoMessage: sanitizeText(safe.lobbyInfoMessage) || defaults.lobbyInfoMessage || '',
+    regulationText: defaults.regulationText || safe.regulationText || ''
   };
 }
 
@@ -114,7 +145,10 @@ function getBotSettings() {
     registerPanelChannelId: sanitizeText(safe.registerPanelChannelId),
     resultsPanelMessageId: safe.resultsPanelMessageId || null,
     resultsPanelChannelId: sanitizeText(safe.resultsPanelChannelId),
-    roomsCategoryId: sanitizeText(safe.roomsCategoryId)
+    roomsCategoryId: sanitizeText(safe.roomsCategoryId),
+    generalChannelId: sanitizeText(safe.generalChannelId),
+    rulesChannelId: sanitizeText(safe.rulesChannelId),
+    lobbyChannelId: sanitizeText(safe.lobbyChannelId)
   };
 }
 
@@ -123,13 +157,37 @@ function ensureDataStructures() {
     data = getDefaultData();
   }
 
+  const defaults = getDefaultData();
+
   if (!data.projectSettings || typeof data.projectSettings !== 'object') {
-    data.projectSettings = getDefaultData().projectSettings;
+    data.projectSettings = defaults.projectSettings;
+  }
+
+  data.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+
+  if (!data.tournamentSettings || typeof data.tournamentSettings !== 'object') {
+    data.tournamentSettings = defaults.tournamentSettings;
+  }
+
+  data.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+  data.tournamentSettings.playersPerTeam = PLAYERS_PER_TEAM;
+  data.tournamentSettings.maxTeams = MAX_TEAMS;
+  data.tournamentSettings.lockedRules = true;
+  data.tournamentSettings.lockedPoints = true;
+
+  if (!Number.isInteger(Number(data.tournamentSettings.totalMatches)) || Number(data.tournamentSettings.totalMatches) <= 0) {
+    data.tournamentSettings.totalMatches = 3;
   }
 
   if (!data.botSettings || typeof data.botSettings !== 'object') {
-    data.botSettings = getDefaultData().botSettings;
+    data.botSettings = defaults.botSettings;
   }
+
+  if (!data.tournamentMessages || typeof data.tournamentMessages !== 'object') {
+    data.tournamentMessages = defaults.tournamentMessages;
+  }
+
+  data.tournamentMessages.regulationText = defaults.tournamentMessages.regulationText;
 
   if (!data.pending || typeof data.pending !== 'object') {
     data.pending = {};
@@ -137,6 +195,10 @@ function ensureDataStructures() {
 
   if (!data.tempSubmit || typeof data.tempSubmit !== 'object') {
     data.tempSubmit = {};
+  }
+
+  if (!data.resultSubmissions || typeof data.resultSubmissions !== 'object') {
+    data.resultSubmissions = {};
   }
 
   if (!data.scores || typeof data.scores !== 'object') {
@@ -147,10 +209,6 @@ function ensureDataStructures() {
     data.fragger = {};
   }
 
-  if (!data.resultSubmissions || typeof data.resultSubmissions !== 'object') {
-    data.resultSubmissions = {};
-  }
-
   if (!Object.prototype.hasOwnProperty.call(data, 'leaderboardGraphicMessageId')) {
     data.leaderboardGraphicMessageId = null;
   }
@@ -158,6 +216,8 @@ function ensureDataStructures() {
   if (!Object.prototype.hasOwnProperty.call(data, 'topFraggerGraphicMessageId')) {
     data.topFraggerGraphicMessageId = null;
   }
+
+  data.registrationMaxTeams = MAX_TEAMS;
 }
 
 function saveState() {
@@ -178,16 +238,25 @@ function setDataState(newData) {
 }
 
 function setTeamsState(newTeams) {
-  teams = newTeams;
+  teams = newTeams || {};
+}
+
+function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
+  const num = Number(value);
+  if (!Number.isInteger(num) || num <= 0) return fallback;
+  return Math.min(num, max);
 }
 
 function getRegistrationLimit() {
-  const limit = Number(data.registrationMaxTeams || 16);
-  return Number.isInteger(limit) && limit > 0 ? limit : 16;
+  return MAX_TEAMS;
+}
+
+function getTournamentTotalMatches() {
+  return sanitizePositiveInteger(data?.tournamentSettings?.totalMatches, 3, 50);
 }
 
 function getSortedTeamEntries() {
-  return Object.entries(teams).sort((a, b) => {
+  return Object.entries(teams || {}).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
     const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
@@ -238,7 +307,7 @@ function chunkArray(list, size) {
 
 function getNextAvailableSlot(limit = getRegistrationLimit()) {
   const used = new Set(
-    Object.values(teams)
+    Object.values(teams || {})
       .map(team => Number(team?.slot))
       .filter(slot => Number.isInteger(slot) && slot >= 1)
   );
@@ -251,7 +320,7 @@ function getNextAvailableSlot(limit = getRegistrationLimit()) {
 }
 
 function isTournamentFull() {
-  return Object.keys(teams).length >= getRegistrationLimit();
+  return Object.keys(teams || {}).length >= getRegistrationLimit();
 }
 
 function sanitizeChannelNamePart(value) {
@@ -273,7 +342,12 @@ function getSavedRoomsCategoryId() {
 
 function logAudit(actor, source, action, details = {}) {
   try {
-    appendAuditLog({ actor, source, action, details });
+    appendAuditLog({
+      actor: sanitizeText(actor) || 'system',
+      source: sanitizeText(source) || 'system',
+      action: sanitizeText(action) || 'unknown',
+      details: details && typeof details === 'object' ? details : {}
+    });
   } catch (error) {
     console.error('Errore audit log:', error);
   }
@@ -293,34 +367,13 @@ function getTeamBySlot(slot) {
   const numericSlot = Number(slot);
   if (!Number.isInteger(numericSlot) || numericSlot <= 0) return null;
 
-  for (const [teamName, teamData] of Object.entries(teams)) {
+  for (const [teamName, teamData] of Object.entries(teams || {})) {
     if (Number(teamData?.slot) === numericSlot) {
       return { teamName, teamData };
     }
   }
 
   return null;
-}
-
-function getTeamSlotByName(teamName) {
-  const cleanTeam = sanitizeText(teamName);
-  if (!cleanTeam) return 0;
-
-  if (teams[cleanTeam]) {
-    return Number(teams[cleanTeam]?.slot || 0);
-  }
-
-  for (const [savedTeamName, teamData] of Object.entries(teams)) {
-    if (savedTeamName.toLowerCase() === cleanTeam.toLowerCase()) {
-      return Number(teamData?.slot || 0);
-    }
-  }
-
-  return 0;
-}
-
-function buildResultButtonCustomId(slot) {
-  return `result_submit_slot_${Number(slot)}`;
 }
 
 function normalizeSubmissionTeamName(teamName) {
@@ -331,28 +384,18 @@ function buildSubmissionKey(teamName, matchNumber) {
   return `${normalizeSubmissionTeamName(teamName)}::match_${Number(matchNumber || 1)}`;
 }
 
-function getSubmissionRecord(teamName, matchNumber) {
-  ensureDataStructures();
+function getPendingForTeamMatch(teamName, matchNumber) {
+  const targetTeam = normalizeSubmissionTeamName(teamName);
+  const targetMatch = Number(matchNumber || 1);
 
-  const key = buildSubmissionKey(teamName, matchNumber);
-  const saved = data.resultSubmissions?.[key];
-
-  if (saved) {
-    return saved;
-  }
-
-  for (const [pendingId, entry] of Object.entries(data.pending || {})) {
+  for (const [id, entry] of Object.entries(data.pending || {})) {
     if (
-      normalizeSubmissionTeamName(entry.team) === normalizeSubmissionTeamName(teamName) &&
-      Number(entry.matchNumber || 1) === Number(matchNumber || 1)
+      normalizeSubmissionTeamName(entry?.team) === targetTeam &&
+      Number(entry?.matchNumber || 1) === targetMatch
     ) {
       return {
-        team: entry.team,
-        matchNumber: Number(entry.matchNumber || 1),
-        status: 'in_attesa',
-        pendingId,
-        updatedAt: new Date().toISOString(),
-        updatedBy: 'system'
+        id,
+        ...entry
       };
     }
   }
@@ -360,54 +403,48 @@ function getSubmissionRecord(teamName, matchNumber) {
   return null;
 }
 
-function getSubmissionStatusLabel(status) {
-  if (status === 'in_attesa') return 'In attesa';
-  if (status === 'approvato') return 'Approvato';
-  if (status === 'rifiutato') return 'Rifiutato';
-  return 'Non inviato';
-}
+function getSubmissionRecord(teamName, matchNumber) {
+  const key = buildSubmissionKey(teamName, matchNumber);
+  const saved = data.resultSubmissions?.[key];
 
-function canSubmitResult(teamName, matchNumber) {
-  const record = getSubmissionRecord(teamName, matchNumber);
-
-  if (!record) {
+  if (saved) {
     return {
-      allowed: true,
-      status: 'non_inviato'
+      team: saved.team || teamName,
+      matchNumber: Number(saved.matchNumber || matchNumber || 1),
+      status: saved.status || 'non_inviato',
+      pendingId: saved.pendingId || null,
+      updatedAt: saved.updatedAt || '',
+      updatedBy: saved.updatedBy || '',
+      source: saved.source || ''
     };
   }
 
-  if (record.status === 'rifiutato') {
-    return {
-      allowed: true,
-      status: 'rifiutato'
-    };
-  }
+  const pending = getPendingForTeamMatch(teamName, matchNumber);
 
-  if (record.status === 'in_attesa') {
+  if (pending) {
     return {
-      allowed: false,
+      team: pending.team || teamName,
+      matchNumber: Number(pending.matchNumber || matchNumber || 1),
       status: 'in_attesa',
-      message: 'Hai già inviato il risultato di questo match. Attendi la verifica dello staff.'
-    };
-  }
-
-  if (record.status === 'approvato') {
-    return {
-      allowed: false,
-      status: 'approvato',
-      message: 'Il risultato di questo match è già stato approvato. Non puoi inviarlo una seconda volta.'
+      pendingId: pending.id,
+      updatedAt: '',
+      updatedBy: pending.submittedBy || '',
+      source: pending.source || ''
     };
   }
 
   return {
-    allowed: false,
-    status: record.status,
-    message: 'Risultato già presente per questo match.'
+    team: teamName,
+    matchNumber: Number(matchNumber || 1),
+    status: 'non_inviato',
+    pendingId: null,
+    updatedAt: '',
+    updatedBy: '',
+    source: ''
   };
 }
 
-function setSubmissionStatus(teamName, matchNumber, status, extra = {}) {
+function markSubmission(teamName, matchNumber, status, extra = {}) {
   ensureDataStructures();
 
   const key = buildSubmissionKey(teamName, matchNumber);
@@ -415,68 +452,45 @@ function setSubmissionStatus(teamName, matchNumber, status, extra = {}) {
   data.resultSubmissions[key] = {
     team: sanitizeText(teamName),
     matchNumber: Number(matchNumber || 1),
-    status,
+    status: sanitizeText(status) || 'non_inviato',
     pendingId: extra.pendingId || null,
     updatedAt: new Date().toISOString(),
-    updatedBy: sanitizeText(extra.updatedBy || 'system')
+    updatedBy: sanitizeText(extra.updatedBy || ''),
+    source: sanitizeText(extra.source || '')
   };
-
-  saveState();
 }
 
-function loadPointsConfig() {
-  const defaultConfig = {
-    kill: 1,
-    placement: {
-      1: 10,
-      2: 6,
-      3: 5,
-      4: 4,
-      5: 3,
-      6: 2,
-      7: 1,
-      8: 1
-    }
-  };
+function canSubmitResult(teamName, matchNumber) {
+  const record = getSubmissionRecord(teamName, matchNumber);
 
-  const possibleFiles = [
-    path.join(__dirname, 'points.json'),
-    path.join(__dirname, 'points.js')
-  ];
-
-  for (const pointsPath of possibleFiles) {
-    try {
-      if (!fs.existsSync(pointsPath)) continue;
-
-      const raw = fs.readFileSync(pointsPath, 'utf8');
-      const parsed = JSON.parse(raw);
-
-      return {
-        kill: Number(parsed.kill || 1),
-        placement: parsed.placement && typeof parsed.placement === 'object'
-          ? parsed.placement
-          : defaultConfig.placement
-      };
-    } catch (error) {
-      console.error(`Errore lettura ${pointsPath}:`, error);
-    }
+  if (record.status === 'in_attesa') {
+    return {
+      allowed: false,
+      message: `❌ Il team **${teamName}** ha già inviato il risultato del Match ${matchNumber}. Deve aspettare la decisione dello staff.`
+    };
   }
 
-  return defaultConfig;
+  if (record.status === 'approvato' || record.status === 'inserito_manualmente') {
+    return {
+      allowed: false,
+      message: `❌ Il risultato del Match ${matchNumber} per il team **${teamName}** è già stato registrato. Non puoi inviarlo due volte.`
+    };
+  }
+
+  return {
+    allowed: true,
+    message: ''
+  };
 }
 
-function calcPoints(pos, kills) {
-  const pointsConfig = loadPointsConfig();
-  const killPoints = Number(pointsConfig.kill || 1);
-  const placementBonus = Number(pointsConfig.placement?.[String(Number(pos))] || 0);
-
-  return Number(kills || 0) * killPoints + placementBonus;
+function buildResultButtonCustomId(slot) {
+  return `result_submit_slot_${Number(slot)}`;
 }
 
 function createRegisterPanelPayload() {
   const project = getProjectSettings();
   const logoUrl = getLogoUrl();
-  const registered = Object.keys(teams).length;
+  const registered = Object.keys(teams || {}).length;
   const maxTeams = getRegistrationLimit();
   const isFull = registered >= maxTeams;
 
@@ -516,8 +530,15 @@ function createTeamResultPanelPayload(teamName, teamData) {
   const slot = Number(teamData?.slot || 0);
   const players = Array.isArray(teamData?.players) ? teamData.players : [];
   const matchNumber = Number(data.currentMatch || 1);
-  const submitCheck = canSubmitResult(teamName, matchNumber);
-  const statusLabel = getSubmissionStatusLabel(submitCheck.status);
+  const record = getSubmissionRecord(teamName, matchNumber);
+
+  const alreadySent = record.status === 'in_attesa' || record.status === 'approvato' || record.status === 'inserito_manualmente';
+
+  const statusText = alreadySent
+    ? record.status === 'in_attesa'
+      ? 'Risultato già inviato e in attesa dello staff.'
+      : 'Risultato già registrato per questo match.'
+    : 'Compila le kill dei 3 giocatori e la posizione finale. Dopo l’invio, allega lo screenshot della partita nella chat di questa stanza.';
 
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
@@ -525,10 +546,8 @@ function createTeamResultPanelPayload(teamName, teamData) {
     .setDescription(
       `**Team:** ${teamName}\n` +
       `**Slot:** #${slot || '-'}\n` +
-      `**Torneo:** ${project.tournamentName}\n` +
-      `**Stato risultato:** ${statusLabel}\n\n` +
-      `Compila le kill dei 3 giocatori e la posizione finale.\n` +
-      `Dopo l’invio, allega lo screenshot della partita nella chat di questa stanza.\n\n` +
+      `**Torneo:** ${project.tournamentName}\n\n` +
+      `${statusText}\n\n` +
       `**Giocatori:**\n` +
       `• ${sanitizeText(players[0]) || 'Giocatore 1'}\n` +
       `• ${sanitizeText(players[1]) || 'Giocatore 2'}\n` +
@@ -540,16 +559,12 @@ function createTeamResultPanelPayload(teamName, teamData) {
     embed.setThumbnail(logoUrl);
   }
 
-  const buttonLabel = submitCheck.allowed
-    ? (submitCheck.status === 'rifiutato' ? `Reinvia risultato Match ${matchNumber}` : `Invia risultato Match ${matchNumber}`)
-    : `${statusLabel} • Match ${matchNumber}`;
-
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(buildResultButtonCustomId(slot))
-      .setLabel(buttonLabel.slice(0, 80))
-      .setStyle(submitCheck.allowed ? ButtonStyle.Primary : ButtonStyle.Secondary)
-      .setDisabled(!submitCheck.allowed)
+      .setLabel(alreadySent ? `Risultato Match ${matchNumber} già inviato` : `Invia risultato Match ${matchNumber}`)
+      .setStyle(alreadySent ? ButtonStyle.Secondary : ButtonStyle.Primary)
+      .setDisabled(alreadySent)
   );
 
   return {
@@ -585,7 +600,7 @@ async function maybeAnnounceTournamentFull() {
     data.registrationClosedAnnounced = true;
     saveState();
 
-    logAudit('bot', 'discord', 'registration_closed_announced', {
+    logAudit('bot', 'discord', 'registrazioni_chiuse_annunciate', {
       tournamentName: project.tournamentName,
       maxTeams: getRegistrationLimit()
     });
@@ -623,9 +638,9 @@ function buildRegistrationTextPages() {
 
   pageTeams.forEach((teamsChunk, pageIndex) => {
     const lines = teamsChunk.map(team => {
-      const p1 = sanitizeText(team.players?.[0]) || 'Player 1';
-      const p2 = sanitizeText(team.players?.[1]) || 'Player 2';
-      const p3 = sanitizeText(team.players?.[2]) || 'Player 3';
+      const p1 = sanitizeText(team.players?.[0]) || 'Giocatore 1';
+      const p2 = sanitizeText(team.players?.[1]) || 'Giocatore 2';
+      const p3 = sanitizeText(team.players?.[2]) || 'Giocatore 3';
 
       return (
         `🏆 **#${team.slot} • ${team.teamName}**\n` +
@@ -745,6 +760,7 @@ async function getVoiceTeamChannels(categoryIdToUse) {
 
 async function refreshTeamResultPanels(customCategoryId) {
   await waitReady();
+  refreshStateFromDisk();
 
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
   if (!categoryIdToUse) {
@@ -754,7 +770,7 @@ async function refreshTeamResultPanels(customCategoryId) {
   const { channels } = await getVoiceTeamChannels(categoryIdToUse);
 
   if (!channels.size) {
-    return { ok: true, updated: 0, created: 0, missingRooms: Object.keys(teams).length };
+    return { ok: true, updated: 0, created: 0, missingRooms: Object.keys(teams || {}).length };
   }
 
   let updated = 0;
@@ -793,7 +809,7 @@ async function refreshTeamResultPanels(customCategoryId) {
     }
   }
 
-  logAudit('bot', 'discord', 'team_result_panels_refreshed', {
+  logAudit('bot', 'discord', 'pannelli_risultati_team_aggiornati', {
     categoryId: categoryIdToUse,
     updated,
     created,
@@ -830,7 +846,7 @@ async function sendTeamResultStatus(entry, approved) {
         `**Uccisioni totali:** ${Number(entry.total || 0)}\n\n` +
         `${approved
           ? 'Lo staff ha approvato il risultato inviato.'
-          : 'Lo staff ha rifiutato il risultato inviato. Puoi reinviare il risultato corretto dal pannello della tua stanza.'}`
+          : 'Lo staff ha rifiutato il risultato inviato. Se richiesto dallo staff, il team potrà reinviarlo.'}`
       )
       .setFooter({ text: project.tournamentName });
 
@@ -884,6 +900,54 @@ async function handleRegistrationStateChange() {
   await maybeAnnounceTournamentFull();
 }
 
+function loadPointsConfig() {
+  const fallback = {
+    kill: 1,
+    placement: {
+      1: 10,
+      2: 6,
+      3: 5,
+      4: 4,
+      5: 3,
+      6: 2,
+      7: 1,
+      8: 1
+    }
+  };
+
+  const possibleFiles = [
+    path.join(__dirname, 'points.json'),
+    path.join(__dirname, 'points.js')
+  ];
+
+  for (const filePath of possibleFiles) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const parsed = JSON.parse(raw);
+
+      return {
+        kill: Number(parsed.kill || fallback.kill),
+        placement: parsed.placement && typeof parsed.placement === 'object'
+          ? parsed.placement
+          : fallback.placement
+      };
+    } catch (error) {
+      console.error(`Errore lettura punteggio ${filePath}:`, error.message);
+    }
+  }
+
+  return fallback;
+}
+
+function calcPoints(pos, kills) {
+  const config = loadPointsConfig();
+  const killPoints = Number(config.kill || 1);
+  const placementBonus = Number(config.placement?.[String(Number(pos))] || 0);
+
+  return Number(kills || 0) * killPoints + placementBonus;
+}
+
 async function waitReady() {
   await readyPromise;
   return client;
@@ -891,22 +955,25 @@ async function waitReady() {
 
 function createResultEmbed(entry, footerText) {
   const project = getProjectSettings();
-  const players = teams[entry.team]?.players || ['Player 1', 'Player 2', 'Player 3'];
+  const players = teams[entry.team]?.players || ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'];
+  const points = calcPoints(Number(entry.pos || 0), Number(entry.total || 0));
 
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
     .setTitle(`📸 NUOVO RISULTATO • ${project.tournamentName}`)
     .setDescription(
-      `🏷️ Team: ${entry.team}
-🎯 Slot: ${teams[entry.team]?.slot || entry.slot || '-'}
-🎮 Match: ${Number(entry.matchNumber || data.currentMatch || 1)}
-👤 ${players[0] || 'Player 1'}: ${Number(entry.kills?.[0] || 0)} kill
-👤 ${players[1] || 'Player 2'}: ${Number(entry.kills?.[1] || 0)} kill
-👤 ${players[2] || 'Player 3'}: ${Number(entry.kills?.[2] || 0)} kill
+      `🏷️ **Team:** ${entry.team}
+🎯 **Slot:** ${entry.slot || teams[entry.team]?.slot || '-'}
+🎮 **Match:** ${Number(entry.matchNumber || data.currentMatch || 1)}
 
-🔥 Totale: ${Number(entry.total || 0)}
-🏆 Posizione: ${Number(entry.pos || 0)}
-🧾 Inviato da: ${entry.submittedBy || 'Sconosciuto'}`
+👤 **${players[0] || 'Giocatore 1'}:** ${Number(entry.kills?.[0] || 0)} kill
+👤 **${players[1] || 'Giocatore 2'}:** ${Number(entry.kills?.[1] || 0)} kill
+👤 **${players[2] || 'Giocatore 3'}:** ${Number(entry.kills?.[2] || 0)} kill
+
+🔥 **Totale kill:** ${Number(entry.total || 0)}
+🏆 **Posizione:** ${Number(entry.pos || 0)}
+📊 **Punti calcolati:** ${points}
+🧾 **Inviato da:** ${entry.submittedBy || 'Sconosciuto'}`
     )
     .setFooter({ text: footerText || '⏳ In attesa approvazione staff' });
 
@@ -1043,7 +1110,7 @@ async function updateLeaderboard() {
     console.error('Errore aggiornamento grafiche classifica:', error);
   }
 
-  logAudit('bot', 'discord', updated ? 'leaderboard_updated' : 'leaderboard_created', {
+  logAudit('bot', 'discord', updated ? 'classifica_aggiornata' : 'classifica_creata', {
     currentMatch: data.currentMatch,
     updated,
     created,
@@ -1085,23 +1152,37 @@ async function editStaffMessage(entry, approved) {
 }
 
 async function approvePending(id, actor = 'system', source = 'system') {
+  ensureDataStructures();
+
   const entry = data.pending[id];
   if (!entry) return { already: true };
 
-  const players = teams[entry.team]?.players || ['Player 1', 'Player 2', 'Player 3'];
-  const matchNumber = Number(entry.matchNumber || data.currentMatch || 1);
-  const addedPoints = calcPoints(Number(entry.pos || 0), Number(entry.total || 0));
+  const duplicateCheck = getSubmissionRecord(entry.team, Number(entry.matchNumber || 1));
 
-  data.scores[entry.team] = Number(data.scores[entry.team] || 0) + addedPoints;
+  if (duplicateCheck.status === 'approvato' || duplicateCheck.status === 'inserito_manualmente') {
+    delete data.pending[id];
+    saveState();
+
+    return {
+      ok: false,
+      message: 'Questo risultato risulta già registrato.'
+    };
+  }
+
+  const players = teams[entry.team]?.players || ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'];
+  const pointsToAdd = calcPoints(Number(entry.pos || 0), Number(entry.total || 0));
+
+  data.scores[entry.team] = Number(data.scores[entry.team] || 0) + pointsToAdd;
 
   (entry.kills || []).forEach((k, i) => {
-    const playerName = players[i] || `Player ${i + 1}`;
+    const playerName = players[i] || `Giocatore ${i + 1}`;
     data.fragger[playerName] = Number(data.fragger[playerName] || 0) + Number(k || 0);
   });
 
-  setSubmissionStatus(entry.team, matchNumber, 'approvato', {
-    pendingId: id,
-    updatedBy: actor
+  markSubmission(entry.team, Number(entry.matchNumber || 1), 'approvato', {
+    pendingId: null,
+    updatedBy: actor,
+    source
   });
 
   delete data.pending[id];
@@ -1114,30 +1195,31 @@ async function approvePending(id, actor = 'system', source = 'system') {
 
   await sendResultToStorico(storicoEmbed);
   await sendTeamResultStatus(entry, true);
-  await refreshTeamResultPanels().catch(() => {});
   await updateLeaderboard();
+  await refreshTeamResultPanels().catch(() => {});
 
-  logAudit(actor, source, 'pending_approved', {
+  logAudit(actor, source, 'risultato_approvato', {
     pendingId: id,
     team: entry.team,
     total: Number(entry.total || 0),
     pos: Number(entry.pos || 0),
-    addedPoints,
-    matchNumber
+    puntiAggiunti: pointsToAdd,
+    matchNumber: Number(entry.matchNumber || 0)
   });
 
   return { ok: true };
 }
 
 async function rejectPending(id, actor = 'system', source = 'system') {
+  ensureDataStructures();
+
   const entry = data.pending[id];
   if (!entry) return { already: true };
 
-  const matchNumber = Number(entry.matchNumber || data.currentMatch || 1);
-
-  setSubmissionStatus(entry.team, matchNumber, 'rifiutato', {
-    pendingId: id,
-    updatedBy: actor
+  markSubmission(entry.team, Number(entry.matchNumber || 1), 'rifiutato', {
+    pendingId: null,
+    updatedBy: actor,
+    source
   });
 
   delete data.pending[id];
@@ -1147,12 +1229,12 @@ async function rejectPending(id, actor = 'system', source = 'system') {
   await sendTeamResultStatus(entry, false);
   await refreshTeamResultPanels().catch(() => {});
 
-  logAudit(actor, source, 'pending_rejected', {
+  logAudit(actor, source, 'risultato_rifiutato', {
     pendingId: id,
     team: entry.team,
     total: Number(entry.total || 0),
     pos: Number(entry.pos || 0),
-    matchNumber
+    matchNumber: Number(entry.matchNumber || 0)
   });
 
   return { ok: true };
@@ -1160,29 +1242,32 @@ async function rejectPending(id, actor = 'system', source = 'system') {
 
 async function createPendingSubmission(entry) {
   await waitReady();
+  ensureDataStructures();
 
+  const teamName = sanitizeText(entry.team);
   const matchNumber = Number(entry.matchNumber || data.currentMatch || 1);
-  const submitCheck = canSubmitResult(entry.team, matchNumber);
+  const check = canSubmitResult(teamName, matchNumber);
 
-  if (!submitCheck.allowed) {
-    throw new Error(submitCheck.message || 'Risultato già inviato per questo match.');
+  if (!check.allowed) {
+    throw new Error(check.message.replace(/\*\*/g, ''));
   }
 
   const id = String(Date.now());
 
-  const slot = Number(entry.slot || getTeamSlotByName(entry.team) || 0);
   data.pending[id] = {
     ...entry,
-    slot,
-    matchNumber
+    team: teamName,
+    matchNumber,
+    slot: entry.slot || teams[teamName]?.slot || null
   };
 
-  saveState();
-
-  setSubmissionStatus(entry.team, matchNumber, 'in_attesa', {
+  markSubmission(teamName, matchNumber, 'in_attesa', {
     pendingId: id,
-    updatedBy: entry.submittedBy || 'system'
+    updatedBy: entry.submittedBy || 'unknown',
+    source: entry.source || 'system'
   });
+
+  saveState();
 
   const staff = await client.channels.fetch(STAFF_CHANNEL);
   const embed = createResultEmbed(data.pending[id], '⏳ In attesa approvazione staff');
@@ -1190,34 +1275,33 @@ async function createPendingSubmission(entry) {
   const msg = await staff.send({ embeds: [embed], components: [row] });
 
   data.pending[id].staffMessageId = msg.id;
+
+  markSubmission(teamName, matchNumber, 'in_attesa', {
+    pendingId: id,
+    updatedBy: entry.submittedBy || 'unknown',
+    source: entry.source || 'system'
+  });
+
   saveState();
 
-  await refreshTeamResultPanels().catch(() => {});
-
-  logAudit(entry.submittedBy || 'unknown', entry.source || 'system', 'pending_created', {
+  logAudit(entry.submittedBy || 'unknown', entry.source || 'system', 'risultato_in_attesa_creato', {
     pendingId: id,
-    team: entry.team,
-    slot,
+    team: teamName,
     total: Number(entry.total || 0),
     pos: Number(entry.pos || 0),
     matchNumber
   });
 
+  await refreshTeamResultPanels().catch(() => {});
+
   return { id };
 }
 
 async function submitWebResult(payload) {
-  const teamName = sanitizeText(payload.team);
-  const matchNumber = Number(data.currentMatch || 1);
-  const submitCheck = canSubmitResult(teamName, matchNumber);
-
-  if (!submitCheck.allowed) {
-    throw new Error(submitCheck.message || 'Risultato già inviato per questo match.');
-  }
+  ensureDataStructures();
 
   const entry = {
-    team: teamName,
-    slot: getTeamSlotByName(teamName),
+    team: sanitizeText(payload.team),
     kills: [
       Number(payload.k1 || 0),
       Number(payload.k2 || 0),
@@ -1228,11 +1312,17 @@ async function submitWebResult(payload) {
     image: payload.image || '',
     source: 'web',
     submittedBy: sanitizeText(payload.submittedBy || 'Dashboard'),
-    matchNumber
+    matchNumber: Number(data.currentMatch || 1),
+    slot: teams[sanitizeText(payload.team)]?.slot || null
   };
 
   if (!teams[entry.team]) {
     throw new Error('Team non trovato');
+  }
+
+  const check = canSubmitResult(entry.team, entry.matchNumber);
+  if (!check.allowed) {
+    throw new Error(check.message.replace(/\*\*/g, ''));
   }
 
   return createPendingSubmission(entry);
@@ -1240,6 +1330,7 @@ async function submitWebResult(payload) {
 
 async function spawnRegisterPanel(channelId) {
   await waitReady();
+  ensureDataStructures();
 
   const botSettings = getBotSettings();
   const targetChannelId = sanitizeText(channelId) || botSettings.registerPanelChannelId;
@@ -1270,7 +1361,7 @@ async function spawnRegisterPanel(channelId) {
   data.botSettings.registerPanelChannelId = targetChannelId;
   saveState();
 
-  logAudit('dashboard', 'web', 'register_panel_sent', {
+  logAudit('dashboard', 'web', 'pannello_registrazione_inviato', {
     channelId: targetChannelId,
     created,
     updated
@@ -1281,6 +1372,7 @@ async function spawnRegisterPanel(channelId) {
 
 async function spawnResultsPanel(channelId) {
   await waitReady();
+  ensureDataStructures();
 
   const botSettings = getBotSettings();
   const targetChannelId = sanitizeText(channelId) || botSettings.resultsPanelChannelId;
@@ -1292,7 +1384,7 @@ async function spawnResultsPanel(channelId) {
 
   const teamPanels = await refreshTeamResultPanels();
 
-  logAudit('dashboard', 'web', 'team_result_panels_spawned', {
+  logAudit('dashboard', 'web', 'pannelli_risultati_team_generati', {
     savedChannelId: targetChannelId || null,
     teamPanelsCreated: Number(teamPanels?.created || 0),
     teamPanelsUpdated: Number(teamPanels?.updated || 0),
@@ -1310,6 +1402,8 @@ async function spawnResultsPanel(channelId) {
 
 async function createTeamRooms(customCategoryId) {
   await waitReady();
+  refreshStateFromDisk();
+
   const guild = await client.guilds.fetch(GUILD_ID);
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
@@ -1323,7 +1417,7 @@ async function createTeamRooms(customCategoryId) {
   }
 
   if (categoryChannel.type !== ChannelType.GuildCategory) {
-    throw new Error('Il channel selezionato non è una categoria');
+    throw new Error('Il canale selezionato non è una categoria');
   }
 
   const sortedTeams = getSortedTeamEntries();
@@ -1370,7 +1464,7 @@ async function createTeamRooms(customCategoryId) {
     console.error('Errore creazione pannelli team dopo stanze:', error);
   }
 
-  logAudit('dashboard', 'web', 'team_rooms_created', {
+  logAudit('dashboard', 'web', 'stanze_team_create', {
     categoryId: categoryIdToUse,
     created,
     skipped,
@@ -1383,6 +1477,7 @@ async function createTeamRooms(customCategoryId) {
 
 async function deleteTeamRooms(customCategoryId) {
   await waitReady();
+
   const guild = await client.guilds.fetch(GUILD_ID);
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
 
@@ -1406,7 +1501,7 @@ async function deleteTeamRooms(customCategoryId) {
   data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
 
-  logAudit('dashboard', 'web', 'team_rooms_deleted', {
+  logAudit('dashboard', 'web', 'stanze_team_eliminate', {
     categoryId: categoryIdToUse,
     deleted
   });
@@ -1420,6 +1515,7 @@ function buildLobbyCodeMessage(lobbyCode) {
 
 Codice: **${cleanCode}**
 
+Il codice viene inviato nelle stanze ufficiali dei team.
 Buon game 🔥`;
 }
 
@@ -1444,7 +1540,7 @@ async function sendLobbyCodeToTeamRooms(lobbyCode, customCategoryId) {
   }
 
   if (categoryChannel.type !== ChannelType.GuildCategory) {
-    throw new Error('Il channel selezionato non è una categoria');
+    throw new Error('Il canale selezionato non è una categoria');
   }
 
   await guild.channels.fetch();
@@ -1478,7 +1574,7 @@ async function sendLobbyCodeToTeamRooms(lobbyCode, customCategoryId) {
     }
   }
 
-  logAudit('dashboard', 'web', 'lobby_code_sent_to_team_rooms', {
+  logAudit('dashboard', 'web', 'codice_lobby_inviato_alle_stanze_team', {
     categoryId: categoryIdToUse,
     lobbyCode: cleanCode,
     sent,
@@ -1527,7 +1623,13 @@ async function saveDiscordAttachmentLocally(attachment) {
 }
 
 function setCurrentMatch(match) {
-  data.currentMatch = Number(match || 1);
+  const targetMatch = sanitizePositiveInteger(match, 1, getTournamentTotalMatches());
+
+  if (targetMatch > getTournamentTotalMatches()) {
+    throw new Error(`Il torneo ha solo ${getTournamentTotalMatches()} match configurati.`);
+  }
+
+  data.currentMatch = targetMatch;
   saveState();
 }
 
@@ -1539,7 +1641,14 @@ async function setCurrentMatchAndRefresh(match) {
 }
 
 function nextMatch() {
-  data.currentMatch = Number(data.currentMatch || 1) + 1;
+  const current = Number(data.currentMatch || 1);
+  const total = getTournamentTotalMatches();
+
+  if (current >= total) {
+    throw new Error(`Sei già all’ultimo match configurato (${total}).`);
+  }
+
+  data.currentMatch = current + 1;
   saveState();
   return data.currentMatch;
 }
@@ -1571,24 +1680,43 @@ function saveBotPanelSettings(settings = {}) {
     settings.roomsCategoryId || data.botSettings.roomsCategoryId
   );
 
+  if (Object.prototype.hasOwnProperty.call(settings, 'generalChannelId')) {
+    data.botSettings.generalChannelId = sanitizeText(settings.generalChannelId);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settings, 'rulesChannelId')) {
+    data.botSettings.rulesChannelId = sanitizeText(settings.rulesChannelId);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(settings, 'lobbyChannelId')) {
+    data.botSettings.lobbyChannelId = sanitizeText(settings.lobbyChannelId);
+  }
+
   saveState();
 
-  logAudit('dashboard', 'web', 'bot_settings_saved', {
+  logAudit('dashboard', 'web', 'impostazioni_bot_salvate', {
     registerPanelChannelId: data.botSettings.registerPanelChannelId,
     resultsPanelChannelId: data.botSettings.resultsPanelChannelId,
-    roomsCategoryId: data.botSettings.roomsCategoryId
+    roomsCategoryId: data.botSettings.roomsCategoryId,
+    generalChannelId: data.botSettings.generalChannelId || '',
+    rulesChannelId: data.botSettings.rulesChannelId || '',
+    lobbyChannelId: data.botSettings.lobbyChannelId || ''
   });
 
   return {
     registerPanelChannelId: data.botSettings.registerPanelChannelId,
     resultsPanelChannelId: data.botSettings.resultsPanelChannelId,
-    roomsCategoryId: data.botSettings.roomsCategoryId
+    roomsCategoryId: data.botSettings.roomsCategoryId,
+    generalChannelId: data.botSettings.generalChannelId || '',
+    rulesChannelId: data.botSettings.rulesChannelId || '',
+    lobbyChannelId: data.botSettings.lobbyChannelId || ''
   };
 }
 
 function getBotConfig() {
   const botSettings = getBotSettings();
   const project = getProjectSettings();
+  const tournament = getTournamentSettings();
 
   return {
     guildId: GUILD_ID,
@@ -1601,9 +1729,15 @@ function getBotConfig() {
     registerPanelChannelId: botSettings.registerPanelChannelId,
     resultsPanelChannelId: botSettings.resultsPanelChannelId,
     roomsCategoryId: botSettings.roomsCategoryId,
+    generalChannelId: botSettings.generalChannelId,
+    rulesChannelId: botSettings.rulesChannelId,
+    lobbyChannelId: botSettings.lobbyChannelId,
     brandName: project.brandName,
-    tournamentName: project.tournamentName,
-    premiumMode: project.premiumMode
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    premiumMode: project.premiumMode,
+    totalMatches: tournament.totalMatches,
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS
   };
 }
 
@@ -1613,13 +1747,7 @@ client.once('ready', async () => {
 
   refreshStateFromDisk();
 
-  try {
-    console.log('[PUNTEGGIO] Config caricata:', loadPointsConfig());
-  } catch (error) {
-    console.error('[PUNTEGGIO] Errore config punteggio:', error);
-  }
-
-  logAudit('bot', 'discord', 'bot_ready', {
+  logAudit('bot', 'discord', 'bot_online', {
     guildId: GUILD_ID
   });
 
@@ -1665,6 +1793,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId.startsWith('result_submit_slot_')) {
+      refreshStateFromDisk();
+
       const slot = Number(interaction.customId.replace('result_submit_slot_', ''));
       const teamInfo = getTeamBySlot(slot);
 
@@ -1677,11 +1807,11 @@ client.on('interactionCreate', async interaction => {
 
       const { teamName, teamData } = teamInfo;
       const matchNumber = Number(data.currentMatch || 1);
-      const submitCheck = canSubmitResult(teamName, matchNumber);
+      const check = canSubmitResult(teamName, matchNumber);
 
-      if (!submitCheck.allowed) {
+      if (!check.allowed) {
         return interaction.reply({
-          content: `❌ ${submitCheck.message}`,
+          content: check.message,
           ephemeral: true
         });
       }
@@ -1693,7 +1823,7 @@ client.on('interactionCreate', async interaction => {
         .setCustomId(`modal_slot_${slot}`)
         .setTitle(`${project.tournamentName} • ${teamName}`.slice(0, 45));
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < PLAYERS_PER_TEAM; i++) {
         modal.addComponents(
           new ActionRowBuilder().addComponents(
             new TextInputBuilder()
@@ -1761,7 +1891,7 @@ client.on('interactionCreate', async interaction => {
       refreshStateFromDisk();
       await handleRegistrationStateChange();
 
-      logAudit(interaction.user.tag, 'discord', 'team_registered_discord', {
+      logAudit(interaction.user.tag, 'discord', 'team_registrato_discord', {
         team,
         slot,
         players: [p1, p2, p3]
@@ -1773,6 +1903,8 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_slot_')) {
+      refreshStateFromDisk();
+
       const slot = Number(interaction.customId.replace('modal_slot_', ''));
       const teamInfo = getTeamBySlot(slot);
 
@@ -1782,11 +1914,11 @@ client.on('interactionCreate', async interaction => {
 
       const { teamName } = teamInfo;
       const matchNumber = Number(data.currentMatch || 1);
-      const submitCheck = canSubmitResult(teamName, matchNumber);
+      const check = canSubmitResult(teamName, matchNumber);
 
-      if (!submitCheck.allowed) {
+      if (!check.allowed) {
         return interaction.reply({
-          content: `❌ ${submitCheck.message}`,
+          content: check.message,
           ephemeral: true
         });
       }
@@ -1794,13 +1926,30 @@ client.on('interactionCreate', async interaction => {
       const kills = [];
       let total = 0;
 
-      for (let i = 0; i < 3; i++) {
-        const k = parseInt(interaction.fields.getTextInputValue(`k${i}`), 10) || 0;
+      for (let i = 0; i < PLAYERS_PER_TEAM; i++) {
+        const raw = interaction.fields.getTextInputValue(`k${i}`);
+        const k = parseInt(raw, 10);
+
+        if (!Number.isFinite(k) || k < 0) {
+          return interaction.reply({
+            content: '❌ Le kill devono essere numeri validi.',
+            ephemeral: true
+          });
+        }
+
         kills.push(k);
         total += k;
       }
 
-      const pos = parseInt(interaction.fields.getTextInputValue('pos'), 10) || 0;
+      const posRaw = interaction.fields.getTextInputValue('pos');
+      const pos = parseInt(posRaw, 10);
+
+      if (!Number.isFinite(pos) || pos <= 0) {
+        return interaction.reply({
+          content: '❌ La posizione finale non è valida.',
+          ephemeral: true
+        });
+      }
 
       data.tempSubmit[interaction.user.id] = {
         team: teamName,
@@ -1813,7 +1962,7 @@ client.on('interactionCreate', async interaction => {
       };
       saveState();
 
-      logAudit(interaction.user.tag, 'discord', 'result_modal_submitted', {
+      logAudit(interaction.user.tag, 'discord', 'modulo_risultato_compilato', {
         team: teamName,
         slot,
         total,
@@ -1823,7 +1972,7 @@ client.on('interactionCreate', async interaction => {
       });
 
       return interaction.reply({
-        content: '📸 Ora invia qui sotto lo screenshot della partita obbligatorio.',
+        content: '📸 Ora invia qui sotto lo screenshot della partita. È obbligatorio per la verifica dello staff.',
         ephemeral: true
       });
     }
@@ -1859,10 +2008,12 @@ client.on('interactionCreate', async interaction => {
 
     try {
       if (interaction.isRepliable()) {
+        const message = error.message || 'Si è verificato un errore durante l’operazione.';
+
         if (interaction.deferred || interaction.replied) {
-          await interaction.editReply({ content: '❌ Si è verificato un errore durante l’operazione.' });
+          await interaction.editReply({ content: `❌ ${message}` });
         } else {
-          await interaction.reply({ content: '❌ Si è verificato un errore durante l’operazione.', ephemeral: true });
+          await interaction.reply({ content: `❌ ${message}`, ephemeral: true });
         }
       }
     } catch {}
@@ -1874,16 +2025,18 @@ client.on('messageCreate', async message => {
     if (message.author.bot) return;
     if (!message.attachments.size) return;
 
+    refreshStateFromDisk();
+
     const temp = data.tempSubmit[message.author.id];
     if (!temp) return;
 
-    const submitCheck = canSubmitResult(temp.team, Number(temp.matchNumber || data.currentMatch || 1));
-    if (!submitCheck.allowed) {
+    const check = canSubmitResult(temp.team, Number(temp.matchNumber || data.currentMatch || 1));
+    if (!check.allowed) {
       delete data.tempSubmit[message.author.id];
       saveState();
 
       await message.reply({
-        content: `❌ ${submitCheck.message}`
+        content: check.message
       }).catch(() => {});
 
       return;
@@ -1941,5 +2094,8 @@ module.exports = {
   getBotConfig,
   resetAllState,
   saveBotPanelSettings,
-  refreshTeamResultPanels
+  refreshTeamResultPanels,
+  getTournamentSettings,
+  getTournamentMessages,
+  calcPoints
 };
