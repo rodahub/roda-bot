@@ -15,7 +15,6 @@ const {
 
 const fs = require('fs');
 const path = require('path');
-const { createCanvas, loadImage, registerFont } = require('canvas');
 
 const {
   loadData,
@@ -26,6 +25,11 @@ const {
   getDefaultData,
   UPLOADS_DIR
 } = require('./storage');
+
+const {
+  generateLeaderboardGraphicBuffer,
+  generateTopFraggerGraphicBuffer
+} = require('./graphics/renderer');
 
 const client = new Client({
   intents: [
@@ -46,33 +50,6 @@ const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
 const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
 const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '1482050564375318579';
 
-const LEADERBOARD_TEMPLATE_PATH = path.join(__dirname, 'classifica-live.png');
-const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
-const RAJDHANI_FONT_PATH = path.join(__dirname, 'rajdhani.bold.ttf');
-const GRAPHIC_FONT_FAMILY = 'RajdhaniBold';
-
-/*
-  COORDINATE FISSE GRAFICHE
-  Se vuoi alzare/abbassare tutto, cambia questi array.
-*/
-const CLASSIFICA_TEAM_CENTER_X = 824;
-const CLASSIFICA_POINTS_CENTER_X = 1344;
-const CLASSIFICA_ROW_Y = [
-  286, 335, 384, 433, 482, 531, 580, 629,
-  678, 727, 776, 825, 874, 923, 972, 1021
-];
-
-const FRAGGER_NAME_CENTER_X = 824;
-const FRAGGER_KILLS_CENTER_X = 1344;
-const FRAGGER_ROW_Y = [
-  286, 343, 400, 457, 514, 571, 628, 685, 742, 799
-];
-
-const CLASSIFICA_TEAM_MAX_WIDTH = 720;
-const CLASSIFICA_POINTS_MAX_WIDTH = 170;
-const FRAGGER_NAME_MAX_WIDTH = 720;
-const FRAGGER_KILLS_MAX_WIDTH = 170;
-
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -86,7 +63,6 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
-let graphicFontRegistered = false;
 
 function sanitizeText(value) {
   return String(value || '').trim();
@@ -324,291 +300,6 @@ function getTeamBySlot(slot) {
 
 function buildResultButtonCustomId(slot) {
   return `result_submit_slot_${Number(slot)}`;
-}
-
-function fileExists(filePath) {
-  try {
-    return fs.existsSync(filePath);
-  } catch {
-    return false;
-  }
-}
-
-function ensureGraphicFont() {
-  if (graphicFontRegistered) return;
-
-  try {
-    if (fileExists(RAJDHANI_FONT_PATH)) {
-      registerFont(RAJDHANI_FONT_PATH, { family: GRAPHIC_FONT_FAMILY });
-      graphicFontRegistered = true;
-      console.log(`Font Rajdhani caricato: ${RAJDHANI_FONT_PATH}`);
-    } else {
-      console.warn(`Font non trovato: ${RAJDHANI_FONT_PATH}. Uso fallback sans-serif.`);
-    }
-  } catch (error) {
-    console.error('Errore caricamento Rajdhani:', error);
-  }
-}
-
-function getGraphicFontFamily() {
-  return graphicFontRegistered ? GRAPHIC_FONT_FAMILY : 'sans-serif';
-}
-
-function sanitizeGraphicText(value) {
-  return String(value || '')
-    .normalize('NFKC')
-    .replace(/[\u0000-\u001F\u007F]/g, '')
-    .replace(/[^\p{L}\p{N}\s._\-&+@#()'’]/gu, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function sanitizeGraphicNumber(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return '0';
-  return String(Math.trunc(numeric)).replace(/[^\d\-]/g, '') || '0';
-}
-
-function setCanvasFont(ctx, size, weight = '700', family = 'sans-serif') {
-  ctx.font = `${weight} ${size}px "${family}"`;
-}
-
-function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = 'sans-serif') {
-  const safeText = String(text || '');
-  let size = startSize;
-
-  while (size >= minSize) {
-    setCanvasFont(ctx, size, weight, family);
-    if (ctx.measureText(safeText).width <= maxWidth) {
-      return size;
-    }
-    size -= 1;
-  }
-
-  return minSize;
-}
-
-function drawGraphicTextAt(ctx, text, x, y, options = {}) {
-  const safeText = String(text || '');
-  if (!safeText) return;
-
-  const {
-    size = 28,
-    minSize = 16,
-    maxWidth = 400,
-    weight = '700',
-    family = 'sans-serif',
-    fill = '#4a2d80',
-    glow = 'rgba(157,92,255,0.20)',
-    glowBlur = 5
-  } = options;
-
-  const finalSize = fitText(ctx, safeText, maxWidth, size, minSize, weight, family);
-  setCanvasFont(ctx, finalSize, weight, family);
-
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowColor = glow;
-  ctx.shadowBlur = glowBlur;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-  ctx.fillStyle = fill;
-  ctx.fillText(safeText, x, y);
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = fill;
-  ctx.fillText(safeText, x, y);
-  ctx.restore();
-}
-
-function ensureGraphicTemplates() {
-  if (!fileExists(LEADERBOARD_TEMPLATE_PATH)) {
-    throw new Error('Template classifica-live.png non trovato nella cartella principale del progetto');
-  }
-
-  if (!fileExists(TOP_FRAGGER_TEMPLATE_PATH)) {
-    throw new Error('Template top-fragger.png non trovato nella cartella principale del progetto');
-  }
-
-  ensureGraphicFont();
-}
-
-async function generateLeaderboardGraphicBuffer() {
-  ensureGraphicTemplates();
-
-  const template = await loadImage(LEADERBOARD_TEMPLATE_PATH);
-  const canvas = createCanvas(template.width, template.height);
-  const ctx = canvas.getContext('2d');
-
-  ctx.drawImage(template, 0, 0, template.width, template.height);
-
-  const rows = getSortedScores().slice(0, 16);
-  const family = getGraphicFontFamily();
-
-  for (let i = 0; i < rows.length && i < CLASSIFICA_ROW_Y.length; i++) {
-    const row = rows[i];
-    const isTop3 = i < 3;
-
-    drawGraphicTextAt(
-      ctx,
-      sanitizeGraphicText(row.teamName),
-      CLASSIFICA_TEAM_CENTER_X,
-      CLASSIFICA_ROW_Y[i],
-      {
-        size: isTop3 ? 31 : 28,
-        minSize: 18,
-        maxWidth: CLASSIFICA_TEAM_MAX_WIDTH,
-        weight: '700',
-        family,
-        fill: isTop3 ? '#331b63' : '#4a2d80',
-        glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
-        glowBlur: isTop3 ? 6 : 4
-      }
-    );
-
-    drawGraphicTextAt(
-      ctx,
-      sanitizeGraphicNumber(row.points),
-      CLASSIFICA_POINTS_CENTER_X,
-      CLASSIFICA_ROW_Y[i],
-      {
-        size: isTop3 ? 31 : 28,
-        minSize: 20,
-        maxWidth: CLASSIFICA_POINTS_MAX_WIDTH,
-        weight: '700',
-        family,
-        fill: '#3b1d71',
-        glow: 'rgba(176,109,255,0.14)',
-        glowBlur: 3
-      }
-    );
-  }
-
-  return canvas.toBuffer('image/png');
-}
-
-async function generateTopFraggerGraphicBuffer() {
-  ensureGraphicTemplates();
-
-  const template = await loadImage(TOP_FRAGGER_TEMPLATE_PATH);
-  const canvas = createCanvas(template.width, template.height);
-  const ctx = canvas.getContext('2d');
-
-  ctx.drawImage(template, 0, 0, template.width, template.height);
-
-  const rows = getSortedFraggers().slice(0, 10);
-  const family = getGraphicFontFamily();
-
-  for (let i = 0; i < rows.length && i < FRAGGER_ROW_Y.length; i++) {
-    const row = rows[i];
-    const isTop3 = i < 3;
-
-    drawGraphicTextAt(
-      ctx,
-      sanitizeGraphicText(row.playerName),
-      FRAGGER_NAME_CENTER_X,
-      FRAGGER_ROW_Y[i],
-      {
-        size: isTop3 ? 31 : 28,
-        minSize: 18,
-        maxWidth: FRAGGER_NAME_MAX_WIDTH,
-        weight: '700',
-        family,
-        fill: isTop3 ? '#331b63' : '#4a2d80',
-        glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
-        glowBlur: isTop3 ? 6 : 4
-      }
-    );
-
-    drawGraphicTextAt(
-      ctx,
-      sanitizeGraphicNumber(row.kills),
-      FRAGGER_KILLS_CENTER_X,
-      FRAGGER_ROW_Y[i],
-      {
-        size: isTop3 ? 31 : 28,
-        minSize: 20,
-        maxWidth: FRAGGER_KILLS_MAX_WIDTH,
-        weight: '700',
-        family,
-        fill: '#3b1d71',
-        glow: 'rgba(176,109,255,0.14)',
-        glowBlur: 3
-      }
-    );
-  }
-
-  return canvas.toBuffer('image/png');
-}
-
-async function sendOrUpdateGraphicMessage({
-  channel,
-  messageId,
-  fileName,
-  buffer,
-  content
-}) {
-  const attachment = new AttachmentBuilder(buffer, { name: fileName });
-
-  if (messageId) {
-    try {
-      const msg = await channel.messages.fetch(messageId);
-      await msg.edit({
-        content,
-        files: [attachment]
-      });
-      return { updated: true, messageId: msg.id };
-    } catch (error) {
-      console.error(`Errore update messaggio grafico ${fileName}:`, error);
-    }
-  }
-
-  const sent = await channel.send({
-    content,
-    files: [attachment]
-  });
-
-  return { created: true, messageId: sent.id };
-}
-
-async function updateLeaderboardGraphics() {
-  await waitReady();
-  ensureDataStructures();
-
-  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
-  const matchNumber = Number(data.currentMatch || 1);
-  const stamp = Date.now();
-
-  const leaderboardBuffer = await generateLeaderboardGraphicBuffer();
-  const topFraggerBuffer = await generateTopFraggerGraphicBuffer();
-
-  const leaderboardGraphicResult = await sendOrUpdateGraphicMessage({
-    channel,
-    messageId: data.leaderboardGraphicMessageId,
-    fileName: `classifica-live-output-match-${matchNumber}-${stamp}.png`,
-    buffer: leaderboardBuffer,
-    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`
-  });
-
-  data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
-
-  const topFraggerGraphicResult = await sendOrUpdateGraphicMessage({
-    channel,
-    messageId: data.topFraggerGraphicMessageId,
-    fileName: `top-fragger-output-match-${matchNumber}-${stamp}.png`,
-    buffer: topFraggerBuffer,
-    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`
-  });
-
-  data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
-  saveState();
-
-  return {
-    ok: true,
-    leaderboardGraphicResult,
-    topFraggerGraphicResult
-  };
 }
 
 function createRegisterPanelPayload() {
