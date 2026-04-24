@@ -9,16 +9,16 @@ const {
   loadTeams,
   loadAuditLog,
   saveData,
+  saveTeams,
   saveAll,
   appendAuditLog,
   createTournamentArchive,
   listTournamentArchives,
   getTournamentArchive,
   getDefaultData,
+  getDefaultTeams,
   getDefaultProjectSettings,
-  getDefaultTournamentSettings,
   getDefaultBotSettings,
-  getDefaultTournamentMessages,
   UPLOADS_DIR
 } = require('./storage');
 
@@ -35,6 +35,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const DASHBOARD_EMAIL = process.env.DASHBOARD_EMAIL || 'admin@example.com';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
 const DASHBOARD_COOKIE_SECRET = process.env.DASHBOARD_COOKIE_SECRET || 'change-this-secret-now';
+
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 
@@ -51,11 +52,110 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
+function getDefaultTournamentSettings() {
+  return {
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    totalMatches: 3,
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    createdAt: null,
+    createdBy: '',
+    lastConfiguredAt: null,
+    lastConfiguredBy: ''
+  };
+}
+
+function getDefaultTournamentMessages() {
+  return {
+    generalAnnouncement:
+      '@everyone\n\n' +
+      '**🏆 BENVENUTI ALLA RØDA CUP**\n\n' +
+      '**Leggete il regolamento ufficiale prima dell’inizio del torneo.**\n\n' +
+      'Ogni team userà la propria stanza vocale ufficiale.\n' +
+      'Dentro la stanza del team troverete il pannello per inviare i risultati.\n' +
+      'Il codice lobby verrà mandato nelle stanze ufficiali dei team.\n\n' +
+      '**Buona fortuna a tutti. 🔥**',
+    lobbyInfoMessage:
+      '**🎮 CODICE LOBBY**\n\n' +
+      'Il codice lobby verrà inviato nelle stanze ufficiali dei team.\n' +
+      'Controllate sempre la vostra stanza durante il torneo.',
+    regulationText:
+      '🏆 RØDA CUP\n\n' +
+      '👥 FORMATO TORNEO\n\n' +
+      'Il torneo si svolge in modalità TERZETTI (TRIO).\n\n' +
+      'Ogni squadra deve essere composta da 3 giocatori titolari.\n' +
+      'Non sono ammessi quartetti o cambi non autorizzati dallo staff.\n\n' +
+      '🎮 OBBLIGO UTILIZZO DISCORD\n\n' +
+      'Per tutta la durata dell’evento è obbligatorio:\n\n' +
+      '• Utilizzare le stanze vocali Discord ufficiali\n' +
+      '• Aprire una stanza temporanea Trio nella sezione RØDA HUB\n' +
+      '• Restare presenti in vocale per tutto il torneo\n\n' +
+      '⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.\n\n' +
+      '🚫 RESTRIZIONI EQUIPAGGIAMENTO\n\n' +
+      'È severamente vietato l’utilizzo di:\n\n' +
+      '❌ Mine\n' +
+      '❌ Claymore\n' +
+      '❌ Psicogranate\n' +
+      '❌ Granate Stordenti\n' +
+      '❌ Lacrimogeni\n' +
+      '❌ Scarica Elettrica\n' +
+      '❌ Skin Terminator\n\n' +
+      '⚖️ SISTEMA DISCIPLINARE\n\n' +
+      '• 1ª infrazione → Richiamo ufficiale\n' +
+      '• 2ª infrazione → Sottrazione punti\n' +
+      '• 3ª infrazione → Squalifica dal torneo\n\n' +
+      'Lo staff può applicare sanzioni immediate in caso di violazioni gravi.\n\n' +
+      '🔫 ARMI CONSENTITE\n\n' +
+      '✅ Solo ARMI META approvate dallo staff\n' +
+      '🎯 È ammesso 1 SOLO CECCHINO per team\n\n' +
+      '⚠️ Violazioni:\n\n' +
+      '• Utilizzo di 2 cecchini → Penalità immediata\n' +
+      '• Uso di armi non consentite → Kill annullate o sottrazione punti\n\n' +
+      '🏆 SISTEMA DI PUNTEGGIO\n\n' +
+      '🔹 Kill di squadra\n\n' +
+      '👉 Si sommano tutte le kill del team\n\n' +
+      '📊 Formula ufficiale:\n\n' +
+      '(Kill totali di squadra) + Bonus Posizionamento\n\n' +
+      '🔹 Bonus Posizionamento\n\n' +
+      '🥇 1° Posto → 10 punti\n' +
+      '🥈 2° Posto → 6 punti\n' +
+      '🥉 3° Posto → 5 punti\n' +
+      '4° Posto → 4 punti\n' +
+      '5° Posto → 3 punti\n' +
+      '6° Posto → 2 punti\n' +
+      '7° Posto → 1 punto\n' +
+      '8° Posto → 1 punto\n\n' +
+      '📸 VALIDAZIONE RISULTATI OBBLIGATORIA\n\n' +
+      'Ogni team deve inviare il risultato dal pannello nella propria stanza ufficiale.\n\n' +
+      'Lo screenshot deve mostrare chiaramente:\n\n' +
+      '• Classifica finale\n' +
+      '• Numero totale kill di squadra\n' +
+      '• Posizionamento\n\n' +
+      'Nel messaggio è obbligatorio indicare:\n\n' +
+      '• Nome Team\n' +
+      '• Posizione ottenuta\n' +
+      '• Kill totali di squadra\n\n' +
+      'Se una di queste informazioni manca, il risultato non verrà convalidato.\n\n' +
+      '✅ ESEMPIO CORRETTO INVIO RISULTATO\n\n' +
+      'Team: RØDA Black\n' +
+      'Posizione: 2° Posto\n' +
+      'Kill Totali Squadra: 18\n\n' +
+      '⚖️ FAIR PLAY\n\n' +
+      '• Vietato glitch, exploit o vantaggi illeciti\n' +
+      '• Vietato comportamento tossico o antisportivo\n' +
+      '• Rispetto obbligatorio verso staff e avversari\n' +
+      '• Le decisioni dello staff sono definitive'
+  };
+}
+
 function parseCookies(cookieHeader) {
   const out = {};
   if (!cookieHeader) return out;
 
   const parts = cookieHeader.split(';');
+
   for (const part of parts) {
     const index = part.indexOf('=');
     if (index === -1) continue;
@@ -114,6 +214,7 @@ function verifyToken(token) {
     if (sign(encoded) !== signature) return null;
 
     const payload = JSON.parse(fromBase64Url(encoded));
+
     if (!payload.email || !payload.exp) return null;
     if (Date.now() > payload.exp) return null;
 
@@ -172,7 +273,7 @@ function authRequired(req, res, next) {
   }
 
   req.staffUser = session.email;
-  next();
+  return next();
 }
 
 function sanitizeText(value) {
@@ -213,6 +314,121 @@ function getPublicBaseUrl(req) {
   }
 
   return '';
+}
+
+function isObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeProjectSettings(projectSettings) {
+  const defaults = getDefaultProjectSettings ? getDefaultProjectSettings() : {
+    brandName: 'RØDA',
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    supportContact: '',
+    premiumMode: false,
+    setupCompleted: false
+  };
+
+  const safe = isObject(projectSettings) ? projectSettings : {};
+
+  return {
+    brandName: sanitizeText(safe.brandName) || defaults.brandName || 'RØDA',
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    supportContact: sanitizeText(safe.supportContact),
+    premiumMode: Boolean(safe.premiumMode),
+    setupCompleted: Boolean(safe.setupCompleted)
+  };
+}
+
+function normalizeBotSettings(botSettings) {
+  const defaults = getDefaultBotSettings ? getDefaultBotSettings() : {};
+  const safe = isObject(botSettings) ? botSettings : {};
+
+  return {
+    registerPanelMessageId: safe.registerPanelMessageId || defaults.registerPanelMessageId || null,
+    registerPanelChannelId: sanitizeText(safe.registerPanelChannelId || defaults.registerPanelChannelId || ''),
+    resultsPanelMessageId: safe.resultsPanelMessageId || defaults.resultsPanelMessageId || null,
+    resultsPanelChannelId: sanitizeText(safe.resultsPanelChannelId || defaults.resultsPanelChannelId || ''),
+    roomsCategoryId: sanitizeText(safe.roomsCategoryId || defaults.roomsCategoryId || ''),
+    generalChannelId: sanitizeText(safe.generalChannelId || defaults.generalChannelId || ''),
+    rulesChannelId: sanitizeText(safe.rulesChannelId || defaults.rulesChannelId || ''),
+    lobbyChannelId: sanitizeText(safe.lobbyChannelId || defaults.lobbyChannelId || '')
+  };
+}
+
+function normalizeTournamentSettings(tournamentSettings) {
+  const defaults = getDefaultTournamentSettings();
+  const safe = isObject(tournamentSettings) ? tournamentSettings : {};
+
+  return {
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    totalMatches: sanitizePositiveInteger(safe.totalMatches, defaults.totalMatches, 50),
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    createdAt: safe.createdAt || null,
+    createdBy: sanitizeText(safe.createdBy),
+    lastConfiguredAt: safe.lastConfiguredAt || null,
+    lastConfiguredBy: sanitizeText(safe.lastConfiguredBy)
+  };
+}
+
+function normalizeTournamentMessages(tournamentMessages) {
+  const defaults = getDefaultTournamentMessages();
+  const safe = isObject(tournamentMessages) ? tournamentMessages : {};
+
+  return {
+    generalAnnouncement: sanitizeText(safe.generalAnnouncement) || defaults.generalAnnouncement,
+    lobbyInfoMessage: sanitizeText(safe.lobbyInfoMessage) || defaults.lobbyInfoMessage,
+    regulationText: defaults.regulationText
+  };
+}
+
+function ensureRuntimeData(data) {
+  const defaults = getDefaultData();
+  const safe = isObject(data) ? data : defaults;
+
+  if (!safe.pending || !isObject(safe.pending)) safe.pending = {};
+  if (!safe.tempSubmit || !isObject(safe.tempSubmit)) safe.tempSubmit = {};
+  if (!safe.resultSubmissions || !isObject(safe.resultSubmissions)) safe.resultSubmissions = {};
+  if (!safe.scores || !isObject(safe.scores)) safe.scores = {};
+  if (!safe.fragger || !isObject(safe.fragger)) safe.fragger = {};
+
+  safe.currentMatch = sanitizePositiveInteger(safe.currentMatch, 1, 50);
+
+  safe.projectSettings = normalizeProjectSettings(safe.projectSettings);
+  safe.botSettings = normalizeBotSettings(safe.botSettings);
+  safe.tournamentSettings = normalizeTournamentSettings(safe.tournamentSettings);
+  safe.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
+
+  safe.registrationMaxTeams = MAX_TEAMS;
+  safe.registrationStatusTitle = sanitizeText(safe.registrationStatusTitle || '📋 Slot Team Registrati') || '📋 Slot Team Registrati';
+  safe.registrationStatusText = sanitizeText(safe.registrationStatusText || '');
+  safe.registrationStatusMessageId = safe.registrationStatusMessageId || null;
+  safe.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
+
+  safe.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+  safe.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+  safe.tournamentSettings.playersPerTeam = PLAYERS_PER_TEAM;
+  safe.tournamentSettings.maxTeams = MAX_TEAMS;
+  safe.tournamentSettings.lockedRules = true;
+  safe.tournamentSettings.lockedPoints = true;
+
+  if (safe.currentMatch > safe.tournamentSettings.totalMatches) {
+    safe.currentMatch = safe.tournamentSettings.totalMatches;
+  }
+
+  return safe;
+}
+
+function loadRuntimeData() {
+  return ensureRuntimeData(loadData());
+}
+
+function saveRuntimeData(data) {
+  const safe = ensureRuntimeData(data);
+  return saveData(safe);
 }
 
 function sortTeamsWithSlot(teams) {
@@ -274,6 +490,8 @@ function getPendingForTeamMatch(data, teamName, matchNumber) {
 }
 
 function getResultSubmissionRecord(data, teamName, matchNumber) {
+  data = ensureRuntimeData(data);
+
   const key = buildSubmissionKey(teamName, matchNumber);
   const saved = data.resultSubmissions?.[key];
 
@@ -328,6 +546,7 @@ function isFinalMatchStatus(status) {
 }
 
 function buildMatchTeamRows(data, teams, matchNumber) {
+  data = ensureRuntimeData(data);
   const targetMatch = Number(matchNumber || 1);
 
   return sortTeamsWithSlot(teams).map(([teamName, teamData]) => {
@@ -388,6 +607,8 @@ function buildMatchOverview(data, teams, matchNumber) {
 }
 
 function buildAllMatchOverviews(data, teams) {
+  data = ensureRuntimeData(data);
+
   const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
   const totalMatches = Math.max(Number(tournamentSettings.totalMatches || 3), Number(data.currentMatch || 1), 1);
   const out = [];
@@ -417,51 +638,11 @@ function buildPending(pending, teams) {
   }));
 }
 
-function normalizeProjectSettings(projectSettings) {
-  const defaults = getDefaultProjectSettings();
-  const safe = projectSettings && typeof projectSettings === 'object' ? projectSettings : {};
-
-  return {
-    brandName: sanitizeText(safe.brandName) || defaults.brandName,
-    tournamentName: FIXED_TOURNAMENT_NAME,
-    supportContact: sanitizeText(safe.supportContact),
-    premiumMode: Boolean(safe.premiumMode),
-    setupCompleted: Boolean(safe.setupCompleted)
-  };
-}
-
-function normalizeTournamentSettings(tournamentSettings) {
-  const defaults = getDefaultTournamentSettings();
-  const safe = tournamentSettings && typeof tournamentSettings === 'object' ? tournamentSettings : {};
-
-  return {
-    tournamentName: FIXED_TOURNAMENT_NAME,
-    totalMatches: sanitizePositiveInteger(safe.totalMatches, defaults.totalMatches, 50),
-    playersPerTeam: PLAYERS_PER_TEAM,
-    maxTeams: MAX_TEAMS,
-    lockedRules: true,
-    lockedPoints: true,
-    createdAt: safe.createdAt || null,
-    createdBy: sanitizeText(safe.createdBy),
-    lastConfiguredAt: safe.lastConfiguredAt || null,
-    lastConfiguredBy: sanitizeText(safe.lastConfiguredBy)
-  };
-}
-
-function normalizeTournamentMessages(tournamentMessages) {
-  const defaults = getDefaultTournamentMessages();
-  const safe = tournamentMessages && typeof tournamentMessages === 'object' ? tournamentMessages : {};
-
-  return {
-    generalAnnouncement: sanitizeText(safe.generalAnnouncement) || defaults.generalAnnouncement,
-    lobbyInfoMessage: sanitizeText(safe.lobbyInfoMessage) || defaults.lobbyInfoMessage,
-    regulationText: defaults.regulationText
-  };
-}
-
 function buildSetupStatus(data) {
+  data = ensureRuntimeData(data);
+
   const projectSettings = normalizeProjectSettings(data.projectSettings);
-  const botSettings = data.botSettings || getDefaultBotSettings();
+  const botSettings = normalizeBotSettings(data.botSettings);
 
   return {
     completato: Boolean(projectSettings.setupCompleted),
@@ -509,17 +690,20 @@ function logAudit(actor, source, action, details = {}) {
 }
 
 function getPreservedSettings(data) {
+  data = ensureRuntimeData(data);
+
   return {
     projectSettings: normalizeProjectSettings(data.projectSettings),
     tournamentSettings: normalizeTournamentSettings(data.tournamentSettings),
-    botSettings: {
-      ...(data.botSettings || getDefaultBotSettings())
-    },
+    botSettings: normalizeBotSettings(data.botSettings),
     tournamentMessages: normalizeTournamentMessages(data.tournamentMessages),
     registrationStatusTitle: sanitizeText(data.registrationStatusTitle || '📋 Slot Team Registrati') || '📋 Slot Team Registrati',
     registrationStatusText: sanitizeText(data.registrationStatusText || ''),
     registrationMaxTeams: MAX_TEAMS,
-    registrationStatusMessageId: data.registrationStatusMessageId || null
+    registrationStatusMessageId: data.registrationStatusMessageId || null,
+    leaderboardMessageId: data.leaderboardMessageId || null,
+    leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
+    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
   };
 }
 
@@ -533,7 +717,11 @@ function applyPreservedSettings(targetData, preserved) {
   targetData.registrationMaxTeams = MAX_TEAMS;
   targetData.registrationStatusMessageId = preserved.registrationStatusMessageId;
 
-  return targetData;
+  targetData.leaderboardMessageId = preserved.leaderboardMessageId || null;
+  targetData.leaderboardGraphicMessageId = preserved.leaderboardGraphicMessageId || null;
+  targetData.topFraggerGraphicMessageId = preserved.topFraggerGraphicMessageId || null;
+
+  return ensureRuntimeData(targetData);
 }
 
 function getNextAvailableSlot(teams, maxTeams) {
@@ -600,6 +788,8 @@ function calcPoints(pos, kills) {
 }
 
 function canManualInsertResult(data, teamName, matchNumber) {
+  data = ensureRuntimeData(data);
+
   const record = getResultSubmissionRecord(data, teamName, matchNumber);
 
   if (record.stato === 'approvato' || record.stato === 'inserito_manualmente') {
@@ -622,8 +812,22 @@ function canManualInsertResult(data, teamName, matchNumber) {
   };
 }
 
+async function updateLeaderboardWithoutCreating() {
+  try {
+    return await bot.updateLeaderboard({
+      allowCreate: false
+    });
+  } catch (error) {
+    console.error('Errore aggiornamento classifica senza creare:', error);
+    return {
+      ok: false,
+      message: error.message || 'Errore aggiornamento classifica'
+    };
+  }
+}
+
 async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
-  const data = loadData();
+  let data = loadRuntimeData();
   const teams = loadTeams();
 
   const teamName = sanitizeText(team);
@@ -684,7 +888,7 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
     source: 'web'
   };
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
   bot.setTeamsState(teams);
@@ -693,7 +897,9 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
     console.error('Errore aggiornamento pannelli dopo risultato manuale:', error);
   });
 
-  await bot.updateLeaderboard().catch(error => {
+  await bot.updateLeaderboard({
+    allowCreate: true
+  }).catch(error => {
     console.error('Errore aggiornamento classifica dopo risultato manuale:', error);
   });
 
@@ -719,7 +925,7 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
 }
 
 function buildDashboardPayload() {
-  const data = loadData();
+  const data = loadRuntimeData();
   const teams = loadTeams();
   const auditLog = loadAuditLog();
   const archives = listTournamentArchives();
@@ -785,7 +991,7 @@ function buildDashboardPayload() {
 }
 
 function buildPublicPayload(req) {
-  const data = loadData();
+  const data = loadRuntimeData();
   const teams = loadTeams();
   const projectSettings = normalizeProjectSettings(data.projectSettings);
   const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
@@ -850,7 +1056,7 @@ app.get('/api/public/dashboard', (req, res) => {
 
 app.post('/api/public/register-team', async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const teams = loadTeams();
 
     const teamName = sanitizeOptionalText(req.body.teamName, 50);
@@ -901,10 +1107,11 @@ app.post('/api/public/register-team', async (req, res) => {
 
     data.registrationMaxTeams = MAX_TEAMS;
 
-    const saved = saveAll(data, teams);
+    const savedTeams = saveTeams(teams);
+    const savedData = saveRuntimeData(data);
 
-    bot.setDataState(saved.data);
-    bot.setTeamsState(saved.teams);
+    bot.setDataState(savedData);
+    bot.setTeamsState(savedTeams);
 
     await bot.handleRegistrationStateChange();
 
@@ -990,7 +1197,7 @@ app.get('/api/dashboard', authRequired, (req, res) => {
 });
 
 app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const teams = loadTeams();
   const matchNumber = sanitizePositiveInteger(req.params.matchNumber, Number(data.currentMatch || 1), 50);
 
@@ -1001,7 +1208,7 @@ app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
 });
 
 app.get('/api/tournament/settings', authRequired, (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
 
   return res.json({
     ok: true,
@@ -1013,7 +1220,7 @@ app.get('/api/tournament/settings', authRequired, (req, res) => {
 
 app.post('/api/tournament/configure', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const teams = loadTeams();
 
     const totalMatches = sanitizePositiveInteger(req.body.totalMatches, 3, 50);
@@ -1045,16 +1252,14 @@ app.post('/api/tournament/configure', authRequired, async (req, res) => {
       data.currentMatch = totalMatches;
     }
 
-    const saved = saveData(data);
+    const saved = saveRuntimeData(data);
 
     bot.setDataState(saved);
     bot.setTeamsState(teams);
 
-    await bot.refreshSavedPanels().catch(error => {
-      console.error('Errore refresh pannelli dopo configurazione torneo:', error);
-    });
-
-    await bot.updateLeaderboard().catch(error => {
+    await bot.updateLeaderboard({
+      allowCreate: true
+    }).catch(error => {
       console.error('Errore aggiornamento classifica dopo configurazione torneo:', error);
     });
 
@@ -1080,7 +1285,7 @@ app.post('/api/tournament/configure', authRequired, async (req, res) => {
 
 app.post('/api/tournament/messages/save', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const defaults = getDefaultTournamentMessages();
 
     data.tournamentMessages = {
@@ -1089,7 +1294,7 @@ app.post('/api/tournament/messages/save', authRequired, async (req, res) => {
       regulationText: defaults.regulationText
     };
 
-    const saved = saveData(data);
+    const saved = saveRuntimeData(data);
     bot.setDataState(saved);
 
     logAudit(req.staffUser, 'web', 'messaggi_torneo_salvati', {
@@ -1131,7 +1336,7 @@ app.get('/api/archivi', authRequired, (req, res) => {
 
 app.post('/api/archivi/crea', authRequired, (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const teams = loadTeams();
 
     const archive = createTournamentArchive(data, teams, {
@@ -1178,7 +1383,7 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
       });
     }
 
-    const currentData = loadData();
+    const currentData = loadRuntimeData();
     const currentTeams = loadTeams();
 
     createTournamentArchive(currentData, currentTeams, {
@@ -1188,13 +1393,16 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
       source: 'web'
     });
 
-    const saved = saveAll(archive.data, archive.teams);
+    const restoredData = ensureRuntimeData(archive.data);
+    const restoredTeams = archive.teams || {};
 
-    bot.setDataState(saved.data);
-    bot.setTeamsState(saved.teams);
+    const savedData = saveRuntimeData(restoredData);
+    const savedTeams = saveTeams(restoredTeams);
 
-    await bot.handleRegistrationStateChange();
-    await bot.refreshSavedPanels();
+    bot.setDataState(savedData);
+    bot.setTeamsState(savedTeams);
+
+    await updateLeaderboardWithoutCreating();
 
     logAudit(req.staffUser, 'web', 'archivio_ripristinato', {
       archiveId: archive.archiveId,
@@ -1215,7 +1423,7 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
 
 app.post('/api/project-settings/save', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
 
     data.projectSettings = {
       ...(data.projectSettings || getDefaultProjectSettings()),
@@ -1226,12 +1434,9 @@ app.post('/api/project-settings/save', authRequired, async (req, res) => {
       setupCompleted: sanitizeBoolean(req.body.setupCompleted)
     };
 
-    const saved = saveData(data);
+    const saved = saveRuntimeData(data);
 
     bot.setDataState(saved);
-
-    await bot.refreshSavedPanels();
-    await bot.updateRegistrationStatusMessage();
 
     logAudit(req.staffUser, 'web', 'impostazioni_progetto_salvate', {
       brandName: saved.projectSettings.brandName,
@@ -1279,7 +1484,7 @@ app.post('/api/bot/settings/save', authRequired, async (req, res) => {
 
 app.post('/api/teams/save', authRequired, async (req, res) => {
   const teams = loadTeams();
-  const data = loadData();
+  const data = loadRuntimeData();
 
   const oldTeamName = sanitizeText(req.body.oldTeamName);
   const teamName = sanitizeOptionalText(req.body.teamName, 50);
@@ -1352,7 +1557,7 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
     const existingSlot = teams[teamName]?.slot || null;
 
     teams[teamName] = {
-      slot: existingSlot,
+      slot: existingSlot || getNextAvailableSlot(teams, MAX_TEAMS),
       players: [p1, p2, p3]
     };
   }
@@ -1363,10 +1568,11 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
 
   data.registrationMaxTeams = MAX_TEAMS;
 
-  const saved = saveAll(data, teams);
+  const savedTeams = saveTeams(teams);
+  const savedData = saveRuntimeData(data);
 
-  bot.setDataState(saved.data);
-  bot.setTeamsState(saved.teams);
+  bot.setDataState(savedData);
+  bot.setTeamsState(savedTeams);
 
   await bot.handleRegistrationStateChange();
 
@@ -1391,7 +1597,7 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
   }
 
   const teams = loadTeams();
-  const data = loadData();
+  const data = loadRuntimeData();
 
   delete teams[teamName];
   delete data.scores[teamName];
@@ -1414,10 +1620,11 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
 
   data.registrationMaxTeams = MAX_TEAMS;
 
-  const saved = saveAll(data, teams);
+  const savedTeams = saveTeams(teams);
+  const savedData = saveRuntimeData(data);
 
-  bot.setDataState(saved.data);
-  bot.setTeamsState(saved.teams);
+  bot.setDataState(savedData);
+  bot.setTeamsState(savedTeams);
 
   await bot.handleRegistrationStateChange();
 
@@ -1431,7 +1638,7 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
 });
 
 app.post('/api/registration-settings/save', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const teams = loadTeams();
 
   const title = sanitizeOptionalText(req.body.title, 100);
@@ -1445,7 +1652,7 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
     data.registrationClosedAnnounced = false;
   }
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
   bot.setTeamsState(teams);
@@ -1464,7 +1671,7 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
 
 app.post('/api/registration-settings/refresh', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const teams = loadTeams();
 
     bot.setDataState(data);
@@ -1487,7 +1694,7 @@ app.post('/api/registration-settings/refresh', authRequired, async (req, res) =>
 
 app.post('/api/match/set', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
     const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
     const match = sanitizePositiveInteger(req.body.match, 1, tournamentSettings.totalMatches);
 
@@ -1537,7 +1744,7 @@ app.post('/api/match/next', authRequired, async (req, res) => {
 });
 
 app.post('/api/scores/add', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
 
@@ -1550,11 +1757,13 @@ app.post('/api/scores/add', authRequired, async (req, res) => {
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
 
-  await bot.updateLeaderboard();
+  await bot.updateLeaderboard({
+    allowCreate: true
+  });
 
   logAudit(req.staffUser, 'web', 'punti_aggiunti', {
     team,
@@ -1569,7 +1778,7 @@ app.post('/api/scores/add', authRequired, async (req, res) => {
 });
 
 app.post('/api/scores/set', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const team = sanitizeText(req.body.team);
   const points = Number(req.body.points || 0);
 
@@ -1582,11 +1791,13 @@ app.post('/api/scores/set', authRequired, async (req, res) => {
 
   data.scores[team] = points;
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
 
-  await bot.updateLeaderboard();
+  await bot.updateLeaderboard({
+    allowCreate: true
+  });
 
   logAudit(req.staffUser, 'web', 'punti_impostati', {
     team,
@@ -1600,7 +1811,7 @@ app.post('/api/scores/set', authRequired, async (req, res) => {
 });
 
 app.post('/api/scores/reset-team', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const team = sanitizeText(req.body.team);
 
   if (!team) {
@@ -1612,11 +1823,13 @@ app.post('/api/scores/reset-team', authRequired, async (req, res) => {
 
   data.scores[team] = 0;
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
 
-  await bot.updateLeaderboard();
+  await bot.updateLeaderboard({
+    allowCreate: true
+  });
 
   logAudit(req.staffUser, 'web', 'punti_team_azzerati', {
     team
@@ -1628,7 +1841,7 @@ app.post('/api/scores/reset-team', authRequired, async (req, res) => {
 });
 
 app.post('/api/fragger/set', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const player = sanitizeOptionalText(req.body.player, 40);
   const kills = Number(req.body.kills || 0);
 
@@ -1641,11 +1854,13 @@ app.post('/api/fragger/set', authRequired, async (req, res) => {
 
   data.fragger[player] = kills;
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
 
-  await bot.updateLeaderboard();
+  await bot.updateLeaderboard({
+    allowCreate: true
+  });
 
   logAudit(req.staffUser, 'web', 'fragger_salvato', {
     player,
@@ -1659,7 +1874,7 @@ app.post('/api/fragger/set', authRequired, async (req, res) => {
 });
 
 app.post('/api/fragger/delete', authRequired, async (req, res) => {
-  const data = loadData();
+  const data = loadRuntimeData();
   const player = sanitizeText(req.body.player);
 
   if (!player) {
@@ -1671,11 +1886,13 @@ app.post('/api/fragger/delete', authRequired, async (req, res) => {
 
   delete data.fragger[player];
 
-  const saved = saveData(data);
+  const saved = saveRuntimeData(data);
 
   bot.setDataState(saved);
 
-  await bot.updateLeaderboard();
+  await bot.updateLeaderboard({
+    allowCreate: true
+  });
 
   logAudit(req.staffUser, 'web', 'fragger_eliminato', {
     player
@@ -1712,7 +1929,7 @@ app.post('/api/reject/:id', authRequired, async (req, res) => {
 
 app.post('/api/manual-result', authRequired, async (req, res) => {
   try {
-    const data = loadData();
+    const data = loadRuntimeData();
 
     const result = await applyManualResult({
       req,
@@ -1734,120 +1951,158 @@ app.post('/api/manual-result', authRequired, async (req, res) => {
 });
 
 app.post('/api/reset-data', authRequired, async (req, res) => {
-  const currentTeams = loadTeams();
-  const currentData = loadData();
+  try {
+    const currentTeams = loadTeams();
+    const currentData = loadRuntimeData();
 
-  createTournamentArchive(currentData, currentTeams, {
-    label: `Backup prima reset classifica ${new Date().toLocaleString('it-IT')}`,
-    note: 'Backup automatico prima del reset classifica/fragger/match',
-    actor: req.staffUser,
-    source: 'web'
-  });
+    createTournamentArchive(currentData, currentTeams, {
+      label: `Backup prima reset classifica ${new Date().toLocaleString('it-IT')}`,
+      note: 'Backup automatico prima del reset classifica, fragger e match',
+      actor: req.staffUser,
+      source: 'web'
+    });
 
-  const preserved = getPreservedSettings(currentData);
+    const preserved = getPreservedSettings(currentData);
 
-  const data = getDefaultData();
+    let data = getDefaultData();
+    data = applyPreservedSettings(data, preserved);
 
-  applyPreservedSettings(data, preserved);
+    data.currentMatch = 1;
+    data.pending = {};
+    data.tempSubmit = {};
+    data.resultSubmissions = {};
+    data.scores = {};
+    data.fragger = {};
+    data.registrationClosedAnnounced = Object.keys(currentTeams).length >= MAX_TEAMS;
+    data.registrationMaxTeams = MAX_TEAMS;
 
-  data.currentMatch = 1;
-  data.pending = {};
-  data.tempSubmit = {};
-  data.resultSubmissions = {};
-  data.scores = {};
-  data.fragger = {};
-  data.registrationClosedAnnounced = Object.keys(currentTeams).length >= MAX_TEAMS;
-  data.registrationMaxTeams = MAX_TEAMS;
+    const saved = saveRuntimeData(data);
 
-  const saved = saveData(data);
+    bot.setDataState(saved);
+    bot.setTeamsState(currentTeams);
 
-  bot.setDataState(saved);
-  bot.setTeamsState(currentTeams);
+    await updateLeaderboardWithoutCreating();
 
-  await bot.updateRegistrationStatusMessage();
-  await bot.refreshSavedPanels();
-  await bot.updateLeaderboard();
+    logAudit(req.staffUser, 'web', 'reset_dati_senza_creare_messaggi', {
+      keepLeaderboardMessageId: Boolean(saved.leaderboardMessageId),
+      keepLeaderboardGraphicMessageId: Boolean(saved.leaderboardGraphicMessageId),
+      keepTopFraggerGraphicMessageId: Boolean(saved.topFraggerGraphicMessageId)
+    });
 
-  logAudit(req.staffUser, 'web', 'reset_dati', {});
-
-  return res.json({
-    ok: true
-  });
+    return res.json({
+      ok: true
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore reset dati'
+    });
+  }
 });
 
 app.post('/api/reset-teams', authRequired, async (req, res) => {
-  const data = loadData();
-  const currentTeams = loadTeams();
+  try {
+    const data = loadRuntimeData();
+    const currentTeams = loadTeams();
 
-  createTournamentArchive(data, currentTeams, {
-    label: `Backup prima reset team ${new Date().toLocaleString('it-IT')}`,
-    note: 'Backup automatico prima del reset team',
-    actor: req.staffUser,
-    source: 'web'
-  });
+    createTournamentArchive(data, currentTeams, {
+      label: `Backup prima reset team ${new Date().toLocaleString('it-IT')}`,
+      note: 'Backup automatico prima del reset team',
+      actor: req.staffUser,
+      source: 'web'
+    });
 
-  const emptyTeams = {};
+    const emptyTeams = {};
 
-  data.pending = {};
-  data.tempSubmit = {};
-  data.resultSubmissions = {};
-  data.registrationClosedAnnounced = false;
-  data.registrationMaxTeams = MAX_TEAMS;
+    data.pending = {};
+    data.tempSubmit = {};
+    data.resultSubmissions = {};
+    data.registrationClosedAnnounced = false;
+    data.registrationMaxTeams = MAX_TEAMS;
 
-  const saved = saveAll(data, emptyTeams);
+    const savedData = saveRuntimeData(data);
+    const savedTeams = saveTeams(emptyTeams);
 
-  bot.setDataState(saved.data);
-  bot.setTeamsState(saved.teams);
+    bot.setDataState(savedData);
+    bot.setTeamsState(savedTeams);
 
-  await bot.handleRegistrationStateChange();
-  await bot.updateLeaderboard();
+    await updateLeaderboardWithoutCreating();
 
-  logAudit(req.staffUser, 'web', 'reset_team', {});
+    logAudit(req.staffUser, 'web', 'reset_team_senza_creare_messaggi', {});
 
-  return res.json({
-    ok: true
-  });
+    return res.json({
+      ok: true
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore reset team'
+    });
+  }
 });
 
 app.post('/api/reset-all', authRequired, async (req, res) => {
-  const currentData = loadData();
-  const currentTeams = loadTeams();
+  try {
+    const currentData = loadRuntimeData();
+    const currentTeams = loadTeams();
 
-  createTournamentArchive(currentData, currentTeams, {
-    label: `Backup prima reset totale ${new Date().toLocaleString('it-IT')}`,
-    note: 'Backup automatico prima del reset totale',
-    actor: req.staffUser,
-    source: 'web'
-  });
+    createTournamentArchive(currentData, currentTeams, {
+      label: `Backup prima reset totale ${new Date().toLocaleString('it-IT')}`,
+      note: 'Backup automatico prima del reset totale',
+      actor: req.staffUser,
+      source: 'web'
+    });
 
-  const preserved = getPreservedSettings(currentData);
-  const data = getDefaultData();
+    const preserved = getPreservedSettings(currentData);
+    let data = getDefaultData();
+    data = applyPreservedSettings(data, preserved);
 
-  applyPreservedSettings(data, preserved);
+    data.currentMatch = 1;
+    data.pending = {};
+    data.tempSubmit = {};
+    data.resultSubmissions = {};
+    data.scores = {};
+    data.fragger = {};
+    data.registrationClosedAnnounced = false;
+    data.registrationMaxTeams = MAX_TEAMS;
 
-  data.currentMatch = 1;
-  data.pending = {};
-  data.tempSubmit = {};
-  data.resultSubmissions = {};
-  data.scores = {};
-  data.fragger = {};
-  data.registrationClosedAnnounced = false;
-  data.registrationMaxTeams = MAX_TEAMS;
+    const emptyTeams = {};
 
-  const emptyTeams = {};
-  const saved = saveAll(data, emptyTeams);
+    const savedData = saveRuntimeData(data);
+    const savedTeams = saveTeams(emptyTeams);
 
-  bot.setDataState(saved.data);
-  bot.setTeamsState(saved.teams);
+    bot.setDataState(savedData);
+    bot.setTeamsState(savedTeams);
 
-  await bot.handleRegistrationStateChange();
-  await bot.updateLeaderboard();
+    await updateLeaderboardWithoutCreating();
 
-  logAudit(req.staffUser, 'web', 'reset_totale', {});
+    logAudit(req.staffUser, 'web', 'reset_totale_senza_creare_messaggi', {});
 
-  return res.json({
-    ok: true
-  });
+    return res.json({
+      ok: true
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore reset totale'
+    });
+  }
+});
+
+app.post('/api/bot/prepare-discord-structure', authRequired, async (req, res) => {
+  try {
+    const categoryId = sanitizeText(req.body.categoryId);
+    const result = await bot.ensureTournamentDiscordStructure(categoryId);
+
+    logAudit(req.staffUser, 'web', 'struttura_discord_preparata', result);
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore preparazione struttura Discord'
+    });
+  }
 });
 
 app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
@@ -1984,11 +2239,14 @@ app.post('/api/bot/send-lobby-code', authRequired, async (req, res) => {
 
 app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
   try {
-    const result = await bot.updateLeaderboard();
+    const result = await bot.updateLeaderboard({
+      allowCreate: true
+    });
 
     logAudit(req.staffUser, 'web', 'classifica_discord_aggiornata_manualmente', {
       created: Boolean(result.created),
-      updated: Boolean(result.updated)
+      updated: Boolean(result.updated),
+      skipped: Boolean(result.skipped)
     });
 
     return res.json(result);
