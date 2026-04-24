@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&display=swap"
     rel="stylesheet"
   />
 
@@ -23,7 +23,7 @@
     body {
       width: 100%;
       min-height: 100%;
-      background: #12081f;
+      background: #10071a;
       font-family: 'Orbitron', sans-serif;
     }
 
@@ -39,7 +39,7 @@
       width: 1672px;
       height: 941px;
       overflow: hidden;
-      background: #140b22;
+      background: #140a21;
     }
 
     .background {
@@ -49,8 +49,8 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
-      user-select: none;
       pointer-events: none;
+      user-select: none;
     }
 
     .table-overlay {
@@ -59,108 +59,127 @@
 
       /* POSIZIONE TABELLA */
       top: 255px;
-      left: 95px;
+      left: 100px;
 
       /* DIMENSIONI TABELLA */
-      width: 1485px;
-      height: 560px;
+      width: 1470px;
 
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .table-header,
     .table-row {
-      display: grid;
-      grid-template-columns: 300px 1fr 320px;
-      align-items: center;
       width: 100%;
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      gap: 8px;
+      align-items: center;
     }
 
     .table-header {
-      height: 58px;
-      gap: 8px;
+      height: 62px;
       margin-bottom: 2px;
     }
 
     .table-row {
-      height: 42px;
-      gap: 8px;
+      height: 54px;
     }
 
     .head-cell {
-      height: 58px;
+      height: 62px;
       display: flex;
       align-items: center;
       justify-content: center;
 
       border-radius: 18px;
-      background: linear-gradient(180deg, rgba(142, 74, 255, 0.95) 0%, rgba(92, 27, 211, 0.96) 100%);
-      border: 2px solid rgba(198, 164, 255, 0.65);
+      border: 2px solid rgba(222, 198, 255, 0.78);
+
+      background:
+        linear-gradient(180deg, rgba(158, 84, 255, 0.98) 0%, rgba(91, 26, 211, 0.98) 100%);
 
       color: #ffffff;
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
       text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      font-size: 22px;
+      font-weight: 900;
 
       box-shadow:
-        0 0 12px rgba(154, 92, 255, 0.55),
-        0 0 24px rgba(154, 92, 255, 0.22),
-        inset 0 0 14px rgba(255, 255, 255, 0.08);
+        0 0 10px rgba(173, 106, 255, 0.95),
+        0 0 20px rgba(173, 106, 255, 0.90),
+        0 0 34px rgba(173, 106, 255, 0.70),
+        0 0 55px rgba(173, 106, 255, 0.45),
+        inset 0 0 18px rgba(255, 255, 255, 0.15);
+
+      text-shadow:
+        0 0 6px rgba(255, 255, 255, 0.35),
+        0 0 14px rgba(255, 255, 255, 0.22);
     }
 
     .cell {
-      height: 42px;
+      height: 54px;
       display: flex;
       align-items: center;
       justify-content: center;
 
-      border-radius: 15px;
-      border: 2px solid rgba(183, 140, 255, 0.82);
-      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      border: 2px solid rgba(179, 133, 255, 0.95);
+      background: rgba(255, 255, 255, 0.035);
 
-      color: #3a176d;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
+      color: #32115f;
       text-align: center;
-
-      box-shadow:
-        0 0 8px rgba(183, 140, 255, 0.35),
-        inset 0 0 6px rgba(183, 140, 255, 0.10);
-    }
-
-    .position-cell {
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
       font-size: 18px;
       font-weight: 800;
+
+      box-shadow:
+        0 0 8px rgba(177, 126, 255, 0.72),
+        0 0 16px rgba(177, 126, 255, 0.42),
+        inset 0 0 7px rgba(177, 126, 255, 0.18);
+    }
+
+    .position-cell,
+    .kill-cell {
+      font-size: 18px;
+      font-weight: 900;
     }
 
     .name-cell {
-      padding: 0 12px;
+      padding: 0 18px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .kill-cell {
-      font-size: 18px;
-      font-weight: 800;
-    }
-
+    /* TOP 1 / 2 / 3 più illuminati */
     .top-1 .cell,
     .top-2 .cell,
     .top-3 .cell {
-      color: #2e0f63;
-      border: 2px solid rgba(157, 92, 255, 0.95);
-      background: rgba(145, 75, 255, 0.05);
+      border: 2px solid rgba(188, 146, 255, 1);
+      background: rgba(151, 82, 255, 0.07);
+      color: #2d0f58;
+
       box-shadow:
-        0 0 10px rgba(157, 92, 255, 0.50),
-        0 0 18px rgba(157, 92, 255, 0.18),
-        inset 0 0 8px rgba(157, 92, 255, 0.12);
+        0 0 12px rgba(175, 115, 255, 0.95),
+        0 0 22px rgba(175, 115, 255, 0.70),
+        0 0 34px rgba(175, 115, 255, 0.35),
+        inset 0 0 10px rgba(175, 115, 255, 0.20);
+    }
+
+    /* anche 4 e 5 belli visibili, non sbiaditi */
+    .top-4 .cell,
+    .top-5 .cell {
+      border: 2px solid rgba(183, 140, 255, 0.98);
+      background: rgba(255, 255, 255, 0.04);
+      color: #331261;
+
+      box-shadow:
+        0 0 10px rgba(172, 118, 255, 0.82),
+        0 0 18px rgba(172, 118, 255, 0.42),
+        inset 0 0 8px rgba(172, 118, 255, 0.14);
     }
   </style>
 </head>
@@ -190,18 +209,14 @@
         const data = await response.json();
 
         const fraggers = Array.isArray(data.classificaFragger)
-          ? data.classificaFragger.slice(0, 10)
+          ? data.classificaFragger.slice(0, 5)
           : [];
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 5; i++) {
           const player = fraggers[i] || {};
 
           const row = document.createElement('div');
-          row.className = 'table-row';
-
-          if (i === 0) row.classList.add('top-1');
-          if (i === 1) row.classList.add('top-2');
-          if (i === 2) row.classList.add('top-3');
+          row.className = `table-row top-${i + 1}`;
 
           const posizione = document.createElement('div');
           posizione.className = 'cell position-cell';
@@ -224,9 +239,9 @@
       } catch (error) {
         console.error('Errore caricamento top fragger:', error);
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 5; i++) {
           const row = document.createElement('div');
-          row.className = 'table-row';
+          row.className = `table-row top-${i + 1}`;
 
           const posizione = document.createElement('div');
           posizione.className = 'cell position-cell';
