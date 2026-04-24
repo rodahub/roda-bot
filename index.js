@@ -187,7 +187,7 @@ function getRegistrationLimit() {
 function getSortedTeamEntries() {
   return Object.entries(teams).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -366,13 +366,6 @@ function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', f
   return minSize;
 }
 
-function getCenteredTextY(ctx, text, boxY, boxHeight, fontSize, extraOffsetY = 0) {
-  const metrics = ctx.measureText(String(text || ''));
-  const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.72;
-  const descent = metrics.actualBoundingBoxDescent || fontSize * 0.22;
-  return boxY + ((boxHeight - (ascent + descent)) / 2) + ascent + extraOffsetY;
-}
-
 function drawGraphicText(ctx, text, box, options = {}) {
   const safeText = String(text || '');
   if (!safeText) return;
@@ -390,15 +383,24 @@ function drawGraphicText(ctx, text, box, options = {}) {
     offsetY = 0
   } = options;
 
-  const finalSize = fitText(ctx, safeText, Math.max(20, box.width - (padX * 2)), size, minSize, weight, family);
+  const finalSize = fitText(
+    ctx,
+    safeText,
+    Math.max(20, box.width - (padX * 2)),
+    size,
+    minSize,
+    weight,
+    family
+  );
+
   setCanvasFont(ctx, finalSize, weight, family);
 
   const x = box.x + (box.width / 2) + offsetX;
-  const y = getCenteredTextY(ctx, safeText, box.y, box.height, finalSize, offsetY);
+  const y = box.y + (box.height / 2) + offsetY;
 
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
+  ctx.textBaseline = 'middle';
   ctx.shadowColor = glow;
   ctx.shadowBlur = glowBlur;
   ctx.shadowOffsetX = 0;
@@ -436,8 +438,8 @@ async function generateLeaderboardGraphicBuffer() {
   const rows = getSortedScores().slice(0, 16);
   const family = getGraphicFontFamily();
 
-  const teamBox = { x: 428, y: 266, width: 792, height: 44 };
-  const pointsBox = { x: 1222, y: 266, width: 244, height: 44 };
+  const teamBox = { x: 428, y: 264, width: 792, height: 46 };
+  const pointsBox = { x: 1222, y: 264, width: 244, height: 46 };
   const rowHeight = 49;
 
   for (let i = 0; i < 16; i++) {
@@ -463,7 +465,7 @@ async function generateLeaderboardGraphicBuffer() {
     };
 
     drawGraphicText(ctx, teamName, currentTeamBox, {
-      size: isTop3 ? 30 : 27,
+      size: isTop3 ? 31 : 28,
       minSize: 18,
       padX: 30,
       weight: '700',
@@ -471,11 +473,11 @@ async function generateLeaderboardGraphicBuffer() {
       fill: isTop3 ? '#331b63' : '#4a2d80',
       glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
       glowBlur: isTop3 ? 6 : 4,
-      offsetY: 7
+      offsetY: 2
     });
 
     drawGraphicText(ctx, pointsText, currentPointsBox, {
-      size: isTop3 ? 30 : 28,
+      size: isTop3 ? 31 : 28,
       minSize: 20,
       padX: 52,
       weight: '700',
@@ -483,7 +485,7 @@ async function generateLeaderboardGraphicBuffer() {
       fill: '#3b1d71',
       glow: 'rgba(176,109,255,0.14)',
       glowBlur: 3,
-      offsetY: 7
+      offsetY: 2
     });
   }
 
@@ -502,8 +504,8 @@ async function generateTopFraggerGraphicBuffer() {
   const rows = getSortedFraggers().slice(0, 10);
   const family = getGraphicFontFamily();
 
-  const playerBox = { x: 428, y: 266, width: 792, height: 44 };
-  const killsBox = { x: 1222, y: 266, width: 244, height: 44 };
+  const playerBox = { x: 428, y: 264, width: 792, height: 46 };
+  const killsBox = { x: 1222, y: 264, width: 244, height: 46 };
   const rowHeight = 57;
 
   for (let i = 0; i < 10; i++) {
@@ -529,7 +531,7 @@ async function generateTopFraggerGraphicBuffer() {
     };
 
     drawGraphicText(ctx, playerName, currentPlayerBox, {
-      size: isTop3 ? 30 : 27,
+      size: isTop3 ? 31 : 28,
       minSize: 18,
       padX: 30,
       weight: '700',
@@ -537,11 +539,11 @@ async function generateTopFraggerGraphicBuffer() {
       fill: isTop3 ? '#331b63' : '#4a2d80',
       glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
       glowBlur: isTop3 ? 6 : 4,
-      offsetY: 7
+      offsetY: 2
     });
 
     drawGraphicText(ctx, killsText, currentKillsBox, {
-      size: isTop3 ? 30 : 28,
+      size: isTop3 ? 31 : 28,
       minSize: 20,
       padX: 52,
       weight: '700',
@@ -549,7 +551,7 @@ async function generateTopFraggerGraphicBuffer() {
       fill: '#3b1d71',
       glow: 'rgba(176,109,255,0.14)',
       glowBlur: 3,
-      offsetY: 7
+      offsetY: 2
     });
   }
 
