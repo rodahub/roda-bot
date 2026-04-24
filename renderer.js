@@ -146,19 +146,7 @@ function fitFontSize(ctx, text, maxWidth, startSize, minSize, family, weight = '
   return minSize;
 }
 
-function getVerticalBaseline(ctx, centerY, text) {
-  const metrics = ctx.measureText(text);
-  const ascent = metrics.actualBoundingBoxAscent || 0;
-  const descent = metrics.actualBoundingBoxDescent || 0;
-
-  if (!ascent && !descent) {
-    return centerY;
-  }
-
-  return centerY + (ascent - descent) / 2;
-}
-
-function drawCenteredTextInBox(ctx, text, box, options = {}) {
+function drawCenteredText(ctx, text, box, options = {}) {
   const value = cleanText(text);
   if (!value) return;
 
@@ -168,16 +156,17 @@ function drawCenteredTextInBox(ctx, text, box, options = {}) {
     fontSize = 28,
     minFontSize = 16,
     fontWeight = 'bold',
-    fillStyle = '#4d2d78',
-    shadowColor = 'rgba(171, 123, 255, 0.10)',
+    fillStyle = '#4b2c77',
+    paddingX = 12,
+    shadowColor = 'rgba(171, 123, 255, 0.08)',
     shadowBlur = 0,
-    paddingX = 10
+    yOffset = 0
   } = options;
 
   const familyToUse = fontsRegistered ? fontFamily : fallbackFamily;
-  const maxWidth = Math.max(10, box.width - paddingX * 2);
+  const maxWidth = Math.max(10, box.width - (paddingX * 2));
 
-  const size = fitFontSize(
+  const finalSize = fitFontSize(
     ctx,
     value,
     maxWidth,
@@ -188,54 +177,69 @@ function drawCenteredTextInBox(ctx, text, box, options = {}) {
   );
 
   ctx.save();
-
-  setFont(ctx, size, familyToUse, fontWeight);
+  setFont(ctx, finalSize, familyToUse, fontWeight);
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = fillStyle;
   ctx.shadowColor = shadowColor;
   ctx.shadowBlur = shadowBlur;
 
-  const centerX = box.x + box.width / 2;
-  const centerY = box.y + box.height / 2;
-  const baselineY = getVerticalBaseline(ctx, centerY, value);
+  const centerX = box.x + (box.width / 2);
+  const centerY = box.y + (box.height / 2) + yOffset;
 
-  ctx.fillText(value, centerX, baselineY);
-
+  ctx.fillText(value, centerX, centerY);
   ctx.restore();
 }
 
-function drawNumberInBox(ctx, value, box, options = {}) {
-  drawCenteredTextInBox(ctx, String(normalizeNumber(value, 0)), box, options);
+function drawCenteredNumber(ctx, value, box, options = {}) {
+  drawCenteredText(ctx, String(normalizeNumber(value, 0)), box, options);
 }
 
 /*
   IMPORTANTE:
   NON disegniamo la colonna POSIZIONE.
-  I numeri a sinistra sono già presenti nel PNG template.
-  Se li ridisegni, escono doppi o sfasati.
+  I numeri a sinistra esistono già dentro il template PNG.
+  Se li ridisegniamo, escono doppi o sfalsati.
 */
 
 const LEADERBOARD_LAYOUT = {
-  rowHeight: 44,
-  rowTops: [
-    267, 316, 365, 414,
-    463, 512, 561, 610,
-    659, 708, 757, 806,
-    855, 904, 953, 1002
+  rows: [
+    { y: 266, h: 42 },
+    { y: 315, h: 42 },
+    { y: 364, h: 42 },
+    { y: 413, h: 42 },
+    { y: 462, h: 42 },
+    { y: 511, h: 42 },
+    { y: 560, h: 42 },
+    { y: 609, h: 42 },
+    { y: 658, h: 42 },
+    { y: 707, h: 42 },
+    { y: 756, h: 42 },
+    { y: 805, h: 42 },
+    { y: 854, h: 42 },
+    { y: 903, h: 42 },
+    { y: 952, h: 42 },
+    { y: 1001, h: 42 }
   ],
-  teamBox: { x: 435, width: 785 },
-  pointsBox: { x: 1227, width: 241 }
+  teamBox: { x: 451, width: 763 },
+  pointsBox: { x: 1225, width: 244 }
 };
 
 const TOP_FRAGGER_LAYOUT = {
-  rowHeight: 45,
-  rowTops: [
-    287, 339, 391, 443, 495,
-    547, 599, 651, 703, 755
+  rows: [
+    { y: 286, h: 43 },
+    { y: 338, h: 43 },
+    { y: 390, h: 43 },
+    { y: 442, h: 43 },
+    { y: 494, h: 43 },
+    { y: 546, h: 43 },
+    { y: 598, h: 43 },
+    { y: 650, h: 43 },
+    { y: 702, h: 43 },
+    { y: 754, h: 43 }
   ],
-  playerBox: { x: 454, width: 759 },
-  killsBox: { x: 1226, width: 242 }
+  playerBox: { x: 451, width: 763 },
+  killsBox: { x: 1225, width: 244 }
 };
 
 function buildBox(x, y, width, height) {
@@ -243,85 +247,79 @@ function buildBox(x, y, width, height) {
 }
 
 function drawLeaderboardRows(ctx, rows) {
-  const visibleRows = rows.slice(0, LEADERBOARD_LAYOUT.rowTops.length);
+  const visibleRows = rows.slice(0, LEADERBOARD_LAYOUT.rows.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const top = LEADERBOARD_LAYOUT.rowTops[i];
-    const height = LEADERBOARD_LAYOUT.rowHeight;
+    const rowLayout = LEADERBOARD_LAYOUT.rows[i];
 
     const teamBox = buildBox(
       LEADERBOARD_LAYOUT.teamBox.x,
-      top,
+      rowLayout.y,
       LEADERBOARD_LAYOUT.teamBox.width,
-      height
+      rowLayout.h
     );
 
     const pointsBox = buildBox(
       LEADERBOARD_LAYOUT.pointsBox.x,
-      top,
+      rowLayout.y,
       LEADERBOARD_LAYOUT.pointsBox.width,
-      height
+      rowLayout.h
     );
 
-    drawCenteredTextInBox(ctx, row.team, teamBox, {
-      fontSize: 29,
-      minFontSize: 17,
-      fillStyle: '#45276d',
-      shadowColor: 'rgba(171, 123, 255, 0.08)',
-      shadowBlur: 0,
-      paddingX: 18
-    });
-
-    drawNumberInBox(ctx, row.punti, pointsBox, {
-      fontSize: 28,
+    drawCenteredText(ctx, row.team, teamBox, {
+      fontSize: 30,
       minFontSize: 18,
       fillStyle: '#45276d',
-      shadowColor: 'rgba(171, 123, 255, 0.08)',
-      shadowBlur: 0,
-      paddingX: 14
+      paddingX: 18,
+      yOffset: 0
+    });
+
+    drawCenteredNumber(ctx, row.punti, pointsBox, {
+      fontSize: 30,
+      minFontSize: 18,
+      fillStyle: '#45276d',
+      paddingX: 16,
+      yOffset: 0
     });
   }
 }
 
 function drawTopFraggerRows(ctx, rows) {
-  const visibleRows = rows.slice(0, TOP_FRAGGER_LAYOUT.rowTops.length);
+  const visibleRows = rows.slice(0, TOP_FRAGGER_LAYOUT.rows.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const top = TOP_FRAGGER_LAYOUT.rowTops[i];
-    const height = TOP_FRAGGER_LAYOUT.rowHeight;
+    const rowLayout = TOP_FRAGGER_LAYOUT.rows[i];
 
     const playerBox = buildBox(
       TOP_FRAGGER_LAYOUT.playerBox.x,
-      top,
+      rowLayout.y,
       TOP_FRAGGER_LAYOUT.playerBox.width,
-      height
+      rowLayout.h
     );
 
     const killsBox = buildBox(
       TOP_FRAGGER_LAYOUT.killsBox.x,
-      top,
+      rowLayout.y,
       TOP_FRAGGER_LAYOUT.killsBox.width,
-      height
+      rowLayout.h
     );
 
-    drawCenteredTextInBox(ctx, row.nome, playerBox, {
-      fontSize: 29,
-      minFontSize: 17,
-      fillStyle: '#45276d',
-      shadowColor: 'rgba(171, 123, 255, 0.08)',
-      shadowBlur: 0,
-      paddingX: 18
-    });
-
-    drawNumberInBox(ctx, row.kills, killsBox, {
-      fontSize: 28,
+    drawCenteredText(ctx, row.nome, playerBox, {
+      fontSize: 30,
       minFontSize: 18,
       fillStyle: '#45276d',
-      shadowColor: 'rgba(171, 123, 255, 0.08)',
-      shadowBlur: 0,
-      paddingX: 14
+      paddingX: 18,
+      yOffset: 0
+    });
+
+    drawCenteredNumber(ctx, row.kills, killsBox, {
+      fontSize: 30,
+      minFontSize: 18,
+      fillStyle: '#45276d',
+      paddingX: 16,
+      yOffset: 0
     });
   }
 }
