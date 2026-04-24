@@ -30,7 +30,7 @@ function registerFontsOnce() {
       registerFont(TITLE_FONT_PATH, { family: TITLE_FONT_FAMILY });
     }
   } catch (error) {
-    console.warn('Impossibile caricare font titolo:', error.message);
+    console.warn('Impossibile registrare il font titolo:', error.message);
   }
 
   try {
@@ -38,7 +38,7 @@ function registerFontsOnce() {
       registerFont(BODY_FONT_PATH, { family: BODY_FONT_FAMILY });
     }
   } catch (error) {
-    console.warn('Impossibile caricare font body:', error.message);
+    console.warn('Impossibile registrare il font body:', error.message);
   }
 
   fontsRegistered = true;
@@ -69,6 +69,11 @@ function cleanText(value) {
   return String(value ?? '').trim();
 }
 
+function normalizeNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function normalizeLeaderboardRows(input) {
   let rows = [];
 
@@ -77,28 +82,20 @@ function normalizeLeaderboardRows(input) {
   } else if (input && typeof input === 'object') {
     rows = Object.entries(input).map(([team, points]) => ({
       team,
-      points
+      punti: points
     }));
   }
 
   return rows.map((row, index) => ({
-    posizione: Number(
-      row.posizione ??
-      row.position ??
-      row.pos ??
+    posizione: normalizeNumber(
+      row.posizione ?? row.position ?? row.pos ?? index + 1,
       index + 1
     ),
     team: cleanText(
-      row.team ??
-      row.teamName ??
-      row.name ??
-      row.nome ??
-      ''
+      row.team ?? row.teamName ?? row.nome ?? row.name ?? ''
     ),
-    punti: Number(
-      row.punti ??
-      row.points ??
-      row.score ??
+    punti: normalizeNumber(
+      row.punti ?? row.points ?? row.score ?? 0,
       0
     )
   }));
@@ -117,23 +114,15 @@ function normalizeFraggerRows(input) {
   }
 
   return rows.map((row, index) => ({
-    posizione: Number(
-      row.posizione ??
-      row.position ??
-      row.pos ??
+    posizione: normalizeNumber(
+      row.posizione ?? row.position ?? row.pos ?? index + 1,
       index + 1
     ),
     nome: cleanText(
-      row.nome ??
-      row.player ??
-      row.playerName ??
-      row.name ??
-      ''
+      row.nome ?? row.player ?? row.playerName ?? row.name ?? ''
     ),
-    kills: Number(
-      row.kills ??
-      row.uccisioni ??
-      row.value ??
+    kills: normalizeNumber(
+      row.kills ?? row.uccisioni ?? row.value ?? 0,
       0
     )
   }));
@@ -146,33 +135,49 @@ function setFont(ctx, size, family, weight = 'bold') {
 function fitFontSize(ctx, text, maxWidth, startSize, minSize, family, weight = 'bold') {
   let size = startSize;
 
-  while (size > minSize) {
+  while (size >= minSize) {
     setFont(ctx, size, family, weight);
-    if (ctx.measureText(text).width <= maxWidth) return size;
+    if (ctx.measureText(text).width <= maxWidth) {
+      return size;
+    }
     size -= 1;
   }
 
   return minSize;
 }
 
-function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
+function getVerticalBaseline(ctx, centerY, text) {
+  const metrics = ctx.measureText(text);
+  const ascent = metrics.actualBoundingBoxAscent || 0;
+  const descent = metrics.actualBoundingBoxDescent || 0;
+
+  if (!ascent && !descent) {
+    return centerY;
+  }
+
+  return centerY + (ascent - descent) / 2;
+}
+
+function drawCenteredTextInBox(ctx, text, box, options = {}) {
   const value = cleanText(text);
   if (!value) return;
 
   const {
-    maxWidth = 300,
     fontFamily = BODY_FONT_FAMILY,
     fallbackFamily = 'sans-serif',
     fontSize = 28,
     minFontSize = 16,
     fontWeight = 'bold',
-    fillStyle = '#4a2b75',
-    shadowColor = 'rgba(170, 118, 255, 0.16)',
-    shadowBlur = 1
+    fillStyle = '#4d2d78',
+    shadowColor = 'rgba(171, 123, 255, 0.10)',
+    shadowBlur = 0,
+    paddingX = 10
   } = options;
 
   const familyToUse = fontsRegistered ? fontFamily : fallbackFamily;
-  const fittedSize = fitFontSize(
+  const maxWidth = Math.max(10, box.width - paddingX * 2);
+
+  const size = fitFontSize(
     ctx,
     value,
     maxWidth,
@@ -183,95 +188,140 @@ function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
   );
 
   ctx.save();
+
+  setFont(ctx, size, familyToUse, fontWeight);
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = fillStyle;
   ctx.shadowColor = shadowColor;
   ctx.shadowBlur = shadowBlur;
 
-  setFont(ctx, fittedSize, familyToUse, fontWeight);
-  ctx.fillText(value, centerX, centerY);
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
+  const baselineY = getVerticalBaseline(ctx, centerY, value);
+
+  ctx.fillText(value, centerX, baselineY);
 
   ctx.restore();
 }
 
+function drawNumberInBox(ctx, value, box, options = {}) {
+  drawCenteredTextInBox(ctx, String(normalizeNumber(value, 0)), box, options);
+}
+
 /*
   IMPORTANTE:
-  Non disegniamo MAI la colonna posizione a sinistra,
-  perché i numeri sono già dentro i template PNG.
+  NON disegniamo la colonna POSIZIONE.
+  I numeri a sinistra sono già presenti nel PNG template.
+  Se li ridisegni, escono doppi o sfasati.
 */
 
-const CLASSIFICA_LAYOUT = {
-  teamCenterX: 824,
-  pointsCenterX: 1342,
-  rowY: [
-    316, 364, 412, 460, 508, 556, 604, 652,
-    700, 748, 796, 844, 892, 940, 988, 1036
+const LEADERBOARD_LAYOUT = {
+  rowHeight: 44,
+  rowTops: [
+    267, 316, 365, 414,
+    463, 512, 561, 610,
+    659, 708, 757, 806,
+    855, 904, 953, 1002
   ],
-  teamMaxWidth: 660,
-  pointsMaxWidth: 150
+  teamBox: { x: 435, width: 785 },
+  pointsBox: { x: 1227, width: 241 }
 };
 
-const FRAGGER_LAYOUT = {
-  playerCenterX: 826,
-  killsCenterX: 1340,
-  rowY: [
-    304, 356, 408, 460, 512, 564, 616, 668, 720, 772
+const TOP_FRAGGER_LAYOUT = {
+  rowHeight: 45,
+  rowTops: [
+    287, 339, 391, 443, 495,
+    547, 599, 651, 703, 755
   ],
-  playerMaxWidth: 660,
-  killsMaxWidth: 150
+  playerBox: { x: 454, width: 759 },
+  killsBox: { x: 1226, width: 242 }
 };
+
+function buildBox(x, y, width, height) {
+  return { x, y, width, height };
+}
 
 function drawLeaderboardRows(ctx, rows) {
-  const visibleRows = rows.slice(0, CLASSIFICA_LAYOUT.rowY.length);
+  const visibleRows = rows.slice(0, LEADERBOARD_LAYOUT.rowTops.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const y = CLASSIFICA_LAYOUT.rowY[i];
+    const top = LEADERBOARD_LAYOUT.rowTops[i];
+    const height = LEADERBOARD_LAYOUT.rowHeight;
 
-    drawCenteredText(ctx, row.team, CLASSIFICA_LAYOUT.teamCenterX, y, {
-      maxWidth: CLASSIFICA_LAYOUT.teamMaxWidth,
+    const teamBox = buildBox(
+      LEADERBOARD_LAYOUT.teamBox.x,
+      top,
+      LEADERBOARD_LAYOUT.teamBox.width,
+      height
+    );
+
+    const pointsBox = buildBox(
+      LEADERBOARD_LAYOUT.pointsBox.x,
+      top,
+      LEADERBOARD_LAYOUT.pointsBox.width,
+      height
+    );
+
+    drawCenteredTextInBox(ctx, row.team, teamBox, {
       fontSize: 29,
       minFontSize: 17,
-      fillStyle: '#47286f',
-      shadowColor: 'rgba(170, 118, 255, 0.12)',
-      shadowBlur: 1
+      fillStyle: '#45276d',
+      shadowColor: 'rgba(171, 123, 255, 0.08)',
+      shadowBlur: 0,
+      paddingX: 18
     });
 
-    drawCenteredText(ctx, String(Number(row.punti || 0)), CLASSIFICA_LAYOUT.pointsCenterX, y, {
-      maxWidth: CLASSIFICA_LAYOUT.pointsMaxWidth,
+    drawNumberInBox(ctx, row.punti, pointsBox, {
       fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#47286f',
-      shadowColor: 'rgba(170, 118, 255, 0.12)',
-      shadowBlur: 1
+      fillStyle: '#45276d',
+      shadowColor: 'rgba(171, 123, 255, 0.08)',
+      shadowBlur: 0,
+      paddingX: 14
     });
   }
 }
 
-function drawFraggerRows(ctx, rows) {
-  const visibleRows = rows.slice(0, FRAGGER_LAYOUT.rowY.length);
+function drawTopFraggerRows(ctx, rows) {
+  const visibleRows = rows.slice(0, TOP_FRAGGER_LAYOUT.rowTops.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const y = FRAGGER_LAYOUT.rowY[i];
+    const top = TOP_FRAGGER_LAYOUT.rowTops[i];
+    const height = TOP_FRAGGER_LAYOUT.rowHeight;
 
-    drawCenteredText(ctx, row.nome, FRAGGER_LAYOUT.playerCenterX, y, {
-      maxWidth: FRAGGER_LAYOUT.playerMaxWidth,
+    const playerBox = buildBox(
+      TOP_FRAGGER_LAYOUT.playerBox.x,
+      top,
+      TOP_FRAGGER_LAYOUT.playerBox.width,
+      height
+    );
+
+    const killsBox = buildBox(
+      TOP_FRAGGER_LAYOUT.killsBox.x,
+      top,
+      TOP_FRAGGER_LAYOUT.killsBox.width,
+      height
+    );
+
+    drawCenteredTextInBox(ctx, row.nome, playerBox, {
       fontSize: 29,
       minFontSize: 17,
-      fillStyle: '#47286f',
-      shadowColor: 'rgba(170, 118, 255, 0.12)',
-      shadowBlur: 1
+      fillStyle: '#45276d',
+      shadowColor: 'rgba(171, 123, 255, 0.08)',
+      shadowBlur: 0,
+      paddingX: 18
     });
 
-    drawCenteredText(ctx, String(Number(row.kills || 0)), FRAGGER_LAYOUT.killsCenterX, y, {
-      maxWidth: FRAGGER_LAYOUT.killsMaxWidth,
+    drawNumberInBox(ctx, row.kills, killsBox, {
       fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#47286f',
-      shadowColor: 'rgba(170, 118, 255, 0.12)',
-      shadowBlur: 1
+      fillStyle: '#45276d',
+      shadowColor: 'rgba(171, 123, 255, 0.08)',
+      shadowBlur: 0,
+      paddingX: 14
     });
   }
 }
@@ -299,24 +349,28 @@ async function generateTopFraggerGraphicBuffer(fraggerInput) {
   const ctx = canvas.getContext('2d');
 
   ctx.drawImage(template, 0, 0, template.width, template.height);
-  drawFraggerRows(ctx, rows);
+  drawTopFraggerRows(ctx, rows);
 
   return canvas.toBuffer('image/png');
 }
 
 async function generateLeaderboardGraphic(leaderboardInput, outputPath) {
   const buffer = await generateLeaderboardGraphicBuffer(leaderboardInput);
+
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
+
   return buffer;
 }
 
 async function generateTopFraggerGraphic(fraggerInput, outputPath) {
   const buffer = await generateTopFraggerGraphicBuffer(fraggerInput);
+
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
+
   return buffer;
 }
 
