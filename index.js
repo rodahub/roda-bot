@@ -15,7 +15,7 @@ const {
 
 const fs = require('fs');
 const path = require('path');
-const { createCanvas, loadImage, registerFont } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 
 const {
   loadData,
@@ -48,10 +48,9 @@ const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '
 
 const LEADERBOARD_TEMPLATE_PATH = path.join(__dirname, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
-const GRAPHIC_FONT_PATH = path.join(__dirname, 'NeltridetrialRegular-q2nmr.otf');
 
-const GRAPHIC_NAME_FONT_FAMILY = 'RodaCustomGraphic';
-const GRAPHIC_NUMBER_FONT_FAMILY = 'sans-serif';
+const SAFE_NAME_FONT = 'Arial';
+const SAFE_NUMBER_FONT = 'Arial';
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -66,7 +65,6 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
-let graphicFontRegistered = false;
 
 function sanitizeText(value) {
   return String(value || '').trim();
@@ -314,26 +312,6 @@ function fileExists(filePath) {
   }
 }
 
-function registerGraphicFont() {
-  if (graphicFontRegistered) return;
-
-  try {
-    if (fileExists(GRAPHIC_FONT_PATH)) {
-      registerFont(GRAPHIC_FONT_PATH, { family: GRAPHIC_NAME_FONT_FAMILY });
-      graphicFontRegistered = true;
-      console.log(`Font grafico caricato: ${GRAPHIC_FONT_PATH}`);
-    } else {
-      console.warn(`Font grafico non trovato: ${GRAPHIC_FONT_PATH}. Uso fallback sans-serif.`);
-    }
-  } catch (error) {
-    console.error('Errore caricamento font grafico:', error);
-  }
-}
-
-function getNameFontFamily() {
-  return graphicFontRegistered ? GRAPHIC_NAME_FONT_FAMILY : 'sans-serif';
-}
-
 function sanitizeGraphicText(value) {
   return String(value || '')
     .normalize('NFKC')
@@ -346,16 +324,14 @@ function sanitizeGraphicText(value) {
 function sanitizeGraphicNumber(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return '0';
-  return String(Math.trunc(numeric))
-    .replace(/[^\d\-]/g, '')
-    .trim() || '0';
+  return String(Math.trunc(numeric)).replace(/[^\d\-]/g, '') || '0';
 }
 
-function setCanvasFont(ctx, size, weight = '700', family = 'sans-serif') {
+function setCanvasFont(ctx, size, weight = '700', family = SAFE_NAME_FONT) {
   ctx.font = `${weight} ${size}px "${family}"`;
 }
 
-function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = 'sans-serif') {
+function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = SAFE_NAME_FONT) {
   const safeText = String(text || '');
   let size = startSize;
 
@@ -370,58 +346,42 @@ function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', f
   return minSize;
 }
 
-function getTextMetricsSafe(ctx, text, fallbackSize = 24) {
-  const m = ctx.measureText(String(text || ''));
-  const ascent = m.actualBoundingBoxAscent || fallbackSize * 0.74;
-  const descent = m.actualBoundingBoxDescent || fallbackSize * 0.26;
-  return { ascent, descent };
-}
-
-function getCenteredTextY(ctx, text, boxY, boxHeight, fallbackSize = 24, extraOffsetY = 0) {
-  const { ascent, descent } = getTextMetricsSafe(ctx, text, fallbackSize);
+function getCenteredTextY(ctx, text, boxY, boxHeight, fontSize, extraOffsetY = 0) {
+  const metrics = ctx.measureText(String(text || ''));
+  const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.72;
+  const descent = metrics.actualBoundingBoxDescent || fontSize * 0.22;
   return boxY + ((boxHeight - (ascent + descent)) / 2) + ascent + extraOffsetY;
 }
 
-function drawGlowTextInBox(ctx, text, box, options = {}) {
+function drawStableTextInBox(ctx, text, box, options = {}) {
   const safeText = String(text || '');
   if (!safeText) return;
 
   const {
-    size = 30,
+    size = 28,
     minSize = 16,
-    padX = 18,
+    padX = 20,
     weight = '700',
-    family = 'sans-serif',
-    fill = '#341b58',
-    stroke = '#f2e6ff',
-    glow = '#b15eff',
-    glowBlur = 14,
-    strokeWidth = 1.5,
+    family = SAFE_NAME_FONT,
+    fill = '#442977',
+    stroke = '#fff6ff',
+    glow = 'rgba(157, 92, 255, 0.35)',
+    glowBlur = 8,
+    strokeWidth = 1,
     offsetX = 0,
-    offsetY = 0,
-    clip = true
+    offsetY = 0
   } = options;
 
-  const maxWidth = Math.max(20, box.width - (padX * 2));
-  const finalSize = fitText(ctx, safeText, maxWidth, size, minSize, weight, family);
-
-  ctx.save();
-
-  if (clip) {
-    ctx.beginPath();
-    ctx.rect(box.x, box.y, box.width, box.height);
-    ctx.clip();
-  }
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.miterLimit = 2;
+  const finalSize = fitText(ctx, safeText, Math.max(20, box.width - (padX * 2)), size, minSize, weight, family);
   setCanvasFont(ctx, finalSize, weight, family);
 
   const x = box.x + (box.width / 2) + offsetX;
   const y = getCenteredTextY(ctx, safeText, box.y, box.height, finalSize, offsetY);
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
 
   ctx.shadowColor = glow;
   ctx.shadowBlur = glowBlur;
@@ -441,7 +401,6 @@ function drawGlowTextInBox(ctx, text, box, options = {}) {
 
   ctx.fillStyle = fill;
   ctx.fillText(safeText, x, y);
-
   ctx.restore();
 }
 
@@ -453,8 +412,6 @@ function ensureGraphicTemplates() {
   if (!fileExists(TOP_FRAGGER_TEMPLATE_PATH)) {
     throw new Error('Template top-fragger.png non trovato nella cartella principale del progetto');
   }
-
-  registerGraphicFont();
 }
 
 async function generateLeaderboardGraphicBuffer() {
@@ -467,19 +424,18 @@ async function generateLeaderboardGraphicBuffer() {
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedScores().slice(0, 16);
-  const nameFamily = getNameFontFamily();
 
-  const teamBox = { x: 426, y: 258, width: 792, height: 44 };
-  const pointsBox = { x: 1218, y: 258, width: 248, height: 44 };
+  const teamBox = { x: 430, y: 257, width: 790, height: 44 };
+  const pointsBox = { x: 1224, y: 257, width: 242, height: 44 };
   const rowHeight = 49;
 
   for (let i = 0; i < 16; i++) {
     const row = rows[i];
     if (!row) continue;
 
+    const isTop3 = i < 3;
     const teamName = sanitizeGraphicText(row.teamName);
     const pointsText = sanitizeGraphicNumber(row.points);
-    const isTop3 = i < 3;
 
     const currentTeamBox = {
       x: teamBox.x,
@@ -495,35 +451,32 @@ async function generateLeaderboardGraphicBuffer() {
       height: pointsBox.height
     };
 
-    drawGlowTextInBox(ctx, teamName, currentTeamBox, {
+    drawStableTextInBox(ctx, teamName, currentTeamBox, {
       size: isTop3 ? 29 : 26,
       minSize: 18,
-      padX: 26,
+      padX: 30,
       weight: isTop3 ? '800' : '700',
-      family: nameFamily,
+      family: SAFE_NAME_FONT,
       fill: isTop3 ? '#351c63' : '#4a2d80',
-      stroke: '#fff3ff',
-      glow: isTop3 ? 'rgba(180, 110, 255, 0.80)' : 'rgba(157, 92, 255, 0.55)',
-      glowBlur: isTop3 ? 14 : 10,
-      strokeWidth: isTop3 ? 1.9 : 1.5,
-      offsetY: 1,
-      clip: true
+      stroke: '#fff7ff',
+      glow: isTop3 ? 'rgba(180,110,255,0.35)' : 'rgba(157,92,255,0.25)',
+      glowBlur: isTop3 ? 9 : 6,
+      strokeWidth: 0.9,
+      offsetY: 3
     });
 
-    drawGlowTextInBox(ctx, pointsText, currentPointsBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 22,
-      padX: 35,
+    drawStableTextInBox(ctx, pointsText, currentPointsBox, {
+      size: isTop3 ? 29 : 27,
+      minSize: 20,
+      padX: 50,
       weight: '800',
-      family: GRAPHIC_NUMBER_FONT_FAMILY,
+      family: SAFE_NUMBER_FONT,
       fill: '#3b1d71',
-      stroke: '#fff7ff',
-      glow: 'rgba(176, 109, 255, 0.72)',
-      glowBlur: isTop3 ? 12 : 10,
-      strokeWidth: 1.1,
-      offsetX: 0,
-      offsetY: 3,
-      clip: false
+      stroke: '#fffaff',
+      glow: 'rgba(176,109,255,0.28)',
+      glowBlur: 5,
+      strokeWidth: 0.6,
+      offsetY: 3
     });
   }
 
@@ -540,19 +493,18 @@ async function generateTopFraggerGraphicBuffer() {
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedFraggers().slice(0, 10);
-  const nameFamily = getNameFontFamily();
 
-  const playerBox = { x: 426, y: 258, width: 792, height: 44 };
-  const killsBox = { x: 1218, y: 258, width: 248, height: 44 };
+  const playerBox = { x: 430, y: 257, width: 790, height: 44 };
+  const killsBox = { x: 1224, y: 257, width: 242, height: 44 };
   const rowHeight = 57;
 
   for (let i = 0; i < 10; i++) {
     const row = rows[i];
     if (!row) continue;
 
+    const isTop3 = i < 3;
     const playerName = sanitizeGraphicText(row.playerName);
     const killsText = sanitizeGraphicNumber(row.kills);
-    const isTop3 = i < 3;
 
     const currentPlayerBox = {
       x: playerBox.x,
@@ -568,35 +520,32 @@ async function generateTopFraggerGraphicBuffer() {
       height: killsBox.height
     };
 
-    drawGlowTextInBox(ctx, playerName, currentPlayerBox, {
+    drawStableTextInBox(ctx, playerName, currentPlayerBox, {
       size: isTop3 ? 29 : 26,
       minSize: 18,
-      padX: 26,
+      padX: 30,
       weight: isTop3 ? '800' : '700',
-      family: nameFamily,
+      family: SAFE_NAME_FONT,
       fill: isTop3 ? '#351c63' : '#4a2d80',
-      stroke: '#fff3ff',
-      glow: isTop3 ? 'rgba(180, 110, 255, 0.80)' : 'rgba(157, 92, 255, 0.55)',
-      glowBlur: isTop3 ? 14 : 10,
-      strokeWidth: isTop3 ? 1.9 : 1.5,
-      offsetY: 1,
-      clip: true
+      stroke: '#fff7ff',
+      glow: isTop3 ? 'rgba(180,110,255,0.35)' : 'rgba(157,92,255,0.25)',
+      glowBlur: isTop3 ? 9 : 6,
+      strokeWidth: 0.9,
+      offsetY: 3
     });
 
-    drawGlowTextInBox(ctx, killsText, currentKillsBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 22,
-      padX: 35,
+    drawStableTextInBox(ctx, killsText, currentKillsBox, {
+      size: isTop3 ? 29 : 27,
+      minSize: 20,
+      padX: 50,
       weight: '800',
-      family: GRAPHIC_NUMBER_FONT_FAMILY,
+      family: SAFE_NUMBER_FONT,
       fill: '#3b1d71',
-      stroke: '#fff7ff',
-      glow: 'rgba(176, 109, 255, 0.72)',
-      glowBlur: isTop3 ? 12 : 10,
-      strokeWidth: 1.1,
-      offsetX: 0,
-      offsetY: 3,
-      clip: false
+      stroke: '#fffaff',
+      glow: 'rgba(176,109,255,0.28)',
+      glowBlur: 5,
+      strokeWidth: 0.6,
+      offsetY: 3
     });
   }
 
@@ -1688,7 +1637,6 @@ client.once('ready', async () => {
   if (readyResolver) readyResolver(client);
 
   refreshStateFromDisk();
-  registerGraphicFont();
 
   logAudit('bot', 'discord', 'bot_ready', {
     guildId: GUILD_ID
