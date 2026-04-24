@@ -19,7 +19,7 @@
       position: relative;
       width: 1672px;
       height: 941px;
-      background-image: url("/classifica-live-1672x941.png");
+      background-image: url("/classifica%20live%201672x941.png");
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-position: center;
@@ -27,10 +27,10 @@
 
     .table-wrap {
       position: absolute;
-      left: 108px;
-      top: 245px; /* ABBASSATA */
-      width: 1456px;
-      height: 610px;
+      left: 102px;   /* leggermente più a sinistra */
+      top: 236px;    /* leggermente più in alto */
+      width: 1444px;
+      height: 620px;
       display: flex;
       flex-direction: column;
     }
@@ -47,30 +47,32 @@
     col.col-points { width: 22%; }
 
     thead th {
-      height: 50px;
-      background: linear-gradient(180deg, rgba(104,37,217,0.95), rgba(67,16,143,0.95));
-      color: white;
+      height: 52px;
+      background: linear-gradient(180deg, rgba(120, 50, 235, 0.96), rgba(80, 25, 170, 0.96));
+      color: #ffffff;
       text-align: center;
       font-size: 22px;
       font-weight: 800;
-      border: 2px solid rgba(255,255,255,0.18);
       border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.18);
+      box-sizing: border-box;
     }
 
     tbody td {
       height: 28px;
-      background: rgba(255,255,255,0.08);
-      border: 2px solid rgba(150,90,255,0.45);
-      color: #4a2378;
+      background: rgba(255,255,255,0.03);
+      border: 2px solid rgba(186, 139, 255, 0.65);
+      color: #4d2b7f;
       text-align: center;
       vertical-align: middle;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
       border-radius: 10px;
+      box-sizing: border-box;
     }
 
     .team-cell {
-      padding: 0 16px;
+      padding: 0 14px;
     }
   </style>
 </head>
@@ -83,6 +85,7 @@
           <col class="col-team" />
           <col class="col-points" />
         </colgroup>
+
         <thead>
           <tr>
             <th>POSIZIONE</th>
@@ -90,6 +93,7 @@
             <th>PUNTI</th>
           </tr>
         </thead>
+
         <tbody>
           <tr><td>1°</td><td class="team-cell">roda red</td><td>45</td></tr>
           <tr><td>2°</td><td class="team-cell">roda black</td><td>32</td></tr>
