@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=1672, height=941, initial-scale=1.0" />
   <title>Classifica Live Preview</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,68 +10,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --w: 1672px;
-      --h: 941px;
-
-      --violet-main: #7b2cff;
-      --violet-bright: #b88cff;
-      --violet-soft: rgba(160, 108, 255, 0.35);
-      --violet-line: rgba(173, 125, 255, 0.78);
-      --header-dark: rgba(91, 23, 196, 0.92);
-      --header-mid: rgba(120, 42, 255, 0.95);
-      --text-dark: #35125f;
-      --text-header: #ffffff;
-    }
-
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
+      width: 1672px;
+      height: 941px;
+      overflow: hidden;
       background: #111;
-      overflow: auto;
-      font-family: 'Rajdhani', sans-serif;
     }
 
     body {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 20px;
+      font-family: 'Rajdhani', sans-serif;
     }
 
-    .preview {
+    .canvas {
       position: relative;
-      width: var(--w);
-      height: var(--h);
+      width: 1672px;
+      height: 941px;
       overflow: hidden;
-      background: #fff;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+
+      /* QUI USO IL NOME ORIGINALE DEL TUO FILE */
+      background-image: url("/classifica live 1672x941.png");
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
     }
 
-    .preview-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    /* POSIZIONE GENERALE TABELLA */
     .table-wrap {
       position: absolute;
+
+      /* QUESTA È LA POSIZIONE BUONA CHE AVEVAMO TROVATO */
+      left: 102px;
+      top: 236px;
+
+      width: 1444px;
+      height: 620px;
       z-index: 2;
-      top: 248px;
-      left: 96px;
-      width: 1440px;
     }
 
     table {
@@ -81,112 +55,106 @@
       table-layout: fixed;
     }
 
-    col.pos   { width: 300px; }
-    col.team  { width: 820px; }
-    col.points{ width: 320px; }
+    col.col-pos { width: 21%; }
+    col.col-team { width: 57%; }
+    col.col-points { width: 22%; }
 
     thead th {
-      height: 58px;
+      height: 52px;
       text-align: center;
       vertical-align: middle;
+      color: #ffffff;
       font-family: 'Orbitron', sans-serif;
       font-size: 22px;
       font-weight: 800;
       letter-spacing: 1px;
-      color: var(--text-header);
       text-transform: uppercase;
 
-      background:
-        linear-gradient(180deg, rgba(140, 68, 255, 0.98) 0%, rgba(92, 28, 201, 0.98) 100%);
-      border: 2px solid rgba(190, 150, 255, 0.65);
+      background: linear-gradient(
+        180deg,
+        rgba(138, 72, 255, 0.96) 0%,
+        rgba(108, 43, 230, 0.96) 45%,
+        rgba(77, 23, 173, 0.96) 100%
+      );
+
+      border: 2px solid rgba(205, 175, 255, 0.24);
+      border-radius: 16px;
+
       box-shadow:
-        0 0 10px rgba(136, 76, 255, 0.55),
-        inset 0 0 12px rgba(255,255,255,0.10);
+        0 0 8px rgba(137, 71, 255, 0.40),
+        0 0 18px rgba(137, 71, 255, 0.20),
+        inset 0 0 10px rgba(255,255,255,0.08);
+
       text-shadow:
-        0 0 6px rgba(255,255,255,0.25),
-        0 0 12px rgba(180, 120, 255, 0.45);
-    }
+        0 0 6px rgba(255,255,255,0.15),
+        0 0 14px rgba(190, 150, 255, 0.30);
 
-    thead th:first-child {
-      border-top-left-radius: 16px;
-      border-bottom-left-radius: 16px;
-    }
-
-    thead th:last-child {
-      border-top-right-radius: 16px;
-      border-bottom-right-radius: 16px;
+      box-sizing: border-box;
     }
 
     tbody td {
-      height: 34px;
+      height: 28px;
       text-align: center;
       vertical-align: middle;
-      padding: 0 14px;
+      border-radius: 12px;
+      box-sizing: border-box;
 
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 22px;
+      background: rgba(255,255,255,0.015);
+      border: 2px solid rgba(186, 139, 255, 0.62);
+
+      color: #472172;
+      font-size: 17px;
       font-weight: 700;
-      color: var(--text-dark);
-
-      background: rgba(255, 255, 255, 0.06);
-      border: 2px solid rgba(184, 140, 255, 0.72);
-      border-radius: 14px;
 
       box-shadow:
-        0 0 8px rgba(170, 120, 255, 0.20),
-        inset 0 0 8px rgba(255,255,255,0.08);
+        0 0 4px rgba(170, 120, 255, 0.12),
+        inset 0 0 6px rgba(255,255,255,0.03);
 
       text-shadow:
-        0 0 3px rgba(255,255,255,0.18),
-        0 0 6px rgba(173, 125, 255, 0.18);
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+        0 0 3px rgba(255,255,255,0.10);
     }
 
     tbody td.pos-cell,
     tbody td.points-cell {
       font-family: 'Orbitron', sans-serif;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.2px;
     }
 
     tbody td.team-cell {
+      font-family: 'Rajdhani', sans-serif;
       font-size: 21px;
       font-weight: 700;
+      padding: 0 14px;
     }
 
     tbody tr.top-3 td {
-      border-color: rgba(172, 110, 255, 0.95);
+      color: #3c125f;
+      border-color: rgba(176, 120, 255, 0.88);
       box-shadow:
-        0 0 12px rgba(155, 90, 255, 0.38),
-        inset 0 0 12px rgba(255,255,255,0.10);
+        0 0 7px rgba(160, 96, 255, 0.22),
+        inset 0 0 7px rgba(255,255,255,0.05);
       text-shadow:
-        0 0 4px rgba(255,255,255,0.18),
-        0 0 10px rgba(164, 95, 255, 0.30);
+        0 0 5px rgba(190, 145, 255, 0.12);
     }
 
     tbody tr.empty-row td {
-      color: rgba(53, 18, 95, 0.28);
-      text-shadow: none;
+      color: rgba(71, 33, 114, 0.28);
       box-shadow:
-        0 0 4px rgba(170, 120, 255, 0.10),
-        inset 0 0 4px rgba(255,255,255,0.05);
+        inset 0 0 4px rgba(255,255,255,0.02);
+      text-shadow: none;
     }
   </style>
 </head>
 <body>
-  <div class="preview">
-    <img class="preview-bg" src="/classifica live 1672x941.png" alt="Classifica Live Background" />
-
+  <div class="canvas">
     <div class="table-wrap">
-      <table aria-label="Classifica Live">
+      <table>
         <colgroup>
-          <col class="pos">
-          <col class="team">
-          <col class="points">
+          <col class="col-pos" />
+          <col class="col-team" />
+          <col class="col-points" />
         </colgroup>
 
         <thead>
@@ -204,7 +172,7 @@
 
   <script>
     const previewData = [
-      { team: 'roda red',   points: 45 },
+      { team: 'roda red', points: 45 },
       { team: 'roda black', points: 32 },
       { team: 'roda white', points: 23 }
     ];
@@ -212,40 +180,21 @@
     const TOTAL_ROWS = 16;
     const tbody = document.getElementById('ranking-body');
 
-    function createRow(index, entry) {
+    for (let i = 0; i < TOTAL_ROWS; i++) {
       const tr = document.createElement('tr');
+      const entry = previewData[i] || null;
 
-      if (index < 3 && entry) {
-        tr.classList.add('top-3');
-      }
-
-      if (!entry) {
-        tr.classList.add('empty-row');
-      }
-
-      const pos = `${index + 1}°`;
-      const team = entry?.team ?? '';
-      const points = entry?.points ?? '';
+      if (i < 3 && entry) tr.classList.add('top-3');
+      if (!entry) tr.classList.add('empty-row');
 
       tr.innerHTML = `
-        <td class="pos-cell">${pos}</td>
-        <td class="team-cell">${team}</td>
-        <td class="points-cell">${points}</td>
+        <td class="pos-cell">${i + 1}°</td>
+        <td class="team-cell">${entry ? entry.team : ''}</td>
+        <td class="points-cell">${entry ? entry.points : ''}</td>
       `;
 
-      return tr;
+      tbody.appendChild(tr);
     }
-
-    function renderTable(data) {
-      tbody.innerHTML = '';
-
-      for (let i = 0; i < TOTAL_ROWS; i++) {
-        const row = createRow(i, data[i] || null);
-        tbody.appendChild(row);
-      }
-    }
-
-    renderTable(previewData);
   </script>
 </body>
 </html>
