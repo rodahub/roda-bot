@@ -7,12 +7,8 @@
   <style>
     :root{
       --bg:#050507;
-      --bg2:#0b0b12;
       --panel:#10101a;
-      --panel2:#151525;
-      --panel3:#1a1a2b;
       --line:rgba(160,110,255,.16);
-      --line-strong:rgba(180,130,255,.30);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
@@ -21,8 +17,7 @@
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
-      --cyan:#4de2ff;
-      --shadow:0 0 0 1px rgba(162,109,255,.10), 0 0 30px rgba(123,44,255,.14);
+      --shadow:0 0 0 1px rgba(162,109,255,.10),0 0 30px rgba(123,44,255,.14);
       --radius:22px;
       --sidebar-width:280px;
       --content-max:1800px;
@@ -35,12 +30,9 @@
       scrollbar-color:rgba(160,110,255,.35) transparent;
     }
 
-    *::-webkit-scrollbar{ width:9px; height:9px; }
-    *::-webkit-scrollbar-thumb{
-      background:rgba(160,110,255,.35);
-      border-radius:999px;
-    }
-    *::-webkit-scrollbar-track{ background:transparent; }
+    *::-webkit-scrollbar{width:9px;height:9px;}
+    *::-webkit-scrollbar-thumb{background:rgba(160,110,255,.35);border-radius:999px;}
+    *::-webkit-scrollbar-track{background:transparent;}
 
     html,body{
       margin:0;
@@ -48,14 +40,14 @@
       min-height:100vh;
       font-family:Inter,Arial,sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(123,44,255,.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(87,183,255,.08), transparent 20%),
-        radial-gradient(circle at bottom center, rgba(123,44,255,.08), transparent 30%),
-        linear-gradient(180deg, #050507 0%, #09090e 100%);
+        radial-gradient(circle at top left,rgba(123,44,255,.16),transparent 28%),
+        radial-gradient(circle at top right,rgba(87,183,255,.08),transparent 20%),
+        radial-gradient(circle at bottom center,rgba(123,44,255,.08),transparent 30%),
+        linear-gradient(180deg,#050507 0%,#09090e 100%);
       color:var(--text);
     }
 
-    body{ overflow:hidden; }
+    body{overflow:hidden;}
 
     .app{
       display:grid;
@@ -64,7 +56,7 @@
     }
 
     .sidebar{
-      background:linear-gradient(180deg, rgba(14,14,24,.98), rgba(8,8,14,.98));
+      background:linear-gradient(180deg,rgba(14,14,24,.98),rgba(8,8,14,.98));
       border-right:1px solid rgba(255,255,255,.05);
       padding:16px;
       display:flex;
@@ -77,7 +69,7 @@
       display:flex;
       align-items:center;
       gap:12px;
-      padding:8px 8px 14px 8px;
+      padding:8px 8px 14px;
       border-bottom:1px solid rgba(255,255,255,.06);
     }
 
@@ -90,20 +82,21 @@
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
     }
 
-    .brand-text{ min-width:0; }
     .brand-title{
       font-size:22px;
       font-weight:900;
       line-height:1.05;
       margin-bottom:4px;
     }
+
     .brand-subtitle{
       color:var(--muted);
       font-size:12px;
       line-height:1.35;
     }
 
-    .nav-group{ display:grid; gap:8px; }
+    .nav-group{display:grid;gap:8px;}
+
     .nav-label{
       padding:0 8px;
       font-size:11px;
@@ -139,7 +132,7 @@
     }
 
     .nav-btn.active{
-      background:linear-gradient(135deg, rgba(123,44,255,.20), rgba(156,92,255,.14));
+      background:linear-gradient(135deg,rgba(123,44,255,.20),rgba(156,92,255,.14));
       border-color:rgba(160,110,255,.28);
       box-shadow:var(--shadow);
     }
@@ -167,7 +160,7 @@
       text-align:center;
     }
 
-    .sidebar-actions{ display:grid; gap:10px; }
+    .sidebar-actions{display:grid;gap:10px;}
 
     .main{
       display:flex;
@@ -184,14 +177,11 @@
       justify-content:space-between;
       gap:14px;
       flex-wrap:wrap;
-      background:linear-gradient(180deg, rgba(14,14,24,.72), rgba(10,10,18,.40));
+      background:linear-gradient(180deg,rgba(14,14,24,.72),rgba(10,10,18,.40));
       backdrop-filter:blur(12px);
     }
 
-    .topbar-left{
-      min-width:0;
-      flex:1;
-    }
+    .topbar-left{min-width:0;flex:1;}
 
     .page-title{
       font-size:30px;
@@ -206,13 +196,6 @@
       line-height:1.5;
     }
 
-    .topbar-actions{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-
     .content{
       flex:1;
       overflow:auto;
@@ -225,11 +208,11 @@
       max-width:var(--content-max);
     }
 
-    .page.active{ display:block; }
+    .page.active{display:block;}
 
     @keyframes fadeIn{
-      from{ opacity:.45; transform:translateY(4px); }
-      to{ opacity:1; transform:none; }
+      from{opacity:.45;transform:translateY(4px);}
+      to{opacity:1;transform:none;}
     }
 
     .stats{
@@ -261,7 +244,7 @@
     }
 
     .card{
-      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(11,11,19,.98));
+      background:linear-gradient(180deg,rgba(18,18,31,.96),rgba(11,11,19,.98));
       border:1px solid var(--line);
       border-radius:var(--radius);
       padding:18px;
@@ -270,7 +253,7 @@
       min-width:0;
     }
 
-    .section-card{ margin-bottom:18px; }
+    .section-card{margin-bottom:18px;}
 
     .card-header{
       display:flex;
@@ -281,13 +264,10 @@
       margin-bottom:14px;
     }
 
-    .card-header-left{
-      min-width:0;
-      flex:1;
-    }
+    .card-header-left{min-width:0;flex:1;}
 
     .card h3{
-      margin:0 0 6px 0;
+      margin:0 0 6px;
       font-size:20px;
       line-height:1.2;
     }
@@ -325,7 +305,7 @@
       font-weight:700;
     }
 
-    input, textarea{
+    input,textarea{
       width:100%;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
@@ -336,16 +316,11 @@
       font-size:14px;
     }
 
-    input{ height:46px; }
+    input{height:46px;}
 
     textarea{
       min-height:100px;
       resize:vertical;
-    }
-
-    input[type="file"]{
-      padding:10px 14px;
-      height:auto;
     }
 
     .row{
@@ -354,9 +329,7 @@
       flex-wrap:wrap;
     }
 
-    .row > *{
-      flex:1 1 auto;
-    }
+    .row>*{flex:1 1 auto;}
 
     .btn{
       border:0;
@@ -374,18 +347,14 @@
       gap:8px;
     }
 
-    .btn:hover{ transform:translateY(-1px); }
-    .btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-      transform:none;
-    }
+    .btn:hover{transform:translateY(-1px);}
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
 
-    .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple2)); }
-    .btn-red{ background:linear-gradient(135deg,#c92b4b,#ff4d6d); }
-    .btn-green{ background:linear-gradient(135deg,#12b75a,#1ed760); color:#08120c; }
-    .btn-yellow{ background:linear-gradient(135deg,#e8b600,#ffd166); color:#1b1200; }
-    .btn-blue{ background:linear-gradient(135deg,#3b9fff,#6ec4ff); color:#09131b; }
+    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple2));}
+    .btn-red{background:linear-gradient(135deg,#c92b4b,#ff4d6d);}
+    .btn-green{background:linear-gradient(135deg,#12b75a,#1ed760);color:#08120c;}
+    .btn-yellow{background:linear-gradient(135deg,#e8b600,#ffd166);color:#1b1200;}
+    .btn-blue{background:linear-gradient(135deg,#3b9fff,#6ec4ff);color:#09131b;}
 
     .helper{
       color:var(--muted);
@@ -414,7 +383,7 @@
 
     th,td{
       text-align:left;
-      padding:12px 12px;
+      padding:12px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-size:14px;
       vertical-align:top;
@@ -431,9 +400,7 @@
       z-index:1;
     }
 
-    tbody tr:hover{
-      background:rgba(255,255,255,.02);
-    }
+    tbody tr:hover{background:rgba(255,255,255,.02);}
 
     .rank{
       width:30px;
@@ -475,13 +442,13 @@
       white-space:nowrap;
     }
 
-    .status-open{
+    .status-open,.status-approved{
       background:rgba(24,201,100,.12);
       color:#b6ffd4;
       border-color:rgba(24,201,100,.28);
     }
 
-    .status-full{
+    .status-full,.status-rejected{
       background:rgba(255,77,109,.12);
       color:#ffd0d9;
       border-color:rgba(255,77,109,.28);
@@ -499,18 +466,6 @@
       border-color:rgba(123,44,255,.28);
     }
 
-    .status-approved{
-      background:rgba(24,201,100,.12);
-      color:#b6ffd4;
-      border-color:rgba(24,201,100,.28);
-    }
-
-    .status-rejected{
-      background:rgba(255,77,109,.12);
-      color:#ffd0d9;
-      border-color:rgba(255,77,109,.28);
-    }
-
     .status-missing{
       background:rgba(255,255,255,.05);
       color:#ddd7f2;
@@ -523,8 +478,7 @@
       border-color:rgba(87,183,255,.26);
     }
 
-    .team-players-list,
-    .slot-card-players{
+    .team-players-list,.slot-card-players{
       display:flex;
       flex-wrap:wrap;
       gap:8px;
@@ -556,7 +510,7 @@
     }
 
     .quick-item h4{
-      margin:0 0 8px 0;
+      margin:0 0 8px;
       font-size:15px;
     }
 
@@ -574,10 +528,7 @@
       align-items:start;
     }
 
-    .registered-summary{
-      display:grid;
-      gap:12px;
-    }
+    .registered-summary{display:grid;gap:12px;}
 
     .summary-box{
       background:rgba(255,255,255,.03);
@@ -587,7 +538,7 @@
     }
 
     .summary-box h4{
-      margin:0 0 10px 0;
+      margin:0 0 10px;
       font-size:15px;
     }
 
@@ -613,9 +564,7 @@
       letter-spacing:.6px;
     }
 
-    .summary-mini strong{
-      font-size:22px;
-    }
+    .summary-mini strong{font-size:22px;}
 
     .slot-preview{
       display:grid;
@@ -636,10 +585,7 @@
       border:1px solid rgba(255,255,255,.06);
     }
 
-    .slot-card-left{
-      min-width:0;
-      flex:1;
-    }
+    .slot-card-left{min-width:0;flex:1;}
 
     .slot-card-title{
       font-size:16px;
@@ -648,10 +594,7 @@
       word-break:break-word;
     }
 
-    .list{
-      display:grid;
-      gap:12px;
-    }
+    .list{display:grid;gap:12px;}
 
     .pending-card{
       background:rgba(255,255,255,.025);
@@ -701,9 +644,7 @@
       letter-spacing:.6px;
     }
 
-    .box strong{
-      font-size:20px;
-    }
+    .box strong{font-size:20px;}
 
     .players{
       display:grid;
@@ -748,7 +689,7 @@
       display:block;
     }
 
-    .image-modal{
+    .image-modal,.manual-modal{
       position:fixed;
       inset:0;
       background:rgba(0,0,0,.84);
@@ -759,7 +700,7 @@
       z-index:9999;
     }
 
-    .image-modal.show{ display:flex; }
+    .image-modal.show,.manual-modal.show{display:flex;}
 
     .image-modal-content{
       position:relative;
@@ -799,10 +740,97 @@
       box-shadow:0 0 20px rgba(0,0,0,.35);
     }
 
-    .section-stack{
-      display:grid;
-      gap:18px;
+    .manual-box{
+      width:min(620px,96vw);
+      background:linear-gradient(180deg,rgba(18,18,31,.98),rgba(8,8,14,.98));
+      border:1px solid rgba(160,110,255,.28);
+      border-radius:28px;
+      padding:22px;
+      box-shadow:0 0 0 1px rgba(162,109,255,.12),0 25px 80px rgba(0,0,0,.65),0 0 45px rgba(123,44,255,.20);
+      animation:modalIn .18s ease;
     }
+
+    @keyframes modalIn{
+      from{opacity:.4;transform:translateY(10px) scale(.98);}
+      to{opacity:1;transform:none;}
+    }
+
+    .manual-head{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:flex-start;
+      margin-bottom:16px;
+    }
+
+    .manual-title{
+      font-size:24px;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    .manual-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .manual-close{
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .manual-info{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .manual-info-card{
+      border-radius:16px;
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.07);
+      padding:12px;
+    }
+
+    .manual-info-card span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      margin-bottom:5px;
+    }
+
+    .manual-info-card strong{
+      font-size:16px;
+      word-break:break-word;
+    }
+
+    .manual-player-row{
+      display:grid;
+      grid-template-columns:1fr 130px;
+      gap:10px;
+      align-items:end;
+      margin-bottom:10px;
+    }
+
+    .manual-actions{
+      display:flex;
+      gap:10px;
+      margin-top:16px;
+      flex-wrap:wrap;
+    }
+
+    .section-stack{display:grid;gap:18px;}
 
     .subsection{
       background:rgba(255,255,255,.025);
@@ -812,14 +840,11 @@
     }
 
     .subsection h4{
-      margin:0 0 8px 0;
+      margin:0 0 8px;
       font-size:16px;
     }
 
-    .check-list{
-      display:grid;
-      gap:10px;
-    }
+    .check-list{display:grid;gap:10px;}
 
     .check-item{
       display:flex;
@@ -833,23 +858,15 @@
       font-size:14px;
     }
 
-    .check-ok{
-      color:#9ff0bf;
-      font-weight:900;
-    }
-
-    .check-no{
-      color:#ffb0bf;
-      font-weight:900;
-    }
+    .check-ok{color:#9ff0bf;font-weight:900;}
+    .check-no{color:#ffb0bf;font-weight:900;}
 
     .danger-zone{
       border-color:rgba(255,77,109,.22);
-      box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 26px rgba(255,77,109,.08);
+      box-shadow:0 0 0 1px rgba(255,77,109,.08),0 0 26px rgba(255,77,109,.08);
     }
 
-    .log-list,
-    .archive-list{
+    .log-list,.archive-list{
       display:grid;
       gap:12px;
       max-height:540px;
@@ -857,16 +874,14 @@
       padding-right:2px;
     }
 
-    .log-card,
-    .archive-card{
+    .log-card,.archive-card{
       background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.06);
       border-radius:18px;
       padding:14px;
     }
 
-    .log-card-top,
-    .archive-card-top{
+    .log-card-top,.archive-card-top{
       display:flex;
       justify-content:space-between;
       gap:12px;
@@ -874,8 +889,7 @@
       margin-bottom:10px;
     }
 
-    .log-action,
-    .archive-title{
+    .log-action,.archive-title{
       font-size:16px;
       font-weight:900;
       word-break:break-word;
@@ -934,11 +948,6 @@
       width:100%;
     }
 
-    .custom-dropdown.disabled{
-      opacity:.6;
-      pointer-events:none;
-    }
-
     .dropdown-trigger{
       width:100%;
       min-height:46px;
@@ -962,11 +971,9 @@
       background:rgba(255,255,255,.045);
     }
 
-    .custom-dropdown.open .dropdown-trigger,
-    .dropdown-trigger:focus-visible{
+    .custom-dropdown.open .dropdown-trigger{
       border-color:rgba(160,110,255,.35);
       box-shadow:0 0 0 3px rgba(123,44,255,.12);
-      outline:none;
     }
 
     .dropdown-trigger-text{
@@ -985,9 +992,7 @@
       font-size:12px;
     }
 
-    .custom-dropdown.open .dropdown-trigger-icon{
-      transform:rotate(180deg);
-    }
+    .custom-dropdown.open .dropdown-trigger-icon{transform:rotate(180deg);}
 
     .dropdown-menu{
       position:absolute;
@@ -995,21 +1000,17 @@
       left:0;
       right:0;
       z-index:1200;
-      background:linear-gradient(180deg, rgba(19,19,31,.98), rgba(10,10,18,.98));
+      background:linear-gradient(180deg,rgba(19,19,31,.98),rgba(10,10,18,.98));
       border:1px solid rgba(160,110,255,.20);
       border-radius:18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(162,109,255,.08);
+      box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 0 1px rgba(162,109,255,.08);
       padding:10px;
       display:none;
     }
 
-    .custom-dropdown.open .dropdown-menu{
-      display:block;
-    }
+    .custom-dropdown.open .dropdown-menu{display:block;}
 
-    .dropdown-search-wrap{
-      margin-bottom:8px;
-    }
+    .dropdown-search-wrap{margin-bottom:8px;}
 
     .dropdown-search{
       width:100%;
@@ -1021,11 +1022,6 @@
       padding:10px 12px;
       font-size:13px;
       outline:none;
-    }
-
-    .dropdown-search:focus{
-      border-color:rgba(160,110,255,.35);
-      box-shadow:0 0 0 3px rgba(123,44,255,.12);
     }
 
     .dropdown-options{
@@ -1056,7 +1052,7 @@
     }
 
     .dropdown-option.active{
-      background:linear-gradient(135deg, rgba(123,44,255,.18), rgba(156,92,255,.12));
+      background:linear-gradient(135deg,rgba(123,44,255,.18),rgba(156,92,255,.12));
       border-color:rgba(160,110,255,.26);
     }
 
@@ -1082,38 +1078,36 @@
       word-break:break-word;
     }
 
-    @media (max-width: 1450px){
-      .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .grid-4, .quick-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media (max-width:1450px){
+      .stats{grid-template-columns:repeat(3,minmax(0,1fr));}
+      .grid-4,.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
 
-    @media (max-width: 1280px){
-      .registered-layout{ grid-template-columns:1fr; }
+    @media (max-width:1280px){
+      .registered-layout{grid-template-columns:1fr;}
     }
 
-    @media (max-width: 1180px){
-      .app{ grid-template-columns:1fr; }
-      .sidebar{
-        border-right:0;
-        border-bottom:1px solid rgba(255,255,255,.05);
-      }
-      .grid-2, .grid-3{ grid-template-columns:1fr; }
-      body{ overflow:auto; }
+    @media (max-width:1180px){
+      .app{grid-template-columns:1fr;}
+      .sidebar{border-right:0;border-bottom:1px solid rgba(255,255,255,.05);}
+      .grid-2,.grid-3{grid-template-columns:1fr;}
+      body{overflow:auto;}
     }
 
-    @media (max-width: 760px){
-      .content{ padding:14px; }
-      .topbar{ padding:14px; }
-      .stats, .grid-4, .quick-grid, .pending-grid, .players, .summary-stats{
+    @media (max-width:760px){
+      .content{padding:14px;}
+      .topbar{padding:14px;}
+      .stats,.grid-4,.quick-grid,.pending-grid,.players,.summary-stats,.manual-info{
         grid-template-columns:1fr;
       }
-      .brand-title{ font-size:20px; }
-      .page-title{ font-size:24px; }
-      .row > *{ width:100%; }
-      .slot-card{ flex-direction:column; }
-      .topbar-actions, .btn, .pill{ width:100%; }
-      .image-modal{ padding:14px; }
-      .image-modal-close{ top:8px; right:8px; }
+      .manual-player-row{grid-template-columns:1fr;}
+      .brand-title{font-size:20px;}
+      .page-title{font-size:24px;}
+      .row>*{width:100%;}
+      .slot-card{flex-direction:column;}
+      .btn,.pill{width:100%;}
+      .image-modal,.manual-modal{padding:14px;}
+      .image-modal-close{top:8px;right:8px;}
     }
   </style>
 </head>
@@ -1122,7 +1116,7 @@
     <aside class="sidebar">
       <div class="brand">
         <img src="/roda-logo.png" alt="Logo" class="logo" />
-        <div class="brand-text">
+        <div>
           <div class="brand-title" id="brandTitle">Dashboard Admin</div>
           <div class="brand-subtitle" id="brandSubtitle">Gestione torneo, lobby e approvazioni</div>
         </div>
@@ -1173,9 +1167,7 @@
           <div class="page-title" id="topbarTitle">Panoramica</div>
           <div class="page-subtitle" id="topbarSubtitle">Controlla lo stato del torneo, dei match e delle funzioni principali.</div>
         </div>
-        <div class="topbar-actions">
-          <div class="pill" id="setupPill">Configurazione non completata</div>
-        </div>
+        <div class="pill" id="setupPill">Configurazione non completata</div>
       </div>
 
       <div class="content">
@@ -1256,7 +1248,7 @@
             <div class="card-header">
               <div class="card-header-left">
                 <h3>⚡ Azioni rapide</h3>
-                <div class="section-note">Qui hai subito le operazioni principali del torneo senza cercare in tutta la dashboard.</div>
+                <div class="section-note">Operazioni principali del torneo.</div>
               </div>
             </div>
 
@@ -1276,7 +1268,7 @@
 
               <div class="quick-item">
                 <h4>🏆 Classifica Discord</h4>
-                <p>La classifica si aggiorna anche in automatico quando approvi, ma puoi forzarla qui quando vuoi.</p>
+                <p>Forza aggiornamento classifica su Discord.</p>
                 <div class="row" style="margin-top:12px;">
                   <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica</button>
                 </div>
@@ -1284,7 +1276,7 @@
 
               <div class="quick-item">
                 <h4>📨 Pannelli torneo</h4>
-                <p>Un pannello iscrizioni pubblico e pannelli risultati locali nelle stanze dei team.</p>
+                <p>Gestisci pannello iscrizioni e pannelli risultati locali nelle stanze team.</p>
                 <div class="row" style="margin-top:12px;">
                   <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
                   <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
@@ -1293,7 +1285,7 @@
 
               <div class="quick-item">
                 <h4>🎮 Codice lobby</h4>
-                <p>Invia in un click il codice lobby in tutte le stanze vocali dei team del torneo.</p>
+                <p>Invia il codice lobby in tutte le stanze vocali dei team.</p>
                 <div class="field" style="margin-top:12px;">
                   <label>Codice lobby</label>
                   <input type="text" id="lobbyCodeQuick" placeholder="Inserisci il codice lobby" />
@@ -1500,7 +1492,7 @@
             <div class="card-header">
               <div class="card-header-left">
                 <h3>🚨 Team mancanti nel match corrente</h3>
-                <div class="section-note">Qui vedi subito chi non ha ancora inviato il risultato o chi deve reinviare perché rifiutato.</div>
+                <div class="section-note">Qui vedi chi non ha ancora inviato il risultato o chi deve reinviare perché rifiutato.</div>
               </div>
               <div class="pill" id="missingTeamsPill">0 mancanti</div>
             </div>
@@ -1554,42 +1546,13 @@
             <div class="card">
               <div class="card-header">
                 <div class="card-header-left">
-                  <h3>📤 Invio risultato manuale</h3>
-                  <div class="section-note">Invia manualmente un risultato alla coda staff, se devi farlo dalla dashboard.</div>
+                  <h3>📌 Inserimento manuale admin</h3>
+                  <div class="section-note">Ora si usa il pulsante “Inserisci risultato” sulle tabelle dei team mancanti. Si apre una finestra centrale con i 3 giocatori.</div>
                 </div>
               </div>
-
-              <div class="field">
-                <label>Team</label>
-                <div id="webResultTeamDropdown"></div>
+              <div class="helper">
+                Il risultato manuale viene contato subito perché è inserito dallo staff. Non serve screenshot e non passa dalla coda approvazioni.
               </div>
-
-              <div class="field">
-                <label>Uccisioni giocatore 1</label>
-                <input type="number" id="webK1" />
-              </div>
-
-              <div class="field">
-                <label>Uccisioni giocatore 2</label>
-                <input type="number" id="webK2" />
-              </div>
-
-              <div class="field">
-                <label>Uccisioni giocatore 3</label>
-                <input type="number" id="webK3" />
-              </div>
-
-              <div class="field">
-                <label>Posizione</label>
-                <input type="number" id="webPos" />
-              </div>
-
-              <div class="field">
-                <label>Screenshot opzionale</label>
-                <input type="file" id="webScreenshot" accept="image/*" />
-              </div>
-
-              <button class="btn btn-green" onclick="submitWebResult()">Invia risultato</button>
             </div>
 
             <div class="card">
@@ -1837,6 +1800,75 @@
     </div>
   </div>
 
+  <div id="manualResultModal" class="manual-modal" onclick="handleManualModalBackdrop(event)">
+    <div class="manual-box">
+      <div class="manual-head">
+        <div>
+          <div class="manual-title">📤 Inserisci risultato manuale</div>
+          <div class="manual-subtitle">Risultato verificato dallo staff. Verrà contato subito senza approvazione.</div>
+        </div>
+        <button type="button" class="manual-close" onclick="closeManualResultModal()">×</button>
+      </div>
+
+      <div class="manual-info">
+        <div class="manual-info-card">
+          <span>Team</span>
+          <strong id="manualTeamName">-</strong>
+        </div>
+        <div class="manual-info-card">
+          <span>Match</span>
+          <strong id="manualMatchNumber">-</strong>
+        </div>
+      </div>
+
+      <input type="hidden" id="manualTeamValue" />
+      <input type="hidden" id="manualMatchValue" />
+
+      <div class="manual-player-row">
+        <div class="field">
+          <label id="manualPlayer1Label">Giocatore 1</label>
+          <input type="number" id="manualK1" min="0" placeholder="Uccisioni" />
+        </div>
+        <div class="field">
+          <label>Kill</label>
+          <input type="number" id="manualK1Mirror" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="manual-player-row">
+        <div class="field">
+          <label id="manualPlayer2Label">Giocatore 2</label>
+          <input type="number" id="manualK2" min="0" placeholder="Uccisioni" />
+        </div>
+        <div class="field">
+          <label>Kill</label>
+          <input type="number" id="manualK2Mirror" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="manual-player-row">
+        <div class="field">
+          <label id="manualPlayer3Label">Giocatore 3</label>
+          <input type="number" id="manualK3" min="0" placeholder="Uccisioni" />
+        </div>
+        <div class="field">
+          <label>Kill</label>
+          <input type="number" id="manualK3Mirror" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Posizione finale</label>
+        <input type="number" id="manualPos" min="1" placeholder="Es. 1, 2, 3..." />
+      </div>
+
+      <div class="manual-actions">
+        <button class="btn btn-red" onclick="closeManualResultModal()">Annulla</button>
+        <button class="btn btn-green" id="manualSubmitBtn" onclick="submitManualResult()">Invia risultato</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let dashboard = null;
     let loading = false;
@@ -1906,15 +1938,6 @@
       document.getElementById('topbarSubtitle').textContent = meta.subtitle;
     }
 
-    async function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
     async function api(url, options = {}) {
       const baseHeaders = options.body ? { 'Content-Type': 'application/json' } : {};
 
@@ -1958,35 +1981,139 @@
       }
     }
 
-    document.addEventListener('keydown', (event) => {
+    function openManualResultModal(teamName, matchNumber) {
+      const teamData = dashboard?.teams?.[teamName] || {};
+      const players = Array.isArray(teamData.players) ? teamData.players : [];
+
+      document.getElementById('manualTeamName').textContent = teamName || '-';
+      document.getElementById('manualMatchNumber').textContent = `Match ${Number(matchNumber || dashboard?.matchCorrente || 1)}`;
+      document.getElementById('manualTeamValue').value = teamName || '';
+      document.getElementById('manualMatchValue').value = Number(matchNumber || dashboard?.matchCorrente || 1);
+
+      document.getElementById('manualPlayer1Label').textContent = players[0] || 'Giocatore 1';
+      document.getElementById('manualPlayer2Label').textContent = players[1] || 'Giocatore 2';
+      document.getElementById('manualPlayer3Label').textContent = players[2] || 'Giocatore 3';
+
+      document.getElementById('manualK1').value = '';
+      document.getElementById('manualK2').value = '';
+      document.getElementById('manualK3').value = '';
+      document.getElementById('manualK1Mirror').value = '';
+      document.getElementById('manualK2Mirror').value = '';
+      document.getElementById('manualK3Mirror').value = '';
+      document.getElementById('manualPos').value = '';
+
+      document.getElementById('manualResultModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+
+      setTimeout(() => document.getElementById('manualK1').focus(), 50);
+    }
+
+    function closeManualResultModal() {
+      document.getElementById('manualResultModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function handleManualModalBackdrop(event) {
+      if (event.target && event.target.id === 'manualResultModal') {
+        closeManualResultModal();
+      }
+    }
+
+    function syncManualMirrors() {
+      const pairs = [
+        ['manualK1', 'manualK1Mirror'],
+        ['manualK2', 'manualK2Mirror'],
+        ['manualK3', 'manualK3Mirror']
+      ];
+
+      pairs.forEach(([a, b]) => {
+        const first = document.getElementById(a);
+        const second = document.getElementById(b);
+
+        first.addEventListener('input', () => {
+          second.value = first.value;
+        });
+
+        second.addEventListener('input', () => {
+          first.value = second.value;
+        });
+      });
+    }
+
+    async function submitManualResult() {
+      const team = document.getElementById('manualTeamValue').value.trim();
+      const matchNumber = Number(document.getElementById('manualMatchValue').value || dashboard?.matchCorrente || 1);
+      const k1 = Number(document.getElementById('manualK1').value || 0);
+      const k2 = Number(document.getElementById('manualK2').value || 0);
+      const k3 = Number(document.getElementById('manualK3').value || 0);
+      const pos = Number(document.getElementById('manualPos').value || 0);
+
+      if (!team) {
+        alert('Team non valido');
+        return;
+      }
+
+      if (!Number.isFinite(pos) || pos <= 0) {
+        alert('Inserisci la posizione finale');
+        return;
+      }
+
+      const submitBtn = document.getElementById('manualSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Invio in corso...';
+
+      try {
+        const result = await api('/api/manual-result', {
+          method: 'POST',
+          body: JSON.stringify({
+            team,
+            matchNumber,
+            k1,
+            k2,
+            k3,
+            pos
+          })
+        });
+
+        if (!result) return;
+
+        if (!result.response.ok || !result.data.ok) {
+          alert(result.data.message || 'Errore inserimento risultato manuale');
+          return;
+        }
+
+        closeManualResultModal();
+        await refreshDashboard();
+        setStatus(`Risultato manuale inserito per ${team} • +${Number(result.data.addedPoints || 0)} punti`);
+      } catch (error) {
+        console.error(error);
+        alert('Errore di connessione');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Invia risultato';
+      }
+    }
+
+    document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         closeImageModal();
+        closeManualResultModal();
         closeAllDropdowns();
       }
     });
 
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', event => {
       const insideDropdown = event.target.closest('.custom-dropdown');
-      if (!insideDropdown) {
-        closeAllDropdowns();
-      }
+      if (!insideDropdown) closeAllDropdowns();
     });
 
     function closeAllDropdowns(exceptId = null) {
       Object.values(customDropdowns).forEach(dropdown => {
-        if (dropdown.id !== exceptId) {
-          dropdown.root.classList.remove('open');
-        }
+        if (dropdown.id !== exceptId) dropdown.root.classList.remove('open');
       });
     }
 
-    function createCustomDropdown({
-      mountId,
-      dropdownId,
-      placeholder = 'Seleziona',
-      searchable = true,
-      onChange = null
-    }) {
+    function createCustomDropdown({ mountId, dropdownId, placeholder = 'Seleziona', searchable = true, onChange = null }) {
       const mount = document.getElementById(mountId);
       if (!mount) return null;
 
@@ -2010,42 +2137,33 @@
       const root = mount.querySelector('.custom-dropdown');
       const trigger = root.querySelector('.dropdown-trigger');
       const triggerText = root.querySelector('.dropdown-trigger-text');
-      const menu = root.querySelector('.dropdown-menu');
       const searchInput = root.querySelector('.dropdown-search');
       const optionsWrap = root.querySelector('.dropdown-options');
 
       const dropdown = {
         id: dropdownId,
-        mountId,
         root,
         trigger,
         triggerText,
-        menu,
         searchInput,
         optionsWrap,
         placeholder,
-        searchable,
         options: [],
-        filteredOptions: [],
         value: '',
         onChange
       };
 
-      trigger.addEventListener('click', (event) => {
+      trigger.addEventListener('click', event => {
         event.stopPropagation();
         const willOpen = !root.classList.contains('open');
         closeAllDropdowns(willOpen ? dropdownId : null);
         root.classList.toggle('open', willOpen);
-        if (willOpen && searchInput) {
-          setTimeout(() => searchInput.focus(), 0);
-        }
+        if (willOpen && searchInput) setTimeout(() => searchInput.focus(), 0);
       });
 
       if (searchInput) {
-        searchInput.addEventListener('click', (event) => event.stopPropagation());
-        searchInput.addEventListener('input', () => {
-          renderDropdownOptions(dropdown, searchInput.value);
-        });
+        searchInput.addEventListener('click', event => event.stopPropagation());
+        searchInput.addEventListener('input', () => renderDropdownOptions(dropdown, searchInput.value));
       }
 
       customDropdowns[dropdownId] = dropdown;
@@ -2072,19 +2190,19 @@
     function renderDropdownOptions(dropdown, searchTerm = '') {
       const term = String(searchTerm || '').trim().toLowerCase();
 
-      dropdown.filteredOptions = dropdown.options.filter(option => {
+      const filtered = dropdown.options.filter(option => {
         if (!term) return true;
         const title = String(option.label || '').toLowerCase();
         const subtitle = String(option.subtitle || '').toLowerCase();
         return title.includes(term) || subtitle.includes(term);
       });
 
-      if (!dropdown.filteredOptions.length) {
+      if (!filtered.length) {
         dropdown.optionsWrap.innerHTML = `<div class="dropdown-option-empty">Nessun elemento trovato</div>`;
         return;
       }
 
-      dropdown.optionsWrap.innerHTML = dropdown.filteredOptions.map(option => `
+      dropdown.optionsWrap.innerHTML = filtered.map(option => `
         <button
           type="button"
           class="dropdown-option ${option.value === dropdown.value ? 'active' : ''}"
@@ -2096,10 +2214,9 @@
       `).join('');
 
       dropdown.optionsWrap.querySelectorAll('.dropdown-option').forEach(button => {
-        button.addEventListener('click', (event) => {
+        button.addEventListener('click', event => {
           event.stopPropagation();
-          const value = button.dataset.value || '';
-          setDropdownValue(dropdown.id, value, true);
+          setDropdownValue(dropdown.id, button.dataset.value || '', true);
           dropdown.root.classList.remove('open');
         });
       });
@@ -2118,9 +2235,7 @@
       updateDropdownTrigger(dropdown);
       renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
 
-      if (triggerChange && typeof dropdown.onChange === 'function') {
-        dropdown.onChange(dropdown.value);
-      }
+      if (triggerChange && typeof dropdown.onChange === 'function') dropdown.onChange(dropdown.value);
     }
 
     function getDropdownValue(dropdownId) {
@@ -2130,9 +2245,7 @@
     function resetDropdownSearch(dropdownId) {
       const dropdown = customDropdowns[dropdownId];
       if (!dropdown) return;
-      if (dropdown.searchInput) {
-        dropdown.searchInput.value = '';
-      }
+      if (dropdown.searchInput) dropdown.searchInput.value = '';
       renderDropdownOptions(dropdown, '');
     }
 
@@ -2143,13 +2256,6 @@
         placeholder: 'Seleziona team',
         searchable: true,
         onChange: loadSelectedTeam
-      });
-
-      createCustomDropdown({
-        mountId: 'webResultTeamDropdown',
-        dropdownId: 'webResultTeam',
-        placeholder: 'Seleziona team',
-        searchable: true
       });
 
       createCustomDropdown({
@@ -2203,24 +2309,24 @@
 
       list.innerHTML = auditLog.length
         ? auditLog.map(item => `
-            <div class="log-card">
-              <div class="log-card-top">
-                <div>
-                  <div class="log-action">${escapeHtml(item.action || 'azione_sconosciuta')}</div>
-                  <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
-                </div>
-                <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
+          <div class="log-card">
+            <div class="log-card-top">
+              <div>
+                <div class="log-action">${escapeHtml(item.action || 'azione_sconosciuta')}</div>
+                <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
               </div>
-              <div class="detail-grid">
-                <div class="mono">${escapeHtml(item.id || '')}</div>
-                ${Object.keys(item.details || {}).length
-                  ? `<div>${Object.entries(item.details).map(([key, value]) => `
-                        <span class="detail-chip"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
-                     `).join('')}</div>`
-                  : `<div class="muted">Nessun dettaglio aggiuntivo</div>`}
-              </div>
+              <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
             </div>
-          `).join('')
+            <div class="detail-grid">
+              <div class="mono">${escapeHtml(item.id || '')}</div>
+              ${Object.keys(item.details || {}).length
+                ? `<div>${Object.entries(item.details).map(([key, value]) => `
+                  <span class="detail-chip"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
+                `).join('')}</div>`
+                : `<div class="muted">Nessun dettaglio aggiuntivo</div>`}
+            </div>
+          </div>
+        `).join('')
         : `<div class="empty">Nessun log disponibile</div>`;
     }
 
@@ -2229,32 +2335,32 @@
 
       list.innerHTML = archivi.length
         ? archivi.map(item => `
-            <div class="archive-card">
-              <div class="archive-card-top">
-                <div>
-                  <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
-                  <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
-                </div>
-                <div class="status-badge status-premium">ARCHIVIO</div>
+          <div class="archive-card">
+            <div class="archive-card-top">
+              <div>
+                <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
+                <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
               </div>
-              <div class="detail-grid">
-                <div>
-                  <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
-                  <span class="detail-chip">Autore: ${escapeHtml(item.actor || '-')}</span>
-                  <span class="detail-chip">Origine: ${escapeHtml(item.source || '-')}</span>
-                </div>
-                <div>
-                  <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
-                  <span class="detail-chip">In attesa: ${Number(item.pendingCount || 0)}</span>
-                  <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
-                </div>
-                <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
-              </div>
-              <div class="archive-actions">
-                <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina archivio</button>
-              </div>
+              <div class="status-badge status-premium">ARCHIVIO</div>
             </div>
-          `).join('')
+            <div class="detail-grid">
+              <div>
+                <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
+                <span class="detail-chip">Autore: ${escapeHtml(item.actor || '-')}</span>
+                <span class="detail-chip">Origine: ${escapeHtml(item.source || '-')}</span>
+              </div>
+              <div>
+                <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
+                <span class="detail-chip">In attesa: ${Number(item.pendingCount || 0)}</span>
+                <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
+              </div>
+              <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
+            </div>
+            <div class="archive-actions">
+              <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina archivio</button>
+            </div>
+          </div>
+        `).join('')
         : `<div class="empty">Nessun archivio disponibile</div>`;
     }
 
@@ -2356,21 +2462,19 @@
 
       currentMatchTeamsBody.innerHTML = matchRows.length
         ? matchRows.map(row => `
-            <tr>
-              <td><span class="slot-badge">#${row.slot || '-'}</span></td>
-              <td><strong>${escapeHtml(row.team)}</strong></td>
-              <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
-              <td>
-                ${row.stato === 'in_attesa' && row.pendingId
-                  ? `<button class="btn btn-blue" onclick="switchPage('page-results')">Controlla risultato</button>`
-                  : row.stato === 'non_inviato'
-                    ? `<button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Inserisci risultato</button>`
-                    : row.stato === 'rifiutato'
-                      ? `<button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Reinserisci risultato</button>`
-                      : `<span class="muted">Nessuna azione</span>`}
-              </td>
-            </tr>
-          `).join('')
+          <tr>
+            <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+            <td><strong>${escapeHtml(row.team)}</strong></td>
+            <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+            <td>
+              ${row.stato === 'in_attesa' && row.pendingId
+                ? `<button class="btn btn-blue" onclick="switchPage('page-results')">Controlla risultato</button>`
+                : row.stato === 'non_inviato' || row.stato === 'rifiutato'
+                  ? `<button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button>`
+                  : `<span class="muted">Nessuna azione</span>`}
+            </td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="4" class="empty">Nessun dato match</td></tr>`;
 
       const missingTeamsBody = document.getElementById('missingTeamsBody');
@@ -2378,90 +2482,90 @@
 
       missingTeamsBody.innerHTML = teamMancantiMatchCorrente.length
         ? teamMancantiMatchCorrente.map(row => `
-            <tr>
-              <td><span class="slot-badge">#${row.slot || '-'}</span></td>
-              <td><strong>${escapeHtml(row.team)}</strong></td>
-              <td>
-                <div class="team-players-list">
-                  ${(row.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-                </div>
-              </td>
-              <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
-              <td>
-                <button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Inserisci risultato</button>
-              </td>
-            </tr>
-          `).join('')
+          <tr>
+            <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+            <td><strong>${escapeHtml(row.team)}</strong></td>
+            <td>
+              <div class="team-players-list">
+                ${(row.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+              </div>
+            </td>
+            <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+            <td>
+              <button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button>
+            </td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="5" class="empty">Nessun team mancante</td></tr>`;
 
       const matchSummaryBody = document.getElementById('matchSummaryBody');
       matchSummaryBody.innerHTML = riepilogoMatch.length
         ? riepilogoMatch.map(match => `
-            <tr>
-              <td><strong>Match ${Number(match.matchNumber || 1)}</strong></td>
-              <td>${Number(match.inviati || 0)} / ${Number(match.totaleTeam || 0)}</td>
-              <td>${Number(match.inAttesa || 0)}</td>
-              <td>${Number(match.approvati || 0)}</td>
-              <td>${Number(match.nonInviati || 0)}</td>
-              <td>
-                <span class="status-badge ${match.completato ? 'status-approved' : 'status-waiting'}">
-                  ${match.completato ? 'COMPLETATO' : 'APERTO'}
-                </span>
-              </td>
-            </tr>
-          `).join('')
+          <tr>
+            <td><strong>Match ${Number(match.matchNumber || 1)}</strong></td>
+            <td>${Number(match.inviati || 0)} / ${Number(match.totaleTeam || 0)}</td>
+            <td>${Number(match.inAttesa || 0)}</td>
+            <td>${Number(match.approvati || 0)}</td>
+            <td>${Number(match.nonInviati || 0)}</td>
+            <td>
+              <span class="status-badge ${match.completato ? 'status-approved' : 'status-waiting'}">
+                ${match.completato ? 'COMPLETATO' : 'APERTO'}
+              </span>
+            </td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="6" class="empty">Nessun riepilogo disponibile</td></tr>`;
 
       const registeredTeamsBody = document.getElementById('registeredTeamsBody');
       registeredTeamsBody.innerHTML = teamOrdinati.length
         ? teamOrdinati.map(team => `
-            <tr>
-              <td><span class="slot-badge">#${team.slot || '-'}</span></td>
-              <td><strong>${escapeHtml(team.team)}</strong></td>
-              <td>
-                <div class="team-players-list">
-                  ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-                </div>
-              </td>
-            </tr>
-          `).join('')
+          <tr>
+            <td><span class="slot-badge">#${team.slot || '-'}</span></td>
+            <td><strong>${escapeHtml(team.team)}</strong></td>
+            <td>
+              <div class="team-players-list">
+                ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+              </div>
+            </td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
 
       const slotPreviewList = document.getElementById('slotPreviewList');
       slotPreviewList.innerHTML = teamOrdinati.length
         ? teamOrdinati.map(team => `
-            <div class="slot-card">
-              <div class="slot-card-left">
-                <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
-                <div class="slot-card-players">
-                  ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-                </div>
+          <div class="slot-card">
+            <div class="slot-card-left">
+              <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
+              <div class="slot-card-players">
+                ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
               </div>
-              <div class="slot-badge">SLOT ${team.slot || '-'}</div>
             </div>
-          `).join('')
+            <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+          </div>
+        `).join('')
         : `<div class="empty">Nessun team registrato</div>`;
 
       const leaderboardBody = document.getElementById('leaderboardBody');
       leaderboardBody.innerHTML = classificaTeam.length
         ? classificaTeam.map(row => `
-            <tr>
-              <td><span class="rank">${row.posizione}</span></td>
-              <td>${escapeHtml(row.team)}</td>
-              <td><strong>${row.punti}</strong></td>
-            </tr>
-          `).join('')
+          <tr>
+            <td><span class="rank">${row.posizione}</span></td>
+            <td>${escapeHtml(row.team)}</td>
+            <td><strong>${row.punti}</strong></td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
 
       const fraggerBody = document.getElementById('fraggerBody');
       fraggerBody.innerHTML = classificaFragger.length
-        ? classificaFragger.slice(0, 20).map(row => `
-            <tr>
-              <td><span class="rank">${row.posizione}</span></td>
-              <td>${escapeHtml(row.nome)}</td>
-              <td><strong>${row.uccisioni}</strong></td>
-            </tr>
-          `).join('')
+        ? classificaFragger.slice(0,20).map(row => `
+          <tr>
+            <td><span class="rank">${row.posizione}</span></td>
+            <td>${escapeHtml(row.nome)}</td>
+            <td><strong>${row.uccisioni}</strong></td>
+          </tr>
+        `).join('')
         : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
 
       const teamOptions = teamOrdinati.map(team => ({
@@ -2471,7 +2575,6 @@
       }));
 
       setDropdownOptions('teamSelect', teamOptions);
-      setDropdownOptions('webResultTeam', teamOptions);
 
       const fraggerOptions = classificaFragger
         .map(item => ({
@@ -2479,72 +2582,65 @@
           label: item.nome,
           subtitle: `${Number(item.uccisioni || 0)} uccisioni`
         }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'it'));
+        .sort((a,b) => a.label.localeCompare(b.label,'it'));
 
       setDropdownOptions('fraggerSelect', fraggerOptions);
 
       const pendingList = document.getElementById('pendingList');
       pendingList.innerHTML = risultatiInAttesa.length
         ? risultatiInAttesa.map(item => `
-            <div class="pending-card">
-              <div class="pending-top">
-                <div>
-                  <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
-                  <div class="muted">Inviato da: ${escapeHtml(item.inviatoDa || '-')}</div>
-                </div>
-                <div class="status-badge status-waiting">IN ATTESA</div>
+          <div class="pending-card">
+            <div class="pending-top">
+              <div>
+                <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
+                <div class="muted">Inviato da: ${escapeHtml(item.inviatoDa || '-')}</div>
               </div>
+              <div class="status-badge status-waiting">IN ATTESA</div>
+            </div>
 
-              <div class="pending-grid">
-                <div class="box">
-                  <span>Match</span>
-                  <strong>${Number(item.matchNumber || 1)}</strong>
-                </div>
-                <div class="box">
-                  <span>Uccisioni totali</span>
-                  <strong>${item.totaleUccisioni}</strong>
-                </div>
-                <div class="box">
-                  <span>Posizione</span>
-                  <strong>${item.posizione}</strong>
-                </div>
-                <div class="box">
-                  <span>ID risultato</span>
-                  <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
-                </div>
+            <div class="pending-grid">
+              <div class="box">
+                <span>Match</span>
+                <strong>${Number(item.matchNumber || 1)}</strong>
               </div>
-
-              <div class="players">
-                ${(item.uccisioni || []).map((k, i) => `
-                  <div class="player-card">
-                    <b>${escapeHtml(item.players?.[i] || `Giocatore ${i + 1}`)}</b>
-                    <div>${Number(k || 0)} uccisioni</div>
-                  </div>
-                `).join('')}
+              <div class="box">
+                <span>Uccisioni totali</span>
+                <strong>${item.totaleUccisioni}</strong>
               </div>
-
-              ${item.immagine ? `
-                <div class="img-box">
-                  <button class="result-image-button" type="button" onclick="openImageModal('${escapeHtml(item.immagine)}')">
-                    <img src="${escapeHtml(item.immagine)}" alt="screenshot risultato">
-                  </button>
-                </div>
-              ` : ''}
-
-              <div class="row">
-                <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
-                <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
+              <div class="box">
+                <span>Posizione</span>
+                <strong>${item.posizione}</strong>
+              </div>
+              <div class="box">
+                <span>ID risultato</span>
+                <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
               </div>
             </div>
-          `).join('')
-        : `<div class="empty">Nessun risultato in attesa</div>`;
-    }
 
-    function prepareManualResult(teamName) {
-      switchPage('page-results');
-      setDropdownValue('webResultTeam', teamName, false);
-      document.getElementById('webK1').focus();
-      setStatus(`Inserimento manuale pronto per ${teamName}`);
+            <div class="players">
+              ${(item.uccisioni || []).map((k,i) => `
+                <div class="player-card">
+                  <b>${escapeHtml(item.players?.[i] || `Giocatore ${i + 1}`)}</b>
+                  <div>${Number(k || 0)} uccisioni</div>
+                </div>
+              `).join('')}
+            </div>
+
+            ${item.immagine ? `
+              <div class="img-box">
+                <button class="result-image-button" type="button" onclick="openImageModal('${escapeHtml(item.immagine)}')">
+                  <img src="${escapeHtml(item.immagine)}" alt="screenshot risultato">
+                </button>
+              </div>
+            ` : ''}
+
+            <div class="row">
+              <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
+              <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
+            </div>
+          </div>
+        `).join('')
+        : `<div class="empty">Nessun risultato in attesa</div>`;
     }
 
     async function saveProjectSettings(customSetupCompleted = null) {
@@ -2564,8 +2660,8 @@
       };
 
       const result = await api('/api/project-settings/save', {
-        method: 'POST',
-        body: JSON.stringify(payload)
+        method:'POST',
+        body:JSON.stringify(payload)
       });
 
       if (!result) return false;
@@ -2602,7 +2698,7 @@
     }
 
     function newTeamForm() {
-      setDropdownValue('teamSelect', '');
+      setDropdownValue('teamSelect','');
       resetDropdownSearch('teamSelect');
       document.getElementById('teamName').value = '';
       document.getElementById('teamP1').value = '';
@@ -2616,12 +2712,8 @@
       const roomsCategoryId = document.getElementById('roomsCategoryId').value.trim();
 
       const result = await api('/api/bot/settings/save', {
-        method: 'POST',
-        body: JSON.stringify({
-          registerPanelChannelId,
-          resultsPanelChannelId,
-          roomsCategoryId
-        })
+        method:'POST',
+        body:JSON.stringify({registerPanelChannelId,resultsPanelChannelId,roomsCategoryId})
       });
 
       if (!result) return;
@@ -2642,8 +2734,8 @@
       const p3 = document.getElementById('teamP3').value.trim();
 
       const result = await api('/api/teams/save', {
-        method: 'POST',
-        body: JSON.stringify({ oldTeamName, teamName, p1, p2, p3 })
+        method:'POST',
+        body:JSON.stringify({oldTeamName,teamName,p1,p2,p3})
       });
 
       if (!result) return;
@@ -2653,7 +2745,7 @@
       }
 
       await refreshDashboard();
-      setDropdownValue('teamSelect', teamName);
+      setDropdownValue('teamSelect',teamName);
       loadSelectedTeam();
       setStatus('Team salvato correttamente');
     }
@@ -2668,8 +2760,8 @@
       if (!confirm('Confermi eliminazione team?')) return;
 
       const result = await api('/api/teams/delete', {
-        method: 'POST',
-        body: JSON.stringify({ teamName })
+        method:'POST',
+        body:JSON.stringify({teamName})
       });
 
       if (!result) return;
@@ -2697,8 +2789,8 @@
       const kills = Number(document.getElementById('fraggerKills').value || 0);
 
       const result = await api('/api/fragger/set', {
-        method: 'POST',
-        body: JSON.stringify({ player, kills })
+        method:'POST',
+        body:JSON.stringify({player,kills})
       });
 
       if (!result) return;
@@ -2708,7 +2800,7 @@
       }
 
       await refreshDashboard();
-      setDropdownValue('fraggerSelect', player);
+      setDropdownValue('fraggerSelect',player);
       loadSelectedFragger();
       setStatus('Giocatore salvato correttamente');
     }
@@ -2723,8 +2815,8 @@
       if (!confirm('Confermi eliminazione giocatore?')) return;
 
       const result = await api('/api/fragger/delete', {
-        method: 'POST',
-        body: JSON.stringify({ player })
+        method:'POST',
+        body:JSON.stringify({player})
       });
 
       if (!result) return;
@@ -2735,7 +2827,7 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
-      setDropdownValue('fraggerSelect', '');
+      setDropdownValue('fraggerSelect','');
       resetDropdownSearch('fraggerSelect');
       await refreshDashboard();
       setStatus('Giocatore eliminato');
@@ -2745,8 +2837,8 @@
       const match = Number(document.getElementById('matchInput').value || 1);
 
       const result = await api('/api/match/set', {
-        method: 'POST',
-        body: JSON.stringify({ match })
+        method:'POST',
+        body:JSON.stringify({match})
       });
 
       if (!result) return;
@@ -2760,7 +2852,7 @@
     }
 
     async function nextMatch() {
-      const result = await api('/api/match/next', { method: 'POST' });
+      const result = await api('/api/match/next', {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore passaggio match');
@@ -2772,7 +2864,7 @@
     }
 
     async function approvePending(id) {
-      const result = await api('/api/approve/' + id, { method: 'POST' });
+      const result = await api('/api/approve/' + id, {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore approvazione risultato');
@@ -2784,7 +2876,7 @@
     }
 
     async function rejectPending(id) {
-      const result = await api('/api/reject/' + id, { method: 'POST' });
+      const result = await api('/api/reject/' + id, {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore rifiuto risultato');
@@ -2798,7 +2890,7 @@
     async function resetTeams() {
       if (!confirm('Confermi reset team registrati? Verrà creato automaticamente un archivio di sicurezza.')) return;
 
-      const result = await api('/api/reset-teams', { method: 'POST' });
+      const result = await api('/api/reset-teams', {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset team');
@@ -2806,8 +2898,6 @@
       }
 
       newTeamForm();
-      setDropdownValue('webResultTeam', '');
-      resetDropdownSearch('webResultTeam');
       await refreshDashboard();
       setStatus('Team registrati azzerati');
     }
@@ -2815,7 +2905,7 @@
     async function resetData() {
       if (!confirm('Confermi reset classifica, fragger e match? Verrà creato automaticamente un archivio di sicurezza.')) return;
 
-      const result = await api('/api/reset-data', { method: 'POST' });
+      const result = await api('/api/reset-data', {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset dati');
@@ -2824,7 +2914,7 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
-      setDropdownValue('fraggerSelect', '');
+      setDropdownValue('fraggerSelect','');
       resetDropdownSearch('fraggerSelect');
       await refreshDashboard();
       setStatus('Classifica e fragger azzerati');
@@ -2836,8 +2926,8 @@
       const maxTeams = Number(document.getElementById('registrationMaxTeams').value || 16);
 
       const result = await api('/api/registration-settings/save', {
-        method: 'POST',
-        body: JSON.stringify({ title, text, maxTeams })
+        method:'POST',
+        body:JSON.stringify({title,text,maxTeams})
       });
 
       if (!result) return;
@@ -2851,7 +2941,7 @@
     }
 
     async function forceRegistrationMessage() {
-      const result = await api('/api/registration-settings/refresh', { method: 'POST' });
+      const result = await api('/api/registration-settings/refresh', {method:'POST'});
 
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
@@ -2874,8 +2964,8 @@
       }
 
       const result = await api('/api/bot/spawn-register-panel', {
-        method: 'POST',
-        body: JSON.stringify({ channelId })
+        method:'POST',
+        body:JSON.stringify({channelId})
       });
 
       if (!result) return;
@@ -2902,8 +2992,8 @@
       }
 
       const result = await api('/api/bot/refresh-team-result-panels', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId })
+        method:'POST',
+        body:JSON.stringify({categoryId})
       });
 
       if (!result) return;
@@ -2913,9 +3003,7 @@
       }
 
       await refreshDashboard();
-      setStatus(
-        `Pannelli team aggiornati • creati: ${Number(result.data.created || 0)} • aggiornati: ${Number(result.data.updated || 0)} • stanze mancanti: ${Number(result.data.missingRooms || 0)}`
-      );
+      setStatus(`Pannelli team aggiornati • creati: ${Number(result.data.created || 0)} • aggiornati: ${Number(result.data.updated || 0)} • stanze mancanti: ${Number(result.data.missingRooms || 0)}`);
     }
 
     async function createRooms() {
@@ -2929,8 +3017,8 @@
       }
 
       const result = await api('/api/bot/create-rooms', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId })
+        method:'POST',
+        body:JSON.stringify({categoryId})
       });
 
       if (!result) return;
@@ -2954,8 +3042,8 @@
       }
 
       const result = await api('/api/bot/delete-rooms', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId })
+        method:'POST',
+        body:JSON.stringify({categoryId})
       });
 
       if (!result) return;
@@ -2985,8 +3073,8 @@
       }
 
       const result = await api('/api/bot/send-lobby-code', {
-        method: 'POST',
-        body: JSON.stringify({ lobbyCode: code, categoryId })
+        method:'POST',
+        body:JSON.stringify({lobbyCode:code,categoryId})
       });
 
       if (!result) return false;
@@ -2995,11 +3083,7 @@
         return false;
       }
 
-      const inviate = Number(result.data.sent || 0);
-      const fallite = Number(result.data.failed || 0);
-      const totale = Number(result.data.total || 0);
-
-      setStatus(`Codice lobby inviato • riuscite: ${inviate}/${totale} • fallite: ${fallite}`);
+      setStatus(`Codice lobby inviato • riuscite: ${Number(result.data.sent || 0)}/${Number(result.data.total || 0)} • fallite: ${Number(result.data.failed || 0)}`);
       return true;
     }
 
@@ -3020,7 +3104,7 @@
     }
 
     async function forceLeaderboard() {
-      const result = await api('/api/bot/update-leaderboard', { method: 'POST' });
+      const result = await api('/api/bot/update-leaderboard', {method:'POST'});
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento classifica Discord');
@@ -3031,54 +3115,13 @@
       setStatus('Classifica Discord aggiornata');
     }
 
-    async function submitWebResult() {
-      const team = getDropdownValue('webResultTeam');
-      const k1 = Number(document.getElementById('webK1').value || 0);
-      const k2 = Number(document.getElementById('webK2').value || 0);
-      const k3 = Number(document.getElementById('webK3').value || 0);
-      const pos = Number(document.getElementById('webPos').value || 0);
-      const file = document.getElementById('webScreenshot').files[0];
-
-      if (!team) {
-        alert('Seleziona un team');
-        return;
-      }
-
-      let imageData = '';
-      if (file) {
-        imageData = await fileToBase64(file);
-      }
-
-      const result = await api('/api/web-submit-result', {
-        method: 'POST',
-        body: JSON.stringify({ team, k1, k2, k3, pos, imageData })
-      });
-
-      if (!result) return;
-      if (!result.response.ok || !result.data.ok) {
-        alert(result.data.message || 'Errore invio risultato');
-        return;
-      }
-
-      document.getElementById('webK1').value = '';
-      document.getElementById('webK2').value = '';
-      document.getElementById('webK3').value = '';
-      document.getElementById('webPos').value = '';
-      document.getElementById('webScreenshot').value = '';
-      setDropdownValue('webResultTeam', '');
-      resetDropdownSearch('webResultTeam');
-
-      await refreshDashboard();
-      setStatus('Risultato inviato alla coda risultati in attesa');
-    }
-
     async function createArchive() {
       const label = document.getElementById('archiveLabel').value.trim();
       const note = document.getElementById('archiveNote').value.trim();
 
       const result = await api('/api/archivi/crea', {
-        method: 'POST',
-        body: JSON.stringify({ label, note })
+        method:'POST',
+        body:JSON.stringify({label,note})
       });
 
       if (!result) return;
@@ -3099,13 +3142,11 @@
         return;
       }
 
-      if (!confirm('Confermi il ripristino di questo archivio? Verrà creato automaticamente un backup dello stato attuale.')) {
-        return;
-      }
+      if (!confirm('Confermi il ripristino di questo archivio? Verrà creato automaticamente un backup dello stato attuale.')) return;
 
       const result = await api('/api/archivi/ripristina', {
-        method: 'POST',
-        body: JSON.stringify({ archiveId: decodeURIComponent(archiveId) })
+        method:'POST',
+        body:JSON.stringify({archiveId:decodeURIComponent(archiveId)})
       });
 
       if (!result) return;
@@ -3119,7 +3160,7 @@
     }
 
     async function logout() {
-      await api('/api/logout', { method: 'POST' });
+      await api('/api/logout', {method:'POST'});
       location.href = '/login';
     }
 
@@ -3136,6 +3177,10 @@
     window.openImageModal = openImageModal;
     window.closeImageModal = closeImageModal;
     window.handleImageModalBackdrop = handleImageModalBackdrop;
+    window.openManualResultModal = openManualResultModal;
+    window.closeManualResultModal = closeManualResultModal;
+    window.handleManualModalBackdrop = handleManualModalBackdrop;
+    window.submitManualResult = submitManualResult;
     window.saveProjectSettings = saveProjectSettings;
     window.completeSetup = completeSetup;
     window.saveBotSettings = saveBotSettings;
@@ -3161,13 +3206,12 @@
     window.sendLobbyCode = sendLobbyCode;
     window.sendLobbyCodeQuick = sendLobbyCodeQuick;
     window.forceLeaderboard = forceLeaderboard;
-    window.submitWebResult = submitWebResult;
     window.createArchive = createArchive;
     window.restoreArchive = restoreArchive;
-    window.prepareManualResult = prepareManualResult;
     window.switchPage = switchPage;
 
     initializeDropdowns();
+    syncManualMirrors();
     switchPage('page-overview');
     refreshDashboard();
 
