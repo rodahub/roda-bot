@@ -20,6 +20,10 @@ const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 const ARCHIVES_DIR = path.join(STORAGE_DIR, 'archives');
 const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
 
+const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
+const MAX_TEAMS = 16;
+const PLAYERS_PER_TEAM = 3;
+
 console.log('RAILWAY_VOLUME_MOUNT_PATH:', process.env.RAILWAY_VOLUME_MOUNT_PATH || '(non presente)');
 console.log('STORAGE_DIR attuale:', STORAGE_DIR);
 console.log('DATA_FILE attuale:', DATA_FILE);
@@ -32,10 +36,24 @@ function ensureDir(dirPath) {
   }
 }
 
+function isObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sanitizeText(value) {
+  return String(value || '').trim();
+}
+
+function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
+  const num = Number(value);
+  if (!Number.isInteger(num) || num <= 0) return fallback;
+  return Math.min(num, max);
+}
+
 function getDefaultProjectSettings() {
   return {
     brandName: 'RØDA',
-    tournamentName: 'RØDA CUP',
+    tournamentName: FIXED_TOURNAMENT_NAME,
     supportContact: '',
     premiumMode: false,
     setupCompleted: false
@@ -44,16 +62,99 @@ function getDefaultProjectSettings() {
 
 function getDefaultTournamentSettings() {
   return {
-    tournamentName: 'RØDA CUP',
+    tournamentName: FIXED_TOURNAMENT_NAME,
     totalMatches: 3,
-    playersPerTeam: 3,
-    maxTeams: 16,
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
     lockedRules: true,
     lockedPoints: true,
     createdAt: null,
     createdBy: '',
     lastConfiguredAt: null,
     lastConfiguredBy: ''
+  };
+}
+
+function getDefaultTournamentMessages() {
+  return {
+    generalAnnouncement:
+      '@everyone\n\n' +
+      '**🏆 BENVENUTI ALLA RØDA CUP**\n\n' +
+      '**Leggete il regolamento ufficiale prima dell’inizio del torneo.**\n\n' +
+      'Ogni team userà la propria stanza vocale ufficiale.\n' +
+      'Dentro la stanza del team troverete il pannello per inviare i risultati.\n' +
+      'Il codice lobby verrà mandato nelle stanze ufficiali dei team.\n\n' +
+      '**Buona fortuna a tutti. 🔥**',
+    lobbyInfoMessage:
+      '**🎮 CODICE LOBBY**\n\n' +
+      'Il codice lobby verrà inviato nelle stanze ufficiali dei team.\n' +
+      'Controllate sempre la vostra stanza durante il torneo.',
+    regulationText:
+      '🏆 RØDA CUP\n\n' +
+      '👥 FORMATO TORNEO\n\n' +
+      'Il torneo si svolge in modalità TERZETTI (TRIO).\n\n' +
+      'Ogni squadra deve essere composta da 3 giocatori titolari.\n' +
+      'Non sono ammessi quartetti o cambi non autorizzati dallo staff.\n\n' +
+      '🎮 OBBLIGO UTILIZZO DISCORD\n\n' +
+      'Per tutta la durata dell’evento è obbligatorio:\n\n' +
+      '• Utilizzare le stanze vocali Discord ufficiali\n' +
+      '• Aprire una stanza temporanea Trio nella sezione RØDA HUB\n' +
+      '• Restare presenti in vocale per tutto il torneo\n\n' +
+      '⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.\n\n' +
+      '🚫 RESTRIZIONI EQUIPAGGIAMENTO\n\n' +
+      'È severamente vietato l’utilizzo di:\n\n' +
+      '❌ Mine\n' +
+      '❌ Claymore\n' +
+      '❌ Psicogranate\n' +
+      '❌ Granate Stordenti\n' +
+      '❌ Lacrimogeni\n' +
+      '❌ Scarica Elettrica\n' +
+      '❌ Skin Terminator\n\n' +
+      '⚖️ SISTEMA DISCIPLINARE\n\n' +
+      '• 1ª infrazione → Richiamo ufficiale\n' +
+      '• 2ª infrazione → Sottrazione punti\n' +
+      '• 3ª infrazione → Squalifica dal torneo\n\n' +
+      'Lo staff può applicare sanzioni immediate in caso di violazioni gravi.\n\n' +
+      '🔫 ARMI CONSENTITE\n\n' +
+      '✅ Solo ARMI META approvate dallo staff\n' +
+      '🎯 È ammesso 1 SOLO CECCHINO per team\n\n' +
+      '⚠️ Violazioni:\n\n' +
+      '• Utilizzo di 2 cecchini → Penalità immediata\n' +
+      '• Uso di armi non consentite → Kill annullate o sottrazione punti\n\n' +
+      '🏆 SISTEMA DI PUNTEGGIO\n\n' +
+      '🔹 Kill di squadra\n\n' +
+      '👉 Si sommano tutte le kill del team\n\n' +
+      '📊 Formula ufficiale:\n\n' +
+      '(Kill totali di squadra) + Bonus Posizionamento\n\n' +
+      '🔹 Bonus Posizionamento\n\n' +
+      '🥇 1° Posto → 10 punti\n' +
+      '🥈 2° Posto → 6 punti\n' +
+      '🥉 3° Posto → 5 punti\n' +
+      '4° Posto → 4 punti\n' +
+      '5° Posto → 3 punti\n' +
+      '6° Posto → 2 punti\n' +
+      '7° Posto → 1 punto\n' +
+      '8° Posto → 1 punto\n\n' +
+      '📸 VALIDAZIONE RISULTATI OBBLIGATORIA\n\n' +
+      'Ogni team deve inviare il risultato dal pannello nella propria stanza ufficiale.\n\n' +
+      'Lo screenshot deve mostrare chiaramente:\n\n' +
+      '• Classifica finale\n' +
+      '• Numero totale kill di squadra\n' +
+      '• Posizionamento\n\n' +
+      'Nel messaggio è obbligatorio indicare:\n\n' +
+      '• Nome Team\n' +
+      '• Posizione ottenuta\n' +
+      '• Kill totali di squadra\n\n' +
+      'Se una di queste informazioni manca, il risultato non verrà convalidato.\n\n' +
+      '✅ ESEMPIO CORRETTO INVIO RISULTATO\n\n' +
+      'Team: RØDA Black\n' +
+      'Posizione: 2° Posto\n' +
+      'Kill Totali Squadra: 18\n\n' +
+      '⚖️ FAIR PLAY\n\n' +
+      '• Vietato glitch, exploit o vantaggi illeciti\n' +
+      '• Vietato comportamento tossico o antisportivo\n' +
+      '• Rispetto obbligatorio verso staff e avversari\n' +
+      '• Le decisioni dello staff sono definitive'
   };
 }
 
@@ -70,124 +171,6 @@ function getDefaultBotSettings() {
   };
 }
 
-function getDefaultTournamentMessages() {
-  return {
-    generalAnnouncement: `@everyone
-
-**🏆 BENVENUTI ALLA RØDA CUP**
-
-Il torneo è stato creato correttamente.
-
-**Cose importanti da sapere:**
-• Leggete il regolamento nel canale dedicato
-• Usate le vocali ufficiali del torneo
-• Ogni team avrà il proprio pannello risultati nella propria stanza
-• Il codice lobby verrà inviato nelle stanze dei team
-• I risultati devono essere inviati solo una volta per ogni match
-
-Buon torneo a tutti 🔥`,
-    lobbyInfoMessage: `**🎮 CODICE LOBBY**
-
-Il codice lobby verrà inviato dallo staff nelle stanze dei team.
-
-Restate pronti e controllate la vostra stanza ufficiale.`,
-    regulationText: `🏆 RØDA CUP
-
-👥 FORMATO TORNEO
-
-Il torneo si svolge in modalità TERZETTI (TRIO).
-
-Ogni squadra deve essere composta da 3 giocatori titolari.
-Non sono ammessi quartetti o cambi non autorizzati dallo staff.
-
-🎮 OBBLIGO UTILIZZO DISCORD
-
-Per tutta la durata dell’evento è obbligatorio:
-
-• Utilizzare le stanze vocali Discord ufficiali
-• Aprire una stanza temporanea Trio nella sezione RØDA HUB
-• Restare presenti in vocale per tutto il torneo
-
-⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.
-
-🚫 RESTRIZIONI EQUIPAGGIAMENTO
-
-È severamente vietato l’utilizzo di:
-
-❌ Mine
-❌ Claymore
-❌ Psicogranate
-❌ Granate Stordenti
-❌ Lacrimogeni
-❌ Scarica Elettrica
-❌ Skin Terminator
-
-⚖️ SISTEMA DISCIPLINARE
-
-• 1ª infrazione → Richiamo ufficiale
-• 2ª infrazione → Sottrazione punti
-• 3ª infrazione → Squalifica dal torneo
-
-Lo staff può applicare sanzioni immediate in caso di violazioni gravi.
-
-🔫 ARMI CONSENTITE
-
-✅ Solo ARMI META approvate dallo staff
-🎯 È ammesso 1 SOLO CECCHINO per team
-
-⚠️ Violazioni:
-
-• Utilizzo di 2 cecchini → Penalità immediata
-• Uso di armi non consentite → Kill annullate o sottrazione punti
-
-🏆 SISTEMA DI PUNTEGGIO
-
-🔹 Kill di squadra
-
-👉 Si sommano tutte le kill del team
-
-📊 Formula ufficiale:
-
-Kill totali di squadra + Bonus Posizionamento
-
-🔹 Bonus Posizionamento
-
-🥇 1° Posto → 10 punti
-🥈 2° Posto → 6 punti
-🥉 3° Posto → 5 punti
-4° Posto → 4 punti
-5° Posto → 3 punti
-6° Posto → 2 punti
-7° Posto → 1 punto
-8° Posto → 1 punto
-
-📸 VALIDAZIONE RISULTATI
-
-Ogni team deve inviare il risultato tramite il pannello ufficiale nella propria stanza.
-
-Lo screenshot deve mostrare chiaramente:
-
-• Classifica finale
-• Numero totale kill di squadra
-• Posizionamento
-
-Se una di queste informazioni manca, il risultato non verrà convalidato.
-
-✅ ESEMPIO CORRETTO INVIO RISULTATO
-
-Team: RØDA Black
-Posizione: 2° Posto
-Kill Totali Squadra: 18
-
-⚖️ FAIR PLAY
-
-• Vietato glitch, exploit o vantaggi illeciti
-• Vietato comportamento tossico o antisportivo
-• Rispetto obbligatorio verso staff e avversari
-• Le decisioni dello staff sono definitive`
-  };
-}
-
 function getDefaultData() {
   return {
     currentMatch: 1,
@@ -201,13 +184,13 @@ function getDefaultData() {
     topFraggerGraphicMessageId: null,
     registrationStatusMessageId: null,
     registrationClosedAnnounced: false,
-    registrationMaxTeams: 16,
+    registrationMaxTeams: MAX_TEAMS,
     registrationStatusTitle: '📋 Slot Team Registrati',
     registrationStatusText: 'Lista team attualmente registrati nel torneo.',
     projectSettings: getDefaultProjectSettings(),
     tournamentSettings: getDefaultTournamentSettings(),
-    botSettings: getDefaultBotSettings(),
-    tournamentMessages: getDefaultTournamentMessages()
+    tournamentMessages: getDefaultTournamentMessages(),
+    botSettings: getDefaultBotSettings()
   };
 }
 
@@ -219,27 +202,13 @@ function getDefaultAuditLog() {
   return [];
 }
 
-function isObject(value) {
-  return value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function sanitizeString(value, fallback = '') {
-  return String(value || fallback).trim();
-}
-
-function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
-  const num = Number(value);
-  if (!Number.isInteger(num) || num <= 0) return fallback;
-  return Math.min(num, max);
-}
-
 function normalizeProjectSettings(value) {
   const base = getDefaultProjectSettings();
   const safe = isObject(value) ? value : {};
 
-  base.brandName = sanitizeString(safe.brandName, base.brandName) || base.brandName;
-  base.tournamentName = 'RØDA CUP';
-  base.supportContact = sanitizeString(safe.supportContact);
+  base.brandName = sanitizeText(safe.brandName || base.brandName) || base.brandName;
+  base.tournamentName = FIXED_TOURNAMENT_NAME;
+  base.supportContact = sanitizeText(safe.supportContact || '');
   base.premiumMode = Boolean(safe.premiumMode);
   base.setupCompleted = Boolean(safe.setupCompleted);
 
@@ -250,16 +219,27 @@ function normalizeTournamentSettings(value) {
   const base = getDefaultTournamentSettings();
   const safe = isObject(value) ? value : {};
 
-  base.tournamentName = 'RØDA CUP';
+  base.tournamentName = FIXED_TOURNAMENT_NAME;
   base.totalMatches = sanitizePositiveInteger(safe.totalMatches, base.totalMatches, 50);
-  base.playersPerTeam = 3;
-  base.maxTeams = 16;
+  base.playersPerTeam = PLAYERS_PER_TEAM;
+  base.maxTeams = MAX_TEAMS;
   base.lockedRules = true;
   base.lockedPoints = true;
   base.createdAt = safe.createdAt || null;
-  base.createdBy = sanitizeString(safe.createdBy);
+  base.createdBy = sanitizeText(safe.createdBy || '');
   base.lastConfiguredAt = safe.lastConfiguredAt || null;
-  base.lastConfiguredBy = sanitizeString(safe.lastConfiguredBy);
+  base.lastConfiguredBy = sanitizeText(safe.lastConfiguredBy || '');
+
+  return base;
+}
+
+function normalizeTournamentMessages(value) {
+  const base = getDefaultTournamentMessages();
+  const safe = isObject(value) ? value : {};
+
+  base.generalAnnouncement = sanitizeText(safe.generalAnnouncement || base.generalAnnouncement) || base.generalAnnouncement;
+  base.lobbyInfoMessage = sanitizeText(safe.lobbyInfoMessage || base.lobbyInfoMessage) || base.lobbyInfoMessage;
+  base.regulationText = getDefaultTournamentMessages().regulationText;
 
   return base;
 }
@@ -269,24 +249,13 @@ function normalizeBotSettings(value) {
   const safe = isObject(value) ? value : {};
 
   base.registerPanelMessageId = safe.registerPanelMessageId || null;
-  base.registerPanelChannelId = sanitizeString(safe.registerPanelChannelId);
+  base.registerPanelChannelId = sanitizeText(safe.registerPanelChannelId || '');
   base.resultsPanelMessageId = safe.resultsPanelMessageId || null;
-  base.resultsPanelChannelId = sanitizeString(safe.resultsPanelChannelId);
-  base.roomsCategoryId = sanitizeString(safe.roomsCategoryId);
-  base.generalChannelId = sanitizeString(safe.generalChannelId);
-  base.rulesChannelId = sanitizeString(safe.rulesChannelId);
-  base.lobbyChannelId = sanitizeString(safe.lobbyChannelId);
-
-  return base;
-}
-
-function normalizeTournamentMessages(value) {
-  const base = getDefaultTournamentMessages();
-  const safe = isObject(value) ? value : {};
-
-  base.generalAnnouncement = sanitizeString(safe.generalAnnouncement, base.generalAnnouncement) || base.generalAnnouncement;
-  base.lobbyInfoMessage = sanitizeString(safe.lobbyInfoMessage, base.lobbyInfoMessage) || base.lobbyInfoMessage;
-  base.regulationText = base.regulationText;
+  base.resultsPanelChannelId = sanitizeText(safe.resultsPanelChannelId || '');
+  base.roomsCategoryId = sanitizeText(safe.roomsCategoryId || safe.categoryId || '');
+  base.generalChannelId = sanitizeText(safe.generalChannelId || '');
+  base.rulesChannelId = sanitizeText(safe.rulesChannelId || '');
+  base.lobbyChannelId = sanitizeText(safe.lobbyChannelId || '');
 
   return base;
 }
@@ -300,9 +269,11 @@ function normalizePending(pendingValue) {
 
     const kills = Array.isArray(entry.kills) ? entry.kills : [];
 
+    const team = sanitizeText(entry.team);
+    if (!team) continue;
+
     out[String(id)] = {
-      team: sanitizeString(entry.team),
-      slot: Number(entry.slot || 0),
+      team,
       kills: [
         Number(kills[0] || 0),
         Number(kills[1] || 0),
@@ -310,12 +281,13 @@ function normalizePending(pendingValue) {
       ],
       total: Number(entry.total || 0),
       pos: Number(entry.pos || 0),
-      image: sanitizeString(entry.image),
-      source: sanitizeString(entry.source),
-      submittedBy: sanitizeString(entry.submittedBy),
+      image: sanitizeText(entry.image || ''),
+      source: sanitizeText(entry.source || ''),
+      submittedBy: sanitizeText(entry.submittedBy || ''),
       staffMessageId: entry.staffMessageId || null,
-      matchNumber: Number(entry.matchNumber || 1),
-      teamResultChannelId: sanitizeString(entry.teamResultChannelId)
+      matchNumber: sanitizePositiveInteger(entry.matchNumber, 1, 50),
+      teamResultChannelId: sanitizeText(entry.teamResultChannelId || ''),
+      slot: Number(entry.slot || 0) || null
     };
   }
 
@@ -330,9 +302,11 @@ function normalizeTempSubmit(tempValue) {
     if (!isObject(entry)) continue;
 
     const kills = Array.isArray(entry.kills) ? entry.kills : [];
+    const team = sanitizeText(entry.team);
+    if (!team) continue;
 
     out[String(userId)] = {
-      team: sanitizeString(entry.team),
+      team,
       slot: Number(entry.slot || 0),
       kills: [
         Number(kills[0] || 0),
@@ -341,35 +315,9 @@ function normalizeTempSubmit(tempValue) {
       ],
       total: Number(entry.total || 0),
       pos: Number(entry.pos || 0),
-      matchNumber: Number(entry.matchNumber || 1),
-      teamResultChannelId: sanitizeString(entry.teamResultChannelId)
+      matchNumber: sanitizePositiveInteger(entry.matchNumber, 1, 50),
+      teamResultChannelId: sanitizeText(entry.teamResultChannelId || '')
     };
-  }
-
-  return out;
-}
-
-function normalizeScores(value) {
-  const safe = isObject(value) ? value : {};
-  const out = {};
-
-  for (const [key, points] of Object.entries(safe)) {
-    const cleanKey = sanitizeString(key);
-    if (!cleanKey) continue;
-    out[cleanKey] = Number(points || 0);
-  }
-
-  return out;
-}
-
-function normalizeFragger(value) {
-  const safe = isObject(value) ? value : {};
-  const out = {};
-
-  for (const [key, kills] of Object.entries(safe)) {
-    const cleanKey = sanitizeString(key);
-    if (!cleanKey) continue;
-    out[cleanKey] = Number(kills || 0);
   }
 
   return out;
@@ -382,20 +330,63 @@ function normalizeResultSubmissions(value) {
   for (const [key, entry] of Object.entries(safe)) {
     if (!isObject(entry)) continue;
 
-    const cleanKey = sanitizeString(key);
-    const team = sanitizeString(entry.team);
+    const team = sanitizeText(entry.team);
+    const matchNumber = sanitizePositiveInteger(entry.matchNumber, 1, 50);
 
-    if (!cleanKey || !team) continue;
+    if (!team) continue;
+
+    const cleanKey = sanitizeText(key) || `${team.toLowerCase()}::match_${matchNumber}`;
+
+    let status = sanitizeText(entry.status || 'non_inviato');
+
+    const allowedStatuses = [
+      'non_inviato',
+      'in_attesa',
+      'approvato',
+      'rifiutato',
+      'assente',
+      'inserito_manualmente'
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      status = 'non_inviato';
+    }
 
     out[cleanKey] = {
       team,
-      matchNumber: sanitizePositiveInteger(entry.matchNumber, 1, 9999),
-      status: sanitizeString(entry.status, 'non_inviato') || 'non_inviato',
+      matchNumber,
+      status,
       pendingId: entry.pendingId || null,
-      updatedAt: sanitizeString(entry.updatedAt),
-      updatedBy: sanitizeString(entry.updatedBy),
-      source: sanitizeString(entry.source)
+      updatedAt: sanitizeText(entry.updatedAt || ''),
+      updatedBy: sanitizeText(entry.updatedBy || ''),
+      source: sanitizeText(entry.source || '')
     };
+  }
+
+  return out;
+}
+
+function normalizeScores(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [key, points] of Object.entries(safe)) {
+    const cleanKey = sanitizeText(key);
+    if (!cleanKey) continue;
+    out[cleanKey] = Number(points || 0);
+  }
+
+  return out;
+}
+
+function normalizeFragger(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [key, kills] of Object.entries(safe)) {
+    const cleanKey = sanitizeText(key);
+    if (!cleanKey) continue;
+    out[cleanKey] = Number(kills || 0);
   }
 
   return out;
@@ -405,7 +396,8 @@ function normalizeData(data) {
   const base = getDefaultData();
   const safe = isObject(data) ? data : {};
 
-  base.currentMatch = sanitizePositiveInteger(safe.currentMatch, 1, 9999);
+  base.currentMatch = sanitizePositiveInteger(safe.currentMatch, 1, 50);
+
   base.pending = normalizePending(safe.pending);
   base.tempSubmit = normalizeTempSubmit(safe.tempSubmit);
   base.resultSubmissions = normalizeResultSubmissions(safe.resultSubmissions);
@@ -418,25 +410,13 @@ function normalizeData(data) {
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
-  const maxTeams = sanitizePositiveInteger(safe.registrationMaxTeams, 16, 16);
-  base.registrationMaxTeams = Math.min(maxTeams, 16);
-
-  base.registrationStatusTitle =
-    sanitizeString(safe.registrationStatusTitle, base.registrationStatusTitle) ||
-    base.registrationStatusTitle;
-
-  base.registrationStatusText = sanitizeString(safe.registrationStatusText);
+  base.registrationMaxTeams = MAX_TEAMS;
+  base.registrationStatusTitle = sanitizeText(safe.registrationStatusTitle || base.registrationStatusTitle) || base.registrationStatusTitle;
+  base.registrationStatusText = sanitizeText(safe.registrationStatusText || '');
 
   base.projectSettings = normalizeProjectSettings(safe.projectSettings);
-
-  base.tournamentSettings = normalizeTournamentSettings(
-    safe.tournamentSettings || {
-      tournamentName: safe.projectSettings?.tournamentName,
-      totalMatches: safe.totalMatches,
-      playersPerTeam: safe.playersPerTeam,
-      maxTeams: safe.registrationMaxTeams
-    }
-  );
+  base.tournamentSettings = normalizeTournamentSettings(safe.tournamentSettings);
+  base.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
 
   base.botSettings = normalizeBotSettings(
     safe.botSettings || {
@@ -444,11 +424,23 @@ function normalizeData(data) {
       registerPanelChannelId: safe.registerPanelChannelId,
       resultsPanelMessageId: safe.resultsPanelMessageId,
       resultsPanelChannelId: safe.resultsPanelChannelId,
-      roomsCategoryId: safe.roomsCategoryId
+      roomsCategoryId: safe.roomsCategoryId || safe.categoryId,
+      generalChannelId: safe.generalChannelId,
+      rulesChannelId: safe.rulesChannelId,
+      lobbyChannelId: safe.lobbyChannelId
     }
   );
 
-  base.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
+  if (base.currentMatch > base.tournamentSettings.totalMatches) {
+    base.currentMatch = base.tournamentSettings.totalMatches;
+  }
+
+  base.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+  base.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
+  base.tournamentSettings.playersPerTeam = PLAYERS_PER_TEAM;
+  base.tournamentSettings.maxTeams = MAX_TEAMS;
+  base.tournamentSettings.lockedRules = true;
+  base.tournamentSettings.lockedPoints = true;
 
   return base;
 }
@@ -459,9 +451,9 @@ function normalizeTeams(teams) {
   const usedSlots = new Set();
   const needsSlot = [];
 
-  for (const [teamName, teamData] of Object.entries(safe)) {
-    const cleanTeamName = sanitizeString(teamName);
-    if (!cleanTeamName || !isObject(teamData)) continue;
+  for (const [teamNameRaw, teamData] of Object.entries(safe)) {
+    const teamName = sanitizeText(teamNameRaw);
+    if (!teamName || !isObject(teamData)) continue;
 
     const players = Array.isArray(teamData.players) ? teamData.players : [];
     const slotValue = Number(teamData.slot);
@@ -470,23 +462,23 @@ function normalizeTeams(teams) {
     if (
       Number.isInteger(slotValue) &&
       slotValue >= 1 &&
-      slotValue <= 16 &&
+      slotValue <= MAX_TEAMS &&
       !usedSlots.has(slotValue)
     ) {
       slot = slotValue;
       usedSlots.add(slotValue);
     }
 
-    temp[cleanTeamName] = {
+    temp[teamName] = {
       slot,
       players: [
-        sanitizeString(players[0]),
-        sanitizeString(players[1]),
-        sanitizeString(players[2])
+        sanitizeText(players[0] || ''),
+        sanitizeText(players[1] || ''),
+        sanitizeText(players[2] || '')
       ]
     };
 
-    if (!slot) needsSlot.push(cleanTeamName);
+    if (!slot) needsSlot.push(teamName);
   }
 
   const sortedNeeding = needsSlot.sort((a, b) => a.localeCompare(b, 'it'));
@@ -494,7 +486,7 @@ function normalizeTeams(teams) {
   for (const teamName of sortedNeeding) {
     let assigned = null;
 
-    for (let i = 1; i <= 16; i++) {
+    for (let i = 1; i <= MAX_TEAMS; i++) {
       if (!usedSlots.has(i)) {
         assigned = i;
         usedSlots.add(i);
@@ -502,10 +494,37 @@ function normalizeTeams(teams) {
       }
     }
 
+    if (!assigned) {
+      delete temp[teamName];
+      continue;
+    }
+
     temp[teamName].slot = assigned;
   }
 
-  return temp;
+  const sorted = Object.entries(temp)
+    .sort((a, b) => {
+      const slotA = Number(a[1]?.slot || 999999);
+      const slotB = Number(b[1]?.slot || 999999);
+      if (slotA !== slotB) return slotA - slotB;
+      return a[0].localeCompare(b[0], 'it');
+    })
+    .slice(0, MAX_TEAMS);
+
+  const out = {};
+
+  for (const [teamName, teamData] of sorted) {
+    out[teamName] = {
+      slot: teamData.slot,
+      players: [
+        sanitizeText(teamData.players[0] || ''),
+        sanitizeText(teamData.players[1] || ''),
+        sanitizeText(teamData.players[2] || '')
+      ]
+    };
+  }
+
+  return out;
 }
 
 function normalizeAuditLog(value) {
@@ -514,11 +533,11 @@ function normalizeAuditLog(value) {
   return value
     .filter(entry => isObject(entry))
     .map(entry => ({
-      id: sanitizeString(entry.id) || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: sanitizeString(entry.timestamp) || new Date().toISOString(),
-      actor: sanitizeString(entry.actor, 'system') || 'system',
-      source: sanitizeString(entry.source, 'system') || 'system',
-      action: sanitizeString(entry.action, 'unknown') || 'unknown',
+      id: sanitizeText(entry.id || '') || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: sanitizeText(entry.timestamp || new Date().toISOString()),
+      actor: sanitizeText(entry.actor || 'system') || 'system',
+      source: sanitizeText(entry.source || 'system') || 'system',
+      action: sanitizeText(entry.action || 'unknown') || 'unknown',
       details: isObject(entry.details) ? entry.details : {}
     }))
     .slice(-1000);
@@ -529,6 +548,7 @@ function readJsonSafe(filePath) {
     if (!fs.existsSync(filePath)) return null;
 
     const raw = fs.readFileSync(filePath, 'utf8');
+
     if (!raw || !raw.trim()) return null;
 
     return JSON.parse(raw);
@@ -542,6 +562,7 @@ function atomicWriteJson(filePath, data) {
   ensureDir(path.dirname(filePath));
 
   const tmpPath = `${filePath}.tmp`;
+
   fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
   fs.renameSync(tmpPath, filePath);
 }
@@ -580,6 +601,7 @@ function loadData() {
 
   if (main) {
     const safe = normalizeData(main);
+    writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
     return safe;
   }
 
@@ -601,6 +623,7 @@ function loadTeams() {
 
   if (main) {
     const safe = normalizeTeams(main);
+    writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safe);
     return safe;
   }
 
@@ -622,6 +645,7 @@ function loadAuditLog() {
 
   if (main) {
     const safe = normalizeAuditLog(main);
+    writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safe);
     return safe;
   }
 
@@ -672,15 +696,16 @@ function appendAuditLog(entry) {
   const newEntry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     timestamp: new Date().toISOString(),
-    actor: sanitizeString(entry?.actor, 'system') || 'system',
-    source: sanitizeString(entry?.source, 'system') || 'system',
-    action: sanitizeString(entry?.action, 'unknown') || 'unknown',
+    actor: sanitizeText(entry?.actor || 'system') || 'system',
+    source: sanitizeText(entry?.source || 'system') || 'system',
+    action: sanitizeText(entry?.action || 'unknown') || 'unknown',
     details: isObject(entry?.details) ? entry.details : {}
   };
 
   logs.push(newEntry);
 
   const trimmed = logs.slice(-1000);
+
   saveAuditLog(trimmed);
 
   return newEntry;
@@ -691,6 +716,7 @@ function createTournamentArchive(data, teams, meta = {}) {
 
   const safeData = normalizeData(data);
   const safeTeams = normalizeTeams(teams);
+
   const now = new Date();
   const stamp = now.toISOString().replace(/[:.]/g, '-');
   const archiveId = `archive-${stamp}-${Math.random().toString(36).slice(2, 7)}`;
@@ -699,16 +725,26 @@ function createTournamentArchive(data, teams, meta = {}) {
     archiveId,
     createdAt: now.toISOString(),
     meta: {
-      label: sanitizeString(meta.label) || `Snapshot ${now.toLocaleString('it-IT')}`,
-      actor: sanitizeString(meta.actor, 'system') || 'system',
-      note: sanitizeString(meta.note),
-      source: sanitizeString(meta.source, 'system') || 'system'
+      label: sanitizeText(meta.label || '') || `Snapshot ${now.toLocaleString('it-IT')}`,
+      actor: sanitizeText(meta.actor || 'system') || 'system',
+      note: sanitizeText(meta.note || ''),
+      source: sanitizeText(meta.source || 'system') || 'system'
+    },
+    summary: {
+      tournamentName: FIXED_TOURNAMENT_NAME,
+      currentMatch: Number(safeData.currentMatch || 1),
+      totalMatches: Number(safeData.tournamentSettings?.totalMatches || 3),
+      teamCount: Object.keys(safeTeams || {}).length,
+      pendingCount: Object.keys(safeData.pending || {}).length,
+      scoreCount: Object.keys(safeData.scores || {}).length,
+      fraggerCount: Object.keys(safeData.fragger || {}).length
     },
     data: safeData,
     teams: safeTeams
   };
 
   const archivePath = path.join(ARCHIVES_DIR, `${archiveId}.json`);
+
   atomicWriteJson(archivePath, payload);
 
   return payload;
@@ -717,8 +753,7 @@ function createTournamentArchive(data, teams, meta = {}) {
 function listTournamentArchives() {
   ensureDir(ARCHIVES_DIR);
 
-  const files = fs
-    .readdirSync(ARCHIVES_DIR)
+  const files = fs.readdirSync(ARCHIVES_DIR)
     .filter(file => file.endsWith('.json'))
     .sort((a, b) => b.localeCompare(a, 'it'));
 
@@ -726,20 +761,26 @@ function listTournamentArchives() {
 
   for (const file of files.slice(0, 100)) {
     const payload = readJsonSafe(path.join(ARCHIVES_DIR, file));
+
     if (!payload || !isObject(payload)) continue;
 
+    const safeData = normalizeData(payload.data || {});
+    const safeTeams = normalizeTeams(payload.teams || {});
+
     archives.push({
-      archiveId: sanitizeString(payload.archiveId) || file.replace(/\.json$/i, ''),
-      createdAt: sanitizeString(payload.createdAt),
-      label: sanitizeString(payload.meta?.label),
-      actor: sanitizeString(payload.meta?.actor),
-      note: sanitizeString(payload.meta?.note),
-      source: sanitizeString(payload.meta?.source),
-      teamCount: Object.keys(payload.teams || {}).length,
-      pendingCount: Object.keys(payload.data?.pending || {}).length,
-      currentMatch: Number(payload.data?.currentMatch || 1),
-      totalMatches: Number(payload.data?.tournamentSettings?.totalMatches || 3),
-      tournamentName: 'RØDA CUP'
+      archiveId: sanitizeText(payload.archiveId || file.replace(/\.json$/i, '')),
+      createdAt: sanitizeText(payload.createdAt || ''),
+      label: sanitizeText(payload.meta?.label || ''),
+      actor: sanitizeText(payload.meta?.actor || ''),
+      note: sanitizeText(payload.meta?.note || ''),
+      source: sanitizeText(payload.meta?.source || ''),
+      tournamentName: FIXED_TOURNAMENT_NAME,
+      teamCount: Object.keys(safeTeams || {}).length,
+      pendingCount: Object.keys(safeData.pending || {}).length,
+      scoreCount: Object.keys(safeData.scores || {}).length,
+      fraggerCount: Object.keys(safeData.fragger || {}).length,
+      currentMatch: Number(safeData.currentMatch || 1),
+      totalMatches: Number(safeData.tournamentSettings?.totalMatches || 3)
     });
   }
 
@@ -747,7 +788,8 @@ function listTournamentArchives() {
 }
 
 function getTournamentArchive(archiveId) {
-  const safeId = sanitizeString(archiveId);
+  const safeId = sanitizeText(archiveId);
+
   if (!safeId) return null;
 
   const archivePath = path.join(ARCHIVES_DIR, `${safeId}.json`);
@@ -756,14 +798,15 @@ function getTournamentArchive(archiveId) {
   if (!payload || !isObject(payload)) return null;
 
   return {
-    archiveId: sanitizeString(payload.archiveId) || safeId,
-    createdAt: sanitizeString(payload.createdAt),
+    archiveId: sanitizeText(payload.archiveId || safeId),
+    createdAt: sanitizeText(payload.createdAt || ''),
     meta: {
-      label: sanitizeString(payload.meta?.label),
-      actor: sanitizeString(payload.meta?.actor),
-      note: sanitizeString(payload.meta?.note),
-      source: sanitizeString(payload.meta?.source)
+      label: sanitizeText(payload.meta?.label || ''),
+      actor: sanitizeText(payload.meta?.actor || ''),
+      note: sanitizeText(payload.meta?.note || ''),
+      source: sanitizeText(payload.meta?.source || '')
     },
+    summary: isObject(payload.summary) ? payload.summary : {},
     data: normalizeData(payload.data),
     teams: normalizeTeams(payload.teams)
   };
@@ -777,22 +820,36 @@ module.exports = {
   TEAMS_FILE,
   AUDIT_LOG_FILE,
   UPLOADS_DIR,
+
   initializeFiles,
+
   loadData,
   loadTeams,
   loadAuditLog,
+
   saveData,
   saveTeams,
   saveAuditLog,
   saveAll,
+
   appendAuditLog,
+
   createTournamentArchive,
   listTournamentArchives,
   getTournamentArchive,
+
   getDefaultData,
   getDefaultTeams,
+  getDefaultAuditLog,
   getDefaultProjectSettings,
   getDefaultTournamentSettings,
+  getDefaultTournamentMessages,
   getDefaultBotSettings,
-  getDefaultTournamentMessages
+
+  normalizeData,
+  normalizeTeams,
+  normalizeProjectSettings,
+  normalizeTournamentSettings,
+  normalizeTournamentMessages,
+  normalizeBotSettings
 };
