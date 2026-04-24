@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Oxanium:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     html, body {
@@ -20,7 +20,7 @@
     }
 
     body {
-      font-family: 'Rajdhani', sans-serif;
+      font-family: 'Oxanium', sans-serif;
     }
 
     .canvas {
@@ -34,10 +34,11 @@
       background-position: center;
     }
 
+    /* POSIZIONE ATTUALE DELLA TABELLA - LASCIATA STABILE */
     .table-wrap {
       position: absolute;
-      left: 102px;
-      top: 236px;
+      left: 100px;
+      top: 245px;
       width: 1444px;
       height: 620px;
       z-index: 2;
@@ -55,7 +56,7 @@
     col.col-points { width: 22%; }
 
     thead th {
-      height: 52px;
+      height: 50px;
       text-align: center;
       vertical-align: middle;
       color: #ffffff;
@@ -66,19 +67,21 @@
       text-transform: uppercase;
       background: linear-gradient(
         180deg,
-        rgba(138, 72, 255, 0.96) 0%,
-        rgba(108, 43, 230, 0.96) 45%,
-        rgba(77, 23, 173, 0.96) 100%
+        rgba(160, 95, 255, 0.98) 0%,
+        rgba(120, 48, 242, 0.97) 45%,
+        rgba(88, 28, 194, 0.97) 100%
       );
-      border: 2px solid rgba(205, 175, 255, 0.24);
+      border: 2px solid rgba(225, 205, 255, 0.35);
       border-radius: 16px;
       box-shadow:
-        0 0 8px rgba(137, 71, 255, 0.40),
-        0 0 18px rgba(137, 71, 255, 0.20),
-        inset 0 0 10px rgba(255,255,255,0.08);
+        0 0 10px rgba(163, 98, 255, 0.75),
+        0 0 22px rgba(163, 98, 255, 0.45),
+        0 0 36px rgba(163, 98, 255, 0.22),
+        inset 0 0 10px rgba(255,255,255,0.10);
       text-shadow:
-        0 0 6px rgba(255,255,255,0.15),
-        0 0 14px rgba(190, 150, 255, 0.30);
+        0 0 6px rgba(255,255,255,0.20),
+        0 0 16px rgba(214, 180, 255, 0.55),
+        0 0 28px rgba(176, 110, 255, 0.30);
       box-sizing: border-box;
     }
 
@@ -88,47 +91,69 @@
       vertical-align: middle;
       border-radius: 12px;
       box-sizing: border-box;
-      background: rgba(255,255,255,0.015);
-      border: 2px solid rgba(186, 139, 255, 0.62);
-      color: #472172;
-      font-size: 17px;
-      font-weight: 700;
+      background: rgba(255,255,255,0.025);
+      border: 2px solid rgba(185, 134, 255, 0.82);
+      color: #4b1e7d;
       box-shadow:
-        0 0 4px rgba(170, 120, 255, 0.12),
-        inset 0 0 6px rgba(255,255,255,0.03);
+        0 0 6px rgba(170, 115, 255, 0.22),
+        0 0 14px rgba(170, 115, 255, 0.08),
+        inset 0 0 6px rgba(255,255,255,0.05);
       text-shadow:
-        0 0 3px rgba(255,255,255,0.10);
+        0 0 4px rgba(255,255,255,0.12),
+        0 0 10px rgba(210, 175, 255, 0.18);
     }
 
     tbody td.pos-cell,
     tbody td.points-cell {
       font-family: 'Orbitron', sans-serif;
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.3px;
     }
 
     tbody td.team-cell {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 21px;
+      font-family: 'Oxanium', sans-serif;
+      font-size: 19px;
       font-weight: 700;
       padding: 0 14px;
+      letter-spacing: 0.2px;
     }
 
+    /* TOP 3 PIU' EVIDENTI */
     tbody tr.top-3 td {
-      color: #3c125f;
-      border-color: rgba(176, 120, 255, 0.88);
+      color: #3f126c;
+      border-color: rgba(178, 116, 255, 0.98);
+      background: rgba(255,255,255,0.035);
       box-shadow:
-        0 0 7px rgba(160, 96, 255, 0.22),
-        inset 0 0 7px rgba(255,255,255,0.05);
+        0 0 8px rgba(176, 110, 255, 0.34),
+        0 0 18px rgba(176, 110, 255, 0.14),
+        inset 0 0 8px rgba(255,255,255,0.08);
       text-shadow:
-        0 0 5px rgba(190, 145, 255, 0.12);
+        0 0 6px rgba(255,255,255,0.14),
+        0 0 10px rgba(210, 175, 255, 0.20);
     }
 
+    /* RIGHE VUOTE: PIU' VISIBILI, NON SBIADITE */
     tbody tr.empty-row td {
-      color: rgba(71, 33, 114, 0.28);
+      border-color: rgba(180, 128, 255, 0.78);
+      background: rgba(255,255,255,0.018);
       box-shadow:
-        inset 0 0 4px rgba(255,255,255,0.02);
+        0 0 5px rgba(174, 118, 255, 0.16),
+        inset 0 0 4px rgba(255,255,255,0.03);
+    }
+
+    /* DAL 4° IN POI LA POSIZIONE DEVE RESTARE LEGGIBILE */
+    tbody tr.empty-row td.pos-cell {
+      color: rgba(94, 48, 150, 0.58);
+      text-shadow:
+        0 0 4px rgba(255,255,255,0.08),
+        0 0 8px rgba(192, 156, 255, 0.14);
+    }
+
+    /* CELLE VUOTE TEAM/PUNTI RESTANO VUOTE MA CON GRIGLIA VISIBILE */
+    tbody tr.empty-row td.team-cell,
+    tbody tr.empty-row td.points-cell {
+      color: transparent;
       text-shadow: none;
     }
   </style>
@@ -170,8 +195,13 @@
       const tr = document.createElement('tr');
       const entry = previewData[i] || null;
 
-      if (i < 3 && entry) tr.classList.add('top-3');
-      if (!entry) tr.classList.add('empty-row');
+      if (i < 3 && entry) {
+        tr.classList.add('top-3');
+      }
+
+      if (!entry) {
+        tr.classList.add('empty-row');
+      }
 
       tr.innerHTML = `
         <td class="pos-cell">${i + 1}°</td>
