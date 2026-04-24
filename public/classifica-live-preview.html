@@ -10,24 +10,30 @@
       --canvas-width: 1672px;
       --canvas-height: 941px;
 
+      /* POSIZIONE TABELLA */
       --table-left: 100px;
       --table-top: 248px;
       --table-width: 1440px;
 
+      /* COLONNE */
       --col-pos: 300px;
       --col-team: 820px;
       --col-points: 320px;
 
+      /* DIMENSIONI */
       --header-height: 44px;
       --row-height: 28px;
       --header-gap: 10px;
       --row-gap: 8px;
 
+      /* COLORI */
       --purple-main: #7d35ff;
-      --purple-dark: #5720c7;
+      --purple-dark: #5f24d1;
+      --purple-darker: #4f18bb;
       --purple-border: rgba(165, 108, 255, 0.95);
       --purple-soft: rgba(180, 130, 255, 0.9);
-      --text-dark: #3d168c;
+
+      --text-dark: #431b9a;
       --text-light: #ffffff;
     }
 
@@ -79,7 +85,6 @@
     .grid-row {
       display: grid;
       grid-template-columns: var(--col-pos) var(--col-team) var(--col-points);
-      column-gap: 0;
       align-items: center;
       width: 100%;
     }
@@ -105,6 +110,7 @@
       overflow: hidden;
     }
 
+    /* HEADER */
     .header-cell {
       background: linear-gradient(180deg, #8c49ff 0%, #732be8 45%, #5d1fcf 100%);
       border: 2px solid rgba(174, 125, 255, 0.95);
@@ -122,9 +128,10 @@
         inset 0 0 12px rgba(255, 255, 255, 0.10);
     }
 
+    /* RIGHE NORMALI */
     .body-cell {
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px solid rgba(182, 136, 255, 0.92);
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid rgba(182, 136, 255, 0.95);
       color: var(--text-dark);
       font-weight: 900;
       font-size: 18px;
@@ -133,15 +140,35 @@
         0 0 5px rgba(255, 255, 255, 0.35),
         0 0 8px rgba(160, 98, 255, 0.18);
       box-shadow:
-        0 0 8px rgba(166, 105, 255, 0.18),
-        inset 0 0 10px rgba(255, 255, 255, 0.05);
+        0 0 8px rgba(166, 105, 255, 0.16),
+        inset 0 0 10px rgba(255, 255, 255, 0.04);
     }
 
     .body-row.has-data .body-cell {
       border-color: rgba(160, 102, 255, 1);
       box-shadow:
-        0 0 10px rgba(157, 93, 255, 0.22),
-        inset 0 0 10px rgba(255, 255, 255, 0.06);
+        0 0 10px rgba(157, 93, 255, 0.20),
+        inset 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    /* SOLO PRIMA RIGA -> STILE TOP FRAGGER */
+    .body-row.first-place .body-cell {
+      background: linear-gradient(
+        180deg,
+        rgba(146, 95, 255, 0.88) 0%,
+        rgba(116, 56, 231, 0.90) 45%,
+        rgba(87, 30, 194, 0.92) 100%
+      );
+      border: 2px solid rgba(214, 183, 255, 0.98);
+      color: #ffffff;
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.45),
+        0 0 16px rgba(190, 130, 255, 0.88),
+        0 0 26px rgba(122, 44, 255, 0.72);
+      box-shadow:
+        0 0 14px rgba(137, 70, 255, 0.45),
+        0 0 26px rgba(173, 108, 255, 0.30),
+        inset 0 0 14px rgba(255, 255, 255, 0.10);
     }
 
     .pos-cell,
@@ -157,7 +184,7 @@
     }
 
     .empty {
-      color: rgba(78, 27, 152, 0.34);
+      color: rgba(78, 27, 152, 0.42);
       text-shadow: none;
     }
   </style>
@@ -183,36 +210,46 @@
 
   <script>
     const rowsCount = 16;
-    const tbody = document.getElementById("table-body");
+    const tbody = document.getElementById('table-body');
 
     function formatPosition(index) {
       return `${index + 1}°`;
     }
 
     function renderTable(data) {
-      tbody.innerHTML = "";
+      tbody.innerHTML = '';
 
       for (let i = 0; i < rowsCount; i++) {
         const item = data[i] || null;
-        const row = document.createElement("div");
-        row.className = `grid-row body-row ${item ? "has-data" : ""}`;
 
-        const pos = document.createElement("div");
-        pos.className = `cell body-cell pos-cell ${item ? "" : "empty"}`;
+        const row = document.createElement('div');
+        row.className = 'grid-row body-row';
+
+        if (item) row.classList.add('has-data');
+
+        /* SOLO LA PRIMA RIGA POPOLATA PRENDE LO STILE TOP FRAGGER */
+        if (item && i === 0) {
+          row.classList.add('first-place');
+        }
+
+        const pos = document.createElement('div');
+        pos.className = `cell body-cell pos-cell ${item ? '' : 'empty'}`;
         pos.textContent = formatPosition(i);
 
-        const team = document.createElement("div");
-        team.className = `cell body-cell team-cell ${item ? "" : "empty"}`;
-        team.textContent = item?.team ? String(item.team).toUpperCase() : "";
+        const team = document.createElement('div');
+        team.className = `cell body-cell team-cell ${item ? '' : 'empty'}`;
+        team.textContent = item?.team
+          ? String(item.team).toUpperCase()
+          : '';
 
-        const points = document.createElement("div");
-        points.className = `cell body-cell points-cell ${item ? "" : "empty"}`;
+        const points = document.createElement('div');
+        points.className = `cell body-cell points-cell ${item ? '' : 'empty'}`;
         points.textContent =
           item?.punti !== undefined && item?.punti !== null
-            ? item.punti
+            ? String(item.punti)
             : item?.points !== undefined && item?.points !== null
-            ? item.points
-            : "";
+            ? String(item.points)
+            : '';
 
         row.appendChild(pos);
         row.appendChild(team);
