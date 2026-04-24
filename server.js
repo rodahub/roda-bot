@@ -16,7 +16,9 @@ const {
   getTournamentArchive,
   getDefaultData,
   getDefaultProjectSettings,
+  getDefaultTournamentSettings,
   getDefaultBotSettings,
+  getDefaultTournamentMessages,
   UPLOADS_DIR
 } = require('./storage');
 
@@ -36,6 +38,10 @@ const DASHBOARD_COOKIE_SECRET = process.env.DASHBOARD_COOKIE_SECRET || 'change-t
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 
+const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
+const MAX_TEAMS = 16;
+const PLAYERS_PER_TEAM = 3;
+
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -53,6 +59,7 @@ function parseCookies(cookieHeader) {
   for (const part of parts) {
     const index = part.indexOf('=');
     if (index === -1) continue;
+
     const key = part.slice(0, index).trim();
     const value = decodeURIComponent(part.slice(index + 1).trim());
     out[key] = value;
@@ -90,6 +97,7 @@ function createToken(email) {
 
   const encoded = toBase64Url(JSON.stringify(payload));
   const signature = sign(encoded);
+
   return `${encoded}.${signature}`;
 }
 
@@ -154,7 +162,10 @@ function authRequired(req, res, next) {
 
   if (!session) {
     if (req.originalUrl.startsWith('/api/')) {
-      return res.status(401).json({ ok: false, message: 'Accesso non autorizzato' });
+      return res.status(401).json({
+        ok: false,
+        message: 'Accesso non autorizzato'
+      });
     }
 
     return res.redirect('/login');
@@ -172,9 +183,10 @@ function sanitizeOptionalText(value, maxLength = 200) {
   return String(value || '').trim().slice(0, maxLength);
 }
 
-function sanitizePositiveInteger(value, fallback = 1) {
+function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
   const num = Number(value);
-  return Number.isInteger(num) && num > 0 ? num : fallback;
+  if (!Number.isInteger(num) || num <= 0) return fallback;
+  return Math.min(num, max);
 }
 
 function sanitizeBoolean(value) {
@@ -207,6 +219,7 @@ function sortTeamsWithSlot(teams) {
   return Object.entries(teams || {}).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
     const slotB = Number(b[1]?.slot || 999999);
+
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -271,7 +284,8 @@ function getResultSubmissionRecord(data, teamName, matchNumber) {
       stato: saved.status || 'non_inviato',
       pendingId: saved.pendingId || null,
       aggiornatoIl: saved.updatedAt || '',
-      aggiornatoDa: saved.updatedBy || ''
+      aggiornatoDa: saved.updatedBy || '',
+      origine: saved.source || ''
     };
   }
 
@@ -284,7 +298,8 @@ function getResultSubmissionRecord(data, teamName, matchNumber) {
       stato: 'in_attesa',
       pendingId: pending.id,
       aggiornatoIl: '',
-      aggiornatoDa: pending.submittedBy || ''
+      aggiornatoDa: pending.submittedBy || '',
+      origine: pending.source || ''
     };
   }
 
@@ -294,7 +309,8 @@ function getResultSubmissionRecord(data, teamName, matchNumber) {
     stato: 'non_inviato',
     pendingId: null,
     aggiornatoIl: '',
-    aggiornatoDa: ''
+    aggiornatoDa: '',
+    origine: ''
   };
 }
 
@@ -328,6 +344,7 @@ function buildMatchTeamRows(data, teams, matchNumber) {
       pendingId: record.pendingId || pending?.id || null,
       aggiornatoIl: record.aggiornatoIl || '',
       aggiornatoDa: record.aggiornatoDa || '',
+      origine: record.origine || '',
       risultato: pending
         ? {
             id: pending.id,
@@ -371,11 +388,11 @@ function buildMatchOverview(data, teams, matchNumber) {
 }
 
 function buildAllMatchOverviews(data, teams) {
-  const currentMatch = Number(data.currentMatch || 1);
-  const matchCount = Math.max(currentMatch, 1);
+  const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
+  const totalMatches = Math.max(Number(tournamentSettings.totalMatches || 3), Number(data.currentMatch || 1), 1);
   const out = [];
 
-  for (let i = 1; i <= matchCount; i++) {
+  for (let i = 1; i <= totalMatches; i++) {
     out.push(buildMatchOverview(data, teams, i));
   }
 
@@ -400,15 +417,57 @@ function buildPending(pending, teams) {
   }));
 }
 
+function normalizeProjectSettings(projectSettings) {
+  const defaults = getDefaultProjectSettings();
+  const safe = projectSettings && typeof projectSettings === 'object' ? projectSettings : {};
+
+  return {
+    brandName: sanitizeText(safe.brandName) || defaults.brandName,
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    supportContact: sanitizeText(safe.supportContact),
+    premiumMode: Boolean(safe.premiumMode),
+    setupCompleted: Boolean(safe.setupCompleted)
+  };
+}
+
+function normalizeTournamentSettings(tournamentSettings) {
+  const defaults = getDefaultTournamentSettings();
+  const safe = tournamentSettings && typeof tournamentSettings === 'object' ? tournamentSettings : {};
+
+  return {
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    totalMatches: sanitizePositiveInteger(safe.totalMatches, defaults.totalMatches, 50),
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    createdAt: safe.createdAt || null,
+    createdBy: sanitizeText(safe.createdBy),
+    lastConfiguredAt: safe.lastConfiguredAt || null,
+    lastConfiguredBy: sanitizeText(safe.lastConfiguredBy)
+  };
+}
+
+function normalizeTournamentMessages(tournamentMessages) {
+  const defaults = getDefaultTournamentMessages();
+  const safe = tournamentMessages && typeof tournamentMessages === 'object' ? tournamentMessages : {};
+
+  return {
+    generalAnnouncement: sanitizeText(safe.generalAnnouncement) || defaults.generalAnnouncement,
+    lobbyInfoMessage: sanitizeText(safe.lobbyInfoMessage) || defaults.lobbyInfoMessage,
+    regulationText: defaults.regulationText
+  };
+}
+
 function buildSetupStatus(data) {
-  const projectSettings = data.projectSettings || getDefaultProjectSettings();
+  const projectSettings = normalizeProjectSettings(data.projectSettings);
   const botSettings = data.botSettings || getDefaultBotSettings();
 
   return {
     completato: Boolean(projectSettings.setupCompleted),
     controlli: {
       nomeBrand: Boolean(projectSettings.brandName),
-      nomeTorneo: Boolean(projectSettings.tournamentName),
+      nomeTorneo: projectSettings.tournamentName === FIXED_TOURNAMENT_NAME,
       canalePannelloRegistrazione: Boolean(botSettings.registerPanelChannelId),
       categoriaStanze: Boolean(botSettings.roomsCategoryId)
     }
@@ -417,6 +476,7 @@ function buildSetupStatus(data) {
 
 function saveBase64Image(imageData, req) {
   const match = String(imageData || '').match(/^data:(image\/png|image\/jpeg|image\/jpg|image\/webp);base64,(.+)$/);
+
   if (!match) {
     throw new Error('Formato immagine non valido');
   }
@@ -431,6 +491,7 @@ function saveBase64Image(imageData, req) {
 
   const baseUrl = getPublicBaseUrl(req);
   if (!baseUrl) return `/uploads/${fileName}`;
+
   return `${baseUrl}/uploads/${fileName}`;
 }
 
@@ -449,26 +510,29 @@ function logAudit(actor, source, action, details = {}) {
 
 function getPreservedSettings(data) {
   return {
-    projectSettings: {
-      ...(data.projectSettings || getDefaultProjectSettings())
-    },
+    projectSettings: normalizeProjectSettings(data.projectSettings),
+    tournamentSettings: normalizeTournamentSettings(data.tournamentSettings),
     botSettings: {
       ...(data.botSettings || getDefaultBotSettings())
     },
+    tournamentMessages: normalizeTournamentMessages(data.tournamentMessages),
     registrationStatusTitle: sanitizeText(data.registrationStatusTitle || '📋 Slot Team Registrati') || '📋 Slot Team Registrati',
     registrationStatusText: sanitizeText(data.registrationStatusText || ''),
-    registrationMaxTeams: sanitizePositiveInteger(data.registrationMaxTeams, 16),
+    registrationMaxTeams: MAX_TEAMS,
     registrationStatusMessageId: data.registrationStatusMessageId || null
   };
 }
 
 function applyPreservedSettings(targetData, preserved) {
   targetData.projectSettings = preserved.projectSettings;
+  targetData.tournamentSettings = preserved.tournamentSettings;
   targetData.botSettings = preserved.botSettings;
+  targetData.tournamentMessages = preserved.tournamentMessages;
   targetData.registrationStatusTitle = preserved.registrationStatusTitle;
   targetData.registrationStatusText = preserved.registrationStatusText;
-  targetData.registrationMaxTeams = preserved.registrationMaxTeams;
+  targetData.registrationMaxTeams = MAX_TEAMS;
   targetData.registrationStatusMessageId = preserved.registrationStatusMessageId;
+
   return targetData;
 }
 
@@ -563,13 +627,20 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
   const teams = loadTeams();
 
   const teamName = sanitizeText(team);
-  const targetMatch = sanitizePositiveInteger(matchNumber, Number(data.currentMatch || 1));
+  const targetMatch = sanitizePositiveInteger(matchNumber, Number(data.currentMatch || 1), 50);
 
   if (!teamName || !teams[teamName]) {
     throw new Error('Team non trovato');
   }
 
+  const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
+
+  if (targetMatch > tournamentSettings.totalMatches) {
+    throw new Error(`Il torneo ha solo ${tournamentSettings.totalMatches} match configurati.`);
+  }
+
   const check = canManualInsertResult(data, teamName, targetMatch);
+
   if (!check.allowed) {
     throw new Error(check.message);
   }
@@ -585,6 +656,7 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
   }
 
   const placement = Number(pos || 0);
+
   if (!Number.isFinite(placement) || placement <= 0) {
     throw new Error('Posizione non valida');
   }
@@ -608,7 +680,8 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
     status: 'inserito_manualmente',
     pendingId: null,
     updatedAt: new Date().toISOString(),
-    updatedBy: sanitizeText(req.staffUser || 'admin')
+    updatedBy: sanitizeText(req.staffUser || 'admin'),
+    source: 'web'
   };
 
   const saved = saveData(data);
@@ -650,6 +723,11 @@ function buildDashboardPayload() {
   const teams = loadTeams();
   const auditLog = loadAuditLog();
   const archives = listTournamentArchives();
+
+  const projectSettings = normalizeProjectSettings(data.projectSettings);
+  const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
+  const tournamentMessages = normalizeTournamentMessages(data.tournamentMessages);
+
   const currentMatch = Number(data.currentMatch || 1);
   const statoMatchCorrente = buildMatchOverview(data, teams, currentMatch);
 
@@ -686,27 +764,33 @@ function buildDashboardPayload() {
     impostazioniRegistrazione: {
       titolo: data.registrationStatusTitle || '📋 Slot Team Registrati',
       testo: data.registrationStatusText || '',
-      maxTeams: Number(data.registrationMaxTeams || 16)
+      maxTeams: MAX_TEAMS
     },
-    impostazioniProgetto: data.projectSettings || getDefaultProjectSettings(),
+    impostazioniProgetto: projectSettings,
+    impostazioniTorneo: tournamentSettings,
+    messaggiTorneo: tournamentMessages,
     statoSetup: buildSetupStatus(data),
     statistiche: {
       totaleTeam: Object.keys(teams).length,
       totalePending: Object.keys(data.pending || {}).length,
       totaleFragger: Object.keys(data.fragger || {}).length,
       teamMancantiMatchCorrente: statoMatchCorrente.teamMancanti.length,
-      risultatiInAttesaMatchCorrente: statoMatchCorrente.inAttesa
+      risultatiInAttesaMatchCorrente: statoMatchCorrente.inAttesa,
+      totaleMatch: tournamentSettings.totalMatches
     },
     auditLog: auditLog.slice(-120).reverse(),
-    archivi: archives
+    archivi: archives,
+    puntiUfficiali: loadPointsConfig()
   };
 }
 
 function buildPublicPayload(req) {
   const data = loadData();
   const teams = loadTeams();
-  const projectSettings = data.projectSettings || getDefaultProjectSettings();
-  const maxTeams = Number(data.registrationMaxTeams || 16);
+  const projectSettings = normalizeProjectSettings(data.projectSettings);
+  const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
+
+  const maxTeams = MAX_TEAMS;
   const teamOrdinati = sortTeamsWithSlot(teams).map(([teamName, teamData]) => ({
     team: teamName,
     slot: teamData.slot || null,
@@ -717,10 +801,12 @@ function buildPublicPayload(req) {
     ok: true,
     torneo: {
       brandName: projectSettings.brandName || 'RØDA',
-      tournamentName: projectSettings.tournamentName || 'RØDA CUP',
+      tournamentName: FIXED_TOURNAMENT_NAME,
       supportContact: projectSettings.supportContact || '',
       premiumMode: Boolean(projectSettings.premiumMode),
       matchCorrente: Number(data.currentMatch || 1),
+      totalMatches: tournamentSettings.totalMatches,
+      playersPerTeam: PLAYERS_PER_TEAM,
       teamRegistrati: Object.keys(teams).length,
       maxTeams,
       postiDisponibili: Math.max(maxTeams - Object.keys(teams).length, 0),
@@ -751,6 +837,7 @@ app.get('/login', (req, res) => {
   const session = verifyToken(token);
 
   if (session) return res.redirect('/admin');
+
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
 
@@ -772,23 +859,35 @@ app.post('/api/public/register-team', async (req, res) => {
     const p3 = sanitizeOptionalText(req.body.p3, 40);
 
     if (!teamName || !p1 || !p2 || !p3) {
-      return res.status(400).json({ ok: false, message: 'Compila tutti i campi richiesti.' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Compila tutti i campi richiesti.'
+      });
     }
 
     if (teams[teamName]) {
-      return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome.' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Esiste già un team con questo nome.'
+      });
     }
 
-    const maxTeams = Number(data.registrationMaxTeams || 16);
     const totalTeams = Object.keys(teams).length;
 
-    if (totalTeams >= maxTeams) {
-      return res.status(400).json({ ok: false, message: 'Le registrazioni sono chiuse: torneo pieno.' });
+    if (totalTeams >= MAX_TEAMS) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Le registrazioni sono chiuse: torneo pieno.'
+      });
     }
 
-    const slot = getNextAvailableSlot(teams, maxTeams);
+    const slot = getNextAvailableSlot(teams, MAX_TEAMS);
+
     if (!slot) {
-      return res.status(400).json({ ok: false, message: 'Nessuno slot disponibile.' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Nessuno slot disponibile.'
+      });
     }
 
     teams[teamName] = {
@@ -796,11 +895,14 @@ app.post('/api/public/register-team', async (req, res) => {
       players: [p1, p2, p3]
     };
 
-    if (Object.keys(teams).length < maxTeams) {
+    if (Object.keys(teams).length < MAX_TEAMS) {
       data.registrationClosedAnnounced = false;
     }
 
+    data.registrationMaxTeams = MAX_TEAMS;
+
     const saved = saveAll(data, teams);
+
     bot.setDataState(saved.data);
     bot.setTeamsState(saved.teams);
 
@@ -831,14 +933,21 @@ app.post('/api/login', (req, res) => {
 
   if (email !== DASHBOARD_EMAIL || password !== DASHBOARD_PASSWORD) {
     logAudit(email || 'unknown', 'web', 'login_fallito', {});
-    return res.status(401).json({ ok: false, message: 'Credenziali non valide' });
+    return res.status(401).json({
+      ok: false,
+      message: 'Credenziali non valide'
+    });
   }
 
   const token = createToken(email);
   res.setHeader('Set-Cookie', buildCookie(token));
 
   logAudit(email, 'web', 'login_riuscito', {});
-  return res.json({ ok: true, email });
+
+  return res.json({
+    ok: true,
+    email
+  });
 });
 
 app.get('/api/session', (req, res) => {
@@ -847,7 +956,10 @@ app.get('/api/session', (req, res) => {
   const session = verifyToken(token);
 
   if (!session) {
-    return res.status(401).json({ ok: false, autenticato: false });
+    return res.status(401).json({
+      ok: false,
+      autenticato: false
+    });
   }
 
   return res.json({
@@ -867,7 +979,10 @@ app.post('/api/logout', (req, res) => {
   }
 
   res.setHeader('Set-Cookie', clearCookie());
-  return res.json({ ok: true });
+
+  return res.json({
+    ok: true
+  });
 });
 
 app.get('/api/dashboard', authRequired, (req, res) => {
@@ -877,7 +992,7 @@ app.get('/api/dashboard', authRequired, (req, res) => {
 app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
   const data = loadData();
   const teams = loadTeams();
-  const matchNumber = sanitizePositiveInteger(req.params.matchNumber, Number(data.currentMatch || 1));
+  const matchNumber = sanitizePositiveInteger(req.params.matchNumber, Number(data.currentMatch || 1), 50);
 
   return res.json({
     ok: true,
@@ -885,15 +1000,133 @@ app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
   });
 });
 
+app.get('/api/tournament/settings', authRequired, (req, res) => {
+  const data = loadData();
+
+  return res.json({
+    ok: true,
+    impostazioniTorneo: normalizeTournamentSettings(data.tournamentSettings),
+    messaggiTorneo: normalizeTournamentMessages(data.tournamentMessages),
+    puntiUfficiali: loadPointsConfig()
+  });
+});
+
+app.post('/api/tournament/configure', authRequired, async (req, res) => {
+  try {
+    const data = loadData();
+    const teams = loadTeams();
+
+    const totalMatches = sanitizePositiveInteger(req.body.totalMatches, 3, 50);
+    const resetCurrentMatch = sanitizeBoolean(req.body.resetCurrentMatch);
+
+    data.projectSettings = normalizeProjectSettings(data.projectSettings);
+
+    data.tournamentSettings = {
+      ...normalizeTournamentSettings(data.tournamentSettings),
+      tournamentName: FIXED_TOURNAMENT_NAME,
+      totalMatches,
+      playersPerTeam: PLAYERS_PER_TEAM,
+      maxTeams: MAX_TEAMS,
+      lockedRules: true,
+      lockedPoints: true,
+      createdAt: data.tournamentSettings?.createdAt || new Date().toISOString(),
+      createdBy: data.tournamentSettings?.createdBy || req.staffUser,
+      lastConfiguredAt: new Date().toISOString(),
+      lastConfiguredBy: req.staffUser
+    };
+
+    data.registrationMaxTeams = MAX_TEAMS;
+
+    if (resetCurrentMatch) {
+      data.currentMatch = 1;
+    }
+
+    if (Number(data.currentMatch || 1) > totalMatches) {
+      data.currentMatch = totalMatches;
+    }
+
+    const saved = saveData(data);
+
+    bot.setDataState(saved);
+    bot.setTeamsState(teams);
+
+    await bot.refreshSavedPanels().catch(error => {
+      console.error('Errore refresh pannelli dopo configurazione torneo:', error);
+    });
+
+    await bot.updateLeaderboard().catch(error => {
+      console.error('Errore aggiornamento classifica dopo configurazione torneo:', error);
+    });
+
+    logAudit(req.staffUser, 'web', 'torneo_configurato', {
+      tournamentName: FIXED_TOURNAMENT_NAME,
+      totalMatches,
+      playersPerTeam: PLAYERS_PER_TEAM,
+      maxTeams: MAX_TEAMS,
+      resetCurrentMatch
+    });
+
+    return res.json({
+      ok: true,
+      impostazioniTorneo: normalizeTournamentSettings(saved.tournamentSettings)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore configurazione torneo'
+    });
+  }
+});
+
+app.post('/api/tournament/messages/save', authRequired, async (req, res) => {
+  try {
+    const data = loadData();
+    const defaults = getDefaultTournamentMessages();
+
+    data.tournamentMessages = {
+      generalAnnouncement: sanitizeOptionalText(req.body.generalAnnouncement, 3000) || defaults.generalAnnouncement,
+      lobbyInfoMessage: sanitizeOptionalText(req.body.lobbyInfoMessage, 1200) || defaults.lobbyInfoMessage,
+      regulationText: defaults.regulationText
+    };
+
+    const saved = saveData(data);
+    bot.setDataState(saved);
+
+    logAudit(req.staffUser, 'web', 'messaggi_torneo_salvati', {
+      generalAnnouncementLength: data.tournamentMessages.generalAnnouncement.length,
+      lobbyInfoMessageLength: data.tournamentMessages.lobbyInfoMessage.length,
+      regulationLocked: true
+    });
+
+    return res.json({
+      ok: true,
+      messaggiTorneo: normalizeTournamentMessages(saved.tournamentMessages)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore salvataggio messaggi torneo'
+    });
+  }
+});
+
 app.get('/api/audit-log', authRequired, (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit || 120), 1), 500);
   const auditLog = loadAuditLog().slice(-limit).reverse();
-  return res.json({ ok: true, auditLog });
+
+  return res.json({
+    ok: true,
+    auditLog
+  });
 });
 
 app.get('/api/archivi', authRequired, (req, res) => {
   const archivi = listTournamentArchives();
-  return res.json({ ok: true, archivi });
+
+  return res.json({
+    ok: true,
+    archivi
+  });
 });
 
 app.post('/api/archivi/crea', authRequired, (req, res) => {
@@ -913,22 +1146,36 @@ app.post('/api/archivi/crea', authRequired, (req, res) => {
       label: archive.meta.label
     });
 
-    return res.json({ ok: true, archivio: archive });
+    return res.json({
+      ok: true,
+      archivio: archive
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore creazione archivio' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore creazione archivio'
+    });
   }
 });
 
 app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
   try {
     const archiveId = sanitizeText(req.body.archiveId);
+
     if (!archiveId) {
-      return res.status(400).json({ ok: false, message: 'Archivio non valido' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Archivio non valido'
+      });
     }
 
     const archive = getTournamentArchive(archiveId);
+
     if (!archive) {
-      return res.status(404).json({ ok: false, message: 'Archivio non trovato' });
+      return res.status(404).json({
+        ok: false,
+        message: 'Archivio non trovato'
+      });
     }
 
     const currentData = loadData();
@@ -942,6 +1189,7 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
     });
 
     const saved = saveAll(archive.data, archive.teams);
+
     bot.setDataState(saved.data);
     bot.setTeamsState(saved.teams);
 
@@ -953,9 +1201,15 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
       label: archive.meta.label || ''
     });
 
-    return res.json({ ok: true, archiveId: archive.archiveId });
+    return res.json({
+      ok: true,
+      archiveId: archive.archiveId
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore ripristino archivio' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore ripristino archivio'
+    });
   }
 });
 
@@ -966,13 +1220,14 @@ app.post('/api/project-settings/save', authRequired, async (req, res) => {
     data.projectSettings = {
       ...(data.projectSettings || getDefaultProjectSettings()),
       brandName: sanitizeOptionalText(req.body.brandName, 60) || 'RØDA',
-      tournamentName: sanitizeOptionalText(req.body.tournamentName, 80) || 'RØDA CUP',
+      tournamentName: FIXED_TOURNAMENT_NAME,
       supportContact: sanitizeOptionalText(req.body.supportContact, 120),
       premiumMode: sanitizeBoolean(req.body.premiumMode),
       setupCompleted: sanitizeBoolean(req.body.setupCompleted)
     };
 
     const saved = saveData(data);
+
     bot.setDataState(saved);
 
     await bot.refreshSavedPanels();
@@ -980,14 +1235,20 @@ app.post('/api/project-settings/save', authRequired, async (req, res) => {
 
     logAudit(req.staffUser, 'web', 'impostazioni_progetto_salvate', {
       brandName: saved.projectSettings.brandName,
-      tournamentName: saved.projectSettings.tournamentName,
+      tournamentName: FIXED_TOURNAMENT_NAME,
       premiumMode: saved.projectSettings.premiumMode,
       setupCompleted: saved.projectSettings.setupCompleted
     });
 
-    return res.json({ ok: true, projectSettings: saved.projectSettings });
+    return res.json({
+      ok: true,
+      projectSettings: normalizeProjectSettings(saved.projectSettings)
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore salvataggio impostazioni progetto' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore salvataggio impostazioni progetto'
+    });
   }
 });
 
@@ -996,14 +1257,23 @@ app.post('/api/bot/settings/save', authRequired, async (req, res) => {
     const settings = bot.saveBotPanelSettings({
       registerPanelChannelId: sanitizeText(req.body.registerPanelChannelId),
       resultsPanelChannelId: sanitizeText(req.body.resultsPanelChannelId),
-      roomsCategoryId: sanitizeText(req.body.roomsCategoryId)
+      roomsCategoryId: sanitizeText(req.body.roomsCategoryId),
+      generalChannelId: sanitizeText(req.body.generalChannelId),
+      rulesChannelId: sanitizeText(req.body.rulesChannelId),
+      lobbyChannelId: sanitizeText(req.body.lobbyChannelId)
     });
 
     logAudit(req.staffUser, 'web', 'impostazioni_bot_salvate', settings);
 
-    return res.json({ ok: true, settings });
+    return res.json({
+      ok: true,
+      settings
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore salvataggio impostazioni bot' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore salvataggio impostazioni bot'
+    });
   }
 });
 
@@ -1018,18 +1288,26 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
   const p3 = sanitizeOptionalText(req.body.p3, 40);
 
   if (!teamName || !p1 || !p2 || !p3) {
-    return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/giocatori' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Compila tutti i campi team/giocatori'
+    });
   }
 
   if (oldTeamName && oldTeamName !== teamName && teams[teamName]) {
-    return res.status(400).json({ ok: false, message: 'Esiste già un team con questo nome' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Esiste già un team con questo nome'
+    });
   }
 
-  const limit = Number(data.registrationMaxTeams || 16);
   const isNewTeam = !oldTeamName || !teams[oldTeamName];
 
-  if (isNewTeam && Object.keys(teams).length >= limit) {
-    return res.status(400).json({ ok: false, message: `Limite massimo di ${limit} team raggiunto` });
+  if (isNewTeam && Object.keys(teams).length >= MAX_TEAMS) {
+    return res.status(400).json({
+      ok: false,
+      message: `Limite massimo di ${MAX_TEAMS} team raggiunto`
+    });
   }
 
   if (oldTeamName && oldTeamName !== teamName) {
@@ -1038,6 +1316,7 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
         slot: teams[oldTeamName].slot,
         players: [p1, p2, p3]
       };
+
       delete teams[oldTeamName];
 
       if (typeof data.scores[oldTeamName] !== 'undefined') {
@@ -1052,6 +1331,7 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
       }
 
       const updatedSubmissions = {};
+
       for (const [key, record] of Object.entries(data.resultSubmissions || {})) {
         if (normalizeSubmissionTeamName(record.team) === normalizeSubmissionTeamName(oldTeamName)) {
           const newKey = buildSubmissionKey(teamName, Number(record.matchNumber || 1));
@@ -1065,23 +1345,29 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
           updatedSubmissions[key] = record;
         }
       }
+
       data.resultSubmissions = updatedSubmissions;
     }
   } else {
     const existingSlot = teams[teamName]?.slot || null;
+
     teams[teamName] = {
       slot: existingSlot,
       players: [p1, p2, p3]
     };
   }
 
-  if (Object.keys(teams).length < limit) {
+  if (Object.keys(teams).length < MAX_TEAMS) {
     data.registrationClosedAnnounced = false;
   }
 
+  data.registrationMaxTeams = MAX_TEAMS;
+
   const saved = saveAll(data, teams);
+
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
+
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'team_salvato', {
@@ -1089,13 +1375,19 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
     teamName
   });
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/teams/delete', authRequired, async (req, res) => {
   const teamName = sanitizeText(req.body.teamName);
+
   if (!teamName) {
-    return res.status(400).json({ ok: false, message: 'Team non valido' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Team non valido'
+    });
   }
 
   const teams = loadTeams();
@@ -1116,20 +1408,26 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
     }
   }
 
-  if (Object.keys(teams).length < Number(data.registrationMaxTeams || 16)) {
+  if (Object.keys(teams).length < MAX_TEAMS) {
     data.registrationClosedAnnounced = false;
   }
 
+  data.registrationMaxTeams = MAX_TEAMS;
+
   const saved = saveAll(data, teams);
+
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
+
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'team_eliminato', {
     teamName
   });
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/registration-settings/save', authRequired, async (req, res) => {
@@ -1138,41 +1436,30 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
 
   const title = sanitizeOptionalText(req.body.title, 100);
   const text = sanitizeOptionalText(req.body.text, 250);
-  const maxTeams = sanitizePositiveInteger(req.body.maxTeams, 16);
-
-  if (Object.keys(teams).length > maxTeams) {
-    return res.status(400).json({
-      ok: false,
-      message: `Hai già ${Object.keys(teams).length} team registrati. Imposta un numero massimo uguale o superiore.`
-    });
-  }
-
-  if (maxTeams > 16) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Il numero massimo consentito è 16 team.'
-    });
-  }
 
   data.registrationStatusTitle = title || '📋 Slot Team Registrati';
   data.registrationStatusText = text || '';
-  data.registrationMaxTeams = maxTeams;
+  data.registrationMaxTeams = MAX_TEAMS;
 
-  if (Object.keys(teams).length < maxTeams) {
+  if (Object.keys(teams).length < MAX_TEAMS) {
     data.registrationClosedAnnounced = false;
   }
 
   const saved = saveData(data);
+
   bot.setDataState(saved);
   bot.setTeamsState(teams);
+
   await bot.handleRegistrationStateChange();
 
   logAudit(req.staffUser, 'web', 'impostazioni_registrazione_salvate', {
     title: saved.registrationStatusTitle,
-    maxTeams: saved.registrationMaxTeams
+    maxTeams: MAX_TEAMS
   });
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/registration-settings/refresh', authRequired, async (req, res) => {
@@ -1187,24 +1474,45 @@ app.post('/api/registration-settings/refresh', authRequired, async (req, res) =>
 
     logAudit(req.staffUser, 'web', 'messaggio_registrazione_aggiornato', {});
 
-    return res.json({ ok: true });
+    return res.json({
+      ok: true
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento messaggio slot' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore aggiornamento messaggio slot'
+    });
   }
 });
 
 app.post('/api/match/set', authRequired, async (req, res) => {
   try {
-    const match = sanitizePositiveInteger(req.body.match, 1);
+    const data = loadData();
+    const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
+    const match = sanitizePositiveInteger(req.body.match, 1, tournamentSettings.totalMatches);
+
+    if (match > tournamentSettings.totalMatches) {
+      return res.status(400).json({
+        ok: false,
+        message: `Il torneo ha solo ${tournamentSettings.totalMatches} match configurati.`
+      });
+    }
+
     const currentMatch = await bot.setCurrentMatchAndRefresh(match);
 
     logAudit(req.staffUser, 'web', 'match_impostato', {
       currentMatch: match
     });
 
-    return res.json({ ok: true, currentMatch });
+    return res.json({
+      ok: true,
+      currentMatch
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento match' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore aggiornamento match'
+    });
   }
 });
 
@@ -1216,9 +1524,15 @@ app.post('/api/match/next', authRequired, async (req, res) => {
       currentMatch
     });
 
-    return res.json({ ok: true, currentMatch });
+    return res.json({
+      ok: true,
+      currentMatch
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore passaggio match' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore passaggio match'
+    });
   }
 });
 
@@ -1228,11 +1542,16 @@ app.post('/api/scores/add', authRequired, async (req, res) => {
   const points = Number(req.body.points || 0);
 
   if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({ ok: false, message: 'Dati punti non validi' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Dati punti non validi'
+    });
   }
 
   data.scores[team] = Number(data.scores[team] || 0) + points;
+
   const saved = saveData(data);
+
   bot.setDataState(saved);
 
   await bot.updateLeaderboard();
@@ -1243,7 +1562,10 @@ app.post('/api/scores/add', authRequired, async (req, res) => {
     total: saved.scores[team]
   });
 
-  return res.json({ ok: true, score: saved.scores[team] });
+  return res.json({
+    ok: true,
+    score: saved.scores[team]
+  });
 });
 
 app.post('/api/scores/set', authRequired, async (req, res) => {
@@ -1252,11 +1574,16 @@ app.post('/api/scores/set', authRequired, async (req, res) => {
   const points = Number(req.body.points || 0);
 
   if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({ ok: false, message: 'Dati non validi' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Dati non validi'
+    });
   }
 
   data.scores[team] = points;
+
   const saved = saveData(data);
+
   bot.setDataState(saved);
 
   await bot.updateLeaderboard();
@@ -1266,7 +1593,10 @@ app.post('/api/scores/set', authRequired, async (req, res) => {
     points
   });
 
-  return res.json({ ok: true, score: saved.scores[team] });
+  return res.json({
+    ok: true,
+    score: saved.scores[team]
+  });
 });
 
 app.post('/api/scores/reset-team', authRequired, async (req, res) => {
@@ -1274,11 +1604,16 @@ app.post('/api/scores/reset-team', authRequired, async (req, res) => {
   const team = sanitizeText(req.body.team);
 
   if (!team) {
-    return res.status(400).json({ ok: false, message: 'Team non valido' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Team non valido'
+    });
   }
 
   data.scores[team] = 0;
+
   const saved = saveData(data);
+
   bot.setDataState(saved);
 
   await bot.updateLeaderboard();
@@ -1287,7 +1622,9 @@ app.post('/api/scores/reset-team', authRequired, async (req, res) => {
     team
   });
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/fragger/set', authRequired, async (req, res) => {
@@ -1296,11 +1633,16 @@ app.post('/api/fragger/set', authRequired, async (req, res) => {
   const kills = Number(req.body.kills || 0);
 
   if (!player || !Number.isFinite(kills)) {
-    return res.status(400).json({ ok: false, message: 'Dati fragger non validi' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Dati fragger non validi'
+    });
   }
 
   data.fragger[player] = kills;
+
   const saved = saveData(data);
+
   bot.setDataState(saved);
 
   await bot.updateLeaderboard();
@@ -1310,7 +1652,10 @@ app.post('/api/fragger/set', authRequired, async (req, res) => {
     kills
   });
 
-  return res.json({ ok: true, kills });
+  return res.json({
+    ok: true,
+    kills
+  });
 });
 
 app.post('/api/fragger/delete', authRequired, async (req, res) => {
@@ -1318,11 +1663,16 @@ app.post('/api/fragger/delete', authRequired, async (req, res) => {
   const player = sanitizeText(req.body.player);
 
   if (!player) {
-    return res.status(400).json({ ok: false, message: 'Giocatore non valido' });
+    return res.status(400).json({
+      ok: false,
+      message: 'Giocatore non valido'
+    });
   }
 
   delete data.fragger[player];
+
   const saved = saveData(data);
+
   bot.setDataState(saved);
 
   await bot.updateLeaderboard();
@@ -1331,7 +1681,9 @@ app.post('/api/fragger/delete', authRequired, async (req, res) => {
     player
   });
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/approve/:id', authRequired, async (req, res) => {
@@ -1339,7 +1691,10 @@ app.post('/api/approve/:id', authRequired, async (req, res) => {
     const result = await bot.approvePending(req.params.id, req.staffUser, 'web');
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore approvazione' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore approvazione'
+    });
   }
 });
 
@@ -1348,12 +1703,17 @@ app.post('/api/reject/:id', authRequired, async (req, res) => {
     const result = await bot.rejectPending(req.params.id, req.staffUser, 'web');
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore rifiuto' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore rifiuto'
+    });
   }
 });
 
 app.post('/api/manual-result', authRequired, async (req, res) => {
   try {
+    const data = loadData();
+
     const result = await applyManualResult({
       req,
       team: sanitizeText(req.body.team),
@@ -1361,7 +1721,7 @@ app.post('/api/manual-result', authRequired, async (req, res) => {
       k2: Number(req.body.k2 || 0),
       k3: Number(req.body.k3 || 0),
       pos: Number(req.body.pos || 0),
-      matchNumber: sanitizePositiveInteger(req.body.matchNumber, Number(loadData().currentMatch || 1))
+      matchNumber: sanitizePositiveInteger(req.body.matchNumber, Number(data.currentMatch || 1), 50)
     });
 
     return res.json(result);
@@ -1387,10 +1747,20 @@ app.post('/api/reset-data', authRequired, async (req, res) => {
   const preserved = getPreservedSettings(currentData);
 
   const data = getDefaultData();
+
   applyPreservedSettings(data, preserved);
-  data.registrationClosedAnnounced = Object.keys(currentTeams).length >= Number(data.registrationMaxTeams || 16);
+
+  data.currentMatch = 1;
+  data.pending = {};
+  data.tempSubmit = {};
+  data.resultSubmissions = {};
+  data.scores = {};
+  data.fragger = {};
+  data.registrationClosedAnnounced = Object.keys(currentTeams).length >= MAX_TEAMS;
+  data.registrationMaxTeams = MAX_TEAMS;
 
   const saved = saveData(data);
+
   bot.setDataState(saved);
   bot.setTeamsState(currentTeams);
 
@@ -1400,7 +1770,9 @@ app.post('/api/reset-data', authRequired, async (req, res) => {
 
   logAudit(req.staffUser, 'web', 'reset_dati', {});
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/reset-teams', authRequired, async (req, res) => {
@@ -1420,16 +1792,21 @@ app.post('/api/reset-teams', authRequired, async (req, res) => {
   data.tempSubmit = {};
   data.resultSubmissions = {};
   data.registrationClosedAnnounced = false;
+  data.registrationMaxTeams = MAX_TEAMS;
 
   const saved = saveAll(data, emptyTeams);
+
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
+
   await bot.handleRegistrationStateChange();
   await bot.updateLeaderboard();
 
   logAudit(req.staffUser, 'web', 'reset_team', {});
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/reset-all', authRequired, async (req, res) => {
@@ -1445,19 +1822,32 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
 
   const preserved = getPreservedSettings(currentData);
   const data = getDefaultData();
+
   applyPreservedSettings(data, preserved);
+
+  data.currentMatch = 1;
+  data.pending = {};
+  data.tempSubmit = {};
+  data.resultSubmissions = {};
+  data.scores = {};
+  data.fragger = {};
+  data.registrationClosedAnnounced = false;
+  data.registrationMaxTeams = MAX_TEAMS;
 
   const emptyTeams = {};
   const saved = saveAll(data, emptyTeams);
 
   bot.setDataState(saved.data);
   bot.setTeamsState(saved.teams);
+
   await bot.handleRegistrationStateChange();
   await bot.updateLeaderboard();
 
   logAudit(req.staffUser, 'web', 'reset_totale', {});
 
-  return res.json({ ok: true });
+  return res.json({
+    ok: true
+  });
 });
 
 app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
@@ -1473,7 +1863,10 @@ app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore invio pannello registrazione' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore invio pannello registrazione'
+    });
   }
 });
 
@@ -1491,7 +1884,10 @@ app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento pannelli risultati team' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore aggiornamento pannelli risultati team'
+    });
   }
 });
 
@@ -1509,7 +1905,10 @@ app.post('/api/bot/refresh-team-result-panels', authRequired, async (req, res) =
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento pannelli team' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore aggiornamento pannelli team'
+    });
   }
 });
 
@@ -1526,7 +1925,10 @@ app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore creazione stanze' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore creazione stanze'
+    });
   }
 });
 
@@ -1542,7 +1944,10 @@ app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore eliminazione stanze' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore eliminazione stanze'
+    });
   }
 });
 
@@ -1552,7 +1957,10 @@ app.post('/api/bot/send-lobby-code', authRequired, async (req, res) => {
     const categoryId = sanitizeText(req.body.categoryId);
 
     if (!lobbyCode) {
-      return res.status(400).json({ ok: false, message: 'Codice lobby non valido' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Codice lobby non valido'
+      });
     }
 
     const result = await bot.sendLobbyCodeToTeamRooms(lobbyCode, categoryId);
@@ -1567,7 +1975,10 @@ app.post('/api/bot/send-lobby-code', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore invio codice lobby' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore invio codice lobby'
+    });
   }
 });
 
@@ -1582,7 +1993,10 @@ app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento classifica Discord' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore aggiornamento classifica Discord'
+    });
   }
 });
 
@@ -1596,10 +2010,14 @@ app.post('/api/web-submit-result', authRequired, async (req, res) => {
     const imageData = req.body.imageData;
 
     if (!team || !Number.isFinite(k1) || !Number.isFinite(k2) || !Number.isFinite(k3) || !Number.isFinite(pos)) {
-      return res.status(400).json({ ok: false, message: 'Dati risultato non validi' });
+      return res.status(400).json({
+        ok: false,
+        message: 'Dati risultato non validi'
+      });
     }
 
     let image = '';
+
     if (imageData) {
       image = saveBase64Image(imageData, req);
     }
@@ -1620,9 +2038,14 @@ app.post('/api/web-submit-result', authRequired, async (req, res) => {
       total: k1 + k2 + k3
     });
 
-    return res.json({ ok: true });
+    return res.json({
+      ok: true
+    });
   } catch (error) {
-    return res.status(500).json({ ok: false, message: error.message || 'Errore invio risultato web' });
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore invio risultato web'
+    });
   }
 });
 
