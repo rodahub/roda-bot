@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Registrati Preview</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0614;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .preview-wrapper {
+      position: relative;
+      width: 1672px;
+      height: 941px;
+      overflow: hidden;
+      border-radius: 18px;
+      box-shadow: 0 0 35px rgba(122, 58, 255, 0.28);
+      background: #12091f;
+    }
+
+    .background {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .table-overlay {
+      position: absolute;
+      z-index: 2;
+      top: 235px;
+      left: 86px;
+      width: 1500px;
+      height: 620px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 130px 350px 1fr 1fr 1fr;
+      column-gap: 12px;
+      align-items: center;
+      width: 100%;
+      height: 40px;
+      margin-bottom: 10px;
+      padding: 0 10px;
+      border-radius: 14px;
+      background: rgba(56, 26, 112, 0.82);
+      border: 1px solid rgba(198, 155, 255, 0.78);
+      box-shadow:
+        0 0 18px rgba(139, 78, 255, 0.40),
+        inset 0 0 14px rgba(214, 176, 255, 0.16);
+      backdrop-filter: blur(4px);
+    }
+
+    .header-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow:
+        0 0 6px rgba(255, 255, 255, 0.28),
+        0 0 12px rgba(184, 130, 255, 0.58),
+        0 0 20px rgba(124, 52, 255, 0.42);
+    }
+
+    .table-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 130px 350px 1fr 1fr 1fr;
+      column-gap: 12px;
+      align-items: center;
+      width: 100%;
+      height: 31px;
+      padding: 0 10px;
+      border-radius: 12px;
+      background: rgba(42, 18, 84, 0.78);
+      border: 1px solid rgba(166, 118, 255, 0.62);
+      box-shadow:
+        0 0 12px rgba(124, 52, 255, 0.20),
+        inset 0 0 10px rgba(194, 152, 255, 0.08);
+      backdrop-filter: blur(3px);
+    }
+
+    .table-row:nth-child(odd) {
+      background: rgba(49, 21, 95, 0.82);
+    }
+
+    .table-row.filled {
+      box-shadow:
+        0 0 14px rgba(132, 63, 255, 0.24),
+        inset 0 0 10px rgba(212, 173, 255, 0.10);
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-width: 0;
+      text-align: center;
+      color: #f7f1ff;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 5px rgba(255, 255, 255, 0.16),
+        0 0 10px rgba(167, 117, 255, 0.34);
+    }
+
+    .cell.slot {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .cell.team {
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+
+    .cell.player {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+
+    .table-row.empty .cell {
+      color: rgba(245, 236, 255, 0.40);
+      text-shadow: none;
+    }
+
+    .empty-text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #f3ebff;
+      font-size: 28px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.22),
+        0 0 16px rgba(167, 117, 255, 0.55);
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-wrapper">
+    <img
+      class="background"
+      src="/team-registrati-1672x941.png"
+      alt="Team Registrati Background"
+    />
+
+    <div class="table-overlay">
+      <div class="table-header">
+        <div class="header-cell">Slot</div>
+        <div class="header-cell">Team</div>
+        <div class="header-cell">Player 1</div>
+        <div class="header-cell">Player 2</div>
+        <div class="header-cell">Player 3</div>
+      </div>
+
+      <div class="table-body" id="teamsTable">
+        <div class="empty-text">Caricamento...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toSafeUpper(value) {
+      return String(value || '-').trim().toUpperCase();
+    }
+
+    function buildEmptyRows(total, rows) {
+      const result = [...rows];
+      while (result.length < total) {
+        result.push({
+          slot: '-',
+          team: '-',
+          players: ['-', '-', '-'],
+          empty: true
+        });
+      }
+      return result.slice(0, total);
+    }
+
+    function createCell(className, text) {
+      const cell = document.createElement('div');
+      cell.className = `cell ${className}`;
+      cell.textContent = text;
+      return cell;
+    }
+
+    async function loadRegisteredTeams() {
+      const table = document.getElementById('teamsTable');
+
+      try {
+        const response = await fetch('/api/public/dashboard', { cache: 'no-store' });
+        const data = await response.json();
+
+        const teams = Array.isArray(data.teamRegistrati)
+          ? data.teamRegistrati.slice(0, 16).map(item => ({
+              slot: item.slot ?? '-',
+              team: toSafeUpper(item.team || '-'),
+              players: [
+                toSafeUpper(item.players?.[0] || '-'),
+                toSafeUpper(item.players?.[1] || '-'),
+                toSafeUpper(item.players?.[2] || '-')
+              ],
+              empty: false
+            }))
+          : [];
+
+        const rows = buildEmptyRows(16, teams);
+
+        table.innerHTML = '';
+
+        rows.forEach(rowData => {
+          const row = document.createElement('div');
+          row.className = `table-row ${rowData.empty ? 'empty' : 'filled'}`;
+
+          row.appendChild(createCell('slot', rowData.slot === '-' ? '-' : `#${rowData.slot}`));
+          row.appendChild(createCell('team', rowData.team));
+          row.appendChild(createCell('player', rowData.players[0] || '-'));
+          row.appendChild(createCell('player', rowData.players[1] || '-'));
+          row.appendChild(createCell('player', rowData.players[2] || '-'));
+
+          table.appendChild(row);
+        });
+      } catch (error) {
+        table.innerHTML = '<div class="empty-text">Errore caricamento dati</div>';
+        console.error(error);
+      }
+    }
+
+    loadRegisteredTeams();
+  </script>
+</body>
+</html>
