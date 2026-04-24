@@ -2,74 +2,37 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=1672, height=941, initial-scale=1.0" />
   <title>Classifica Live Preview</title>
   <style>
-    :root {
-      --canvas-width: 1672px;
-      --canvas-height: 941px;
-
-      /* Posizione tabella */
-      --table-left: 108px;
-      --table-top: 190px;
-      --table-width: 1456px;
-      --table-height: 640px;
-
-      /* Colonne */
-      --col-pos: 21%;
-      --col-team: 57%;
-      --col-points: 22%;
-
-      /* Stile */
-      --purple-main: #7a2bff;
-      --purple-dark: #44108f;
-      --purple-soft: rgba(122, 43, 255, 0.20);
-      --purple-border: rgba(150, 90, 255, 0.55);
-      --purple-glow: rgba(180, 120, 255, 0.55);
-      --cell-bg: rgba(255, 255, 255, 0.16);
-      --header-bg-1: rgba(104, 37, 217, 0.95);
-      --header-bg-2: rgba(67, 16, 143, 0.95);
-      --text-dark: #3a1777;
-      --text-header: #ffffff;
-    }
-
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      background: #141019;
-      padding: 20px;
-      font-family: Arial, Helvetica, sans-serif;
+      width: 1672px;
+      height: 941px;
+      overflow: hidden;
+      background: #111;
+      font-family: Arial, sans-serif;
     }
 
     .canvas {
       position: relative;
-      width: var(--canvas-width);
-      height: var(--canvas-height);
-      background-image: url("classifica live 1672x941.png");
+      width: 1672px;
+      height: 941px;
+      background-image: url("/classifica-live-1672x941.png");
       background-size: 100% 100%;
       background-repeat: no-repeat;
       background-position: center;
-      overflow: hidden;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
     }
 
     .table-wrap {
       position: absolute;
-      left: var(--table-left);
-      top: var(--table-top);
-      width: var(--table-width);
-      height: var(--table-height);
+      left: 108px;
+      top: 190px;
+      width: 1456px;
+      height: 640px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
     }
 
     table {
@@ -79,102 +42,42 @@
       table-layout: fixed;
     }
 
-    col.col-pos { width: var(--col-pos); }
-    col.col-team { width: var(--col-team); }
-    col.col-points { width: var(--col-points); }
+    col.col-pos { width: 21%; }
+    col.col-team { width: 57%; }
+    col.col-points { width: 22%; }
 
     thead th {
       height: 50px;
-      background: linear-gradient(180deg, var(--header-bg-1), var(--header-bg-2));
-      color: var(--text-header);
+      background: linear-gradient(180deg, rgba(104,37,217,0.95), rgba(67,16,143,0.95));
+      color: white;
       text-align: center;
       font-size: 22px;
       font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      border: 2px solid rgba(255, 255, 255, 0.18);
-      box-shadow:
-        0 0 0 1px rgba(160, 110, 255, 0.18) inset,
-        0 0 10px rgba(150, 90, 255, 0.30),
-        0 0 18px rgba(150, 90, 255, 0.12);
-      user-select: none;
-    }
-
-    thead th:first-child {
-      border-top-left-radius: 16px;
-      border-bottom-left-radius: 16px;
-    }
-
-    thead th:last-child {
-      border-top-right-radius: 16px;
-      border-bottom-right-radius: 16px;
-    }
-
-    tbody tr {
-      height: 30px;
+      border: 2px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
     }
 
     tbody td {
       height: 30px;
-      background: var(--cell-bg);
-      border: 2px solid var(--purple-border);
-      color: var(--text-dark);
+      background: rgba(255,255,255,0.14);
+      border: 2px solid rgba(150,90,255,0.45);
+      color: #4a2378;
       text-align: center;
       vertical-align: middle;
       font-size: 18px;
       font-weight: 800;
-      letter-spacing: 0.2px;
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.14) inset,
-        0 0 8px rgba(180, 120, 255, 0.10);
-      text-shadow: 0 0 3px rgba(255, 255, 255, 0.20);
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      border-radius: 10px;
     }
 
-    tbody td:first-child {
-      border-top-left-radius: 12px;
-      border-bottom-left-radius: 12px;
-    }
-
-    tbody td:last-child {
-      border-top-right-radius: 12px;
-      border-bottom-right-radius: 12px;
-    }
-
-    td.team-cell {
-      text-align: center;
+    .team-cell {
       padding: 0 16px;
-    }
-
-    td.pos-cell,
-    td.points-cell {
-      text-align: center;
-    }
-
-    /* Prime 3 righe più luminose */
-    tbody tr.highlight td {
-      background: rgba(255, 255, 255, 0.24);
-      border-color: rgba(170, 100, 255, 0.80);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.18) inset,
-        0 0 12px rgba(185, 120, 255, 0.28);
-    }
-
-    /* Preview responsive */
-    @media (max-width: 1720px) {
-      body {
-        justify-content: flex-start;
-        overflow-x: auto;
-      }
     }
   </style>
 </head>
 <body>
   <div class="canvas">
     <div class="table-wrap">
-      <table aria-label="Classifica Live">
+      <table>
         <colgroup>
           <col class="col-pos" />
           <col class="col-team" />
@@ -187,45 +90,26 @@
             <th>PUNTI</th>
           </tr>
         </thead>
-        <tbody id="leaderboard-body"></tbody>
+        <tbody>
+          <tr><td>1°</td><td class="team-cell">roda red</td><td>45</td></tr>
+          <tr><td>2°</td><td class="team-cell">roda black</td><td>32</td></tr>
+          <tr><td>3°</td><td class="team-cell">roda white</td><td>23</td></tr>
+          <tr><td>4°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>5°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>6°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>7°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>8°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>9°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>10°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>11°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>12°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>13°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>14°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>15°</td><td class="team-cell"></td><td></td></tr>
+          <tr><td>16°</td><td class="team-cell"></td><td></td></tr>
+        </tbody>
       </table>
     </div>
   </div>
-
-  <script>
-    const data = [
-      { posizione: "1°", team: "roda red", punti: "45" },
-      { posizione: "2°", team: "roda black", punti: "32" },
-      { posizione: "3°", team: "roda white", punti: "23" },
-      { posizione: "4°", team: "", punti: "" },
-      { posizione: "5°", team: "", punti: "" },
-      { posizione: "6°", team: "", punti: "" },
-      { posizione: "7°", team: "", punti: "" },
-      { posizione: "8°", team: "", punti: "" },
-      { posizione: "9°", team: "", punti: "" },
-      { posizione: "10°", team: "", punti: "" },
-      { posizione: "11°", team: "", punti: "" },
-      { posizione: "12°", team: "", punti: "" },
-      { posizione: "13°", team: "", punti: "" },
-      { posizione: "14°", team: "", punti: "" },
-      { posizione: "15°", team: "", punti: "" },
-      { posizione: "16°", team: "", punti: "" }
-    ];
-
-    const tbody = document.getElementById("leaderboard-body");
-
-    data.forEach((row, index) => {
-      const tr = document.createElement("tr");
-      if (index < 3) tr.classList.add("highlight");
-
-      tr.innerHTML = `
-        <td class="pos-cell">${row.posizione}</td>
-        <td class="team-cell">${row.team}</td>
-        <td class="points-cell">${row.punti}</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  </script>
 </body>
 </html>
