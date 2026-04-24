@@ -31,7 +31,7 @@
       height: 941px;
       overflow: hidden;
       border-radius: 18px;
-      box-shadow: 0 0 35px rgba(122, 58, 255, 0.28);
+      box-shadow: 0 0 40px rgba(132, 73, 245, 0.30);
       background: #12091f;
     }
 
@@ -63,15 +63,21 @@
       column-gap: 12px;
       align-items: center;
       width: 100%;
-      height: 40px;
+      height: 42px;
       margin-bottom: 10px;
       padding: 0 10px;
       border-radius: 14px;
-      background: rgba(56, 26, 112, 0.82);
-      border: 1px solid rgba(198, 155, 255, 0.78);
+      background: linear-gradient(
+        180deg,
+        rgba(109, 56, 204, 0.96) 0%,
+        rgba(82, 32, 176, 0.96) 55%,
+        rgba(62, 19, 145, 0.98) 100%
+      );
+      border: 1px solid rgba(222, 193, 255, 0.92);
       box-shadow:
-        0 0 18px rgba(139, 78, 255, 0.40),
-        inset 0 0 14px rgba(214, 176, 255, 0.16);
+        0 0 16px rgba(160, 95, 255, 0.62),
+        0 0 28px rgba(160, 95, 255, 0.28),
+        inset 0 0 16px rgba(224, 195, 255, 0.18);
       backdrop-filter: blur(4px);
     }
 
@@ -87,9 +93,9 @@
       text-transform: uppercase;
       text-align: center;
       text-shadow:
-        0 0 6px rgba(255, 255, 255, 0.28),
-        0 0 12px rgba(184, 130, 255, 0.58),
-        0 0 20px rgba(124, 52, 255, 0.42);
+        0 0 8px rgba(255, 255, 255, 0.34),
+        0 0 16px rgba(191, 134, 255, 0.68),
+        0 0 26px rgba(130, 58, 255, 0.48);
     }
 
     .table-body {
@@ -108,22 +114,24 @@
       height: 31px;
       padding: 0 10px;
       border-radius: 12px;
-      background: rgba(42, 18, 84, 0.78);
-      border: 1px solid rgba(166, 118, 255, 0.62);
+      background: rgba(74, 28, 146, 0.82);
+      border: 1px solid rgba(188, 147, 255, 0.76);
       box-shadow:
-        0 0 12px rgba(124, 52, 255, 0.20),
-        inset 0 0 10px rgba(194, 152, 255, 0.08);
+        0 0 14px rgba(145, 74, 255, 0.30),
+        0 0 22px rgba(145, 74, 255, 0.10),
+        inset 0 0 12px rgba(214, 179, 255, 0.10);
       backdrop-filter: blur(3px);
     }
 
     .table-row:nth-child(odd) {
-      background: rgba(49, 21, 95, 0.82);
+      background: rgba(84, 34, 160, 0.86);
     }
 
     .table-row.filled {
       box-shadow:
-        0 0 14px rgba(132, 63, 255, 0.24),
-        inset 0 0 10px rgba(212, 173, 255, 0.10);
+        0 0 16px rgba(149, 79, 255, 0.34),
+        0 0 26px rgba(149, 79, 255, 0.12),
+        inset 0 0 12px rgba(221, 190, 255, 0.12);
     }
 
     .cell {
@@ -133,15 +141,16 @@
       height: 100%;
       min-width: 0;
       text-align: center;
-      color: #f7f1ff;
+      color: #fffaff;
       font-size: 17px;
       font-weight: 800;
       line-height: 1;
       letter-spacing: 0.6px;
       text-transform: uppercase;
       text-shadow:
-        0 0 5px rgba(255, 255, 255, 0.16),
-        0 0 10px rgba(167, 117, 255, 0.34);
+        0 0 6px rgba(255, 255, 255, 0.22),
+        0 0 12px rgba(181, 129, 255, 0.42),
+        0 0 18px rgba(118, 46, 255, 0.20);
     }
 
     .cell.slot {
@@ -165,9 +174,18 @@
       padding: 0 8px;
     }
 
+    .table-row.empty {
+      background: rgba(63, 24, 124, 0.68);
+      border: 1px solid rgba(162, 118, 235, 0.54);
+      box-shadow:
+        0 0 10px rgba(128, 64, 220, 0.16),
+        inset 0 0 8px rgba(196, 158, 255, 0.06);
+    }
+
     .table-row.empty .cell {
-      color: rgba(245, 236, 255, 0.40);
-      text-shadow: none;
+      color: rgba(245, 236, 255, 0.62);
+      text-shadow:
+        0 0 4px rgba(255, 255, 255, 0.08);
     }
 
     .empty-text {
