@@ -51,27 +51,6 @@ const STORICO_CHANNEL = process.env.STORICO_CHANNEL || '1483594392819204126';
 const TOURNAMENT_FULL_CHANNEL = process.env.TOURNAMENT_FULL_CHANNEL || STAFF_CHANNEL;
 const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '1482050564375318579';
 
-const REGISTERED_TEAMS_CHANNEL =
-  process.env.REGISTERED_TEAMS_CHANNEL ||
-  process.env.TEAM_REGISTRATI_CHANNEL ||
-  process.env.REGISTRATION_STATUS_CHANNEL ||
-  '1482050564375318579';
-
-const REGISTERED_TEAMS_CHANNEL_NAME_CANDIDATES = [
-  'team',
-  'teams',
-  '👥・team',
-  '👥・teams',
-  '🏆・team',
-  '🏆・teams',
-  'team-registrati',
-  'team registrati',
-  'slot-team',
-  'slot team',
-  'iscritti',
-  'registrati'
-];
-
 const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
 const TOURNAMENT_CATEGORY_NAME = '🏆・RØDA CUP';
 const GENERAL_CHANNEL_NAME = '💬・generale';
@@ -315,10 +294,6 @@ function ensureDataStructures() {
     data.botSettings.lobbyChannelId = '';
   }
 
-  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'registrationStatusChannelId')) {
-    data.botSettings.registrationStatusChannelId = '';
-  }
-
   if (!data.tournamentMessages || typeof data.tournamentMessages !== 'object') {
     data.tournamentMessages = getDefaultTournamentMessages();
   }
@@ -415,8 +390,7 @@ function getBotSettings() {
     roomsCategoryId: sanitizeText(safe.roomsCategoryId),
     generalChannelId: sanitizeText(safe.generalChannelId),
     rulesChannelId: sanitizeText(safe.rulesChannelId),
-    lobbyChannelId: sanitizeText(safe.lobbyChannelId),
-    registrationStatusChannelId: sanitizeText(safe.registrationStatusChannelId)
+    lobbyChannelId: sanitizeText(safe.lobbyChannelId)
   };
 }
 
@@ -948,8 +922,10 @@ async function findPanelMessageByButtonCustomId(channel, customId) {
       if (message.author?.id !== client.user?.id) continue;
 
       const rows = Array.isArray(message.components) ? message.components : [];
+
       for (const row of rows) {
         const components = Array.isArray(row.components) ? row.components : [];
+
         for (const component of components) {
           if (component.customId === customId) {
             return message;
@@ -969,6 +945,7 @@ async function refreshTeamResultPanels(customCategoryId) {
   refreshStateFromDisk();
 
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
+
   if (!categoryIdToUse) {
     return { ok: false, skipped: true, reason: 'Categoria non valida' };
   }
@@ -1046,6 +1023,7 @@ async function createTeamRooms(customCategoryId) {
   const categoryIdToUse = structure.categoryId;
 
   const sortedTeams = getSortedTeamEntries();
+
   if (!sortedTeams.length) {
     throw new Error('Nessun team registrato');
   }
@@ -1404,6 +1382,7 @@ async function sendOrUpdateGraphicMessage({
   if (messageId) {
     try {
       const msg = await channel.messages.fetch(messageId);
+
       await msg.edit({
         content,
         embeds: [],
@@ -1555,94 +1534,17 @@ function buildRegisteredTeamsGraphicCaption() {
   );
 }
 
-async function resolveRegisteredTeamsGraphicChannel() {
-  await waitReady();
-  ensureDataStructures();
-
-  const settings = getBotSettings();
-
-  const directChannelId =
-    settings.registrationStatusChannelId ||
-    REGISTERED_TEAMS_CHANNEL ||
-    REGISTRATION_STATUS_CHANNEL;
-
-  console.log('[team-registrati] directChannelId:', directChannelId);
-
-  if (directChannelId) {
-    const channel = await client.channels.fetch(directChannelId).catch(error => {
-      console.error('[team-registrati] errore fetch canale diretto:', error);
-      return null;
-    });
-
-    if (channel && channel.messages) {
-      return {
-        channel,
-        source: 'id',
-        channelId: channel.id
-      };
-    }
-  }
-
-  const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
-
-  if (!guild) {
-    throw new Error('Guild Discord non trovata per la grafica team registrati');
-  }
-
-  await guild.channels.fetch();
-
-  const foundByName = guild.channels.cache.find(channel => {
-    if (!channel || channel.type !== ChannelType.GuildText) return false;
-
-    const cleanName = sanitizeText(channel.name).toLowerCase();
-
-    return REGISTERED_TEAMS_CHANNEL_NAME_CANDIDATES.some(candidate => {
-      const cleanCandidate = sanitizeText(candidate).toLowerCase();
-      return cleanName === cleanCandidate || cleanName.includes(cleanCandidate);
-    });
-  });
-
-  if (foundByName && foundByName.messages) {
-    data.botSettings.registrationStatusChannelId = foundByName.id;
-    saveState();
-
-    return {
-      channel: foundByName,
-      source: 'name',
-      channelId: foundByName.id
-    };
-  }
-
-  if (settings.registerPanelChannelId) {
-    const fallbackChannel = await client.channels.fetch(settings.registerPanelChannelId).catch(() => null);
-
-    if (fallbackChannel && fallbackChannel.messages) {
-      return {
-        channel: fallbackChannel,
-        source: 'registerPanelFallback',
-        channelId: fallbackChannel.id
-      };
-    }
-  }
-
-  throw new Error(
-    'Canale grafica Team Registrati non trovato. Imposta REGISTERED_TEAMS_CHANNEL su Railway.'
-  );
-}
-
 async function updateRegisteredTeamsGraphic(options = {}) {
   await waitReady();
   refreshStateFromDisk();
 
   console.log('[team-registrati] avvio aggiornamento grafica');
-  console.log('[team-registrati] REGISTERED_TEAMS_CHANNEL:', REGISTERED_TEAMS_CHANNEL);
   console.log('[team-registrati] REGISTRATION_STATUS_CHANNEL:', REGISTRATION_STATUS_CHANNEL);
   console.log('[team-registrati] PUBLIC_BASE_URL:', process.env.PUBLIC_BASE_URL || '(non impostato)');
   console.log('[team-registrati] RAILWAY_PUBLIC_DOMAIN:', process.env.RAILWAY_PUBLIC_DOMAIN || '(non impostato)');
 
   const allowCreate = options.allowCreate !== false;
-  const resolved = await resolveRegisteredTeamsGraphicChannel();
-  const channel = resolved.channel;
+  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
 
   console.log('[team-registrati] canale risolto:', channel.id, channel.name || '(senza nome)');
 
@@ -1666,14 +1568,11 @@ async function updateRegisteredTeamsGraphic(options = {}) {
 
   if (result.messageId) {
     data.registrationStatusMessageId = result.messageId;
-    data.botSettings.registrationStatusChannelId = channel.id;
     saveState();
   }
 
   logAudit('bot', 'discord', 'grafica_team_registrati_aggiornata', {
-    channelId: channel.id,
-    channelName: channel.name || '',
-    source: resolved.source,
+    channelId: REGISTRATION_STATUS_CHANNEL,
     registered,
     maxTeams: getRegistrationLimit(),
     updated: Boolean(result.updated),
@@ -1682,9 +1581,7 @@ async function updateRegisteredTeamsGraphic(options = {}) {
 
   return {
     ok: true,
-    channelId: channel.id,
-    channelName: channel.name || '',
-    source: resolved.source,
+    channelId: REGISTRATION_STATUS_CHANNEL,
     ...result
   };
 }
@@ -2301,10 +2198,6 @@ function saveBotPanelSettings(settings = {}) {
     data.botSettings.lobbyChannelId = sanitizeText(settings.lobbyChannelId);
   }
 
-  if (Object.prototype.hasOwnProperty.call(settings, 'registrationStatusChannelId')) {
-    data.botSettings.registrationStatusChannelId = sanitizeText(settings.registrationStatusChannelId);
-  }
-
   saveState();
 
   logAudit('dashboard', 'web', 'impostazioni_bot_salvate', {
@@ -2313,8 +2206,7 @@ function saveBotPanelSettings(settings = {}) {
     roomsCategoryId: data.botSettings.roomsCategoryId,
     generalChannelId: data.botSettings.generalChannelId || '',
     rulesChannelId: data.botSettings.rulesChannelId || '',
-    lobbyChannelId: data.botSettings.lobbyChannelId || '',
-    registrationStatusChannelId: data.botSettings.registrationStatusChannelId || ''
+    lobbyChannelId: data.botSettings.lobbyChannelId || ''
   });
 
   return {
@@ -2323,8 +2215,7 @@ function saveBotPanelSettings(settings = {}) {
     roomsCategoryId: data.botSettings.roomsCategoryId,
     generalChannelId: data.botSettings.generalChannelId || '',
     rulesChannelId: data.botSettings.rulesChannelId || '',
-    lobbyChannelId: data.botSettings.lobbyChannelId || '',
-    registrationStatusChannelId: data.botSettings.registrationStatusChannelId || ''
+    lobbyChannelId: data.botSettings.lobbyChannelId || ''
   };
 }
 
@@ -2341,14 +2232,12 @@ function getBotConfig() {
     storicoChannel: STORICO_CHANNEL,
     tournamentFullChannel: TOURNAMENT_FULL_CHANNEL,
     registrationStatusChannel: REGISTRATION_STATUS_CHANNEL,
-    registeredTeamsChannel: REGISTERED_TEAMS_CHANNEL,
     registerPanelChannelId: botSettings.registerPanelChannelId,
     resultsPanelChannelId: botSettings.resultsPanelChannelId,
     roomsCategoryId: botSettings.roomsCategoryId,
     generalChannelId: botSettings.generalChannelId,
     rulesChannelId: botSettings.rulesChannelId,
     lobbyChannelId: botSettings.lobbyChannelId,
-    registrationStatusChannelId: botSettings.registrationStatusChannelId,
     brandName: project.brandName,
     tournamentName: FIXED_TOURNAMENT_NAME,
     premiumMode: project.premiumMode,
