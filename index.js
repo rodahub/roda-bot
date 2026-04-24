@@ -28,7 +28,8 @@ const {
 
 const {
   generateLeaderboardGraphicBuffer,
-  generateTopFraggerGraphicBuffer
+  generateTopFraggerGraphicBuffer,
+  generateRegisteredTeamsGraphicBuffer
 } = require('./renderer');
 
 const client = new Client({
@@ -490,26 +491,31 @@ function queueRegistrationStatusUpdate() {
       refreshStateFromDisk();
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const embeds = buildRegistrationEmbeds();
+      const stamp = Date.now();
+      const graphicBuffer = await generateRegisteredTeamsGraphicBuffer();
+
+      const attachment = new AttachmentBuilder(graphicBuffer, {
+        name: `team-registrati-${stamp}.png`
+      });
 
       if (data.registrationStatusMessageId) {
         try {
           const msg = await channel.messages.fetch(data.registrationStatusMessageId);
           await msg.edit({
-            content: '',
-            embeds,
+            content: '👥 **TEAM REGISTRATI**',
+            embeds: [],
             components: [],
-            attachments: []
+            files: [attachment]
           });
           return true;
         } catch (error) {
-          console.error('Errore update messaggio slot team:', error);
+          console.error('Errore update grafica team registrati:', error);
         }
       }
 
       const msg = await channel.send({
-        content: '',
-        embeds
+        content: '👥 **TEAM REGISTRATI**',
+        files: [attachment]
       });
 
       data.registrationStatusMessageId = msg.id;
@@ -517,7 +523,7 @@ function queueRegistrationStatusUpdate() {
       return true;
     })
     .catch(error => {
-      console.error('Errore queue pannello slot team:', error);
+      console.error('Errore queue grafica team registrati:', error);
     });
 
   return registrationStatusUpdateQueue;
