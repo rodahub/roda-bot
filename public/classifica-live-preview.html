@@ -153,7 +153,7 @@
     .team-cell {
       font-size: 18px;
       font-weight: 900;
-      text-transform: uppercase; /* QUI li mostra sempre in maiuscolo */
+      text-transform: uppercase;
     }
 
     .empty {
@@ -182,29 +182,14 @@
   </div>
 
   <script>
-    // Se in futuro vuoi passare dati dinamici, puoi usare window.CLASSIFICA_DATA
-    // Esempio:
-    // window.CLASSIFICA_DATA = [
-    //   { team: "roda red", points: 45 },
-    //   { team: "roda black", points: 32 },
-    //   { team: "roda white", points: 23 }
-    // ];
-
-    const defaultData = [
-      { team: "roda red", points: 45 },
-      { team: "roda black", points: 32 },
-      { team: "roda white", points: 23 }
-    ];
-
     const rowsCount = 16;
-    const data = Array.isArray(window.CLASSIFICA_DATA) ? window.CLASSIFICA_DATA : defaultData;
     const tbody = document.getElementById("table-body");
 
     function formatPosition(index) {
       return `${index + 1}°`;
     }
 
-    function renderTable() {
+    function renderTable(data) {
       tbody.innerHTML = "";
 
       for (let i = 0; i < rowsCount; i++) {
@@ -222,7 +207,12 @@
 
         const points = document.createElement("div");
         points.className = `cell body-cell points-cell ${item ? "" : "empty"}`;
-        points.textContent = item?.points !== undefined && item?.points !== null ? item.points : "";
+        points.textContent =
+          item?.punti !== undefined && item?.punti !== null
+            ? item.punti
+            : item?.points !== undefined && item?.points !== null
+            ? item.points
+            : "";
 
         row.appendChild(pos);
         row.appendChild(team);
@@ -232,7 +222,23 @@
       }
     }
 
-    renderTable();
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch('/api/public/dashboard');
+        const data = await response.json();
+
+        const ranking = Array.isArray(data.classificaTeam)
+          ? data.classificaTeam
+          : [];
+
+        renderTable(ranking);
+      } catch (error) {
+        console.error('Errore caricamento classifica live:', error);
+        renderTable([]);
+      }
+    }
+
+    loadLeaderboard();
   </script>
 </body>
 </html>
