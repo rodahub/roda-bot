@@ -51,6 +51,28 @@ const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
 const RAJDHANI_FONT_PATH = path.join(__dirname, 'rajdhani.bold.ttf');
 const GRAPHIC_FONT_FAMILY = 'RajdhaniBold';
 
+/*
+  COORDINATE FISSE GRAFICHE
+  Se vuoi alzare/abbassare tutto, cambia questi array.
+*/
+const CLASSIFICA_TEAM_CENTER_X = 824;
+const CLASSIFICA_POINTS_CENTER_X = 1344;
+const CLASSIFICA_ROW_Y = [
+  286, 335, 384, 433, 482, 531, 580, 629,
+  678, 727, 776, 825, 874, 923, 972, 1021
+];
+
+const FRAGGER_NAME_CENTER_X = 824;
+const FRAGGER_KILLS_CENTER_X = 1344;
+const FRAGGER_ROW_Y = [
+  286, 343, 400, 457, 514, 571, 628, 685, 742, 799
+];
+
+const CLASSIFICA_TEAM_MAX_WIDTH = 720;
+const CLASSIFICA_POINTS_MAX_WIDTH = 170;
+const FRAGGER_NAME_MAX_WIDTH = 720;
+const FRAGGER_KILLS_MAX_WIDTH = 170;
+
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -366,37 +388,23 @@ function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', f
   return minSize;
 }
 
-function drawGraphicText(ctx, text, box, options = {}) {
+function drawGraphicTextAt(ctx, text, x, y, options = {}) {
   const safeText = String(text || '');
   if (!safeText) return;
 
   const {
     size = 28,
     minSize = 16,
-    padX = 20,
+    maxWidth = 400,
     weight = '700',
     family = 'sans-serif',
     fill = '#4a2d80',
     glow = 'rgba(157,92,255,0.20)',
-    glowBlur = 5,
-    offsetX = 0,
-    offsetY = 0
+    glowBlur = 5
   } = options;
 
-  const finalSize = fitText(
-    ctx,
-    safeText,
-    Math.max(20, box.width - (padX * 2)),
-    size,
-    minSize,
-    weight,
-    family
-  );
-
+  const finalSize = fitText(ctx, safeText, maxWidth, size, minSize, weight, family);
   setCanvasFont(ctx, finalSize, weight, family);
-
-  const x = box.x + (box.width / 2) + offsetX;
-  const y = box.y + (box.height / 2) + offsetY;
 
   ctx.save();
   ctx.textAlign = 'center';
@@ -438,55 +446,43 @@ async function generateLeaderboardGraphicBuffer() {
   const rows = getSortedScores().slice(0, 16);
   const family = getGraphicFontFamily();
 
-  const teamBox = { x: 428, y: 264, width: 792, height: 46 };
-  const pointsBox = { x: 1222, y: 264, width: 244, height: 46 };
-  const rowHeight = 49;
-
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < rows.length && i < CLASSIFICA_ROW_Y.length; i++) {
     const row = rows[i];
-    if (!row) continue;
-
     const isTop3 = i < 3;
-    const teamName = sanitizeGraphicText(row.teamName);
-    const pointsText = sanitizeGraphicNumber(row.points);
 
-    const currentTeamBox = {
-      x: teamBox.x,
-      y: teamBox.y + (i * rowHeight),
-      width: teamBox.width,
-      height: teamBox.height
-    };
+    drawGraphicTextAt(
+      ctx,
+      sanitizeGraphicText(row.teamName),
+      CLASSIFICA_TEAM_CENTER_X,
+      CLASSIFICA_ROW_Y[i],
+      {
+        size: isTop3 ? 31 : 28,
+        minSize: 18,
+        maxWidth: CLASSIFICA_TEAM_MAX_WIDTH,
+        weight: '700',
+        family,
+        fill: isTop3 ? '#331b63' : '#4a2d80',
+        glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
+        glowBlur: isTop3 ? 6 : 4
+      }
+    );
 
-    const currentPointsBox = {
-      x: pointsBox.x,
-      y: pointsBox.y + (i * rowHeight),
-      width: pointsBox.width,
-      height: pointsBox.height
-    };
-
-    drawGraphicText(ctx, teamName, currentTeamBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 18,
-      padX: 30,
-      weight: '700',
-      family,
-      fill: isTop3 ? '#331b63' : '#4a2d80',
-      glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
-      glowBlur: isTop3 ? 6 : 4,
-      offsetY: 2
-    });
-
-    drawGraphicText(ctx, pointsText, currentPointsBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 20,
-      padX: 52,
-      weight: '700',
-      family,
-      fill: '#3b1d71',
-      glow: 'rgba(176,109,255,0.14)',
-      glowBlur: 3,
-      offsetY: 2
-    });
+    drawGraphicTextAt(
+      ctx,
+      sanitizeGraphicNumber(row.points),
+      CLASSIFICA_POINTS_CENTER_X,
+      CLASSIFICA_ROW_Y[i],
+      {
+        size: isTop3 ? 31 : 28,
+        minSize: 20,
+        maxWidth: CLASSIFICA_POINTS_MAX_WIDTH,
+        weight: '700',
+        family,
+        fill: '#3b1d71',
+        glow: 'rgba(176,109,255,0.14)',
+        glowBlur: 3
+      }
+    );
   }
 
   return canvas.toBuffer('image/png');
@@ -504,55 +500,43 @@ async function generateTopFraggerGraphicBuffer() {
   const rows = getSortedFraggers().slice(0, 10);
   const family = getGraphicFontFamily();
 
-  const playerBox = { x: 428, y: 264, width: 792, height: 46 };
-  const killsBox = { x: 1222, y: 264, width: 244, height: 46 };
-  const rowHeight = 57;
-
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < rows.length && i < FRAGGER_ROW_Y.length; i++) {
     const row = rows[i];
-    if (!row) continue;
-
     const isTop3 = i < 3;
-    const playerName = sanitizeGraphicText(row.playerName);
-    const killsText = sanitizeGraphicNumber(row.kills);
 
-    const currentPlayerBox = {
-      x: playerBox.x,
-      y: playerBox.y + (i * rowHeight),
-      width: playerBox.width,
-      height: playerBox.height
-    };
+    drawGraphicTextAt(
+      ctx,
+      sanitizeGraphicText(row.playerName),
+      FRAGGER_NAME_CENTER_X,
+      FRAGGER_ROW_Y[i],
+      {
+        size: isTop3 ? 31 : 28,
+        minSize: 18,
+        maxWidth: FRAGGER_NAME_MAX_WIDTH,
+        weight: '700',
+        family,
+        fill: isTop3 ? '#331b63' : '#4a2d80',
+        glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
+        glowBlur: isTop3 ? 6 : 4
+      }
+    );
 
-    const currentKillsBox = {
-      x: killsBox.x,
-      y: killsBox.y + (i * rowHeight),
-      width: killsBox.width,
-      height: killsBox.height
-    };
-
-    drawGraphicText(ctx, playerName, currentPlayerBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 18,
-      padX: 30,
-      weight: '700',
-      family,
-      fill: isTop3 ? '#331b63' : '#4a2d80',
-      glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
-      glowBlur: isTop3 ? 6 : 4,
-      offsetY: 2
-    });
-
-    drawGraphicText(ctx, killsText, currentKillsBox, {
-      size: isTop3 ? 31 : 28,
-      minSize: 20,
-      padX: 52,
-      weight: '700',
-      family,
-      fill: '#3b1d71',
-      glow: 'rgba(176,109,255,0.14)',
-      glowBlur: 3,
-      offsetY: 2
-    });
+    drawGraphicTextAt(
+      ctx,
+      sanitizeGraphicNumber(row.kills),
+      FRAGGER_KILLS_CENTER_X,
+      FRAGGER_ROW_Y[i],
+      {
+        size: isTop3 ? 31 : 28,
+        minSize: 20,
+        maxWidth: FRAGGER_KILLS_MAX_WIDTH,
+        weight: '700',
+        family,
+        fill: '#3b1d71',
+        glow: 'rgba(176,109,255,0.14)',
+        glowBlur: 3
+      }
+    );
   }
 
   return canvas.toBuffer('image/png');
