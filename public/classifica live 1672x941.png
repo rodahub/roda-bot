@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classifica Live Preview</title>
+  <style>
+    :root {
+      --canvas-width: 1672px;
+      --canvas-height: 941px;
+
+      /* Posizione tabella */
+      --table-left: 108px;
+      --table-top: 190px;
+      --table-width: 1456px;
+      --table-height: 640px;
+
+      /* Colonne */
+      --col-pos: 21%;
+      --col-team: 57%;
+      --col-points: 22%;
+
+      /* Stile */
+      --purple-main: #7a2bff;
+      --purple-dark: #44108f;
+      --purple-soft: rgba(122, 43, 255, 0.20);
+      --purple-border: rgba(150, 90, 255, 0.55);
+      --purple-glow: rgba(180, 120, 255, 0.55);
+      --cell-bg: rgba(255, 255, 255, 0.16);
+      --header-bg-1: rgba(104, 37, 217, 0.95);
+      --header-bg-2: rgba(67, 16, 143, 0.95);
+      --text-dark: #3a1777;
+      --text-header: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      background: #141019;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .canvas {
+      position: relative;
+      width: var(--canvas-width);
+      height: var(--canvas-height);
+      background-image: url("classifica live 1672x941.png");
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .table-wrap {
+      position: absolute;
+      left: var(--table-left);
+      top: var(--table-top);
+      width: var(--table-width);
+      height: var(--table-height);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      table-layout: fixed;
+    }
+
+    col.col-pos { width: var(--col-pos); }
+    col.col-team { width: var(--col-team); }
+    col.col-points { width: var(--col-points); }
+
+    thead th {
+      height: 50px;
+      background: linear-gradient(180deg, var(--header-bg-1), var(--header-bg-2));
+      color: var(--text-header);
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        0 0 0 1px rgba(160, 110, 255, 0.18) inset,
+        0 0 10px rgba(150, 90, 255, 0.30),
+        0 0 18px rgba(150, 90, 255, 0.12);
+      user-select: none;
+    }
+
+    thead th:first-child {
+      border-top-left-radius: 16px;
+      border-bottom-left-radius: 16px;
+    }
+
+    thead th:last-child {
+      border-top-right-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+
+    tbody tr {
+      height: 30px;
+    }
+
+    tbody td {
+      height: 30px;
+      background: var(--cell-bg);
+      border: 2px solid var(--purple-border);
+      color: var(--text-dark);
+      text-align: center;
+      vertical-align: middle;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+        0 0 8px rgba(180, 120, 255, 0.10);
+      text-shadow: 0 0 3px rgba(255, 255, 255, 0.20);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    tbody td:first-child {
+      border-top-left-radius: 12px;
+      border-bottom-left-radius: 12px;
+    }
+
+    tbody td:last-child {
+      border-top-right-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    td.team-cell {
+      text-align: center;
+      padding: 0 16px;
+    }
+
+    td.pos-cell,
+    td.points-cell {
+      text-align: center;
+    }
+
+    /* Prime 3 righe più luminose */
+    tbody tr.highlight td {
+      background: rgba(255, 255, 255, 0.24);
+      border-color: rgba(170, 100, 255, 0.80);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+        0 0 12px rgba(185, 120, 255, 0.28);
+    }
+
+    /* Preview responsive */
+    @media (max-width: 1720px) {
+      body {
+        justify-content: flex-start;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="table-wrap">
+      <table aria-label="Classifica Live">
+        <colgroup>
+          <col class="col-pos" />
+          <col class="col-team" />
+          <col class="col-points" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>POSIZIONE</th>
+            <th>TEAM</th>
+            <th>PUNTI</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const data = [
+      { posizione: "1°", team: "roda red", punti: "45" },
+      { posizione: "2°", team: "roda black", punti: "32" },
+      { posizione: "3°", team: "roda white", punti: "23" },
+      { posizione: "4°", team: "", punti: "" },
+      { posizione: "5°", team: "", punti: "" },
+      { posizione: "6°", team: "", punti: "" },
+      { posizione: "7°", team: "", punti: "" },
+      { posizione: "8°", team: "", punti: "" },
+      { posizione: "9°", team: "", punti: "" },
+      { posizione: "10°", team: "", punti: "" },
+      { posizione: "11°", team: "", punti: "" },
+      { posizione: "12°", team: "", punti: "" },
+      { posizione: "13°", team: "", punti: "" },
+      { posizione: "14°", team: "", punti: "" },
+      { posizione: "15°", team: "", punti: "" },
+      { posizione: "16°", team: "", punti: "" }
+    ];
+
+    const tbody = document.getElementById("leaderboard-body");
+
+    data.forEach((row, index) => {
+      const tr = document.createElement("tr");
+      if (index < 3) tr.classList.add("highlight");
+
+      tr.innerHTML = `
+        <td class="pos-cell">${row.posizione}</td>
+        <td class="team-cell">${row.team}</td>
+        <td class="points-cell">${row.punti}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>
