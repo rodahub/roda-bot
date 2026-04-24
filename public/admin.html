@@ -49,9 +49,7 @@
         linear-gradient(180deg,#050507 0%,#09090e 100%);
     }
 
-    body{
-      overflow:auto;
-    }
+    body{overflow:auto;}
 
     .app{
       display:grid;
@@ -247,9 +245,7 @@
       min-width:0;
     }
 
-    .section-card{
-      margin-bottom:18px;
-    }
+    .section-card{margin-bottom:18px;}
 
     .card-header{
       display:flex;
@@ -332,8 +328,20 @@
     }
 
     textarea{
-      min-height:100px;
+      min-height:140px;
       resize:vertical;
+      line-height:1.5;
+    }
+
+    textarea.big{
+      min-height:420px;
+      font-family:Inter,Arial,sans-serif;
+    }
+
+    textarea[readonly],
+    input[readonly]{
+      opacity:.82;
+      cursor:not-allowed;
     }
 
     .row{
@@ -342,9 +350,7 @@
       flex-wrap:wrap;
     }
 
-    .row>*{
-      flex:1 1 auto;
-    }
+    .row>*{flex:1 1 auto;}
 
     .btn{
       min-height:46px;
@@ -416,9 +422,7 @@
       background:#121220;
     }
 
-    tbody tr:hover{
-      background:rgba(255,255,255,.025);
-    }
+    tbody tr:hover{background:rgba(255,255,255,.025);}
 
     .rank{
       width:30px;
@@ -520,9 +524,7 @@
       font-weight:900;
     }
 
-    .summary-mini strong{
-      font-size:24px;
-    }
+    .summary-mini strong{font-size:24px;}
 
     .quick-grid{
       display:grid;
@@ -655,9 +657,7 @@
       margin-bottom:6px;
     }
 
-    .box strong{
-      font-size:20px;
-    }
+    .box strong{font-size:20px;}
 
     .players{
       display:grid;
@@ -748,6 +748,44 @@
       margin-bottom:8px;
     }
 
+    .rules-box{
+      white-space:pre-wrap;
+      line-height:1.55;
+      max-height:520px;
+      overflow:auto;
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:16px;
+      color:#eee8ff;
+      font-size:14px;
+    }
+
+    .points-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .point-card{
+      border-radius:16px;
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
+      padding:14px;
+      text-align:center;
+    }
+
+    .point-card span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:6px;
+    }
+
+    .point-card strong{
+      font-size:22px;
+    }
+
     .status-bar{
       position:sticky;
       bottom:0;
@@ -773,9 +811,7 @@
       background:rgba(0,0,0,.84);
     }
 
-    .image-modal.show,.manual-modal.show{
-      display:flex;
-    }
+    .image-modal.show,.manual-modal.show{display:flex;}
 
     .image-modal-content{
       position:relative;
@@ -907,6 +943,14 @@
       white-space:nowrap;
     }
 
+    .field-label{
+      display:block;
+      color:#ddd7f2;
+      font-size:13px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+
     .manual-actions{
       display:flex;
       gap:10px;
@@ -924,7 +968,7 @@
 
     @media (max-width:1450px){
       .stats{grid-template-columns:repeat(3,minmax(0,1fr));}
-      .grid-4,.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .grid-4,.quick-grid,.points-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
 
     @media (max-width:1180px){
@@ -942,7 +986,7 @@
     @media (max-width:760px){
       .content{padding:14px;}
       .topbar{padding:14px;}
-      .stats,.grid-4,.quick-grid,.pending-grid,.players,.summary-stats,.manual-info{
+      .stats,.grid-4,.quick-grid,.pending-grid,.players,.summary-stats,.manual-info,.points-grid{
         grid-template-columns:1fr;
       }
       .manual-player-row{grid-template-columns:1fr;}
@@ -973,6 +1017,11 @@
         <button class="nav-btn active" data-page="page-overview">
           <span>📊 Panoramica</span>
           <small>Stato generale</small>
+        </button>
+
+        <button class="nav-btn" data-page="page-tournament">
+          <span>🏆 Torneo</span>
+          <small>Crea e configura</small>
         </button>
 
         <button class="nav-btn" data-page="page-teams">
@@ -1021,6 +1070,10 @@
               <div class="stat-value" id="statMatch">1</div>
             </div>
             <div class="card">
+              <div class="stat-label">Match totali</div>
+              <div class="stat-value" id="statTotalMatches">3</div>
+            </div>
+            <div class="card">
               <div class="stat-label">Team registrati</div>
               <div class="stat-value" id="statTeams">0</div>
             </div>
@@ -1031,10 +1084,6 @@
             <div class="card">
               <div class="stat-label">Team mancanti</div>
               <div class="stat-value" id="statMissingTeams">0</div>
-            </div>
-            <div class="card">
-              <div class="stat-label">Top fragger</div>
-              <div class="stat-value" id="statFragger">-</div>
             </div>
             <div class="card">
               <div class="stat-label">Registrazioni</div>
@@ -1110,25 +1159,25 @@
               </div>
 
               <div class="quick-item">
-                <h4>🏆 Classifica Discord</h4>
-                <p>Forza aggiornamento classifica su Discord.</p>
+                <h4>🏆 Torneo</h4>
+                <p>Configura il numero di match e i messaggi ufficiali.</p>
                 <div class="row" style="margin-top:12px;">
-                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica</button>
+                  <button class="btn btn-purple" onclick="switchPage('page-tournament')">Apri torneo</button>
                 </div>
               </div>
 
               <div class="quick-item">
-                <h4>📨 Pannelli torneo</h4>
-                <p>Pannello iscrizioni e pannelli risultati locali nelle stanze team.</p>
+                <h4>📨 Pannelli</h4>
+                <p>Pannello iscrizioni e pannelli risultati nelle stanze team.</p>
                 <div class="row" style="margin-top:12px;">
                   <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
-                  <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
+                  <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati</button>
                 </div>
               </div>
 
               <div class="quick-item">
                 <h4>🎮 Codice lobby</h4>
-                <p>Invia il codice lobby in tutte le stanze vocali dei team.</p>
+                <p>Invia il codice lobby in tutte le stanze dei team.</p>
                 <div class="field" style="margin-top:12px;">
                   <label>Codice lobby</label>
                   <input type="text" id="lobbyCodeQuick" placeholder="Inserisci il codice lobby" />
@@ -1196,6 +1245,120 @@
             <div class="check-list" id="setupChecks">
               <div class="check-item"><span>Caricamento...</span><span class="check-no">...</span></div>
             </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-tournament">
+          <div class="card section-card">
+            <div class="card-header">
+              <div>
+                <h3>🏆 Crea torneo guidato</h3>
+                <div class="section-note">Qui imposti il torneo. Nome, formato, numero player, massimo team, regolamento e punteggio restano bloccati.</div>
+              </div>
+              <div class="pill">RØDA CUP</div>
+            </div>
+
+            <div class="grid-4">
+              <div class="summary-mini">
+                <span>Nome torneo</span>
+                <strong id="tournamentNameFixed">RØDA CUP</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Giocatori per team</span>
+                <strong id="playersPerTeamFixed">3</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Massimo team</span>
+                <strong id="maxTeamsFixed">16</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Regole e punteggio</span>
+                <strong>Bloccati</strong>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <div class="field">
+                  <label>Numero match del torneo</label>
+                  <input type="number" id="tournamentTotalMatches" min="1" max="50" />
+                </div>
+
+                <div class="field">
+                  <label class="helper" style="margin:0;">
+                    <input type="checkbox" id="tournamentResetCurrentMatch" style="width:auto;min-height:auto;margin-right:8px;" />
+                    Riporta il torneo al match 1 dopo il salvataggio
+                  </label>
+                </div>
+
+                <button class="btn btn-green" onclick="saveTournamentConfigure()">Salva torneo</button>
+              </div>
+
+              <div class="summary-box">
+                <h4>🔒 Cose non modificabili</h4>
+                <div class="check-list">
+                  <div class="check-item"><span>Nome torneo sempre RØDA CUP</span><span class="check-ok">BLOCCATO</span></div>
+                  <div class="check-item"><span>Formato terzetti</span><span class="check-ok">BLOCCATO</span></div>
+                  <div class="check-item"><span>Massimo 16 team</span><span class="check-ok">BLOCCATO</span></div>
+                  <div class="check-item"><span>Regolamento ufficiale</span><span class="check-ok">BLOCCATO</span></div>
+                  <div class="check-item"><span>Sistema punteggio</span><span class="check-ok">BLOCCATO</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>💬 Messaggio generale torneo</h3>
+                  <div class="section-note">Testo modificabile che useremo per il messaggio grande nella chat generale.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Messaggio generale</label>
+                <textarea id="tournamentGeneralAnnouncement"></textarea>
+              </div>
+
+              <div class="field">
+                <label>Messaggio info codice lobby</label>
+                <textarea id="tournamentLobbyInfoMessage"></textarea>
+              </div>
+
+              <button class="btn btn-purple" onclick="saveTournamentMessages()">Salva messaggi torneo</button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>📊 Punteggio ufficiale</h3>
+                  <div class="section-note">Il punteggio è fisso: nessun admin normale può modificarlo.</div>
+                </div>
+                <div class="status-badge status-approved">BLOCCATO</div>
+              </div>
+
+              <div class="summary-mini" style="margin-bottom:12px;">
+                <span>Uccisioni</span>
+                <strong id="pointsKillValue">1 punto per kill</strong>
+              </div>
+
+              <div class="points-grid" id="pointsPlacementGrid">
+                <div class="empty">Caricamento punteggio...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div>
+                <h3>📜 Regolamento ufficiale</h3>
+                <div class="section-note">Il regolamento è visibile ma non modificabile da qui.</div>
+              </div>
+              <div class="status-badge status-approved">BLOCCATO</div>
+            </div>
+
+            <div class="rules-box" id="tournamentRulesBox">Caricamento regolamento...</div>
           </div>
         </section>
 
@@ -1321,7 +1484,7 @@
 
               <div class="field">
                 <label>Numero massimo team</label>
-                <input type="number" id="registrationMaxTeams" min="1" max="16" />
+                <input type="number" id="registrationMaxTeams" min="1" max="16" readonly />
               </div>
 
               <div class="row">
@@ -1391,18 +1554,6 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <h3>📌 Inserimento manuale admin</h3>
-                  <div class="section-note">Usa il pulsante “Inserisci risultato” nelle tabelle dei team mancanti. Si apre una finestra centrale.</div>
-                </div>
-              </div>
-              <div class="helper">
-                Il risultato manuale viene contato subito perché lo inserisce lo staff. Non serve screenshot e non passa dalla coda approvazioni.
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div>
                   <h3>🔥 Gestione fragger</h3>
                   <div class="section-note">Correggi o elimina manualmente i dati dei giocatori.</div>
                 </div>
@@ -1430,6 +1581,18 @@
                 <button class="btn btn-red" onclick="deleteFragger()">Elimina giocatore</button>
               </div>
             </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>📌 Inserimento manuale</h3>
+                  <div class="section-note">Usa il pulsante “Inserisci risultato” nei team mancanti.</div>
+                </div>
+              </div>
+              <div class="helper">
+                Il risultato manuale viene contato subito perché lo inserisce lo staff. Non serve screenshot e non passa dalla coda approvazioni.
+              </div>
+            </div>
           </div>
 
           <div class="card section-card">
@@ -1451,7 +1614,7 @@
             <div class="card-header">
               <div>
                 <h3>⚙️ Impostazioni Discord</h3>
-                <div class="section-note">Salva una volta canali e categoria, così la dashboard li riusa automaticamente.</div>
+                <div class="section-note">Salva canali e categoria. La categoria deve essere quella principale della RØDA CUP.</div>
               </div>
             </div>
 
@@ -1462,12 +1625,16 @@
                   <input type="text" id="registerPanelChannel" placeholder="ID canale registrazione" />
                 </div>
                 <div class="field">
-                  <label>ID canale risultati salvato</label>
-                  <input type="text" id="resultsPanelChannel" placeholder="Facoltativo" />
+                  <label>ID categoria RØDA CUP</label>
+                  <input type="text" id="roomsCategoryId" placeholder="ID categoria ufficiale RØDA CUP" />
                 </div>
                 <div class="field">
-                  <label>ID categoria stanze team</label>
-                  <input type="text" id="roomsCategoryId" placeholder="ID categoria stanze vocali" />
+                  <label>ID canale generale torneo</label>
+                  <input type="text" id="generalChannelId" placeholder="ID canale generale" />
+                </div>
+                <div class="field">
+                  <label>ID canale regolamento</label>
+                  <input type="text" id="rulesChannelId" placeholder="ID canale regolamento" />
                 </div>
                 <button class="btn btn-blue" onclick="saveBotSettings()">Salva impostazioni Discord</button>
               </div>
@@ -1486,7 +1653,7 @@
               <div>
                 <h3>Classifica Discord</h3>
                 <div class="helper" style="margin-bottom:12px;">
-                  La classifica si aggiorna anche quando approvi o inserisci risultati manuali.
+                  La classifica si aggiorna quando approvi o inserisci risultati manuali.
                 </div>
                 <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica Discord</button>
               </div>
@@ -1503,8 +1670,8 @@
               </div>
 
               <div class="row">
-                <button class="btn btn-green" onclick="createRooms()">Crea stanze team</button>
-                <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze team</button>
+                <button class="btn btn-green" onclick="createRooms()">Genera stanze</button>
+                <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze</button>
               </div>
             </div>
 
@@ -1532,7 +1699,7 @@
               <div class="card-header">
                 <div>
                   <h3>🛠️ Configurazione progetto</h3>
-                  <div class="section-note">Impostazioni generali usate dal sito pubblico, dai pannelli Discord e dalla dashboard.</div>
+                  <div class="section-note">Impostazioni generali. Il nome torneo resta sempre RØDA CUP.</div>
                 </div>
               </div>
 
@@ -1543,7 +1710,7 @@
 
               <div class="field">
                 <label>Nome torneo</label>
-                <input type="text" id="projectTournamentName" placeholder="Es. RØDA CUP" />
+                <input type="text" id="projectTournamentName" value="RØDA CUP" readonly />
               </div>
 
               <div class="field">
@@ -1711,6 +1878,10 @@
         title: 'Panoramica',
         subtitle: 'Controlla lo stato del torneo, dei match e delle funzioni principali.'
       },
+      'page-tournament': {
+        title: 'Torneo',
+        subtitle: 'Crea e configura la RØDA CUP con regole e punteggio bloccati.'
+      },
       'page-teams': {
         title: 'Team',
         subtitle: 'Gestisci team, giocatori, slot assegnati e messaggio registrazioni.'
@@ -1752,7 +1923,6 @@
       if (status === 'approvato' || status === 'inserito_manualmente') return 'status-approved';
       if (status === 'in_attesa') return 'status-waiting';
       if (status === 'rifiutato') return 'status-rejected';
-      if (status === 'assente') return 'status-missing';
       return 'status-missing';
     }
 
@@ -1787,7 +1957,7 @@
         return null;
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       return { response, data };
     }
 
@@ -1942,14 +2112,18 @@
       const botConfig = dashboard.botConfig || {};
       const impostazioniRegistrazione = dashboard.impostazioniRegistrazione || {};
       const impostazioniProgetto = dashboard.impostazioniProgetto || {};
+      const impostazioniTorneo = dashboard.impostazioniTorneo || {};
+      const messaggiTorneo = dashboard.messaggiTorneo || {};
       const statoSetup = dashboard.statoSetup || {};
       const auditLog = dashboard.auditLog || [];
       const archivi = dashboard.archivi || [];
       const statoMatchCorrente = dashboard.statoMatchCorrente || {};
       const teamMancanti = dashboard.teamMancantiMatchCorrente || [];
       const riepilogoMatch = dashboard.riepilogoMatch || [];
+      const puntiUfficiali = dashboard.puntiUfficiali || {};
 
       renderBranding(impostazioniProgetto);
+      renderTournamentSettings(impostazioniTorneo, messaggiTorneo, puntiUfficiali);
       renderSetupChecks(statoSetup);
       renderAuditLog(auditLog);
       renderArchives(archivi);
@@ -1960,16 +2134,17 @@
       const registrationClosed = registeredCount >= maxTeams;
 
       document.getElementById('statMatch').textContent = dashboard.matchCorrente || 1;
+      document.getElementById('statTotalMatches').textContent = dashboard.statistiche?.totaleMatch || impostazioniTorneo.totalMatches || 3;
       document.getElementById('statTeams').textContent = dashboard.statistiche?.totaleTeam || 0;
       document.getElementById('statPending').textContent = dashboard.statistiche?.totalePending || 0;
       document.getElementById('statMissingTeams').textContent = dashboard.statistiche?.teamMancantiMatchCorrente || 0;
-      document.getElementById('statFragger').textContent = classificaFragger.length ? classificaFragger[0].nome : '-';
       document.getElementById('statRegistrationState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
 
       document.getElementById('matchInput').value = dashboard.matchCorrente || 1;
       document.getElementById('registerPanelChannel').value = botConfig.registerPanelChannelId || '';
-      document.getElementById('resultsPanelChannel').value = botConfig.resultsPanelChannelId || '';
       document.getElementById('roomsCategoryId').value = botConfig.roomsCategoryId || botConfig.categoryId || '';
+      document.getElementById('generalChannelId').value = botConfig.generalChannelId || '';
+      document.getElementById('rulesChannelId').value = botConfig.rulesChannelId || '';
 
       document.getElementById('registrationStatusTitle').value = impostazioniRegistrazione.titolo || '';
       document.getElementById('registrationStatusText').value = impostazioniRegistrazione.testo || '';
@@ -1999,7 +2174,7 @@
 
     function renderBranding(settings) {
       const brandName = settings?.brandName || 'RØDA';
-      const tournamentName = settings?.tournamentName || 'RØDA CUP';
+      const tournamentName = 'RØDA CUP';
       const premiumMode = Boolean(settings?.premiumMode);
       const modeLabel = premiumMode ? 'Dashboard Admin Premium' : 'Dashboard Admin';
 
@@ -2013,11 +2188,36 @@
       document.getElementById('projectPremiumMode').checked = premiumMode;
     }
 
+    function renderTournamentSettings(settings, messages, points) {
+      document.getElementById('tournamentNameFixed').textContent = 'RØDA CUP';
+      document.getElementById('playersPerTeamFixed').textContent = String(settings.playersPerTeam || 3);
+      document.getElementById('maxTeamsFixed').textContent = String(settings.maxTeams || 16);
+      document.getElementById('tournamentTotalMatches').value = Number(settings.totalMatches || 3);
+      document.getElementById('tournamentGeneralAnnouncement').value = messages.generalAnnouncement || '';
+      document.getElementById('tournamentLobbyInfoMessage').value = messages.lobbyInfoMessage || '';
+      document.getElementById('tournamentRulesBox').textContent = messages.regulationText || 'Regolamento non disponibile.';
+
+      const killValue = Number(points.kill || 1);
+      document.getElementById('pointsKillValue').textContent = `${killValue} punto${killValue === 1 ? '' : 'i'} per kill`;
+
+      const placement = points.placement || {};
+      const ordered = Object.entries(placement).sort((a, b) => Number(a[0]) - Number(b[0]));
+
+      document.getElementById('pointsPlacementGrid').innerHTML = ordered.length
+        ? ordered.map(([pos, value]) => `
+          <div class="point-card">
+            <span>${Number(pos)}° posto</span>
+            <strong>${Number(value || 0)} pt</strong>
+          </div>
+        `).join('')
+        : `<div class="empty">Punteggio non disponibile</div>`;
+    }
+
     function renderSetupChecks(statoSetup) {
       const controlli = statoSetup?.controlli || {};
       const entries = [
         ['Nome brand', controlli.nomeBrand],
-        ['Nome torneo', controlli.nomeTorneo],
+        ['Nome torneo RØDA CUP', controlli.nomeTorneo],
         ['Canale pannello registrazione', controlli.canalePannelloRegistrazione],
         ['Categoria stanze vocali', controlli.categoriaStanze]
       ];
@@ -2270,10 +2470,51 @@
       document.getElementById('fraggerKills').value = found ? Number(found.uccisioni || 0) : '';
     }
 
+    async function saveTournamentConfigure() {
+      const totalMatches = Number(document.getElementById('tournamentTotalMatches').value || 3);
+      const resetCurrentMatch = document.getElementById('tournamentResetCurrentMatch').checked;
+
+      const result = await api('/api/tournament/configure', {
+        method:'POST',
+        body:JSON.stringify({ totalMatches, resetCurrentMatch })
+      });
+
+      if (!result) return;
+
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore configurazione torneo');
+        return;
+      }
+
+      document.getElementById('tournamentResetCurrentMatch').checked = false;
+      await refreshDashboard();
+      setStatus('Torneo configurato correttamente');
+    }
+
+    async function saveTournamentMessages() {
+      const generalAnnouncement = document.getElementById('tournamentGeneralAnnouncement').value.trim();
+      const lobbyInfoMessage = document.getElementById('tournamentLobbyInfoMessage').value.trim();
+
+      const result = await api('/api/tournament/messages/save', {
+        method:'POST',
+        body:JSON.stringify({ generalAnnouncement, lobbyInfoMessage })
+      });
+
+      if (!result) return;
+
+      if (!result.response.ok || !result.data.ok) {
+        alert(result.data.message || 'Errore salvataggio messaggi torneo');
+        return;
+      }
+
+      await refreshDashboard();
+      setStatus('Messaggi torneo salvati');
+    }
+
     async function saveProjectSettings(customSetupCompleted = null) {
       const payload = {
         brandName: document.getElementById('projectBrandName').value.trim(),
-        tournamentName: document.getElementById('projectTournamentName').value.trim(),
+        tournamentName: 'RØDA CUP',
         supportContact: document.getElementById('projectSupportContact').value.trim(),
         premiumMode: document.getElementById('projectPremiumMode').checked,
         setupCompleted: customSetupCompleted === null
@@ -2287,6 +2528,7 @@
       });
 
       if (!result) return false;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore salvataggio impostazioni progetto');
         return false;
@@ -2307,12 +2549,14 @@
         method:'POST',
         body:JSON.stringify({
           registerPanelChannelId: document.getElementById('registerPanelChannel').value.trim(),
-          resultsPanelChannelId: document.getElementById('resultsPanelChannel').value.trim(),
-          roomsCategoryId: document.getElementById('roomsCategoryId').value.trim()
+          roomsCategoryId: document.getElementById('roomsCategoryId').value.trim(),
+          generalChannelId: document.getElementById('generalChannelId').value.trim(),
+          rulesChannelId: document.getElementById('rulesChannelId').value.trim()
         })
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore salvataggio impostazioni Discord');
         return;
@@ -2335,6 +2579,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore salvataggio team');
         return;
@@ -2362,6 +2607,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore eliminazione team');
         return;
@@ -2382,6 +2628,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore salvataggio giocatore');
         return;
@@ -2409,6 +2656,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore eliminazione giocatore');
         return;
@@ -2430,6 +2678,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento match');
         return;
@@ -2443,6 +2692,7 @@
       const result = await api('/api/match/next', { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore passaggio match');
         return;
@@ -2456,6 +2706,7 @@
       const result = await api('/api/approve/' + id, { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore approvazione risultato');
         return;
@@ -2469,6 +2720,7 @@
       const result = await api('/api/reject/' + id, { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore rifiuto risultato');
         return;
@@ -2484,6 +2736,7 @@
       const result = await api('/api/reset-teams', { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset team');
         return;
@@ -2500,6 +2753,7 @@
       const result = await api('/api/reset-data', { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset dati');
         return;
@@ -2515,7 +2769,7 @@
     async function saveRegistrationSettings() {
       const title = document.getElementById('registrationStatusTitle').value.trim();
       const text = document.getElementById('registrationStatusText').value.trim();
-      const maxTeams = Number(document.getElementById('registrationMaxTeams').value || 16);
+      const maxTeams = 16;
 
       const result = await api('/api/registration-settings/save', {
         method:'POST',
@@ -2523,6 +2777,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore salvataggio impostazioni registrazione');
         return;
@@ -2536,6 +2791,7 @@
       const result = await api('/api/registration-settings/refresh', { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento messaggio registrazioni');
         return;
@@ -2559,6 +2815,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore invio pannello registrazione');
         return;
@@ -2582,6 +2839,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento pannelli risultati team');
         return;
@@ -2605,6 +2863,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore creazione stanze');
         return;
@@ -2628,6 +2887,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore eliminazione stanze');
         return;
@@ -2657,6 +2917,7 @@
       });
 
       if (!result) return false;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore invio codice lobby');
         return false;
@@ -2686,6 +2947,7 @@
       const result = await api('/api/bot/update-leaderboard', { method:'POST' });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento classifica Discord');
         return;
@@ -2705,6 +2967,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore creazione archivio');
         return;
@@ -2730,6 +2993,7 @@
       });
 
       if (!result) return;
+
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore ripristino archivio');
         return;
