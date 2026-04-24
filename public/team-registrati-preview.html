@@ -228,12 +228,15 @@
   </div>
 
   <script>
+    window.__RODA_RENDER_READY = false;
+
     function toSafeUpper(value) {
       return String(value || '-').trim().toUpperCase();
     }
 
     function buildEmptyRows(total, rows) {
       const result = [...rows];
+
       while (result.length < total) {
         result.push({
           slot: '-',
@@ -242,6 +245,7 @@
           empty: true
         });
       }
+
       return result.slice(0, total);
     }
 
@@ -250,6 +254,24 @@
       cell.className = `cell ${className}`;
       cell.textContent = text;
       return cell;
+    }
+
+    function renderRows(rows) {
+      const table = document.getElementById('teamsTable');
+      table.innerHTML = '';
+
+      rows.forEach(rowData => {
+        const row = document.createElement('div');
+        row.className = `table-row ${rowData.empty ? 'empty' : 'filled'}`;
+
+        row.appendChild(createCell('slot', rowData.slot === '-' ? '-' : `#${rowData.slot}`));
+        row.appendChild(createCell('team', rowData.team));
+        row.appendChild(createCell('player', rowData.players[0] || '-'));
+        row.appendChild(createCell('player', rowData.players[1] || '-'));
+        row.appendChild(createCell('player', rowData.players[2] || '-'));
+
+        table.appendChild(row);
+      });
     }
 
     async function loadRegisteredTeams() {
@@ -272,25 +294,12 @@
             }))
           : [];
 
-        const rows = buildEmptyRows(16, teams);
-
-        table.innerHTML = '';
-
-        rows.forEach(rowData => {
-          const row = document.createElement('div');
-          row.className = `table-row ${rowData.empty ? 'empty' : 'filled'}`;
-
-          row.appendChild(createCell('slot', rowData.slot === '-' ? '-' : `#${rowData.slot}`));
-          row.appendChild(createCell('team', rowData.team));
-          row.appendChild(createCell('player', rowData.players[0] || '-'));
-          row.appendChild(createCell('player', rowData.players[1] || '-'));
-          row.appendChild(createCell('player', rowData.players[2] || '-'));
-
-          table.appendChild(row);
-        });
+        renderRows(buildEmptyRows(16, teams));
       } catch (error) {
         table.innerHTML = '<div class="empty-text">Errore caricamento dati</div>';
         console.error(error);
+      } finally {
+        window.__RODA_RENDER_READY = true;
       }
     }
 
