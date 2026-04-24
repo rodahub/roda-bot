@@ -234,7 +234,7 @@
 
     .stats{
       display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
+      grid-template-columns:repeat(6,minmax(0,1fr));
       gap:14px;
       margin-bottom:18px;
     }
@@ -472,6 +472,7 @@
       text-transform:uppercase;
       letter-spacing:.6px;
       border:1px solid rgba(255,255,255,.08);
+      white-space:nowrap;
     }
 
     .status-open{
@@ -496,6 +497,30 @@
       background:rgba(123,44,255,.12);
       color:#ead8ff;
       border-color:rgba(123,44,255,.28);
+    }
+
+    .status-approved{
+      background:rgba(24,201,100,.12);
+      color:#b6ffd4;
+      border-color:rgba(24,201,100,.28);
+    }
+
+    .status-rejected{
+      background:rgba(255,77,109,.12);
+      color:#ffd0d9;
+      border-color:rgba(255,77,109,.28);
+    }
+
+    .status-missing{
+      background:rgba(255,255,255,.05);
+      color:#ddd7f2;
+      border-color:rgba(255,255,255,.12);
+    }
+
+    .status-absent{
+      background:rgba(87,183,255,.12);
+      color:#dff3ff;
+      border-color:rgba(87,183,255,.26);
     }
 
     .team-players-list,
@@ -904,7 +929,6 @@
       z-index:3;
     }
 
-    /* Dropdown personalizzati */
     .custom-dropdown{
       position:relative;
       width:100%;
@@ -1170,12 +1194,61 @@
               <div class="stat-value" id="statPending">0</div>
             </div>
             <div class="card">
+              <div class="stat-label">Team mancanti</div>
+              <div class="stat-value" id="statMissingTeams">0</div>
+            </div>
+            <div class="card">
               <div class="stat-label">Top fragger</div>
               <div class="stat-value" id="statFragger">-</div>
             </div>
             <div class="card">
               <div class="stat-label">Registrazioni</div>
               <div class="stat-value" id="statRegistrationState">APERTE</div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>🎮 Stato match corrente</h3>
+                <div class="section-note">Controllo rapido del match attuale: risultati ricevuti, approvati, in attesa e team mancanti.</div>
+              </div>
+              <div class="pill" id="currentMatchStatusPill">Match 1</div>
+            </div>
+
+            <div class="grid-4">
+              <div class="summary-mini">
+                <span>Team totali</span>
+                <strong id="matchTotalTeams">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Risultati ricevuti</span>
+                <strong id="matchSubmittedTeams">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Approvati</span>
+                <strong id="matchApprovedTeams">0</strong>
+              </div>
+              <div class="summary-mini">
+                <span>Non inviati</span>
+                <strong id="matchMissingTeams">0</strong>
+              </div>
+            </div>
+
+            <div class="table-wrap" style="margin-top:14px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slot</th>
+                    <th>Team</th>
+                    <th>Stato</th>
+                    <th>Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="currentMatchTeamsBody">
+                  <tr><td colspan="4" class="empty">Nessun dato match</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1411,7 +1484,7 @@
 
               <div class="field">
                 <label>Numero massimo team</label>
-                <input type="number" id="registrationMaxTeams" min="1" />
+                <input type="number" id="registrationMaxTeams" min="1" max="16" />
               </div>
 
               <div class="row">
@@ -1423,6 +1496,60 @@
         </section>
 
         <section class="page" id="page-results">
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>🚨 Team mancanti nel match corrente</h3>
+                <div class="section-note">Qui vedi subito chi non ha ancora inviato il risultato o chi deve reinviare perché rifiutato.</div>
+              </div>
+              <div class="pill" id="missingTeamsPill">0 mancanti</div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slot</th>
+                    <th>Team</th>
+                    <th>Giocatori</th>
+                    <th>Stato</th>
+                    <th>Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="missingTeamsBody">
+                  <tr><td colspan="5" class="empty">Nessun team mancante</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>📊 Riepilogo match</h3>
+                <div class="section-note">Situazione dei match creati finora.</div>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Match</th>
+                    <th>Ricevuti</th>
+                    <th>In attesa</th>
+                    <th>Approvati</th>
+                    <th>Non inviati</th>
+                    <th>Stato</th>
+                  </tr>
+                </thead>
+                <tbody id="matchSummaryBody">
+                  <tr><td colspan="6" class="empty">Nessun riepilogo disponibile</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
@@ -1755,6 +1882,14 @@
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return value || '-';
       return date.toLocaleString('it-IT');
+    }
+
+    function getStatusClass(status) {
+      if (status === 'approvato' || status === 'inserito_manualmente') return 'status-approved';
+      if (status === 'in_attesa') return 'status-waiting';
+      if (status === 'rifiutato') return 'status-rejected';
+      if (status === 'assente') return 'status-absent';
+      return 'status-missing';
     }
 
     function switchPage(pageId) {
@@ -2174,6 +2309,9 @@
       const statoSetup = dashboard.statoSetup || {};
       const auditLog = dashboard.auditLog || [];
       const archivi = dashboard.archivi || [];
+      const statoMatchCorrente = dashboard.statoMatchCorrente || {};
+      const teamMancantiMatchCorrente = dashboard.teamMancantiMatchCorrente || [];
+      const riepilogoMatch = dashboard.riepilogoMatch || [];
 
       renderBranding(impostazioniProgetto);
       renderSetupChecks(statoSetup);
@@ -2188,6 +2326,7 @@
       document.getElementById('statMatch').textContent = dashboard.matchCorrente || 1;
       document.getElementById('statTeams').textContent = dashboard.statistiche?.totaleTeam || 0;
       document.getElementById('statPending').textContent = dashboard.statistiche?.totalePending || 0;
+      document.getElementById('statMissingTeams').textContent = dashboard.statistiche?.teamMancantiMatchCorrente || 0;
       document.getElementById('statFragger').textContent = classificaFragger.length ? classificaFragger[0].nome : '-';
       document.getElementById('statRegistrationState').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
 
@@ -2205,6 +2344,73 @@
       document.getElementById('availableTeamsCount').textContent = String(availableCount);
       document.getElementById('maxTeamsCount').textContent = String(maxTeams);
       document.getElementById('registrationStateText').textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
+
+      document.getElementById('currentMatchStatusPill').textContent = `Match ${Number(statoMatchCorrente.matchNumber || dashboard.matchCorrente || 1)}`;
+      document.getElementById('matchTotalTeams').textContent = Number(statoMatchCorrente.totaleTeam || 0);
+      document.getElementById('matchSubmittedTeams').textContent = Number(statoMatchCorrente.inviati || 0);
+      document.getElementById('matchApprovedTeams').textContent = Number(statoMatchCorrente.approvati || 0);
+      document.getElementById('matchMissingTeams').textContent = Number(statoMatchCorrente.nonInviati || 0);
+
+      const currentMatchTeamsBody = document.getElementById('currentMatchTeamsBody');
+      const matchRows = Array.isArray(statoMatchCorrente.righe) ? statoMatchCorrente.righe : [];
+
+      currentMatchTeamsBody.innerHTML = matchRows.length
+        ? matchRows.map(row => `
+            <tr>
+              <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+              <td><strong>${escapeHtml(row.team)}</strong></td>
+              <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+              <td>
+                ${row.stato === 'in_attesa' && row.pendingId
+                  ? `<button class="btn btn-blue" onclick="switchPage('page-results')">Controlla risultato</button>`
+                  : row.stato === 'non_inviato'
+                    ? `<button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Inserisci risultato</button>`
+                    : row.stato === 'rifiutato'
+                      ? `<button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Reinserisci risultato</button>`
+                      : `<span class="muted">Nessuna azione</span>`}
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="4" class="empty">Nessun dato match</td></tr>`;
+
+      const missingTeamsBody = document.getElementById('missingTeamsBody');
+      document.getElementById('missingTeamsPill').textContent = `${teamMancantiMatchCorrente.length} mancanti`;
+
+      missingTeamsBody.innerHTML = teamMancantiMatchCorrente.length
+        ? teamMancantiMatchCorrente.map(row => `
+            <tr>
+              <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+              <td><strong>${escapeHtml(row.team)}</strong></td>
+              <td>
+                <div class="team-players-list">
+                  ${(row.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
+                </div>
+              </td>
+              <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+              <td>
+                <button class="btn btn-yellow" onclick="prepareManualResult('${escapeHtml(row.team)}')">Inserisci risultato</button>
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="5" class="empty">Nessun team mancante</td></tr>`;
+
+      const matchSummaryBody = document.getElementById('matchSummaryBody');
+      matchSummaryBody.innerHTML = riepilogoMatch.length
+        ? riepilogoMatch.map(match => `
+            <tr>
+              <td><strong>Match ${Number(match.matchNumber || 1)}</strong></td>
+              <td>${Number(match.inviati || 0)} / ${Number(match.totaleTeam || 0)}</td>
+              <td>${Number(match.inAttesa || 0)}</td>
+              <td>${Number(match.approvati || 0)}</td>
+              <td>${Number(match.nonInviati || 0)}</td>
+              <td>
+                <span class="status-badge ${match.completato ? 'status-approved' : 'status-waiting'}">
+                  ${match.completato ? 'COMPLETATO' : 'APERTO'}
+                </span>
+              </td>
+            </tr>
+          `).join('')
+        : `<tr><td colspan="6" class="empty">Nessun riepilogo disponibile</td></tr>`;
 
       const registeredTeamsBody = document.getElementById('registeredTeamsBody');
       registeredTeamsBody.innerHTML = teamOrdinati.length
@@ -2311,7 +2517,7 @@
               <div class="players">
                 ${(item.uccisioni || []).map((k, i) => `
                   <div class="player-card">
-                    <b>${escapeHtml(item.players?.[i] || `Player ${i + 1}`)}</b>
+                    <b>${escapeHtml(item.players?.[i] || `Giocatore ${i + 1}`)}</b>
                     <div>${Number(k || 0)} uccisioni</div>
                   </div>
                 `).join('')}
@@ -2332,6 +2538,13 @@
             </div>
           `).join('')
         : `<div class="empty">Nessun risultato in attesa</div>`;
+    }
+
+    function prepareManualResult(teamName) {
+      switchPage('page-results');
+      setDropdownValue('webResultTeam', teamName, false);
+      document.getElementById('webK1').focus();
+      setStatus(`Inserimento manuale pronto per ${teamName}`);
     }
 
     async function saveProjectSettings(customSetupCompleted = null) {
@@ -2951,6 +3164,8 @@
     window.submitWebResult = submitWebResult;
     window.createArchive = createArchive;
     window.restoreArchive = restoreArchive;
+    window.prepareManualResult = prepareManualResult;
+    window.switchPage = switchPage;
 
     initializeDropdowns();
     switchPage('page-overview');
