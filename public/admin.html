@@ -4,11 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Admin</title>
+
   <style>
     :root{
       --bg:#050507;
       --panel:#10101a;
-      --line:rgba(160,110,255,.16);
+      --panel2:#151525;
+      --line:rgba(160,110,255,.18);
+      --line2:rgba(160,110,255,.32);
       --text:#f7f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
@@ -19,50 +22,54 @@
       --blue:#57b7ff;
       --shadow:0 0 0 1px rgba(162,109,255,.10),0 0 30px rgba(123,44,255,.14);
       --radius:22px;
-      --sidebar-width:280px;
-      --content-max:1800px;
+      --sidebar:280px;
     }
 
     *{
       box-sizing:border-box;
       -webkit-tap-highlight-color:transparent;
       scrollbar-width:thin;
-      scrollbar-color:rgba(160,110,255,.35) transparent;
+      scrollbar-color:rgba(160,110,255,.45) transparent;
     }
 
     *::-webkit-scrollbar{width:9px;height:9px;}
-    *::-webkit-scrollbar-thumb{background:rgba(160,110,255,.35);border-radius:999px;}
+    *::-webkit-scrollbar-thumb{background:rgba(160,110,255,.45);border-radius:999px;}
     *::-webkit-scrollbar-track{background:transparent;}
 
     html,body{
       margin:0;
       padding:0;
-      min-height:100vh;
+      min-height:100%;
       font-family:Inter,Arial,sans-serif;
-      background:
-        radial-gradient(circle at top left,rgba(123,44,255,.16),transparent 28%),
-        radial-gradient(circle at top right,rgba(87,183,255,.08),transparent 20%),
-        radial-gradient(circle at bottom center,rgba(123,44,255,.08),transparent 30%),
-        linear-gradient(180deg,#050507 0%,#09090e 100%);
       color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(123,44,255,.18),transparent 28%),
+        radial-gradient(circle at top right,rgba(87,183,255,.10),transparent 22%),
+        radial-gradient(circle at bottom center,rgba(123,44,255,.10),transparent 32%),
+        linear-gradient(180deg,#050507 0%,#09090e 100%);
     }
 
-    body{overflow:hidden;}
+    body{
+      overflow:auto;
+    }
 
     .app{
       display:grid;
-      grid-template-columns:var(--sidebar-width) 1fr;
+      grid-template-columns:var(--sidebar) minmax(0,1fr);
       min-height:100vh;
     }
 
     .sidebar{
-      background:linear-gradient(180deg,rgba(14,14,24,.98),rgba(8,8,14,.98));
-      border-right:1px solid rgba(255,255,255,.05);
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
       padding:16px;
+      background:linear-gradient(180deg,rgba(14,14,24,.98),rgba(8,8,14,.98));
+      border-right:1px solid rgba(255,255,255,.06);
       display:flex;
       flex-direction:column;
       gap:16px;
-      min-width:0;
     }
 
     .brand{
@@ -73,20 +80,20 @@
       border-bottom:1px solid rgba(255,255,255,.06);
     }
 
-    .brand img.logo{
+    .brand img{
       width:56px;
       height:56px;
       object-fit:contain;
       border-radius:16px;
-      flex-shrink:0;
       filter:drop-shadow(0 0 14px rgba(123,44,255,.45));
+      flex-shrink:0;
     }
 
     .brand-title{
-      font-size:22px;
+      font-size:21px;
       font-weight:900;
       line-height:1.05;
-      margin-bottom:4px;
+      margin-bottom:5px;
     }
 
     .brand-subtitle{
@@ -95,7 +102,10 @@
       line-height:1.35;
     }
 
-    .nav-group{display:grid;gap:8px;}
+    .nav-group{
+      display:grid;
+      gap:8px;
+    }
 
     .nav-label{
       padding:0 8px;
@@ -103,44 +113,44 @@
       color:var(--muted);
       text-transform:uppercase;
       letter-spacing:.8px;
-      font-weight:800;
+      font-weight:900;
     }
 
     .nav-btn{
       width:100%;
+      min-height:50px;
       border:1px solid transparent;
-      background:rgba(255,255,255,.03);
+      background:rgba(255,255,255,.035);
       color:#f2ecff;
       border-radius:16px;
-      min-height:50px;
-      text-align:left;
       padding:12px 14px;
-      font-size:14px;
-      font-weight:800;
-      cursor:pointer;
-      transition:.18s ease;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
+      font-size:14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.18s ease;
+      text-align:left;
     }
 
     .nav-btn:hover{
       transform:translateX(2px);
-      border-color:rgba(160,110,255,.16);
-      background:rgba(255,255,255,.05);
+      border-color:rgba(160,110,255,.18);
+      background:rgba(255,255,255,.055);
     }
 
     .nav-btn.active{
-      background:linear-gradient(135deg,rgba(123,44,255,.20),rgba(156,92,255,.14));
-      border-color:rgba(160,110,255,.28);
+      background:linear-gradient(135deg,rgba(123,44,255,.22),rgba(156,92,255,.14));
+      border-color:rgba(160,110,255,.30);
       box-shadow:var(--shadow);
     }
 
     .nav-btn small{
       color:var(--muted);
       font-size:11px;
-      font-weight:700;
+      font-weight:800;
     }
 
     .sidebar-footer{
@@ -149,39 +159,25 @@
       gap:10px;
     }
 
-    .pill{
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--line);
-      color:#ddd7f2;
-      border-radius:999px;
-      padding:11px 14px;
-      font-size:13px;
-      box-shadow:var(--shadow);
-      text-align:center;
-    }
-
-    .sidebar-actions{display:grid;gap:10px;}
-
     .main{
-      display:flex;
-      flex-direction:column;
       min-width:0;
       min-height:100vh;
     }
 
     .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
       padding:18px 22px;
-      border-bottom:1px solid rgba(255,255,255,.05);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,rgba(14,14,24,.88),rgba(10,10,18,.72));
+      backdrop-filter:blur(14px);
       display:flex;
-      align-items:center;
       justify-content:space-between;
-      gap:14px;
+      align-items:center;
+      gap:16px;
       flex-wrap:wrap;
-      background:linear-gradient(180deg,rgba(14,14,24,.72),rgba(10,10,18,.40));
-      backdrop-filter:blur(12px);
     }
-
-    .topbar-left{min-width:0;flex:1;}
 
     .page-title{
       font-size:30px;
@@ -193,25 +189,24 @@
     .page-subtitle{
       color:var(--muted);
       font-size:13px;
-      line-height:1.5;
+      line-height:1.45;
     }
 
     .content{
-      flex:1;
-      overflow:auto;
       padding:22px;
+      max-width:1820px;
+      min-height:calc(100vh - 90px);
     }
 
     .page{
       display:none;
       animation:fadeIn .18s ease;
-      max-width:var(--content-max);
     }
 
     .page.active{display:block;}
 
     @keyframes fadeIn{
-      from{opacity:.45;transform:translateY(4px);}
+      from{opacity:.45;transform:translateY(5px);}
       to{opacity:1;transform:none;}
     }
 
@@ -224,7 +219,7 @@
 
     .grid-2{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:18px;
       margin-bottom:18px;
     }
@@ -239,7 +234,7 @@
     .grid-4{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:18px;
+      gap:14px;
       margin-bottom:18px;
     }
 
@@ -249,11 +244,12 @@
       border-radius:var(--radius);
       padding:18px;
       box-shadow:var(--shadow);
-      overflow:hidden;
       min-width:0;
     }
 
-    .section-card{margin-bottom:18px;}
+    .section-card{
+      margin-bottom:18px;
+    }
 
     .card-header{
       display:flex;
@@ -264,8 +260,6 @@
       margin-bottom:14px;
     }
 
-    .card-header-left{min-width:0;flex:1;}
-
     .card h3{
       margin:0 0 6px;
       font-size:20px;
@@ -275,7 +269,7 @@
     .section-note{
       color:var(--muted);
       font-size:13px;
-      line-height:1.5;
+      line-height:1.45;
     }
 
     .stat-label{
@@ -283,14 +277,29 @@
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.7px;
+      font-weight:900;
       margin-bottom:10px;
-      font-weight:700;
     }
 
     .stat-value{
       font-size:30px;
       font-weight:900;
       word-break:break-word;
+    }
+
+    .pill{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color:#ddd7f2;
+      border-radius:999px;
+      padding:11px 14px;
+      font-size:13px;
+      box-shadow:var(--shadow);
+      text-align:center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
     }
 
     .field{
@@ -302,21 +311,25 @@
     .field label{
       font-size:13px;
       color:#ddd7f2;
-      font-weight:700;
+      font-weight:800;
     }
 
-    input,textarea{
+    input,textarea,select{
       width:100%;
+      min-height:46px;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
+      background:rgba(255,255,255,.035);
       color:#fff;
       padding:12px 14px;
       outline:none;
       font-size:14px;
     }
 
-    input{height:46px;}
+    select option{
+      background:#11111b;
+      color:#fff;
+    }
 
     textarea{
       min-height:100px;
@@ -329,22 +342,25 @@
       flex-wrap:wrap;
     }
 
-    .row>*{flex:1 1 auto;}
+    .row>*{
+      flex:1 1 auto;
+    }
 
     .btn{
+      min-height:46px;
       border:0;
-      cursor:pointer;
       border-radius:14px;
       padding:12px 16px;
-      font-weight:800;
-      font-size:14px;
-      color:#fff;
-      transition:.18s ease;
-      min-height:46px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       gap:8px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:14px;
+      color:#fff;
+      transition:.18s ease;
+      text-decoration:none;
     }
 
     .btn:hover{transform:translateY(-1px);}
@@ -356,29 +372,29 @@
     .btn-yellow{background:linear-gradient(135deg,#e8b600,#ffd166);color:#1b1200;}
     .btn-blue{background:linear-gradient(135deg,#3b9fff,#6ec4ff);color:#09131b;}
 
-    .helper{
+    .helper,.muted{
       color:var(--muted);
-      font-size:12px;
+      font-size:13px;
       line-height:1.5;
-      margin-top:6px;
     }
 
     .empty{
       color:var(--muted);
       font-size:14px;
-      padding:12px;
+      padding:14px;
     }
 
     .table-wrap{
       overflow:auto;
       border-radius:16px;
-      border:1px solid rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
       background:rgba(255,255,255,.02);
     }
 
     table{
       width:100%;
       border-collapse:collapse;
+      min-width:720px;
     }
 
     th,td{
@@ -390,27 +406,29 @@
     }
 
     th{
+      position:sticky;
+      top:0;
+      z-index:2;
       color:#d6c9ff;
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.7px;
-      background:rgba(255,255,255,.02);
-      position:sticky;
-      top:0;
-      z-index:1;
+      background:#121220;
     }
 
-    tbody tr:hover{background:rgba(255,255,255,.02);}
+    tbody tr:hover{
+      background:rgba(255,255,255,.025);
+    }
 
     .rank{
       width:30px;
       height:30px;
+      border-radius:999px;
+      background:rgba(123,44,255,.15);
+      border:1px solid rgba(169,120,255,.28);
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      border-radius:999px;
-      background:rgba(123,44,255,.14);
-      border:1px solid rgba(169,120,255,.25);
       font-weight:900;
     }
 
@@ -424,7 +442,7 @@
       font-size:13px;
       font-weight:900;
       background:rgba(87,183,255,.12);
-      border:1px solid rgba(87,183,255,.26);
+      border:1px solid rgba(87,183,255,.28);
       color:#dff3ff;
     }
 
@@ -442,13 +460,13 @@
       white-space:nowrap;
     }
 
-    .status-open,.status-approved{
+    .status-approved,.status-open{
       background:rgba(24,201,100,.12);
       color:#b6ffd4;
       border-color:rgba(24,201,100,.28);
     }
 
-    .status-full,.status-rejected{
+    .status-rejected,.status-full{
       background:rgba(255,77,109,.12);
       color:#ffd0d9;
       border-color:rgba(255,77,109,.28);
@@ -460,28 +478,16 @@
       border-color:rgba(255,209,102,.26);
     }
 
-    .status-premium{
-      background:rgba(123,44,255,.12);
-      color:#ead8ff;
-      border-color:rgba(123,44,255,.28);
-    }
-
     .status-missing{
       background:rgba(255,255,255,.05);
       color:#ddd7f2;
       border-color:rgba(255,255,255,.12);
     }
 
-    .status-absent{
-      background:rgba(87,183,255,.12);
-      color:#dff3ff;
-      border-color:rgba(87,183,255,.26);
-    }
-
-    .team-players-list,.slot-card-players{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
+    .status-premium{
+      background:rgba(123,44,255,.12);
+      color:#ead8ff;
+      border-color:rgba(123,44,255,.28);
     }
 
     .mini-chip{
@@ -494,6 +500,28 @@
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.06);
       color:#e9e4fb;
+      margin:3px;
+    }
+
+    .summary-mini{
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:16px;
+      padding:14px;
+    }
+
+    .summary-mini span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      margin-bottom:6px;
+      font-weight:900;
+    }
+
+    .summary-mini strong{
+      font-size:24px;
     }
 
     .quick-grid{
@@ -503,8 +531,8 @@
     }
 
     .quick-item{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
       border-radius:18px;
       padding:16px;
     }
@@ -528,11 +556,14 @@
       align-items:start;
     }
 
-    .registered-summary{display:grid;gap:12px;}
+    .registered-summary{
+      display:grid;
+      gap:12px;
+    }
 
     .summary-box{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
       border-radius:18px;
       padding:16px;
     }
@@ -547,24 +578,6 @@
       grid-template-columns:repeat(2,minmax(0,1fr));
       gap:10px;
     }
-
-    .summary-mini{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:14px;
-      padding:12px;
-    }
-
-    .summary-mini span{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-    }
-
-    .summary-mini strong{font-size:22px;}
 
     .slot-preview{
       display:grid;
@@ -581,11 +594,9 @@
       gap:12px;
       padding:14px;
       border-radius:18px;
-      background:rgba(255,255,255,.03);
+      background:rgba(255,255,255,.035);
       border:1px solid rgba(255,255,255,.06);
     }
-
-    .slot-card-left{min-width:0;flex:1;}
 
     .slot-card-title{
       font-size:16px;
@@ -594,31 +605,31 @@
       word-break:break-word;
     }
 
-    .list{display:grid;gap:12px;}
+    .list{
+      display:grid;
+      gap:12px;
+    }
 
-    .pending-card{
-      background:rgba(255,255,255,.025);
+    .pending-card,.log-card,.archive-card{
+      background:rgba(255,255,255,.03);
       border:1px solid rgba(255,255,255,.06);
       border-radius:18px;
       padding:14px;
     }
 
-    .pending-top{
+    .pending-top,.log-card-top,.archive-card-top{
       display:flex;
       justify-content:space-between;
-      gap:10px;
+      align-items:flex-start;
+      gap:12px;
       flex-wrap:wrap;
       margin-bottom:12px;
     }
 
-    .pending-team{
-      font-size:20px;
+    .pending-team,.log-action,.archive-title{
+      font-size:18px;
       font-weight:900;
-    }
-
-    .muted{
-      color:var(--muted);
-      font-size:13px;
+      word-break:break-word;
     }
 
     .pending-grid{
@@ -629,22 +640,24 @@
     }
 
     .box{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
       border-radius:14px;
       padding:12px;
     }
 
     .box span{
       display:block;
-      font-size:12px;
       color:var(--muted);
-      margin-bottom:6px;
+      font-size:12px;
       text-transform:uppercase;
-      letter-spacing:.6px;
+      letter-spacing:.7px;
+      margin-bottom:6px;
     }
 
-    .box strong{font-size:20px;}
+    .box strong{
+      font-size:20px;
+    }
 
     .players{
       display:grid;
@@ -654,8 +667,8 @@
     }
 
     .player-card{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
       border-radius:14px;
       padding:12px;
     }
@@ -689,162 +702,10 @@
       display:block;
     }
 
-    .image-modal,.manual-modal{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.84);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      z-index:9999;
-    }
-
-    .image-modal.show,.manual-modal.show{display:flex;}
-
-    .image-modal-content{
-      position:relative;
-      max-width:min(1400px,96vw);
-      max-height:92vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    .image-modal-content img{
-      max-width:100%;
-      max-height:92vh;
-      object-fit:contain;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:0 0 40px rgba(0,0,0,.45);
-      background:#050507;
-    }
-
-    .image-modal-close{
-      position:absolute;
-      top:-14px;
-      right:-14px;
-      width:42px;
-      height:42px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(15,15,25,.95);
-      color:#fff;
-      font-size:20px;
-      font-weight:900;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow:0 0 20px rgba(0,0,0,.35);
-    }
-
-    .manual-box{
-      width:min(620px,96vw);
-      background:linear-gradient(180deg,rgba(18,18,31,.98),rgba(8,8,14,.98));
-      border:1px solid rgba(160,110,255,.28);
-      border-radius:28px;
-      padding:22px;
-      box-shadow:0 0 0 1px rgba(162,109,255,.12),0 25px 80px rgba(0,0,0,.65),0 0 45px rgba(123,44,255,.20);
-      animation:modalIn .18s ease;
-    }
-
-    @keyframes modalIn{
-      from{opacity:.4;transform:translateY(10px) scale(.98);}
-      to{opacity:1;transform:none;}
-    }
-
-    .manual-head{
-      display:flex;
-      justify-content:space-between;
-      gap:14px;
-      align-items:flex-start;
-      margin-bottom:16px;
-    }
-
-    .manual-title{
-      font-size:24px;
-      font-weight:900;
-      margin-bottom:6px;
-    }
-
-    .manual-subtitle{
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.4;
-    }
-
-    .manual-close{
-      width:42px;
-      height:42px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      color:#fff;
-      font-size:20px;
-      font-weight:900;
-      cursor:pointer;
-    }
-
-    .manual-info{
+    .check-list{
       display:grid;
-      grid-template-columns:1fr 1fr;
       gap:10px;
-      margin-bottom:14px;
     }
-
-    .manual-info-card{
-      border-radius:16px;
-      background:rgba(255,255,255,.035);
-      border:1px solid rgba(255,255,255,.07);
-      padding:12px;
-    }
-
-    .manual-info-card span{
-      display:block;
-      color:var(--muted);
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.7px;
-      margin-bottom:5px;
-    }
-
-    .manual-info-card strong{
-      font-size:16px;
-      word-break:break-word;
-    }
-
-    .manual-player-row{
-      display:grid;
-      grid-template-columns:1fr 130px;
-      gap:10px;
-      align-items:end;
-      margin-bottom:10px;
-    }
-
-    .manual-actions{
-      display:flex;
-      gap:10px;
-      margin-top:16px;
-      flex-wrap:wrap;
-    }
-
-    .section-stack{display:grid;gap:18px;}
-
-    .subsection{
-      background:rgba(255,255,255,.025);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:18px;
-      padding:14px;
-    }
-
-    .subsection h4{
-      margin:0 0 8px;
-      font-size:16px;
-    }
-
-    .check-list{display:grid;gap:10px;}
 
     .check-item{
       display:flex;
@@ -853,8 +714,8 @@
       gap:10px;
       padding:12px 14px;
       border-radius:14px;
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
       font-size:14px;
     }
 
@@ -862,37 +723,8 @@
     .check-no{color:#ffb0bf;font-weight:900;}
 
     .danger-zone{
-      border-color:rgba(255,77,109,.22);
+      border-color:rgba(255,77,109,.25);
       box-shadow:0 0 0 1px rgba(255,77,109,.08),0 0 26px rgba(255,77,109,.08);
-    }
-
-    .log-list,.archive-list{
-      display:grid;
-      gap:12px;
-      max-height:540px;
-      overflow:auto;
-      padding-right:2px;
-    }
-
-    .log-card,.archive-card{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:18px;
-      padding:14px;
-    }
-
-    .log-card-top,.archive-card-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
-
-    .log-action,.archive-title{
-      font-size:16px;
-      font-weight:900;
-      word-break:break-word;
     }
 
     .mono{
@@ -900,12 +732,6 @@
       font-size:12px;
       color:#ded6ff;
       word-break:break-word;
-    }
-
-    .detail-grid{
-      display:grid;
-      gap:8px;
-      margin-top:10px;
     }
 
     .detail-chip{
@@ -922,160 +748,178 @@
       margin-bottom:8px;
     }
 
-    .archive-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:12px;
-    }
-
     .status-bar{
       position:sticky;
       bottom:0;
       margin-top:18px;
-      background:rgba(255,255,255,.04);
+      background:rgba(255,255,255,.055);
       border:1px solid var(--line);
       color:#ddd7f2;
       border-radius:16px;
       padding:12px 14px;
       box-shadow:var(--shadow);
       font-size:13px;
-      z-index:3;
+      z-index:10;
     }
 
-    .custom-dropdown{
+    .image-modal,.manual-modal{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(0,0,0,.84);
+    }
+
+    .image-modal.show,.manual-modal.show{
+      display:flex;
+    }
+
+    .image-modal-content{
       position:relative;
-      width:100%;
+      max-width:min(1400px,96vw);
+      max-height:92vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
 
-    .dropdown-trigger{
-      width:100%;
+    .image-modal-content img{
+      max-width:100%;
+      max-height:92vh;
+      object-fit:contain;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#050507;
+      box-shadow:0 0 45px rgba(0,0,0,.55);
+    }
+
+    .modal-close{
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(15,15,25,.96);
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .image-close{
+      position:absolute;
+      top:-14px;
+      right:-14px;
+      box-shadow:0 0 20px rgba(0,0,0,.45);
+    }
+
+    .manual-box{
+      width:min(620px,96vw);
+      max-height:92vh;
+      overflow:auto;
+      border-radius:28px;
+      padding:22px;
+      background:linear-gradient(180deg,rgba(18,18,31,.98),rgba(8,8,14,.98));
+      border:1px solid rgba(160,110,255,.30);
+      box-shadow:0 0 0 1px rgba(162,109,255,.12),0 25px 80px rgba(0,0,0,.68),0 0 45px rgba(123,44,255,.20);
+      animation:modalIn .18s ease;
+    }
+
+    @keyframes modalIn{
+      from{opacity:.45;transform:translateY(10px) scale(.98);}
+      to{opacity:1;transform:none;}
+    }
+
+    .manual-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .manual-title{
+      font-size:24px;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    .manual-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .manual-info{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:16px;
+    }
+
+    .manual-info-card{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:12px;
+    }
+
+    .manual-info-card span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      font-weight:900;
+      margin-bottom:5px;
+    }
+
+    .manual-info-card strong{
+      font-size:16px;
+      word-break:break-word;
+    }
+
+    .manual-player-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 130px;
+      gap:12px;
+      align-items:end;
+      margin-bottom:10px;
+    }
+
+    .player-name-box{
       min-height:46px;
       border-radius:14px;
       border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      color:#fff;
+      background:rgba(255,255,255,.035);
       padding:12px 14px;
-      font-size:14px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      cursor:pointer;
-      transition:.18s ease;
-      user-select:none;
-    }
-
-    .dropdown-trigger:hover{
-      border-color:rgba(160,110,255,.22);
-      background:rgba(255,255,255,.045);
-    }
-
-    .custom-dropdown.open .dropdown-trigger{
-      border-color:rgba(160,110,255,.35);
-      box-shadow:0 0 0 3px rgba(123,44,255,.12);
-    }
-
-    .dropdown-trigger-text{
-      min-width:0;
-      flex:1;
-      text-align:left;
-      white-space:nowrap;
+      font-weight:900;
+      color:#fff;
       overflow:hidden;
       text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
-    .dropdown-trigger-icon{
-      flex-shrink:0;
-      color:#d4c4ff;
-      transition:transform .18s ease;
-      font-size:12px;
+    .manual-actions{
+      display:flex;
+      gap:10px;
+      margin-top:16px;
+      flex-wrap:wrap;
     }
 
-    .custom-dropdown.open .dropdown-trigger-icon{transform:rotate(180deg);}
-
-    .dropdown-menu{
-      position:absolute;
-      top:calc(100% + 8px);
-      left:0;
-      right:0;
-      z-index:1200;
-      background:linear-gradient(180deg,rgba(19,19,31,.98),rgba(10,10,18,.98));
-      border:1px solid rgba(160,110,255,.20);
-      border-radius:18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 0 1px rgba(162,109,255,.08);
-      padding:10px;
-      display:none;
-    }
-
-    .custom-dropdown.open .dropdown-menu{display:block;}
-
-    .dropdown-search-wrap{margin-bottom:8px;}
-
-    .dropdown-search{
-      width:100%;
-      height:42px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
-      color:#fff;
-      padding:10px 12px;
-      font-size:13px;
-      outline:none;
-    }
-
-    .dropdown-options{
-      max-height:240px;
-      overflow:auto;
+    .log-list,.archive-list{
       display:grid;
-      gap:6px;
+      gap:12px;
+      max-height:540px;
+      overflow:auto;
       padding-right:2px;
-    }
-
-    .dropdown-option{
-      width:100%;
-      border:1px solid transparent;
-      background:rgba(255,255,255,.03);
-      color:#f7f4ff;
-      border-radius:12px;
-      padding:11px 12px;
-      text-align:left;
-      cursor:pointer;
-      font-size:13px;
-      line-height:1.35;
-      transition:.16s ease;
-    }
-
-    .dropdown-option:hover{
-      background:rgba(123,44,255,.12);
-      border-color:rgba(160,110,255,.18);
-    }
-
-    .dropdown-option.active{
-      background:linear-gradient(135deg,rgba(123,44,255,.18),rgba(156,92,255,.12));
-      border-color:rgba(160,110,255,.26);
-    }
-
-    .dropdown-option-empty{
-      padding:12px;
-      color:var(--muted);
-      font-size:13px;
-      text-align:center;
-      background:rgba(255,255,255,.02);
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.05);
-    }
-
-    .dropdown-option-title{
-      font-weight:800;
-      margin-bottom:3px;
-      word-break:break-word;
-    }
-
-    .dropdown-option-subtitle{
-      color:var(--muted);
-      font-size:12px;
-      word-break:break-word;
     }
 
     @media (max-width:1450px){
@@ -1083,15 +927,16 @@
       .grid-4,.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
 
-    @media (max-width:1280px){
-      .registered-layout{grid-template-columns:1fr;}
-    }
-
     @media (max-width:1180px){
       .app{grid-template-columns:1fr;}
-      .sidebar{border-right:0;border-bottom:1px solid rgba(255,255,255,.05);}
-      .grid-2,.grid-3{grid-template-columns:1fr;}
-      body{overflow:auto;}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-right:0;
+        border-bottom:1px solid rgba(255,255,255,.06);
+      }
+      .grid-2,.grid-3,.registered-layout{grid-template-columns:1fr;}
+      .topbar{position:relative;}
     }
 
     @media (max-width:760px){
@@ -1101,21 +946,21 @@
         grid-template-columns:1fr;
       }
       .manual-player-row{grid-template-columns:1fr;}
-      .brand-title{font-size:20px;}
       .page-title{font-size:24px;}
-      .row>*{width:100%;}
+      .brand-title{font-size:20px;}
+      .row>*,.btn,.pill{width:100%;}
       .slot-card{flex-direction:column;}
-      .btn,.pill{width:100%;}
       .image-modal,.manual-modal{padding:14px;}
-      .image-modal-close{top:8px;right:8px;}
+      .image-close{top:8px;right:8px;}
     }
   </style>
 </head>
+
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
-        <img src="/roda-logo.png" alt="Logo" class="logo" />
+        <img src="/roda-logo.png" alt="Logo" />
         <div>
           <div class="brand-title" id="brandTitle">Dashboard Admin</div>
           <div class="brand-subtitle" id="brandSubtitle">Gestione torneo, lobby e approvazioni</div>
@@ -1153,17 +998,15 @@
 
       <div class="sidebar-footer">
         <div class="pill" id="staffInfo">Connesso</div>
-        <div class="sidebar-actions">
-          <button class="btn btn-blue" id="publicSiteBtn">Vai al sito pubblico</button>
-          <button class="btn btn-purple" id="refreshBtn">Aggiorna dashboard</button>
-          <button class="btn btn-red" id="logoutBtn">Esci</button>
-        </div>
+        <button class="btn btn-blue" id="publicSiteBtn">Vai al sito pubblico</button>
+        <button class="btn btn-purple" id="refreshBtn">Aggiorna dashboard</button>
+        <button class="btn btn-red" id="logoutBtn">Esci</button>
       </div>
     </aside>
 
     <main class="main">
       <div class="topbar">
-        <div class="topbar-left">
+        <div>
           <div class="page-title" id="topbarTitle">Panoramica</div>
           <div class="page-subtitle" id="topbarSubtitle">Controlla lo stato del torneo, dei match e delle funzioni principali.</div>
         </div>
@@ -1201,7 +1044,7 @@
 
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>🎮 Stato match corrente</h3>
                 <div class="section-note">Controllo rapido del match attuale: risultati ricevuti, approvati, in attesa e team mancanti.</div>
               </div>
@@ -1227,7 +1070,7 @@
               </div>
             </div>
 
-            <div class="table-wrap" style="margin-top:14px;">
+            <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
@@ -1246,7 +1089,7 @@
 
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>⚡ Azioni rapide</h3>
                 <div class="section-note">Operazioni principali del torneo.</div>
               </div>
@@ -1255,7 +1098,7 @@
             <div class="quick-grid">
               <div class="quick-item">
                 <h4>🎮 Match</h4>
-                <p>Quando cambi match si aggiornano anche i pannelli risultati nelle stanze team e la classifica Discord.</p>
+                <p>Cambia match e aggiorna pannelli risultati e classifica Discord.</p>
                 <div class="field" style="margin-top:12px;">
                   <label>Match corrente</label>
                   <input type="number" id="matchInput" min="1" />
@@ -1276,7 +1119,7 @@
 
               <div class="quick-item">
                 <h4>📨 Pannelli torneo</h4>
-                <p>Gestisci pannello iscrizioni e pannelli risultati locali nelle stanze team.</p>
+                <p>Pannello iscrizioni e pannelli risultati locali nelle stanze team.</p>
                 <div class="row" style="margin-top:12px;">
                   <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
                   <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
@@ -1298,7 +1141,7 @@
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🏆 Classifica team</h3>
                   <div class="section-note">Vista rapida della classifica generale aggiornata.</div>
                 </div>
@@ -1321,7 +1164,7 @@
 
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🔥 Classifica fragger</h3>
                   <div class="section-note">Vista rapida dei giocatori con più uccisioni.</div>
                 </div>
@@ -1345,9 +1188,9 @@
 
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>✅ Controllo configurazione</h3>
-                <div class="section-note">Controllo rapido delle impostazioni base del progetto e dei canali Discord importanti.</div>
+                <div class="section-note">Controllo rapido delle impostazioni base e dei canali Discord importanti.</div>
               </div>
             </div>
             <div class="check-list" id="setupChecks">
@@ -1359,7 +1202,7 @@
         <section class="page" id="page-teams">
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>📋 Team registrati e slot assegnati</h3>
                 <div class="section-note">Lista completa dei team iscritti con slot e giocatori.</div>
               </div>
@@ -1418,7 +1261,7 @@
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>✏️ Modifica team</h3>
                   <div class="section-note">Crea, modifica o elimina i team registrati.</div>
                 </div>
@@ -1426,7 +1269,9 @@
 
               <div class="field">
                 <label>Seleziona team esistente</label>
-                <div id="teamSelectDropdown"></div>
+                <select id="teamSelect" onchange="loadSelectedTeam()">
+                  <option value="">Seleziona team</option>
+                </select>
               </div>
 
               <div class="field">
@@ -1458,7 +1303,7 @@
 
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>📝 Messaggio registrazioni Discord</h3>
                   <div class="section-note">Personalizza il messaggio slot pubblico del torneo.</div>
                 </div>
@@ -1490,9 +1335,9 @@
         <section class="page" id="page-results">
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>🚨 Team mancanti nel match corrente</h3>
-                <div class="section-note">Qui vedi chi non ha ancora inviato il risultato o chi deve reinviare perché rifiutato.</div>
+                <div class="section-note">Chi non ha ancora inviato o chi deve essere sistemato manualmente.</div>
               </div>
               <div class="pill" id="missingTeamsPill">0 mancanti</div>
             </div>
@@ -1517,7 +1362,7 @@
 
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>📊 Riepilogo match</h3>
                 <div class="section-note">Situazione dei match creati finora.</div>
               </div>
@@ -1545,19 +1390,19 @@
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>📌 Inserimento manuale admin</h3>
-                  <div class="section-note">Ora si usa il pulsante “Inserisci risultato” sulle tabelle dei team mancanti. Si apre una finestra centrale con i 3 giocatori.</div>
+                  <div class="section-note">Usa il pulsante “Inserisci risultato” nelle tabelle dei team mancanti. Si apre una finestra centrale.</div>
                 </div>
               </div>
               <div class="helper">
-                Il risultato manuale viene contato subito perché è inserito dallo staff. Non serve screenshot e non passa dalla coda approvazioni.
+                Il risultato manuale viene contato subito perché lo inserisce lo staff. Non serve screenshot e non passa dalla coda approvazioni.
               </div>
             </div>
 
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🔥 Gestione fragger</h3>
                   <div class="section-note">Correggi o elimina manualmente i dati dei giocatori.</div>
                 </div>
@@ -1565,7 +1410,9 @@
 
               <div class="field">
                 <label>Seleziona giocatore</label>
-                <div id="fraggerSelectDropdown"></div>
+                <select id="fraggerSelect" onchange="loadSelectedFragger()">
+                  <option value="">Seleziona giocatore</option>
+                </select>
               </div>
 
               <div class="field">
@@ -1587,7 +1434,7 @@
 
           <div class="card section-card">
             <div class="card-header">
-              <div class="card-header-left">
+              <div>
                 <h3>📸 Risultati in attesa</h3>
                 <div class="section-note">Apri l’immagine, controlla i dati del match e approva o rifiuta.</div>
               </div>
@@ -1600,95 +1447,81 @@
         </section>
 
         <section class="page" id="page-discord">
-          <div class="section-stack">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-header-left">
-                  <h3>⚙️ Impostazioni Discord</h3>
-                  <div class="section-note">Salva una volta canali e categoria, così la dashboard li riusa automaticamente.</div>
-                </div>
-              </div>
-
-              <div class="grid-3">
-                <div class="subsection">
-                  <h4>Canali e categoria</h4>
-                  <div class="field">
-                    <label>ID canale pannello registrazione</label>
-                    <input type="text" id="registerPanelChannel" placeholder="ID canale registrazione" />
-                  </div>
-                  <div class="field">
-                    <label>ID canale risultati salvato</label>
-                    <input type="text" id="resultsPanelChannel" placeholder="Facoltativo, per compatibilità" />
-                  </div>
-                  <div class="field">
-                    <label>ID categoria stanze team</label>
-                    <input type="text" id="roomsCategoryId" placeholder="ID categoria stanze vocali" />
-                  </div>
-                  <button class="btn btn-blue" onclick="saveBotSettings()">Salva impostazioni Discord</button>
-                </div>
-
-                <div class="subsection">
-                  <h4>Pannelli torneo</h4>
-                  <div class="helper" style="margin-bottom:12px;">
-                    Il pannello registrazione è pubblico. I pannelli risultati vengono creati e aggiornati direttamente nelle stanze dei team.
-                  </div>
-                  <div class="row">
-                    <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
-                    <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
-                  </div>
-                </div>
-
-                <div class="subsection">
-                  <h4>Classifica Discord</h4>
-                  <div class="helper" style="margin-bottom:12px;">
-                    La classifica viene aggiornata anche quando approvi un risultato, ma puoi forzarla quando vuoi.
-                  </div>
-                  <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica Discord</button>
-                </div>
+          <div class="card section-card">
+            <div class="card-header">
+              <div>
+                <h3>⚙️ Impostazioni Discord</h3>
+                <div class="section-note">Salva una volta canali e categoria, così la dashboard li riusa automaticamente.</div>
               </div>
             </div>
 
-            <div class="grid-2">
-              <div class="card">
-                <div class="card-header">
-                  <div class="card-header-left">
-                    <h3>🎙️ Stanze vocali team</h3>
-                    <div class="section-note">Crea o elimina tutte le stanze vocali ordinate per slot.</div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <button class="btn btn-green" onclick="createRooms()">Crea stanze team</button>
-                  <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze team</button>
-                </div>
-
-                <div class="helper">
-                  Dopo la creazione, puoi generare i pannelli risultati team e inviare il codice lobby.
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="card-header">
-                  <div class="card-header-left">
-                    <h3>🎮 Codice lobby</h3>
-                    <div class="section-note">Invia in un click il codice lobby in tutte le stanze vocali dei team.</div>
-                  </div>
-                </div>
-
+            <div class="grid-3">
+              <div>
                 <div class="field">
-                  <label>Codice lobby</label>
-                  <input type="text" id="lobbyCode" placeholder="Inserisci il codice lobby" />
+                  <label>ID canale pannello registrazione</label>
+                  <input type="text" id="registerPanelChannel" placeholder="ID canale registrazione" />
                 </div>
+                <div class="field">
+                  <label>ID canale risultati salvato</label>
+                  <input type="text" id="resultsPanelChannel" placeholder="Facoltativo" />
+                </div>
+                <div class="field">
+                  <label>ID categoria stanze team</label>
+                  <input type="text" id="roomsCategoryId" placeholder="ID categoria stanze vocali" />
+                </div>
+                <button class="btn btn-blue" onclick="saveBotSettings()">Salva impostazioni Discord</button>
+              </div>
 
-                <button class="btn btn-green" onclick="sendLobbyCode()">Invia codice a tutte le stanze team</button>
-
-                <div class="helper">
-                  Messaggio inviato dal bot:<br>
-                  <strong>🎮 CODICE LOBBY</strong><br>
-                  Codice: <strong>...</strong><br><br>
-                  Buon game 🔥
+              <div>
+                <h3>Pannelli torneo</h3>
+                <div class="helper" style="margin-bottom:12px;">
+                  Il pannello registrazione è pubblico. I pannelli risultati vengono creati nelle stanze team.
+                </div>
+                <div class="row">
+                  <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello registrazione</button>
+                  <button class="btn btn-blue" onclick="refreshTeamResultPanels()">Pannelli risultati team</button>
                 </div>
               </div>
+
+              <div>
+                <h3>Classifica Discord</h3>
+                <div class="helper" style="margin-bottom:12px;">
+                  La classifica si aggiorna anche quando approvi o inserisci risultati manuali.
+                </div>
+                <button class="btn btn-yellow" onclick="forceLeaderboard()">Aggiorna classifica Discord</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>🎙️ Stanze vocali team</h3>
+                  <div class="section-note">Crea o elimina tutte le stanze vocali ordinate per slot.</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn btn-green" onclick="createRooms()">Crea stanze team</button>
+                <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze team</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>🎮 Codice lobby</h3>
+                  <div class="section-note">Invia il codice lobby in tutte le stanze vocali dei team.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Codice lobby</label>
+                <input type="text" id="lobbyCode" placeholder="Inserisci il codice lobby" />
+              </div>
+
+              <button class="btn btn-green" onclick="sendLobbyCode()">Invia codice a tutte le stanze team</button>
             </div>
           </div>
         </section>
@@ -1697,7 +1530,7 @@
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🛠️ Configurazione progetto</h3>
                   <div class="section-note">Impostazioni generali usate dal sito pubblico, dai pannelli Discord e dalla dashboard.</div>
                 </div>
@@ -1715,12 +1548,12 @@
 
               <div class="field">
                 <label>Contatto supporto</label>
-                <input type="text" id="projectSupportContact" placeholder="Es. Discord, Telegram o email" />
+                <input type="text" id="projectSupportContact" placeholder="Discord, Telegram o email" />
               </div>
 
               <div class="field">
                 <label class="helper" style="margin:0;">
-                  <input type="checkbox" id="projectPremiumMode" style="width:auto;height:auto;margin-right:8px;" />
+                  <input type="checkbox" id="projectPremiumMode" style="width:auto;min-height:auto;margin-right:8px;" />
                   Modalità premium attiva
                 </label>
               </div>
@@ -1733,7 +1566,7 @@
 
             <div class="card danger-zone">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🧹 Reset sistema</h3>
                   <div class="section-note">Usa questi pulsanti solo quando vuoi pulire dati o registrazioni.</div>
                 </div>
@@ -1751,7 +1584,7 @@
           <div class="grid-2">
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🧾 Registro attività staff</h3>
                   <div class="section-note">Storico delle azioni eseguite da staff, sito e bot.</div>
                 </div>
@@ -1763,25 +1596,25 @@
 
             <div class="card">
               <div class="card-header">
-                <div class="card-header-left">
+                <div>
                   <h3>🗂️ Archivi torneo</h3>
                   <div class="section-note">Crea snapshot manuali e ripristina uno stato precedente in sicurezza.</div>
                 </div>
               </div>
 
-              <div class="subsection" style="margin-bottom:12px;">
-                <div class="field">
-                  <label>Etichetta archivio</label>
-                  <input type="text" id="archiveLabel" placeholder="Es. Fine match 4 / Backup staff / Pre reset" />
-                </div>
-                <div class="field">
-                  <label>Nota archivio</label>
-                  <textarea id="archiveNote" placeholder="Nota opzionale archivio"></textarea>
-                </div>
-                <button class="btn btn-blue" onclick="createArchive()">Crea archivio adesso</button>
+              <div class="field">
+                <label>Etichetta archivio</label>
+                <input type="text" id="archiveLabel" placeholder="Es. Fine torneo / Backup staff / Pre reset" />
               </div>
 
-              <div id="archiveList" class="archive-list">
+              <div class="field">
+                <label>Nota archivio</label>
+                <textarea id="archiveNote" placeholder="Nota opzionale archivio"></textarea>
+              </div>
+
+              <button class="btn btn-blue" onclick="createArchive()">Crea archivio adesso</button>
+
+              <div id="archiveList" class="archive-list" style="margin-top:14px;">
                 <div class="empty">Nessun archivio disponibile</div>
               </div>
             </div>
@@ -1795,7 +1628,7 @@
 
   <div id="imageModal" class="image-modal" onclick="handleImageModalBackdrop(event)">
     <div class="image-modal-content">
-      <button type="button" class="image-modal-close" onclick="closeImageModal()">×</button>
+      <button type="button" class="modal-close image-close" onclick="closeImageModal()">×</button>
       <img id="imageModalPreview" src="" alt="Anteprima screenshot risultato" />
     </div>
   </div>
@@ -1807,7 +1640,7 @@
           <div class="manual-title">📤 Inserisci risultato manuale</div>
           <div class="manual-subtitle">Risultato verificato dallo staff. Verrà contato subito senza approvazione.</div>
         </div>
-        <button type="button" class="manual-close" onclick="closeManualResultModal()">×</button>
+        <button type="button" class="modal-close" onclick="closeManualResultModal()">×</button>
       </div>
 
       <div class="manual-info">
@@ -1825,35 +1658,35 @@
       <input type="hidden" id="manualMatchValue" />
 
       <div class="manual-player-row">
-        <div class="field">
-          <label id="manualPlayer1Label">Giocatore 1</label>
-          <input type="number" id="manualK1" min="0" placeholder="Uccisioni" />
+        <div>
+          <label class="field-label">Giocatore 1</label>
+          <div class="player-name-box" id="manualPlayer1Name">Giocatore 1</div>
         </div>
         <div class="field">
           <label>Kill</label>
-          <input type="number" id="manualK1Mirror" min="0" placeholder="0" />
+          <input type="number" id="manualK1" min="0" placeholder="0" />
         </div>
       </div>
 
       <div class="manual-player-row">
-        <div class="field">
-          <label id="manualPlayer2Label">Giocatore 2</label>
-          <input type="number" id="manualK2" min="0" placeholder="Uccisioni" />
+        <div>
+          <label class="field-label">Giocatore 2</label>
+          <div class="player-name-box" id="manualPlayer2Name">Giocatore 2</div>
         </div>
         <div class="field">
           <label>Kill</label>
-          <input type="number" id="manualK2Mirror" min="0" placeholder="0" />
+          <input type="number" id="manualK2" min="0" placeholder="0" />
         </div>
       </div>
 
       <div class="manual-player-row">
-        <div class="field">
-          <label id="manualPlayer3Label">Giocatore 3</label>
-          <input type="number" id="manualK3" min="0" placeholder="Uccisioni" />
+        <div>
+          <label class="field-label">Giocatore 3</label>
+          <div class="player-name-box" id="manualPlayer3Name">Giocatore 3</div>
         </div>
         <div class="field">
           <label>Kill</label>
-          <input type="number" id="manualK3Mirror" min="0" placeholder="0" />
+          <input type="number" id="manualK3" min="0" placeholder="0" />
         </div>
       </div>
 
@@ -1872,7 +1705,6 @@
   <script>
     let dashboard = null;
     let loading = false;
-    let customDropdowns = {};
 
     const pageMeta = {
       'page-overview': {
@@ -1903,11 +1735,11 @@
 
     function escapeHtml(text) {
       return String(text ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
     }
 
     function formatDateTime(value) {
@@ -1920,7 +1752,7 @@
       if (status === 'approvato' || status === 'inserito_manualmente') return 'status-approved';
       if (status === 'in_attesa') return 'status-waiting';
       if (status === 'rifiutato') return 'status-rejected';
-      if (status === 'assente') return 'status-absent';
+      if (status === 'assente') return 'status-missing';
       return 'status-missing';
     }
 
@@ -1936,15 +1768,15 @@
       const meta = pageMeta[pageId] || pageMeta['page-overview'];
       document.getElementById('topbarTitle').textContent = meta.title;
       document.getElementById('topbarSubtitle').textContent = meta.subtitle;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function api(url, options = {}) {
-      const baseHeaders = options.body ? { 'Content-Type': 'application/json' } : {};
-
       const response = await fetch(url, {
-        credentials: 'same-origin',
-        headers: {
-          ...baseHeaders,
+        credentials:'same-origin',
+        headers:{
+          ...(options.body ? {'Content-Type':'application/json'} : {}),
           ...(options.headers || {})
         },
         ...options
@@ -1960,25 +1792,19 @@
     }
 
     function openImageModal(src) {
-      const modal = document.getElementById('imageModal');
-      const preview = document.getElementById('imageModalPreview');
-      preview.src = src || '';
-      modal.classList.add('show');
+      document.getElementById('imageModalPreview').src = src || '';
+      document.getElementById('imageModal').classList.add('show');
       document.body.style.overflow = 'hidden';
     }
 
     function closeImageModal() {
-      const modal = document.getElementById('imageModal');
-      const preview = document.getElementById('imageModalPreview');
-      modal.classList.remove('show');
-      preview.src = '';
+      document.getElementById('imageModal').classList.remove('show');
+      document.getElementById('imageModalPreview').src = '';
       document.body.style.overflow = '';
     }
 
     function handleImageModalBackdrop(event) {
-      if (event.target && event.target.id === 'imageModal') {
-        closeImageModal();
-      }
+      if (event.target.id === 'imageModal') closeImageModal();
     }
 
     function openManualResultModal(teamName, matchNumber) {
@@ -1990,16 +1816,13 @@
       document.getElementById('manualTeamValue').value = teamName || '';
       document.getElementById('manualMatchValue').value = Number(matchNumber || dashboard?.matchCorrente || 1);
 
-      document.getElementById('manualPlayer1Label').textContent = players[0] || 'Giocatore 1';
-      document.getElementById('manualPlayer2Label').textContent = players[1] || 'Giocatore 2';
-      document.getElementById('manualPlayer3Label').textContent = players[2] || 'Giocatore 3';
+      document.getElementById('manualPlayer1Name').textContent = players[0] || 'Giocatore 1';
+      document.getElementById('manualPlayer2Name').textContent = players[1] || 'Giocatore 2';
+      document.getElementById('manualPlayer3Name').textContent = players[2] || 'Giocatore 3';
 
       document.getElementById('manualK1').value = '';
       document.getElementById('manualK2').value = '';
       document.getElementById('manualK3').value = '';
-      document.getElementById('manualK1Mirror').value = '';
-      document.getElementById('manualK2Mirror').value = '';
-      document.getElementById('manualK3Mirror').value = '';
       document.getElementById('manualPos').value = '';
 
       document.getElementById('manualResultModal').classList.add('show');
@@ -2014,30 +1837,7 @@
     }
 
     function handleManualModalBackdrop(event) {
-      if (event.target && event.target.id === 'manualResultModal') {
-        closeManualResultModal();
-      }
-    }
-
-    function syncManualMirrors() {
-      const pairs = [
-        ['manualK1', 'manualK1Mirror'],
-        ['manualK2', 'manualK2Mirror'],
-        ['manualK3', 'manualK3Mirror']
-      ];
-
-      pairs.forEach(([a, b]) => {
-        const first = document.getElementById(a);
-        const second = document.getElementById(b);
-
-        first.addEventListener('input', () => {
-          second.value = first.value;
-        });
-
-        second.addEventListener('input', () => {
-          first.value = second.value;
-        });
-      });
+      if (event.target.id === 'manualResultModal') closeManualResultModal();
     }
 
     async function submitManualResult() {
@@ -2058,21 +1858,14 @@
         return;
       }
 
-      const submitBtn = document.getElementById('manualSubmitBtn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Invio in corso...';
+      const btn = document.getElementById('manualSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Invio in corso...';
 
       try {
         const result = await api('/api/manual-result', {
-          method: 'POST',
-          body: JSON.stringify({
-            team,
-            matchNumber,
-            k1,
-            k2,
-            k3,
-            pos
-          })
+          method:'POST',
+          body:JSON.stringify({ team, matchNumber, k1, k2, k3, pos })
         });
 
         if (!result) return;
@@ -2089,8 +1882,8 @@
         console.error(error);
         alert('Errore di connessione');
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Invia risultato';
+        btn.disabled = false;
+        btn.textContent = 'Invia risultato';
       }
     }
 
@@ -2098,271 +1891,8 @@
       if (event.key === 'Escape') {
         closeImageModal();
         closeManualResultModal();
-        closeAllDropdowns();
       }
     });
-
-    document.addEventListener('click', event => {
-      const insideDropdown = event.target.closest('.custom-dropdown');
-      if (!insideDropdown) closeAllDropdowns();
-    });
-
-    function closeAllDropdowns(exceptId = null) {
-      Object.values(customDropdowns).forEach(dropdown => {
-        if (dropdown.id !== exceptId) dropdown.root.classList.remove('open');
-      });
-    }
-
-    function createCustomDropdown({ mountId, dropdownId, placeholder = 'Seleziona', searchable = true, onChange = null }) {
-      const mount = document.getElementById(mountId);
-      if (!mount) return null;
-
-      mount.innerHTML = `
-        <div class="custom-dropdown" data-dropdown-id="${escapeHtml(dropdownId)}">
-          <button type="button" class="dropdown-trigger">
-            <span class="dropdown-trigger-text">${escapeHtml(placeholder)}</span>
-            <span class="dropdown-trigger-icon">⌄</span>
-          </button>
-          <div class="dropdown-menu">
-            ${searchable ? `
-              <div class="dropdown-search-wrap">
-                <input type="text" class="dropdown-search" placeholder="Cerca..." />
-              </div>
-            ` : ''}
-            <div class="dropdown-options"></div>
-          </div>
-        </div>
-      `;
-
-      const root = mount.querySelector('.custom-dropdown');
-      const trigger = root.querySelector('.dropdown-trigger');
-      const triggerText = root.querySelector('.dropdown-trigger-text');
-      const searchInput = root.querySelector('.dropdown-search');
-      const optionsWrap = root.querySelector('.dropdown-options');
-
-      const dropdown = {
-        id: dropdownId,
-        root,
-        trigger,
-        triggerText,
-        searchInput,
-        optionsWrap,
-        placeholder,
-        options: [],
-        value: '',
-        onChange
-      };
-
-      trigger.addEventListener('click', event => {
-        event.stopPropagation();
-        const willOpen = !root.classList.contains('open');
-        closeAllDropdowns(willOpen ? dropdownId : null);
-        root.classList.toggle('open', willOpen);
-        if (willOpen && searchInput) setTimeout(() => searchInput.focus(), 0);
-      });
-
-      if (searchInput) {
-        searchInput.addEventListener('click', event => event.stopPropagation());
-        searchInput.addEventListener('input', () => renderDropdownOptions(dropdown, searchInput.value));
-      }
-
-      customDropdowns[dropdownId] = dropdown;
-      renderDropdownOptions(dropdown, '');
-      return dropdown;
-    }
-
-    function setDropdownOptions(dropdownId, options = []) {
-      const dropdown = customDropdowns[dropdownId];
-      if (!dropdown) return;
-
-      dropdown.options = Array.isArray(options) ? options.slice() : [];
-      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
-
-      const hasCurrent = dropdown.options.some(option => option.value === dropdown.value);
-      if (!hasCurrent) {
-        dropdown.value = '';
-        dropdown.triggerText.textContent = dropdown.placeholder;
-      } else {
-        updateDropdownTrigger(dropdown);
-      }
-    }
-
-    function renderDropdownOptions(dropdown, searchTerm = '') {
-      const term = String(searchTerm || '').trim().toLowerCase();
-
-      const filtered = dropdown.options.filter(option => {
-        if (!term) return true;
-        const title = String(option.label || '').toLowerCase();
-        const subtitle = String(option.subtitle || '').toLowerCase();
-        return title.includes(term) || subtitle.includes(term);
-      });
-
-      if (!filtered.length) {
-        dropdown.optionsWrap.innerHTML = `<div class="dropdown-option-empty">Nessun elemento trovato</div>`;
-        return;
-      }
-
-      dropdown.optionsWrap.innerHTML = filtered.map(option => `
-        <button
-          type="button"
-          class="dropdown-option ${option.value === dropdown.value ? 'active' : ''}"
-          data-value="${escapeHtml(option.value)}"
-        >
-          <div class="dropdown-option-title">${escapeHtml(option.label)}</div>
-          ${option.subtitle ? `<div class="dropdown-option-subtitle">${escapeHtml(option.subtitle)}</div>` : ''}
-        </button>
-      `).join('');
-
-      dropdown.optionsWrap.querySelectorAll('.dropdown-option').forEach(button => {
-        button.addEventListener('click', event => {
-          event.stopPropagation();
-          setDropdownValue(dropdown.id, button.dataset.value || '', true);
-          dropdown.root.classList.remove('open');
-        });
-      });
-    }
-
-    function updateDropdownTrigger(dropdown) {
-      const selected = dropdown.options.find(option => option.value === dropdown.value);
-      dropdown.triggerText.textContent = selected ? selected.label : dropdown.placeholder;
-    }
-
-    function setDropdownValue(dropdownId, value, triggerChange = false) {
-      const dropdown = customDropdowns[dropdownId];
-      if (!dropdown) return;
-
-      dropdown.value = value || '';
-      updateDropdownTrigger(dropdown);
-      renderDropdownOptions(dropdown, dropdown.searchInput?.value || '');
-
-      if (triggerChange && typeof dropdown.onChange === 'function') dropdown.onChange(dropdown.value);
-    }
-
-    function getDropdownValue(dropdownId) {
-      return customDropdowns[dropdownId]?.value || '';
-    }
-
-    function resetDropdownSearch(dropdownId) {
-      const dropdown = customDropdowns[dropdownId];
-      if (!dropdown) return;
-      if (dropdown.searchInput) dropdown.searchInput.value = '';
-      renderDropdownOptions(dropdown, '');
-    }
-
-    function initializeDropdowns() {
-      createCustomDropdown({
-        mountId: 'teamSelectDropdown',
-        dropdownId: 'teamSelect',
-        placeholder: 'Seleziona team',
-        searchable: true,
-        onChange: loadSelectedTeam
-      });
-
-      createCustomDropdown({
-        mountId: 'fraggerSelectDropdown',
-        dropdownId: 'fraggerSelect',
-        placeholder: 'Seleziona giocatore',
-        searchable: true,
-        onChange: loadSelectedFragger
-      });
-    }
-
-    function renderSetupChecks(statoSetup) {
-      const controlli = statoSetup?.controlli || {};
-      const entries = [
-        ['Nome brand', controlli.nomeBrand],
-        ['Nome torneo', controlli.nomeTorneo],
-        ['Canale pannello registrazione', controlli.canalePannelloRegistrazione],
-        ['Categoria stanze vocali', controlli.categoriaStanze]
-      ];
-
-      document.getElementById('setupChecks').innerHTML = entries.map(([label, ok]) => `
-        <div class="check-item">
-          <span>${escapeHtml(label)}</span>
-          <span class="${ok ? 'check-ok' : 'check-no'}">${ok ? 'OK' : 'MANCANTE'}</span>
-        </div>
-      `).join('');
-
-      document.getElementById('setupPill').textContent = statoSetup?.completato
-        ? 'Configurazione completata'
-        : 'Configurazione non completata';
-    }
-
-    function renderBranding(impostazioniProgetto) {
-      const brandName = impostazioniProgetto?.brandName || 'RØDA';
-      const tournamentName = impostazioniProgetto?.tournamentName || 'RØDA CUP';
-      const premiumMode = Boolean(impostazioniProgetto?.premiumMode);
-      const modeLabel = premiumMode ? 'Dashboard Admin Premium' : 'Dashboard Admin';
-
-      document.title = `${brandName} ${modeLabel}`;
-      document.getElementById('brandTitle').textContent = `${brandName} ${modeLabel}`;
-      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione torneo, lobby e approvazioni${premiumMode ? ' • premium attivo' : ''}`;
-
-      document.getElementById('projectBrandName').value = brandName;
-      document.getElementById('projectTournamentName').value = tournamentName;
-      document.getElementById('projectSupportContact').value = impostazioniProgetto?.supportContact || '';
-      document.getElementById('projectPremiumMode').checked = premiumMode;
-    }
-
-    function renderAuditLog(auditLog) {
-      const list = document.getElementById('auditLogList');
-
-      list.innerHTML = auditLog.length
-        ? auditLog.map(item => `
-          <div class="log-card">
-            <div class="log-card-top">
-              <div>
-                <div class="log-action">${escapeHtml(item.action || 'azione_sconosciuta')}</div>
-                <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
-              </div>
-              <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
-            </div>
-            <div class="detail-grid">
-              <div class="mono">${escapeHtml(item.id || '')}</div>
-              ${Object.keys(item.details || {}).length
-                ? `<div>${Object.entries(item.details).map(([key, value]) => `
-                  <span class="detail-chip"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
-                `).join('')}</div>`
-                : `<div class="muted">Nessun dettaglio aggiuntivo</div>`}
-            </div>
-          </div>
-        `).join('')
-        : `<div class="empty">Nessun log disponibile</div>`;
-    }
-
-    function renderArchives(archivi) {
-      const list = document.getElementById('archiveList');
-
-      list.innerHTML = archivi.length
-        ? archivi.map(item => `
-          <div class="archive-card">
-            <div class="archive-card-top">
-              <div>
-                <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
-                <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
-              </div>
-              <div class="status-badge status-premium">ARCHIVIO</div>
-            </div>
-            <div class="detail-grid">
-              <div>
-                <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
-                <span class="detail-chip">Autore: ${escapeHtml(item.actor || '-')}</span>
-                <span class="detail-chip">Origine: ${escapeHtml(item.source || '-')}</span>
-              </div>
-              <div>
-                <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
-                <span class="detail-chip">In attesa: ${Number(item.pendingCount || 0)}</span>
-                <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
-              </div>
-              <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
-            </div>
-            <div class="archive-actions">
-              <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina archivio</button>
-            </div>
-          </div>
-        `).join('')
-        : `<div class="empty">Nessun archivio disponibile</div>`;
-    }
 
     async function refreshDashboard() {
       if (loading) return;
@@ -2416,7 +1946,7 @@
       const auditLog = dashboard.auditLog || [];
       const archivi = dashboard.archivi || [];
       const statoMatchCorrente = dashboard.statoMatchCorrente || {};
-      const teamMancantiMatchCorrente = dashboard.teamMancantiMatchCorrente || [];
+      const teamMancanti = dashboard.teamMancantiMatchCorrente || [];
       const riepilogoMatch = dashboard.riepilogoMatch || [];
 
       renderBranding(impostazioniProgetto);
@@ -2457,203 +1987,295 @@
       document.getElementById('matchApprovedTeams').textContent = Number(statoMatchCorrente.approvati || 0);
       document.getElementById('matchMissingTeams').textContent = Number(statoMatchCorrente.nonInviati || 0);
 
-      const currentMatchTeamsBody = document.getElementById('currentMatchTeamsBody');
-      const matchRows = Array.isArray(statoMatchCorrente.righe) ? statoMatchCorrente.righe : [];
+      renderCurrentMatchRows(statoMatchCorrente);
+      renderMissingTeams(teamMancanti);
+      renderMatchSummary(riepilogoMatch);
+      renderRegisteredTeams(teamOrdinati);
+      renderTeamSelect(teamOrdinati);
+      renderLeaderboards(classificaTeam, classificaFragger);
+      renderPendingResults(risultatiInAttesa);
+      renderFraggerSelect(classificaFragger);
+    }
 
-      currentMatchTeamsBody.innerHTML = matchRows.length
-        ? matchRows.map(row => `
-          <tr>
-            <td><span class="slot-badge">#${row.slot || '-'}</span></td>
-            <td><strong>${escapeHtml(row.team)}</strong></td>
-            <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
-            <td>
-              ${row.stato === 'in_attesa' && row.pendingId
-                ? `<button class="btn btn-blue" onclick="switchPage('page-results')">Controlla risultato</button>`
-                : row.stato === 'non_inviato' || row.stato === 'rifiutato'
-                  ? `<button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button>`
-                  : `<span class="muted">Nessuna azione</span>`}
-            </td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="4" class="empty">Nessun dato match</td></tr>`;
+    function renderBranding(settings) {
+      const brandName = settings?.brandName || 'RØDA';
+      const tournamentName = settings?.tournamentName || 'RØDA CUP';
+      const premiumMode = Boolean(settings?.premiumMode);
+      const modeLabel = premiumMode ? 'Dashboard Admin Premium' : 'Dashboard Admin';
 
-      const missingTeamsBody = document.getElementById('missingTeamsBody');
-      document.getElementById('missingTeamsPill').textContent = `${teamMancantiMatchCorrente.length} mancanti`;
+      document.title = `${brandName} ${modeLabel}`;
+      document.getElementById('brandTitle').textContent = `${brandName} ${modeLabel}`;
+      document.getElementById('brandSubtitle').textContent = `${tournamentName} • gestione torneo, lobby e approvazioni${premiumMode ? ' • premium attivo' : ''}`;
 
-      missingTeamsBody.innerHTML = teamMancantiMatchCorrente.length
-        ? teamMancantiMatchCorrente.map(row => `
-          <tr>
-            <td><span class="slot-badge">#${row.slot || '-'}</span></td>
-            <td><strong>${escapeHtml(row.team)}</strong></td>
-            <td>
-              <div class="team-players-list">
-                ${(row.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-              </div>
-            </td>
-            <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
-            <td>
-              <button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button>
-            </td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="5" class="empty">Nessun team mancante</td></tr>`;
+      document.getElementById('projectBrandName').value = brandName;
+      document.getElementById('projectTournamentName').value = tournamentName;
+      document.getElementById('projectSupportContact').value = settings?.supportContact || '';
+      document.getElementById('projectPremiumMode').checked = premiumMode;
+    }
 
-      const matchSummaryBody = document.getElementById('matchSummaryBody');
-      matchSummaryBody.innerHTML = riepilogoMatch.length
-        ? riepilogoMatch.map(match => `
-          <tr>
-            <td><strong>Match ${Number(match.matchNumber || 1)}</strong></td>
-            <td>${Number(match.inviati || 0)} / ${Number(match.totaleTeam || 0)}</td>
-            <td>${Number(match.inAttesa || 0)}</td>
-            <td>${Number(match.approvati || 0)}</td>
-            <td>${Number(match.nonInviati || 0)}</td>
-            <td>
-              <span class="status-badge ${match.completato ? 'status-approved' : 'status-waiting'}">
-                ${match.completato ? 'COMPLETATO' : 'APERTO'}
-              </span>
-            </td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="6" class="empty">Nessun riepilogo disponibile</td></tr>`;
+    function renderSetupChecks(statoSetup) {
+      const controlli = statoSetup?.controlli || {};
+      const entries = [
+        ['Nome brand', controlli.nomeBrand],
+        ['Nome torneo', controlli.nomeTorneo],
+        ['Canale pannello registrazione', controlli.canalePannelloRegistrazione],
+        ['Categoria stanze vocali', controlli.categoriaStanze]
+      ];
 
-      const registeredTeamsBody = document.getElementById('registeredTeamsBody');
-      registeredTeamsBody.innerHTML = teamOrdinati.length
-        ? teamOrdinati.map(team => `
-          <tr>
-            <td><span class="slot-badge">#${team.slot || '-'}</span></td>
-            <td><strong>${escapeHtml(team.team)}</strong></td>
-            <td>
-              <div class="team-players-list">
-                ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-              </div>
-            </td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
+      document.getElementById('setupChecks').innerHTML = entries.map(([label, ok]) => `
+        <div class="check-item">
+          <span>${escapeHtml(label)}</span>
+          <span class="${ok ? 'check-ok' : 'check-no'}">${ok ? 'OK' : 'MANCANTE'}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('setupPill').textContent = statoSetup?.completato
+        ? 'Configurazione completata'
+        : 'Configurazione non completata';
+    }
+
+    function renderCurrentMatchRows(statoMatchCorrente) {
+      const body = document.getElementById('currentMatchTeamsBody');
+      const rows = Array.isArray(statoMatchCorrente.righe) ? statoMatchCorrente.righe : [];
+
+      body.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+          <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+          <td><strong>${escapeHtml(row.team)}</strong></td>
+          <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+          <td>
+            ${row.stato === 'in_attesa' && row.pendingId
+              ? `<button class="btn btn-blue" onclick="switchPage('page-results')">Controlla risultato</button>`
+              : row.stato === 'non_inviato' || row.stato === 'rifiutato'
+                ? `<button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button>`
+                : `<span class="muted">Nessuna azione</span>`}
+          </td>
+        </tr>
+      `).join('') : `<tr><td colspan="4" class="empty">Nessun dato match</td></tr>`;
+    }
+
+    function renderMissingTeams(rows) {
+      const body = document.getElementById('missingTeamsBody');
+      document.getElementById('missingTeamsPill').textContent = `${rows.length} mancanti`;
+
+      body.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+          <td><span class="slot-badge">#${row.slot || '-'}</span></td>
+          <td><strong>${escapeHtml(row.team)}</strong></td>
+          <td>${(row.players || []).map(p => `<span class="mini-chip">${escapeHtml(p || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}</td>
+          <td><span class="status-badge ${getStatusClass(row.stato)}">${escapeHtml(row.statoTesto || '-')}</span></td>
+          <td><button class="btn btn-yellow" onclick="openManualResultModal('${escapeHtml(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button></td>
+        </tr>
+      `).join('') : `<tr><td colspan="5" class="empty">Nessun team mancante</td></tr>`;
+    }
+
+    function renderMatchSummary(rows) {
+      const body = document.getElementById('matchSummaryBody');
+
+      body.innerHTML = rows.length ? rows.map(match => `
+        <tr>
+          <td><strong>Match ${Number(match.matchNumber || 1)}</strong></td>
+          <td>${Number(match.inviati || 0)} / ${Number(match.totaleTeam || 0)}</td>
+          <td>${Number(match.inAttesa || 0)}</td>
+          <td>${Number(match.approvati || 0)}</td>
+          <td>${Number(match.nonInviati || 0)}</td>
+          <td>
+            <span class="status-badge ${match.completato ? 'status-approved' : 'status-waiting'}">
+              ${match.completato ? 'COMPLETATO' : 'APERTO'}
+            </span>
+          </td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" class="empty">Nessun riepilogo disponibile</td></tr>`;
+    }
+
+    function renderRegisteredTeams(rows) {
+      const body = document.getElementById('registeredTeamsBody');
+
+      body.innerHTML = rows.length ? rows.map(team => `
+        <tr>
+          <td><span class="slot-badge">#${team.slot || '-'}</span></td>
+          <td><strong>${escapeHtml(team.team)}</strong></td>
+          <td>${(team.players || []).map(p => `<span class="mini-chip">${escapeHtml(p || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
 
       const slotPreviewList = document.getElementById('slotPreviewList');
-      slotPreviewList.innerHTML = teamOrdinati.length
-        ? teamOrdinati.map(team => `
-          <div class="slot-card">
-            <div class="slot-card-left">
-              <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
-              <div class="slot-card-players">
-                ${(team.players || []).map(player => `<span class="mini-chip">${escapeHtml(player || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}
-              </div>
-            </div>
-            <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+      slotPreviewList.innerHTML = rows.length ? rows.map(team => `
+        <div class="slot-card">
+          <div>
+            <div class="slot-card-title">#${team.slot || '-'} • ${escapeHtml(team.team)}</div>
+            <div>${(team.players || []).map(p => `<span class="mini-chip">${escapeHtml(p || '-')}</span>`).join('') || '<span class="mini-chip">Nessun giocatore</span>'}</div>
           </div>
-        `).join('')
-        : `<div class="empty">Nessun team registrato</div>`;
+          <div class="slot-badge">SLOT ${team.slot || '-'}</div>
+        </div>
+      `).join('') : `<div class="empty">Nessun team registrato</div>`;
+    }
 
-      const leaderboardBody = document.getElementById('leaderboardBody');
-      leaderboardBody.innerHTML = classificaTeam.length
-        ? classificaTeam.map(row => `
-          <tr>
-            <td><span class="rank">${row.posizione}</span></td>
-            <td>${escapeHtml(row.team)}</td>
-            <td><strong>${row.punti}</strong></td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+    function renderTeamSelect(rows) {
+      const select = document.getElementById('teamSelect');
+      const current = select.value;
 
-      const fraggerBody = document.getElementById('fraggerBody');
-      fraggerBody.innerHTML = classificaFragger.length
-        ? classificaFragger.slice(0,20).map(row => `
-          <tr>
-            <td><span class="rank">${row.posizione}</span></td>
-            <td>${escapeHtml(row.nome)}</td>
-            <td><strong>${row.uccisioni}</strong></td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+      select.innerHTML = `<option value="">Seleziona team</option>` + rows.map(team => `
+        <option value="${escapeHtml(team.team)}">#${team.slot || '-'} • ${escapeHtml(team.team)}</option>
+      `).join('');
 
-      const teamOptions = teamOrdinati.map(team => ({
-        value: team.team,
-        label: `#${team.slot || '-'} • ${team.team}`,
-        subtitle: (team.players || []).join(' • ')
-      }));
+      if (rows.some(team => team.team === current)) select.value = current;
+    }
 
-      setDropdownOptions('teamSelect', teamOptions);
+    function renderFraggerSelect(rows) {
+      const select = document.getElementById('fraggerSelect');
+      const current = select.value;
 
-      const fraggerOptions = classificaFragger
-        .map(item => ({
-          value: item.nome,
-          label: item.nome,
-          subtitle: `${Number(item.uccisioni || 0)} uccisioni`
-        }))
-        .sort((a,b) => a.label.localeCompare(b.label,'it'));
+      select.innerHTML = `<option value="">Seleziona giocatore</option>` + rows.map(row => `
+        <option value="${escapeHtml(row.nome)}">${escapeHtml(row.nome)} • ${Number(row.uccisioni || 0)} uccisioni</option>
+      `).join('');
 
-      setDropdownOptions('fraggerSelect', fraggerOptions);
+      if (rows.some(row => row.nome === current)) select.value = current;
+    }
 
-      const pendingList = document.getElementById('pendingList');
-      pendingList.innerHTML = risultatiInAttesa.length
-        ? risultatiInAttesa.map(item => `
-          <div class="pending-card">
-            <div class="pending-top">
-              <div>
-                <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
-                <div class="muted">Inviato da: ${escapeHtml(item.inviatoDa || '-')}</div>
-              </div>
-              <div class="status-badge status-waiting">IN ATTESA</div>
+    function renderLeaderboards(teamRows, fraggerRows) {
+      document.getElementById('leaderboardBody').innerHTML = teamRows.length ? teamRows.map(row => `
+        <tr>
+          <td><span class="rank">${row.posizione}</span></td>
+          <td>${escapeHtml(row.team)}</td>
+          <td><strong>${row.punti}</strong></td>
+        </tr>
+      `).join('') : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+
+      document.getElementById('fraggerBody').innerHTML = fraggerRows.length ? fraggerRows.slice(0,20).map(row => `
+        <tr>
+          <td><span class="rank">${row.posizione}</span></td>
+          <td>${escapeHtml(row.nome)}</td>
+          <td><strong>${row.uccisioni}</strong></td>
+        </tr>
+      `).join('') : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
+    }
+
+    function renderPendingResults(rows) {
+      const list = document.getElementById('pendingList');
+
+      list.innerHTML = rows.length ? rows.map(item => `
+        <div class="pending-card">
+          <div class="pending-top">
+            <div>
+              <div class="pending-team">#${item.slot || '-'} • ${escapeHtml(item.team)}</div>
+              <div class="muted">Inviato da: ${escapeHtml(item.inviatoDa || '-')}</div>
             </div>
-
-            <div class="pending-grid">
-              <div class="box">
-                <span>Match</span>
-                <strong>${Number(item.matchNumber || 1)}</strong>
-              </div>
-              <div class="box">
-                <span>Uccisioni totali</span>
-                <strong>${item.totaleUccisioni}</strong>
-              </div>
-              <div class="box">
-                <span>Posizione</span>
-                <strong>${item.posizione}</strong>
-              </div>
-              <div class="box">
-                <span>ID risultato</span>
-                <strong style="font-size:14px">${escapeHtml(item.id)}</strong>
-              </div>
-            </div>
-
-            <div class="players">
-              ${(item.uccisioni || []).map((k,i) => `
-                <div class="player-card">
-                  <b>${escapeHtml(item.players?.[i] || `Giocatore ${i + 1}`)}</b>
-                  <div>${Number(k || 0)} uccisioni</div>
-                </div>
-              `).join('')}
-            </div>
-
-            ${item.immagine ? `
-              <div class="img-box">
-                <button class="result-image-button" type="button" onclick="openImageModal('${escapeHtml(item.immagine)}')">
-                  <img src="${escapeHtml(item.immagine)}" alt="screenshot risultato">
-                </button>
-              </div>
-            ` : ''}
-
-            <div class="row">
-              <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
-              <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
-            </div>
+            <div class="status-badge status-waiting">IN ATTESA</div>
           </div>
-        `).join('')
-        : `<div class="empty">Nessun risultato in attesa</div>`;
+
+          <div class="pending-grid">
+            <div class="box"><span>Match</span><strong>${Number(item.matchNumber || 1)}</strong></div>
+            <div class="box"><span>Uccisioni totali</span><strong>${Number(item.totaleUccisioni || 0)}</strong></div>
+            <div class="box"><span>Posizione</span><strong>${Number(item.posizione || 0)}</strong></div>
+            <div class="box"><span>ID risultato</span><strong style="font-size:14px">${escapeHtml(item.id)}</strong></div>
+          </div>
+
+          <div class="players">
+            ${(item.uccisioni || []).map((k,i) => `
+              <div class="player-card">
+                <b>${escapeHtml(item.players?.[i] || `Giocatore ${i + 1}`)}</b>
+                <div>${Number(k || 0)} uccisioni</div>
+              </div>
+            `).join('')}
+          </div>
+
+          ${item.immagine ? `
+            <div class="img-box">
+              <button class="result-image-button" type="button" onclick="openImageModal('${escapeHtml(item.immagine)}')">
+                <img src="${escapeHtml(item.immagine)}" alt="screenshot risultato">
+              </button>
+            </div>
+          ` : ''}
+
+          <div class="row">
+            <button class="btn btn-green" onclick="approvePending('${encodeURIComponent(item.id)}')">Approva</button>
+            <button class="btn btn-red" onclick="rejectPending('${encodeURIComponent(item.id)}')">Rifiuta</button>
+          </div>
+        </div>
+      `).join('') : `<div class="empty">Nessun risultato in attesa</div>`;
+    }
+
+    function renderAuditLog(rows) {
+      const list = document.getElementById('auditLogList');
+
+      list.innerHTML = rows.length ? rows.map(item => `
+        <div class="log-card">
+          <div class="log-card-top">
+            <div>
+              <div class="log-action">${escapeHtml(item.action || 'azione_sconosciuta')}</div>
+              <div class="muted">${escapeHtml(item.actor || 'system')} • ${escapeHtml(item.source || 'system')}</div>
+            </div>
+            <div class="mono">${escapeHtml(formatDateTime(item.timestamp))}</div>
+          </div>
+          <div class="mono">${escapeHtml(item.id || '')}</div>
+        </div>
+      `).join('') : `<div class="empty">Nessun log disponibile</div>`;
+    }
+
+    function renderArchives(rows) {
+      const list = document.getElementById('archiveList');
+
+      list.innerHTML = rows.length ? rows.map(item => `
+        <div class="archive-card">
+          <div class="archive-card-top">
+            <div>
+              <div class="archive-title">${escapeHtml(item.label || item.archiveId)}</div>
+              <div class="muted">${escapeHtml(formatDateTime(item.createdAt))}</div>
+            </div>
+            <div class="status-badge status-premium">ARCHIVIO</div>
+          </div>
+          <div>
+            <span class="detail-chip">ID: ${escapeHtml(item.archiveId || '-')}</span>
+            <span class="detail-chip">Autore: ${escapeHtml(item.actor || '-')}</span>
+            <span class="detail-chip">Team: ${Number(item.teamCount || 0)}</span>
+            <span class="detail-chip">Match: ${Number(item.currentMatch || 1)}</span>
+          </div>
+          <div class="muted">${escapeHtml(item.note || 'Nessuna nota')}</div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina archivio</button>
+          </div>
+        </div>
+      `).join('') : `<div class="empty">Nessun archivio disponibile</div>`;
+    }
+
+    function loadSelectedTeam() {
+      const selected = document.getElementById('teamSelect').value;
+      const team = dashboard?.teams?.[selected];
+
+      if (!team) {
+        newTeamForm();
+        return;
+      }
+
+      document.getElementById('teamName').value = selected;
+      document.getElementById('teamP1').value = team.players?.[0] || '';
+      document.getElementById('teamP2').value = team.players?.[1] || '';
+      document.getElementById('teamP3').value = team.players?.[2] || '';
+    }
+
+    function newTeamForm() {
+      document.getElementById('teamSelect').value = '';
+      document.getElementById('teamName').value = '';
+      document.getElementById('teamP1').value = '';
+      document.getElementById('teamP2').value = '';
+      document.getElementById('teamP3').value = '';
+    }
+
+    function loadSelectedFragger() {
+      const name = document.getElementById('fraggerSelect').value;
+      const found = (dashboard?.classificaFragger || []).find(item => item.nome === name);
+
+      document.getElementById('fraggerName').value = name || '';
+      document.getElementById('fraggerKills').value = found ? Number(found.uccisioni || 0) : '';
     }
 
     async function saveProjectSettings(customSetupCompleted = null) {
-      const brandName = document.getElementById('projectBrandName').value.trim();
-      const tournamentName = document.getElementById('projectTournamentName').value.trim();
-      const supportContact = document.getElementById('projectSupportContact').value.trim();
-      const premiumMode = document.getElementById('projectPremiumMode').checked;
-
       const payload = {
-        brandName,
-        tournamentName,
-        supportContact,
-        premiumMode,
+        brandName: document.getElementById('projectBrandName').value.trim(),
+        tournamentName: document.getElementById('projectTournamentName').value.trim(),
+        supportContact: document.getElementById('projectSupportContact').value.trim(),
+        premiumMode: document.getElementById('projectPremiumMode').checked,
         setupCompleted: customSetupCompleted === null
           ? Boolean(dashboard?.impostazioniProgetto?.setupCompleted)
           : Boolean(customSetupCompleted)
@@ -2677,43 +2299,17 @@
 
     async function completeSetup() {
       const ok = await saveProjectSettings(true);
-      if (!ok) return;
-      setStatus('Configurazione segnata come completata');
-    }
-
-    function loadSelectedTeam() {
-      if (!dashboard) return;
-      const selected = getDropdownValue('teamSelect');
-      const team = dashboard.teams?.[selected];
-
-      if (!team) {
-        newTeamForm();
-        return;
-      }
-
-      document.getElementById('teamName').value = selected;
-      document.getElementById('teamP1').value = team.players?.[0] || '';
-      document.getElementById('teamP2').value = team.players?.[1] || '';
-      document.getElementById('teamP3').value = team.players?.[2] || '';
-    }
-
-    function newTeamForm() {
-      setDropdownValue('teamSelect','');
-      resetDropdownSearch('teamSelect');
-      document.getElementById('teamName').value = '';
-      document.getElementById('teamP1').value = '';
-      document.getElementById('teamP2').value = '';
-      document.getElementById('teamP3').value = '';
+      if (ok) setStatus('Configurazione segnata come completata');
     }
 
     async function saveBotSettings() {
-      const registerPanelChannelId = document.getElementById('registerPanelChannel').value.trim();
-      const resultsPanelChannelId = document.getElementById('resultsPanelChannel').value.trim();
-      const roomsCategoryId = document.getElementById('roomsCategoryId').value.trim();
-
       const result = await api('/api/bot/settings/save', {
         method:'POST',
-        body:JSON.stringify({registerPanelChannelId,resultsPanelChannelId,roomsCategoryId})
+        body:JSON.stringify({
+          registerPanelChannelId: document.getElementById('registerPanelChannel').value.trim(),
+          resultsPanelChannelId: document.getElementById('resultsPanelChannel').value.trim(),
+          roomsCategoryId: document.getElementById('roomsCategoryId').value.trim()
+        })
       });
 
       if (!result) return;
@@ -2727,7 +2323,7 @@
     }
 
     async function saveTeam() {
-      const oldTeamName = getDropdownValue('teamSelect');
+      const oldTeamName = document.getElementById('teamSelect').value;
       const teamName = document.getElementById('teamName').value.trim();
       const p1 = document.getElementById('teamP1').value.trim();
       const p2 = document.getElementById('teamP2').value.trim();
@@ -2735,7 +2331,7 @@
 
       const result = await api('/api/teams/save', {
         method:'POST',
-        body:JSON.stringify({oldTeamName,teamName,p1,p2,p3})
+        body:JSON.stringify({ oldTeamName, teamName, p1, p2, p3 })
       });
 
       if (!result) return;
@@ -2745,13 +2341,14 @@
       }
 
       await refreshDashboard();
-      setDropdownValue('teamSelect',teamName);
+      document.getElementById('teamSelect').value = teamName;
       loadSelectedTeam();
       setStatus('Team salvato correttamente');
     }
 
     async function deleteTeam() {
-      const teamName = getDropdownValue('teamSelect') || document.getElementById('teamName').value.trim();
+      const teamName = document.getElementById('teamSelect').value || document.getElementById('teamName').value.trim();
+
       if (!teamName) {
         alert('Seleziona un team');
         return;
@@ -2761,7 +2358,7 @@
 
       const result = await api('/api/teams/delete', {
         method:'POST',
-        body:JSON.stringify({teamName})
+        body:JSON.stringify({ teamName })
       });
 
       if (!result) return;
@@ -2775,22 +2372,13 @@
       setStatus('Team eliminato');
     }
 
-    function loadSelectedFragger() {
-      if (!dashboard) return;
-      const name = getDropdownValue('fraggerSelect');
-      const found = (dashboard.classificaFragger || []).find(item => item.nome === name);
-
-      document.getElementById('fraggerName').value = name || '';
-      document.getElementById('fraggerKills').value = found ? Number(found.uccisioni || 0) : '';
-    }
-
     async function saveFragger() {
       const player = document.getElementById('fraggerName').value.trim();
       const kills = Number(document.getElementById('fraggerKills').value || 0);
 
       const result = await api('/api/fragger/set', {
         method:'POST',
-        body:JSON.stringify({player,kills})
+        body:JSON.stringify({ player, kills })
       });
 
       if (!result) return;
@@ -2800,13 +2388,14 @@
       }
 
       await refreshDashboard();
-      setDropdownValue('fraggerSelect',player);
+      document.getElementById('fraggerSelect').value = player;
       loadSelectedFragger();
       setStatus('Giocatore salvato correttamente');
     }
 
     async function deleteFragger() {
-      const player = getDropdownValue('fraggerSelect') || document.getElementById('fraggerName').value.trim();
+      const player = document.getElementById('fraggerSelect').value || document.getElementById('fraggerName').value.trim();
+
       if (!player) {
         alert('Seleziona un giocatore');
         return;
@@ -2816,7 +2405,7 @@
 
       const result = await api('/api/fragger/delete', {
         method:'POST',
-        body:JSON.stringify({player})
+        body:JSON.stringify({ player })
       });
 
       if (!result) return;
@@ -2827,8 +2416,7 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
-      setDropdownValue('fraggerSelect','');
-      resetDropdownSearch('fraggerSelect');
+      document.getElementById('fraggerSelect').value = '';
       await refreshDashboard();
       setStatus('Giocatore eliminato');
     }
@@ -2838,7 +2426,7 @@
 
       const result = await api('/api/match/set', {
         method:'POST',
-        body:JSON.stringify({match})
+        body:JSON.stringify({ match })
       });
 
       if (!result) return;
@@ -2852,7 +2440,8 @@
     }
 
     async function nextMatch() {
-      const result = await api('/api/match/next', {method:'POST'});
+      const result = await api('/api/match/next', { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore passaggio match');
@@ -2864,7 +2453,8 @@
     }
 
     async function approvePending(id) {
-      const result = await api('/api/approve/' + id, {method:'POST'});
+      const result = await api('/api/approve/' + id, { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore approvazione risultato');
@@ -2876,7 +2466,8 @@
     }
 
     async function rejectPending(id) {
-      const result = await api('/api/reject/' + id, {method:'POST'});
+      const result = await api('/api/reject/' + id, { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore rifiuto risultato');
@@ -2890,7 +2481,8 @@
     async function resetTeams() {
       if (!confirm('Confermi reset team registrati? Verrà creato automaticamente un archivio di sicurezza.')) return;
 
-      const result = await api('/api/reset-teams', {method:'POST'});
+      const result = await api('/api/reset-teams', { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset team');
@@ -2905,7 +2497,8 @@
     async function resetData() {
       if (!confirm('Confermi reset classifica, fragger e match? Verrà creato automaticamente un archivio di sicurezza.')) return;
 
-      const result = await api('/api/reset-data', {method:'POST'});
+      const result = await api('/api/reset-data', { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore reset dati');
@@ -2914,8 +2507,7 @@
 
       document.getElementById('fraggerName').value = '';
       document.getElementById('fraggerKills').value = '';
-      setDropdownValue('fraggerSelect','');
-      resetDropdownSearch('fraggerSelect');
+      document.getElementById('fraggerSelect').value = '';
       await refreshDashboard();
       setStatus('Classifica e fragger azzerati');
     }
@@ -2927,7 +2519,7 @@
 
       const result = await api('/api/registration-settings/save', {
         method:'POST',
-        body:JSON.stringify({title,text,maxTeams})
+        body:JSON.stringify({ title, text, maxTeams })
       });
 
       if (!result) return;
@@ -2941,7 +2533,7 @@
     }
 
     async function forceRegistrationMessage() {
-      const result = await api('/api/registration-settings/refresh', {method:'POST'});
+      const result = await api('/api/registration-settings/refresh', { method:'POST' });
 
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
@@ -2954,9 +2546,7 @@
     }
 
     async function spawnRegisterPanel() {
-      const typedChannelId = document.getElementById('registerPanelChannel').value.trim();
-      const savedChannelId = dashboard?.botConfig?.registerPanelChannelId || '';
-      const channelId = typedChannelId || savedChannelId;
+      const channelId = document.getElementById('registerPanelChannel').value.trim() || dashboard?.botConfig?.registerPanelChannelId || '';
 
       if (!channelId) {
         alert('Inserisci o salva prima l’ID del canale del pannello registrazione');
@@ -2965,7 +2555,7 @@
 
       const result = await api('/api/bot/spawn-register-panel', {
         method:'POST',
-        body:JSON.stringify({channelId})
+        body:JSON.stringify({ channelId })
       });
 
       if (!result) return;
@@ -2975,16 +2565,11 @@
       }
 
       await refreshDashboard();
-
-      if (result.data.updated) setStatus('Pannello registrazione aggiornato');
-      else if (result.data.created) setStatus('Pannello registrazione inviato');
-      else setStatus('Pannello registrazione gestito correttamente');
+      setStatus(result.data.updated ? 'Pannello registrazione aggiornato' : 'Pannello registrazione inviato');
     }
 
     async function refreshTeamResultPanels() {
-      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
-      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
-      const categoryId = typedCategoryId || savedCategoryId;
+      const categoryId = document.getElementById('roomsCategoryId').value.trim() || dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
 
       if (!categoryId) {
         alert('Inserisci o salva prima l’ID della categoria delle stanze team');
@@ -2993,7 +2578,7 @@
 
       const result = await api('/api/bot/refresh-team-result-panels', {
         method:'POST',
-        body:JSON.stringify({categoryId})
+        body:JSON.stringify({ categoryId })
       });
 
       if (!result) return;
@@ -3007,9 +2592,7 @@
     }
 
     async function createRooms() {
-      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
-      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
-      const categoryId = typedCategoryId || savedCategoryId;
+      const categoryId = document.getElementById('roomsCategoryId').value.trim() || dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
 
       if (!categoryId) {
         alert('Inserisci o salva prima l’ID della categoria delle stanze team');
@@ -3018,7 +2601,7 @@
 
       const result = await api('/api/bot/create-rooms', {
         method:'POST',
-        body:JSON.stringify({categoryId})
+        body:JSON.stringify({ categoryId })
       });
 
       if (!result) return;
@@ -3032,9 +2615,7 @@
     }
 
     async function deleteRooms() {
-      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
-      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
-      const categoryId = typedCategoryId || savedCategoryId;
+      const categoryId = document.getElementById('roomsCategoryId').value.trim() || dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
 
       if (!categoryId) {
         alert('Inserisci o salva prima l’ID della categoria delle stanze team');
@@ -3043,7 +2624,7 @@
 
       const result = await api('/api/bot/delete-rooms', {
         method:'POST',
-        body:JSON.stringify({categoryId})
+        body:JSON.stringify({ categoryId })
       });
 
       if (!result) return;
@@ -3058,9 +2639,7 @@
 
     async function sendLobbyCodeWithValue(lobbyCode) {
       const code = String(lobbyCode || '').trim();
-      const typedCategoryId = document.getElementById('roomsCategoryId').value.trim();
-      const savedCategoryId = dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
-      const categoryId = typedCategoryId || savedCategoryId;
+      const categoryId = document.getElementById('roomsCategoryId').value.trim() || dashboard?.botConfig?.roomsCategoryId || dashboard?.botConfig?.categoryId || '';
 
       if (!code) {
         alert('Inserisci il codice lobby');
@@ -3074,7 +2653,7 @@
 
       const result = await api('/api/bot/send-lobby-code', {
         method:'POST',
-        body:JSON.stringify({lobbyCode:code,categoryId})
+        body:JSON.stringify({ lobbyCode:code, categoryId })
       });
 
       if (!result) return false;
@@ -3104,7 +2683,8 @@
     }
 
     async function forceLeaderboard() {
-      const result = await api('/api/bot/update-leaderboard', {method:'POST'});
+      const result = await api('/api/bot/update-leaderboard', { method:'POST' });
+
       if (!result) return;
       if (!result.response.ok || !result.data.ok) {
         alert(result.data.message || 'Errore aggiornamento classifica Discord');
@@ -3121,7 +2701,7 @@
 
       const result = await api('/api/archivi/crea', {
         method:'POST',
-        body:JSON.stringify({label,note})
+        body:JSON.stringify({ label, note })
       });
 
       if (!result) return;
@@ -3146,7 +2726,7 @@
 
       const result = await api('/api/archivi/ripristina', {
         method:'POST',
-        body:JSON.stringify({archiveId:decodeURIComponent(archiveId)})
+        body:JSON.stringify({ archiveId:decodeURIComponent(archiveId) })
       });
 
       if (!result) return;
@@ -3160,7 +2740,7 @@
     }
 
     async function logout() {
-      await api('/api/logout', {method:'POST'});
+      await api('/api/logout', { method:'POST' });
       location.href = '/login';
     }
 
@@ -3181,38 +2761,8 @@
     window.closeManualResultModal = closeManualResultModal;
     window.handleManualModalBackdrop = handleManualModalBackdrop;
     window.submitManualResult = submitManualResult;
-    window.saveProjectSettings = saveProjectSettings;
-    window.completeSetup = completeSetup;
-    window.saveBotSettings = saveBotSettings;
-    window.saveTeam = saveTeam;
-    window.deleteTeam = deleteTeam;
-    window.newTeamForm = newTeamForm;
-    window.loadSelectedTeam = loadSelectedTeam;
-    window.loadSelectedFragger = loadSelectedFragger;
-    window.saveFragger = saveFragger;
-    window.deleteFragger = deleteFragger;
-    window.setMatch = setMatch;
-    window.nextMatch = nextMatch;
-    window.approvePending = approvePending;
-    window.rejectPending = rejectPending;
-    window.resetTeams = resetTeams;
-    window.resetData = resetData;
-    window.saveRegistrationSettings = saveRegistrationSettings;
-    window.forceRegistrationMessage = forceRegistrationMessage;
-    window.spawnRegisterPanel = spawnRegisterPanel;
-    window.refreshTeamResultPanels = refreshTeamResultPanels;
-    window.createRooms = createRooms;
-    window.deleteRooms = deleteRooms;
-    window.sendLobbyCode = sendLobbyCode;
-    window.sendLobbyCodeQuick = sendLobbyCodeQuick;
-    window.forceLeaderboard = forceLeaderboard;
-    window.createArchive = createArchive;
-    window.restoreArchive = restoreArchive;
     window.switchPage = switchPage;
 
-    initializeDropdowns();
-    syncManualMirrors();
-    switchPage('page-overview');
     refreshDashboard();
 
     setInterval(() => {
