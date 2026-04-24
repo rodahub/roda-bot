@@ -59,6 +59,7 @@ function getDefaultData() {
     tempSubmit: {},
     scores: {},
     fragger: {},
+    resultSubmissions: {},
     leaderboardMessageId: null,
     leaderboardGraphicMessageId: null,
     topFraggerGraphicMessageId: null,
@@ -189,6 +190,26 @@ function normalizeFragger(value) {
   return out;
 }
 
+function normalizeResultSubmissions(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [key, entry] of Object.entries(safe)) {
+    if (!isObject(entry)) continue;
+
+    out[String(key)] = {
+      team: String(entry.team || '').trim(),
+      matchNumber: Number(entry.matchNumber || 1),
+      status: String(entry.status || 'non_inviato').trim(),
+      pendingId: entry.pendingId ? String(entry.pendingId) : null,
+      updatedAt: String(entry.updatedAt || new Date().toISOString()).trim(),
+      updatedBy: String(entry.updatedBy || 'system').trim()
+    };
+  }
+
+  return out;
+}
+
 function normalizeData(data) {
   const base = getDefaultData();
   const safe = isObject(data) ? data : {};
@@ -201,6 +222,7 @@ function normalizeData(data) {
   base.tempSubmit = normalizeTempSubmit(safe.tempSubmit);
   base.scores = normalizeScores(safe.scores);
   base.fragger = normalizeFragger(safe.fragger);
+  base.resultSubmissions = normalizeResultSubmissions(safe.resultSubmissions);
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
   base.leaderboardGraphicMessageId = safe.leaderboardGraphicMessageId || null;
   base.topFraggerGraphicMessageId = safe.topFraggerGraphicMessageId || null;
