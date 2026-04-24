@@ -50,36 +50,38 @@
       position: absolute;
       z-index: 2;
 
-      /* POSIZIONE TABELLA */
-      top: 258px;
-      left: 146px;
+      /* TABELLA CENTRATA */
+      top: 285px;
+      left: 50%;
+      transform: translateX(-50%);
 
       width: 1380px;
+      min-height: 430px;
 
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      gap: 16px; /* PIÙ SPAZIO TRA LE RIGHE */
+      gap: 20px;
     }
 
     .table-row {
       display: grid;
-      grid-template-columns: 150px 1fr 195px;
+      grid-template-columns: 170px 1fr 170px;
       align-items: center;
 
       width: 100%;
-      height: 54px;
+      height: 68px;
 
-      padding: 0 18px;
-      border-radius: 16px;
+      padding: 0 26px;
+      border-radius: 18px;
 
-      background: rgba(74, 24, 150, 0.36);
-      border: 2px solid rgba(131, 60, 255, 0.72);
+      background: rgba(103, 65, 170, 0.52);
+      border: 2px solid rgba(150, 93, 255, 0.78);
 
       box-shadow:
-        0 0 18px rgba(111, 44, 219, 0.24),
-        0 0 30px rgba(111, 44, 219, 0.12),
-        inset 0 0 14px rgba(184, 138, 255, 0.10);
+        0 0 16px rgba(132, 73, 245, 0.28),
+        0 0 28px rgba(132, 73, 245, 0.14),
+        inset 0 0 18px rgba(214, 186, 255, 0.08);
     }
 
     .cell {
@@ -89,24 +91,22 @@
       height: 100%;
 
       color: #ffffff;
-      font-weight: 800;
-      font-size: 28px;
+      font-weight: 900;
+      font-size: 33px;
       line-height: 1;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
 
       text-shadow:
-        0 0 6px rgba(255, 255, 255, 0.20),
-        0 0 12px rgba(149, 75, 255, 0.45),
-        0 0 20px rgba(94, 26, 210, 0.32);
+        0 0 5px rgba(255, 255, 255, 0.15),
+        0 0 10px rgba(154, 97, 255, 0.20);
     }
 
     .cell.position {
-      font-size: 27px;
+      font-size: 32px;
     }
 
     .cell.name {
-      justify-content: center;
       text-align: center;
       padding: 0 18px;
       white-space: nowrap;
@@ -115,44 +115,20 @@
     }
 
     .cell.kills {
-      font-size: 29px;
+      font-size: 32px;
     }
 
-    .table-row.top-1 {
-      background: rgba(95, 34, 188, 0.48);
-      border: 2px solid rgba(198, 154, 255, 0.95);
-      box-shadow:
-        0 0 24px rgba(145, 64, 255, 0.34),
-        0 0 36px rgba(145, 64, 255, 0.16),
-        inset 0 0 18px rgba(227, 203, 255, 0.14);
-    }
-
-    .table-row.top-2 {
-      background: rgba(87, 30, 174, 0.44);
-      border: 2px solid rgba(184, 136, 255, 0.88);
-      box-shadow:
-        0 0 22px rgba(131, 54, 240, 0.30),
-        0 0 34px rgba(131, 54, 240, 0.14),
-        inset 0 0 16px rgba(214, 181, 255, 0.12);
-    }
-
-    .table-row.top-3 {
-      background: rgba(79, 28, 160, 0.42);
-      border: 2px solid rgba(170, 122, 248, 0.82);
-      box-shadow:
-        0 0 20px rgba(122, 49, 228, 0.28),
-        0 0 30px rgba(122, 49, 228, 0.12),
-        inset 0 0 14px rgba(200, 166, 255, 0.11);
-    }
-
+    .table-row.top-1,
+    .table-row.top-2,
+    .table-row.top-3,
     .table-row.top-4,
     .table-row.top-5 {
-      background: rgba(71, 24, 145, 0.40);
-      border: 2px solid rgba(154, 103, 240, 0.76);
+      background: rgba(110, 74, 182, 0.54);
+      border: 2px solid rgba(165, 108, 255, 0.82);
       box-shadow:
-        0 0 18px rgba(112, 42, 214, 0.24),
-        0 0 26px rgba(112, 42, 214, 0.10),
-        inset 0 0 12px rgba(182, 143, 246, 0.10);
+        0 0 18px rgba(139, 79, 255, 0.32),
+        0 0 30px rgba(139, 79, 255, 0.16),
+        inset 0 0 18px rgba(228, 206, 255, 0.08);
     }
 
     .table-row.top-1 .cell,
@@ -162,9 +138,8 @@
     .table-row.top-5 .cell {
       color: #ffffff;
       text-shadow:
-        0 0 8px rgba(255, 255, 255, 0.26),
-        0 0 15px rgba(171, 108, 255, 0.56),
-        0 0 24px rgba(105, 30, 220, 0.36);
+        0 0 6px rgba(255, 255, 255, 0.16),
+        0 0 10px rgba(170, 120, 255, 0.18);
     }
 
     .empty-text {
