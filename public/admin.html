@@ -3,38 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RØDA CUP • Admin</title>
+  <title>RØDA CUP • Pannello Admin</title>
 
   <style>
     :root{
-      --bg:#06060a;
-      --panel:#11111c;
-      --panel2:#171727;
-      --panel3:#202036;
+      --bg:#050508;
+      --bg2:#090911;
+      --card:#111120;
+      --card2:#17172b;
+      --card3:#20203a;
       --line:rgba(160,110,255,.18);
-      --line2:rgba(160,110,255,.34);
+      --line2:rgba(160,110,255,.36);
       --text:#f8f4ff;
       --muted:#aaa6c5;
       --purple:#7b2cff;
-      --purple2:#9c5cff;
+      --purple2:#a25cff;
       --green:#18c964;
       --red:#ff4d6d;
       --yellow:#ffd166;
       --blue:#57b7ff;
-      --shadow:0 0 0 1px rgba(162,109,255,.10),0 20px 55px rgba(0,0,0,.35),0 0 32px rgba(123,44,255,.12);
-      --radius:22px;
-      --sidebar:270px;
+      --shadow:0 0 0 1px rgba(162,109,255,.10), 0 24px 70px rgba(0,0,0,.38), 0 0 35px rgba(123,44,255,.14);
+      --radius:24px;
+      --sidebar:292px;
     }
 
     *{
       box-sizing:border-box;
       -webkit-tap-highlight-color:transparent;
       scrollbar-width:thin;
-      scrollbar-color:rgba(160,110,255,.45) transparent;
+      scrollbar-color:rgba(160,110,255,.48) transparent;
     }
 
     *::-webkit-scrollbar{width:9px;height:9px;}
-    *::-webkit-scrollbar-thumb{background:rgba(160,110,255,.45);border-radius:999px;}
+    *::-webkit-scrollbar-thumb{background:rgba(160,110,255,.48);border-radius:999px;}
     *::-webkit-scrollbar-track{background:transparent;}
 
     html,body{
@@ -43,13 +44,17 @@
       font-family:Inter,Arial,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at top left,rgba(123,44,255,.18),transparent 28%),
-        radial-gradient(circle at top right,rgba(87,183,255,.10),transparent 22%),
-        radial-gradient(circle at bottom,rgba(123,44,255,.08),transparent 35%),
-        linear-gradient(180deg,#050507 0%,#09090f 100%);
+        radial-gradient(circle at top left,rgba(123,44,255,.22),transparent 26%),
+        radial-gradient(circle at top right,rgba(87,183,255,.11),transparent 22%),
+        radial-gradient(circle at bottom,rgba(123,44,255,.09),transparent 36%),
+        linear-gradient(180deg,#050507 0%,#090910 100%);
     }
 
     body{overflow:auto;}
+
+    button,input,textarea,select{
+      font-family:inherit;
+    }
 
     .app{
       min-height:100vh;
@@ -63,8 +68,8 @@
       height:100vh;
       overflow:auto;
       padding:18px 14px;
-      background:linear-gradient(180deg,rgba(15,15,26,.98),rgba(8,8,14,.98));
-      border-right:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,rgba(14,14,26,.98),rgba(7,7,12,.98));
+      border-right:1px solid rgba(255,255,255,.07);
       display:flex;
       flex-direction:column;
       gap:16px;
@@ -74,27 +79,30 @@
       display:flex;
       align-items:center;
       gap:12px;
-      padding:8px 10px 16px;
+      padding:10px 10px 18px;
       border-bottom:1px solid rgba(255,255,255,.07);
     }
 
     .brand img{
-      width:58px;
-      height:58px;
+      width:62px;
+      height:62px;
       object-fit:contain;
-      filter:drop-shadow(0 0 16px rgba(123,44,255,.50));
+      filter:drop-shadow(0 0 18px rgba(123,44,255,.55));
     }
 
-    .brand-title{
-      font-size:22px;
-      font-weight:950;
+    .brand h1{
+      margin:0;
+      font-size:23px;
       line-height:1;
+      font-weight:950;
+      letter-spacing:.2px;
     }
 
-    .brand-sub{
+    .brand p{
+      margin:6px 0 0;
       color:var(--muted);
       font-size:12px;
-      margin-top:5px;
+      line-height:1.35;
     }
 
     .nav{
@@ -102,29 +110,30 @@
       gap:8px;
     }
 
-    .nav-title{
+    .nav-label{
       color:var(--muted);
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:.9px;
+      font-weight:950;
       padding:0 10px;
-      font-weight:900;
+      margin-top:2px;
     }
 
     .nav button{
       border:1px solid transparent;
       background:rgba(255,255,255,.035);
-      color:#f4edff;
-      border-radius:16px;
-      min-height:50px;
-      padding:12px 13px;
+      color:#f5efff;
+      border-radius:17px;
+      min-height:52px;
+      padding:12px 14px;
       cursor:pointer;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
       font-size:14px;
-      font-weight:900;
+      font-weight:950;
       text-align:left;
       transition:.16s ease;
     }
@@ -132,19 +141,20 @@
     .nav button:hover{
       transform:translateX(2px);
       background:rgba(255,255,255,.055);
-      border-color:rgba(160,110,255,.18);
+      border-color:rgba(160,110,255,.20);
     }
 
     .nav button.active{
-      background:linear-gradient(135deg,rgba(123,44,255,.24),rgba(156,92,255,.14));
-      border-color:rgba(160,110,255,.34);
+      background:linear-gradient(135deg,rgba(123,44,255,.26),rgba(162,92,255,.16));
+      border-color:rgba(160,110,255,.36);
       box-shadow:var(--shadow);
     }
 
     .nav small{
-      font-size:11px;
       color:var(--muted);
-      font-weight:800;
+      font-size:11px;
+      font-weight:850;
+      white-space:nowrap;
     }
 
     .side-footer{
@@ -161,20 +171,20 @@
     .topbar{
       position:sticky;
       top:0;
-      z-index:50;
+      z-index:70;
       padding:18px 24px;
-      background:linear-gradient(180deg,rgba(13,13,23,.90),rgba(10,10,18,.70));
-      border-bottom:1px solid rgba(255,255,255,.06);
-      backdrop-filter:blur(14px);
+      background:linear-gradient(180deg,rgba(13,13,24,.92),rgba(9,9,17,.72));
+      border-bottom:1px solid rgba(255,255,255,.07);
+      backdrop-filter:blur(16px);
       display:flex;
-      justify-content:space-between;
       align-items:center;
+      justify-content:space-between;
       gap:16px;
       flex-wrap:wrap;
     }
 
     .page-title{
-      font-size:30px;
+      font-size:31px;
       font-weight:950;
       line-height:1;
       margin-bottom:7px;
@@ -183,21 +193,29 @@
     .page-sub{
       color:var(--muted);
       font-size:13px;
+      line-height:1.35;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
     }
 
     .content{
       padding:22px;
-      max-width:1780px;
+      max-width:1840px;
     }
 
     .page{display:none;}
     .page.active{
       display:block;
-      animation:fadeIn .18s ease;
+      animation:fade .18s ease;
     }
 
-    @keyframes fadeIn{
-      from{opacity:.5;transform:translateY(5px);}
+    @keyframes fade{
+      from{opacity:.48;transform:translateY(5px);}
       to{opacity:1;transform:none;}
     }
 
@@ -223,16 +241,12 @@
     }
 
     .card{
-      background:linear-gradient(180deg,rgba(18,18,31,.97),rgba(11,11,19,.98));
+      background:linear-gradient(180deg,rgba(18,18,33,.97),rgba(10,10,18,.98));
       border:1px solid var(--line);
       border-radius:var(--radius);
       padding:18px;
       box-shadow:var(--shadow);
       min-width:0;
-    }
-
-    .card.compact{
-      padding:16px;
     }
 
     .card-head{
@@ -244,14 +258,11 @@
       flex-wrap:wrap;
     }
 
-    h2,h3,h4{
-      margin:0;
-      line-height:1.2;
-    }
-
-    h3{
+    .card-title{
+      margin:0 0 6px;
       font-size:20px;
-      margin-bottom:6px;
+      line-height:1.15;
+      font-weight:950;
     }
 
     .note{
@@ -261,26 +272,27 @@
     }
 
     .stat{
-      background:linear-gradient(180deg,rgba(18,18,31,.97),rgba(11,11,19,.98));
+      background:linear-gradient(180deg,rgba(18,18,33,.97),rgba(10,10,18,.98));
       border:1px solid var(--line);
-      border-radius:20px;
-      padding:16px;
+      border-radius:22px;
+      padding:17px;
       box-shadow:var(--shadow);
+      min-width:0;
     }
 
     .stat span{
       display:block;
       color:var(--muted);
       font-size:11px;
-      font-weight:900;
-      letter-spacing:.7px;
       text-transform:uppercase;
+      letter-spacing:.75px;
+      font-weight:950;
       margin-bottom:9px;
     }
 
     .stat strong{
       display:block;
-      font-size:30px;
+      font-size:31px;
       font-weight:950;
       word-break:break-word;
     }
@@ -292,12 +304,67 @@
       gap:8px;
       border-radius:999px;
       border:1px solid var(--line);
-      background:rgba(255,255,255,.04);
-      color:#e8ddff;
-      padding:10px 13px;
+      background:rgba(255,255,255,.045);
+      color:#eadfff;
+      padding:10px 14px;
       font-size:13px;
-      font-weight:850;
+      font-weight:900;
       box-shadow:var(--shadow);
+      white-space:nowrap;
+    }
+
+    .btn{
+      min-height:46px;
+      border:0;
+      border-radius:15px;
+      padding:12px 16px;
+      cursor:pointer;
+      color:white;
+      font-weight:950;
+      font-size:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-decoration:none;
+      transition:.16s ease;
+      white-space:nowrap;
+    }
+
+    .btn:hover{transform:translateY(-1px);}
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple2));}
+    .btn-green{background:linear-gradient(135deg,#12b75a,#1ed760);color:#06120b;}
+    .btn-red{background:linear-gradient(135deg,#c92b4b,#ff4d6d);}
+    .btn-yellow{background:linear-gradient(135deg,#e8b600,#ffd166);color:#191100;}
+    .btn-blue{background:linear-gradient(135deg,#3b9fff,#6ec4ff);color:#07121a;}
+    .btn-ghost{
+      background:rgba(255,255,255,.045);
+      border:1px solid rgba(255,255,255,.09);
+      color:#fff;
+    }
+
+    .icon-btn{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      border:1px solid rgba(160,110,255,.22);
+      background:rgba(123,44,255,.14);
+      color:#f5edff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:950;
+      transition:.14s ease;
+      flex-shrink:0;
+    }
+
+    .icon-btn:hover{
+      transform:translateY(-1px) scale(1.03);
+      border-color:rgba(160,110,255,.42);
+      background:rgba(123,44,255,.24);
     }
 
     .field{
@@ -309,35 +376,35 @@
     .field label{
       color:#ddd7f2;
       font-size:13px;
-      font-weight:850;
+      font-weight:900;
     }
 
     input,textarea,select{
       width:100%;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.085);
+      background:rgba(255,255,255,.04);
       color:#fff;
-      border-radius:14px;
-      min-height:46px;
+      border-radius:15px;
+      min-height:47px;
       padding:12px 14px;
       outline:none;
       font-size:14px;
     }
 
     textarea{
-      min-height:120px;
+      min-height:122px;
       resize:vertical;
       line-height:1.45;
     }
 
     select option{
-      background:#11111c;
-      color:white;
+      background:#111120;
+      color:#fff;
     }
 
     input:focus,textarea:focus,select:focus{
       border-color:var(--line2);
-      box-shadow:0 0 0 3px rgba(123,44,255,.12);
+      box-shadow:0 0 0 3px rgba(123,44,255,.13);
     }
 
     .row{
@@ -346,106 +413,88 @@
       flex-wrap:wrap;
     }
 
-    .row > *{
-      flex:1 1 auto;
-    }
-
-    .btn{
-      min-height:46px;
-      border:0;
-      border-radius:14px;
-      padding:12px 15px;
-      cursor:pointer;
-      color:white;
-      font-weight:950;
-      font-size:14px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      text-decoration:none;
-      transition:.16s ease;
-    }
-
-    .btn:hover{transform:translateY(-1px);}
-    .btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple2));}
-    .btn-blue{background:linear-gradient(135deg,#3b9fff,#6ec4ff);color:#08121a;}
-    .btn-green{background:linear-gradient(135deg,#12b75a,#1ed760);color:#06120b;}
-    .btn-yellow{background:linear-gradient(135deg,#e8b600,#ffd166);color:#191100;}
-    .btn-red{background:linear-gradient(135deg,#c92b4b,#ff4d6d);}
+    .row > *{flex:1 1 auto;}
 
     .table-wrap{
       overflow:auto;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.06);
-      background:rgba(255,255,255,.02);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.065);
+      background:rgba(255,255,255,.022);
     }
 
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:760px;
+      min-width:850px;
     }
 
     th,td{
       padding:12px;
       text-align:left;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      vertical-align:top;
+      border-bottom:1px solid rgba(255,255,255,.065);
+      vertical-align:middle;
       font-size:14px;
     }
 
     th{
       position:sticky;
       top:0;
-      z-index:2;
-      background:#131322;
-      color:#d6c9ff;
+      z-index:3;
+      background:#141426;
+      color:#d8ccff;
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.7px;
       font-weight:950;
     }
 
-    tbody tr:hover{background:rgba(255,255,255,.025);}
+    tbody tr:hover{background:rgba(255,255,255,.026);}
 
     .empty{
       color:var(--muted);
-      padding:14px;
+      padding:15px;
       font-size:14px;
     }
 
-    .rank,.slot{
+    .slot,.rank{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      border-radius:999px;
-      min-width:34px;
+      min-width:36px;
       height:34px;
       padding:0 10px;
-      font-weight:950;
+      border-radius:999px;
       background:rgba(123,44,255,.16);
       border:1px solid rgba(160,110,255,.28);
+      font-weight:950;
     }
 
     .chip{
       display:inline-flex;
       align-items:center;
-      gap:6px;
+      gap:7px;
       margin:3px;
       padding:7px 10px;
       border-radius:999px;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.06);
-      color:#e9e4fb;
+      background:rgba(255,255,255,.045);
+      border:1px solid rgba(255,255,255,.07);
+      color:#eee7ff;
       font-size:12px;
-      font-weight:800;
+      font-weight:850;
+    }
+
+    .editable{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      max-width:100%;
+    }
+
+    .editable strong,.editable span{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     .state{
@@ -462,13 +511,18 @@
       white-space:nowrap;
     }
 
-    .state-ok{background:rgba(24,201,100,.12);border-color:rgba(24,201,100,.28);color:#b6ffd4;}
-    .state-warn{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.28);color:#ffe7a6;}
-    .state-bad{background:rgba(255,77,109,.12);border-color:rgba(255,77,109,.28);color:#ffd0d9;}
-    .state-muted{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#ddd7f2;}
+    .state-ok{background:rgba(24,201,100,.13);border-color:rgba(24,201,100,.29);color:#b8ffd5;}
+    .state-warn{background:rgba(255,209,102,.13);border-color:rgba(255,209,102,.29);color:#ffe8aa;}
+    .state-bad{background:rgba(255,77,109,.13);border-color:rgba(255,77,109,.30);color:#ffd0d9;}
+    .state-muted{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.13);color:#ddd7f2;}
 
-    .section{
-      margin-bottom:18px;
+    .section{margin-bottom:18px;}
+
+    .split-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
     .simple-list{
@@ -477,10 +531,10 @@
     }
 
     .item{
-      background:rgba(255,255,255,.035);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:18px;
-      padding:14px;
+      background:rgba(255,255,255,.038);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:20px;
+      padding:15px;
     }
 
     .item-top{
@@ -493,8 +547,8 @@
     }
 
     .item-title{
-      font-weight:950;
       font-size:18px;
+      font-weight:950;
       word-break:break-word;
     }
 
@@ -506,9 +560,9 @@
     }
 
     .box{
-      background:rgba(255,255,255,.035);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:15px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:16px;
       padding:12px;
     }
 
@@ -524,6 +578,7 @@
 
     .box strong{
       font-size:20px;
+      font-weight:950;
     }
 
     .players{
@@ -534,9 +589,9 @@
     }
 
     .player{
-      background:rgba(255,255,255,.035);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:15px;
       padding:12px;
     }
 
@@ -547,48 +602,59 @@
 
     .screenshot{
       margin:12px 0;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
+      border:1px solid rgba(255,255,255,.09);
+      border-radius:18px;
       overflow:hidden;
-      background:#08080d;
+      background:#07070d;
     }
 
     .screenshot button{
-      border:0;
-      padding:0;
       display:block;
       width:100%;
+      border:0;
+      padding:0;
       background:transparent;
       cursor:zoom-in;
     }
 
     .screenshot img{
       width:100%;
-      max-height:340px;
+      max-height:360px;
       object-fit:cover;
       display:block;
     }
 
     .rules{
-      max-height:0;
-      overflow:hidden;
-      transition:.2s ease;
-      border:1px solid transparent;
-      border-radius:18px;
-      background:rgba(255,255,255,.035);
       white-space:pre-wrap;
       line-height:1.55;
-      font-size:14px;
       color:#eee8ff;
-      padding:0 15px;
-    }
-
-    .rules.open{
+      font-size:14px;
       max-height:560px;
       overflow:auto;
-      border-color:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:18px;
+      background:rgba(255,255,255,.035);
       padding:15px;
-      margin-top:12px;
+    }
+
+    .danger{
+      border-color:rgba(255,77,109,.30);
+      box-shadow:0 0 0 1px rgba(255,77,109,.08), 0 0 38px rgba(255,77,109,.08);
+    }
+
+    .status-bar{
+      position:sticky;
+      bottom:0;
+      z-index:40;
+      margin-top:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:#e0d8f6;
+      border-radius:17px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+      font-size:13px;
+      backdrop-filter:blur(12px);
     }
 
     .modal{
@@ -600,48 +666,40 @@
       justify-content:center;
       padding:18px;
       background:rgba(0,0,0,.82);
+      backdrop-filter:blur(6px);
     }
 
     .modal.show{display:flex;}
 
     .modal-card{
-      width:min(620px,96vw);
+      width:min(660px,96vw);
       max-height:92vh;
       overflow:auto;
-      background:linear-gradient(180deg,rgba(18,18,31,.99),rgba(8,8,14,.99));
-      border:1px solid rgba(160,110,255,.28);
-      border-radius:28px;
+      background:linear-gradient(180deg,rgba(18,18,33,.99),rgba(8,8,14,.99));
+      border:1px solid rgba(160,110,255,.30);
+      border-radius:30px;
       padding:22px;
-      box-shadow:0 24px 90px rgba(0,0,0,.65),0 0 38px rgba(123,44,255,.18);
+      box-shadow:0 28px 100px rgba(0,0,0,.72),0 0 42px rgba(123,44,255,.20);
     }
 
     .modal-head{
       display:flex;
-      justify-content:space-between;
       align-items:flex-start;
+      justify-content:space-between;
       gap:14px;
       margin-bottom:16px;
     }
 
     .modal-title{
-      font-size:23px;
+      font-size:24px;
       font-weight:950;
+      line-height:1.1;
       margin-bottom:6px;
     }
 
-    .modal-img{
-      max-width:96vw;
-      max-height:92vh;
-      object-fit:contain;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.12);
-      background:#050507;
-      box-shadow:0 0 50px rgba(0,0,0,.55);
-    }
-
     .close{
-      width:42px;
-      height:42px;
+      width:43px;
+      height:43px;
       border-radius:999px;
       border:1px solid rgba(255,255,255,.14);
       background:rgba(15,15,25,.96);
@@ -649,6 +707,17 @@
       font-size:20px;
       font-weight:950;
       cursor:pointer;
+      flex-shrink:0;
+    }
+
+    .modal-img{
+      max-width:96vw;
+      max-height:92vh;
+      object-fit:contain;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.13);
+      background:#050507;
+      box-shadow:0 0 55px rgba(0,0,0,.58);
     }
 
     .manual-row{
@@ -659,13 +728,13 @@
       margin-bottom:10px;
     }
 
-    .player-name{
-      min-height:46px;
+    .fake-input{
+      min-height:47px;
       display:flex;
       align-items:center;
-      border-radius:14px;
-      background:rgba(255,255,255,.035);
-      border:1px solid rgba(255,255,255,.08);
+      border-radius:15px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.085);
       padding:12px 14px;
       font-weight:950;
       overflow:hidden;
@@ -673,37 +742,22 @@
       white-space:nowrap;
     }
 
-    .status-bar{
-      position:sticky;
-      bottom:0;
-      z-index:30;
-      margin-top:18px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.055);
-      color:#e0d8f6;
-      border-radius:16px;
-      padding:12px 14px;
-      box-shadow:var(--shadow);
-      font-size:13px;
+    .staff-only.hidden{
+      display:none !important;
     }
 
-    .danger{
-      border-color:rgba(255,77,109,.28);
-      box-shadow:0 0 0 1px rgba(255,77,109,.08),0 0 35px rgba(255,77,109,.08);
-    }
-
-    @media(max-width:1280px){
+    @media(max-width:1320px){
       .grid-4{grid-template-columns:repeat(2,minmax(0,1fr));}
       .boxes{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
 
-    @media(max-width:1100px){
+    @media(max-width:1120px){
       .app{grid-template-columns:1fr;}
       .sidebar{
         position:relative;
         height:auto;
         border-right:0;
-        border-bottom:1px solid rgba(255,255,255,.06);
+        border-bottom:1px solid rgba(255,255,255,.07);
       }
       .topbar{position:relative;}
       .grid-2,.grid-3{grid-template-columns:1fr;}
@@ -716,7 +770,9 @@
       .manual-row{grid-template-columns:1fr;}
       .page-title{font-size:24px;}
       .row > *,.btn,.pill{width:100%;}
-      table{min-width:680px;}
+      table{min-width:760px;}
+      .top-actions{width:100%;}
+      .modal-card{padding:18px;border-radius:24px;}
     }
   </style>
 </head>
@@ -727,27 +783,17 @@
       <div class="brand">
         <img src="/roda-logo.png" alt="Logo RØDA" />
         <div>
-          <div class="brand-title">RØDA CUP</div>
-          <div class="brand-sub">Area admin torneo</div>
+          <h1>RØDA CUP</h1>
+          <p>Gestione torneo, team, risultati e Discord</p>
         </div>
       </div>
 
       <div class="nav">
-        <div class="nav-title">Gestione</div>
+        <div class="nav-label">Menu</div>
 
-        <button class="active" data-page="overview">
-          <span>📊 Panoramica</span>
-          <small>Stato</small>
-        </button>
-
-        <button data-page="tournament">
-          <span>🏆 Torneo</span>
-          <small>Regole</small>
-        </button>
-
-        <button data-page="teams">
-          <span>👥 Team</span>
-          <small>Iscritti</small>
+        <button class="active" data-page="dashboard">
+          <span>📊 Dashboard</span>
+          <small>Rapido</small>
         </button>
 
         <button data-page="results">
@@ -755,14 +801,29 @@
           <small>Match</small>
         </button>
 
+        <button data-page="teams">
+          <span>👥 Team</span>
+          <small>Pennini</small>
+        </button>
+
+        <button data-page="tournament">
+          <span>🏆 Torneo</span>
+          <small>Regole</small>
+        </button>
+
         <button data-page="discord">
           <span>🤖 Discord</span>
-          <small>Stanze</small>
+          <small>Bot</small>
         </button>
 
         <button data-page="archive">
           <span>🗂️ Archivio</span>
           <small>Storico</small>
+        </button>
+
+        <button class="staff-only" data-page="staff">
+          <span>🔐 Staff</span>
+          <small>Account</small>
         </button>
 
         <button data-page="system">
@@ -782,30 +843,31 @@
     <main class="main">
       <div class="topbar">
         <div>
-          <div class="page-title" id="pageTitle">Panoramica</div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
           <div class="page-sub" id="pageSub">Controllo rapido del torneo.</div>
         </div>
-        <div class="pill" id="topPill">Caricamento...</div>
+
+        <div class="top-actions">
+          <div class="pill" id="topPill">Caricamento...</div>
+          <button class="btn btn-green" onclick="openQuickManualModal()">+ Risultato</button>
+        </div>
       </div>
 
       <div class="content">
-        <section class="page active" id="overview">
+        <section class="page active" id="dashboard">
           <div class="grid-4">
             <div class="stat">
               <span>Match corrente</span>
               <strong id="statMatch">1</strong>
             </div>
-
             <div class="stat">
               <span>Match totali</span>
               <strong id="statTotalMatches">3</strong>
             </div>
-
             <div class="stat">
               <span>Team registrati</span>
               <strong id="statTeams">0</strong>
             </div>
-
             <div class="stat">
               <span>Team mancanti</span>
               <strong id="statMissing">0</strong>
@@ -815,29 +877,29 @@
           <div class="card section">
             <div class="card-head">
               <div>
-                <h3>🎮 Situazione match corrente</h3>
-                <div class="note">Qui vedi subito chi ha inviato, chi manca e chi va contattato.</div>
+                <h3 class="card-title">🎮 Match corrente</h3>
+                <div class="note">Qui vedi subito chi deve ancora inviare il risultato.</div>
               </div>
-              <div class="pill" id="currentMatchPill">Match 1</div>
+              <div class="split-actions">
+                <div class="pill" id="currentMatchPill">Match 1</div>
+                <button class="btn btn-purple" onclick="switchPage('results')">Apri risultati</button>
+              </div>
             </div>
 
             <div class="grid-4">
-              <div class="stat compact">
+              <div class="stat">
                 <span>Team totali</span>
                 <strong id="matchTotal">0</strong>
               </div>
-
-              <div class="stat compact">
-                <span>Risultati ricevuti</span>
+              <div class="stat">
+                <span>Ricevuti</span>
                 <strong id="matchSent">0</strong>
               </div>
-
-              <div class="stat compact">
+              <div class="stat">
                 <span>Approvati</span>
                 <strong id="matchApproved">0</strong>
               </div>
-
-              <div class="stat compact">
+              <div class="stat">
                 <span>Non inviati</span>
                 <strong id="matchMissing">0</strong>
               </div>
@@ -864,8 +926,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🏆 Classifica team</h3>
-                  <div class="note">Punteggio generale del torneo.</div>
+                  <h3 class="card-title">🏆 Classifica team</h3>
+                  <div class="note">Pennino sui punti per correzioni rapide.</div>
                 </div>
               </div>
 
@@ -888,8 +950,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🔥 Top fragger</h3>
-                  <div class="note">Giocatori con più uccisioni.</div>
+                  <h3 class="card-title">🔥 Top fragger</h3>
+                  <div class="note">Pennino sulle kill per correzioni rapide.</div>
                 </div>
               </div>
 
@@ -911,179 +973,117 @@
           </div>
         </section>
 
-        <section class="page" id="tournament">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>🏆 Configurazione torneo</h3>
-                  <div class="note">Il nome, il regolamento e il punteggio restano bloccati.</div>
-                </div>
-                <span class="state state-ok">Bloccato</span>
+        <section class="page" id="results">
+          <div class="card section">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">📸 Gestione risultati</h3>
+                <div class="note">Scegli un match, controlla stati, inserisci manualmente o approva gli screen.</div>
               </div>
 
-              <div class="grid-4">
-                <div class="stat compact">
-                  <span>Torneo</span>
-                  <strong style="font-size:22px;">RØDA CUP</strong>
-                </div>
-
-                <div class="stat compact">
-                  <span>Team massimi</span>
-                  <strong>16</strong>
-                </div>
-
-                <div class="stat compact">
-                  <span>Player team</span>
-                  <strong>3</strong>
-                </div>
-
-                <div class="stat compact">
-                  <span>Regole</span>
-                  <strong style="font-size:22px;">Fisse</strong>
-                </div>
+              <div class="split-actions">
+                <select id="matchFilter" style="min-width:180px;" onchange="renderMatchFilter()"></select>
+                <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
               </div>
-
-              <div class="field">
-                <label>Numero match</label>
-                <input type="number" id="totalMatchesInput" min="1" max="50" />
-              </div>
-
-              <div class="field">
-                <label>
-                  <input type="checkbox" id="resetMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />
-                  Riporta il torneo al match 1
-                </label>
-              </div>
-
-              <button class="btn btn-green" onclick="saveTournament()">Salva torneo</button>
             </div>
 
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>📊 Punteggio ufficiale</h3>
-                  <div class="note">1 kill = 1 punto + bonus posizione.</div>
-                </div>
-              </div>
-
-              <div id="pointsBox" class="grid-4">
-                <div class="empty">Caricamento...</div>
-              </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slot</th>
+                    <th>Team</th>
+                    <th>Giocatori</th>
+                    <th>Stato</th>
+                    <th>Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="matchRowsBody">
+                  <tr><td colspan="5" class="empty">Nessun dato</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>💬 Messaggi bot</h3>
-                  <div class="note">Messaggi modificabili dal sito admin.</div>
-                </div>
+          <div class="card section">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">⏳ Risultati in attesa</h3>
+                <div class="note">Screen inviati dai team e non ancora validati.</div>
               </div>
-
-              <div class="field">
-                <label>Messaggio generale torneo</label>
-                <textarea id="generalMessageInput"></textarea>
-              </div>
-
-              <div class="field">
-                <label>Messaggio codice lobby</label>
-                <textarea id="lobbyMessageInput"></textarea>
-              </div>
-
-              <button class="btn btn-purple" onclick="saveTournamentMessages()">Salva messaggi</button>
             </div>
 
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>📜 Regolamento ufficiale</h3>
-                  <div class="note">Visibile agli admin, non modificabile da qui.</div>
-                </div>
-                <button class="btn btn-blue" onclick="toggleRules()">Mostra</button>
-              </div>
+            <div class="simple-list" id="pendingList">
+              <div class="empty">Nessun risultato in attesa</div>
+            </div>
+          </div>
 
-              <div class="rules" id="rulesBox">Caricamento...</div>
+          <div class="card section">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">📊 Riepilogo match</h3>
+                <div class="note">Panoramica di tutti i match configurati.</div>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Match</th>
+                    <th>Ricevuti</th>
+                    <th>In attesa</th>
+                    <th>Validi</th>
+                    <th>Mancanti</th>
+                    <th>Stato</th>
+                  </tr>
+                </thead>
+                <tbody id="matchSummaryBody">
+                  <tr><td colspan="6" class="empty">Nessun dato</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
 
         <section class="page" id="teams">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>👥 Team iscritti</h3>
-                  <div class="note">Lista ordinata per slot.</div>
-                </div>
-                <div class="pill" id="teamsPill">0 / 16</div>
+          <div class="card section">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">👥 Team iscritti</h3>
+                <div class="note">Modifica nome team e giocatori direttamente con il pennino.</div>
               </div>
 
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Slot</th>
-                      <th>Team</th>
-                      <th>Giocatori</th>
-                    </tr>
-                  </thead>
-                  <tbody id="teamsBody">
-                    <tr><td colspan="3" class="empty">Nessun team registrato</td></tr>
-                  </tbody>
-                </table>
+              <div class="split-actions">
+                <div class="pill" id="teamsPill">0 / 16</div>
+                <button class="btn btn-green" onclick="openCreateTeamModal()">+ Aggiungi team</button>
               </div>
             </div>
 
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>✏️ Modifica team</h3>
-                  <div class="note">Correggi nomi team e giocatori.</div>
-                </div>
-              </div>
-
-              <div class="field">
-                <label>Seleziona team</label>
-                <select id="teamSelect" onchange="loadSelectedTeam()">
-                  <option value="">Nuovo team</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Nome team</label>
-                <input id="teamName" type="text" />
-              </div>
-
-              <div class="field">
-                <label>Giocatore 1</label>
-                <input id="teamP1" type="text" />
-              </div>
-
-              <div class="field">
-                <label>Giocatore 2</label>
-                <input id="teamP2" type="text" />
-              </div>
-
-              <div class="field">
-                <label>Giocatore 3</label>
-                <input id="teamP3" type="text" />
-              </div>
-
-              <div class="row">
-                <button class="btn btn-green" onclick="saveTeam()">Salva</button>
-                <button class="btn btn-purple" onclick="newTeam()">Nuovo</button>
-                <button class="btn btn-red" onclick="deleteTeam()">Elimina</button>
-              </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slot</th>
+                    <th>Nome team</th>
+                    <th>Giocatore 1</th>
+                    <th>Giocatore 2</th>
+                    <th>Giocatore 3</th>
+                    <th>Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="teamsBody">
+                  <tr><td colspan="6" class="empty">Nessun team registrato</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="card">
+          <div class="card section">
             <div class="card-head">
               <div>
-                <h3>📝 Messaggio iscrizioni</h3>
-                <div class="note">Testo del pannello iscrizioni e lista slot.</div>
+                <h3 class="card-title">📝 Messaggio iscrizioni</h3>
+                <div class="note">Testo usato per il pannello iscrizioni e la lista slot.</div>
               </div>
             </div>
 
@@ -1103,44 +1103,50 @@
           </div>
         </section>
 
-        <section class="page" id="results">
-          <div class="card section">
-            <div class="card-head">
-              <div>
-                <h3>🚨 Team mancanti</h3>
-                <div class="note">Team che non hanno ancora un risultato valido nel match corrente.</div>
+        <section class="page" id="tournament">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">🏆 Torneo</h3>
+                  <div class="note">Nome, regolamento e punteggio restano bloccati.</div>
+                </div>
+                <span class="state state-ok">Istituzione RØDA CUP</span>
               </div>
-              <div class="pill" id="missingPill">0 mancanti</div>
-            </div>
 
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Slot</th>
-                    <th>Team</th>
-                    <th>Giocatori</th>
-                    <th>Stato</th>
-                    <th>Azione</th>
-                  </tr>
-                </thead>
-                <tbody id="missingBody">
-                  <tr><td colspan="5" class="empty">Nessun team mancante</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card section">
-            <div class="card-head">
-              <div>
-                <h3>📸 Risultati in attesa</h3>
-                <div class="note">Controlla screenshot, kill e posizione.</div>
+              <div class="grid-4">
+                <div class="stat"><span>Nome</span><strong style="font-size:22px;">RØDA CUP</strong></div>
+                <div class="stat"><span>Team</span><strong>16</strong></div>
+                <div class="stat"><span>Player</span><strong>3</strong></div>
+                <div class="stat"><span>Regole</span><strong style="font-size:22px;">Bloccate</strong></div>
               </div>
+
+              <div class="field">
+                <label>Numero match</label>
+                <input type="number" id="totalMatchesInput" min="1" max="50" />
+              </div>
+
+              <div class="field">
+                <label>
+                  <input type="checkbox" id="resetMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />
+                  Riporta al match 1
+                </label>
+              </div>
+
+              <button class="btn btn-green" onclick="saveTournament()">Salva torneo</button>
             </div>
 
-            <div class="simple-list" id="pendingList">
-              <div class="empty">Nessun risultato in attesa</div>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">📊 Punteggio ufficiale</h3>
+                  <div class="note">1 kill = 1 punto + bonus posizionamento.</div>
+                </div>
+              </div>
+
+              <div id="pointsBox" class="grid-4">
+                <div class="empty">Caricamento...</div>
+              </div>
             </div>
           </div>
 
@@ -1148,59 +1154,33 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>📊 Riepilogo match</h3>
-                  <div class="note">Stato di tutti i match configurati.</div>
+                  <h3 class="card-title">💬 Messaggi bot</h3>
+                  <div class="note">Questi messaggi sono modificabili dal pannello.</div>
                 </div>
               </div>
 
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Match</th>
-                      <th>Ricevuti</th>
-                      <th>Attesa</th>
-                      <th>Validi</th>
-                      <th>Mancanti</th>
-                      <th>Stato</th>
-                    </tr>
-                  </thead>
-                  <tbody id="matchSummaryBody">
-                    <tr><td colspan="6" class="empty">Nessun dato</td></tr>
-                  </tbody>
-                </table>
+              <div class="field">
+                <label>Messaggio generale torneo</label>
+                <textarea id="generalMessageInput"></textarea>
               </div>
+
+              <div class="field">
+                <label>Messaggio codice lobby</label>
+                <textarea id="lobbyMessageInput"></textarea>
+              </div>
+
+              <button class="btn btn-purple" onclick="saveTournamentMessages()">Salva messaggi</button>
             </div>
 
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🔥 Correzione fragger</h3>
-                  <div class="note">Modifica manuale delle uccisioni giocatori.</div>
+                  <h3 class="card-title">📜 Regolamento ufficiale</h3>
+                  <div class="note">Solo visibile. Non modificabile dagli admin normali.</div>
                 </div>
               </div>
 
-              <div class="field">
-                <label>Seleziona giocatore</label>
-                <select id="fraggerSelect" onchange="loadSelectedFragger()">
-                  <option value="">Seleziona</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label>Nome giocatore</label>
-                <input id="fraggerName" type="text" />
-              </div>
-
-              <div class="field">
-                <label>Uccisioni</label>
-                <input id="fraggerKills" type="number" />
-              </div>
-
-              <div class="row">
-                <button class="btn btn-green" onclick="saveFragger()">Salva</button>
-                <button class="btn btn-red" onclick="deleteFragger()">Elimina</button>
-              </div>
+              <div class="rules" id="rulesBox">Caricamento...</div>
             </div>
           </div>
         </section>
@@ -1210,8 +1190,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🤖 Struttura Discord</h3>
-                  <div class="note">Categoria ufficiale RØDA CUP, generale, regolamento e stanze team.</div>
+                  <h3 class="card-title">🤖 Struttura Discord</h3>
+                  <div class="note">Categoria ufficiale, generale, regolamento e pannelli.</div>
                 </div>
               </div>
 
@@ -1244,8 +1224,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🎙️ Azioni Discord</h3>
-                  <div class="note">Usa solo quando serve. I reset non reinviano pannelli.</div>
+                  <h3 class="card-title">🎙️ Azioni bot</h3>
+                  <div class="note">I reset non reinviano pannelli e non creano grafiche nuove.</div>
                 </div>
               </div>
 
@@ -1274,8 +1254,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🗂️ Crea archivio</h3>
-                  <div class="note">Salva classifica, team, match, fragger e risultati.</div>
+                  <h3 class="card-title">🗂️ Crea archivio</h3>
+                  <div class="note">Salva stato torneo, team, risultati, fragger e classifica.</div>
                 </div>
               </div>
 
@@ -1295,8 +1275,8 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>📁 Archivi salvati</h3>
-                  <div class="note">Lista degli snapshot disponibili.</div>
+                  <h3 class="card-title">📁 Archivi salvati</h3>
+                  <div class="note">Snapshot disponibili per consultazione o ripristino.</div>
                 </div>
               </div>
 
@@ -1307,13 +1287,59 @@
           </div>
         </section>
 
+        <section class="page staff-only" id="staff">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">🔐 Crea account staff</h3>
+                  <div class="note">Solo RooS può creare e gestire gli account.</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Nome utente</label>
+                <input id="newStaffUsername" type="text" placeholder="Es. Staff1" />
+              </div>
+
+              <div class="field">
+                <label>Password</label>
+                <input id="newStaffPassword" type="password" placeholder="Minimo 6 caratteri" />
+              </div>
+
+              <div class="field">
+                <label>Ruolo</label>
+                <select id="newStaffRole">
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <button class="btn btn-green" onclick="createStaffUser()">Crea account</button>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">👤 Account admin/staff</h3>
+                  <div class="note">RooS resta proprietario e non può essere eliminato.</div>
+                </div>
+              </div>
+
+              <div class="simple-list" id="staffList">
+                <div class="empty">Nessun account disponibile</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="page" id="system">
           <div class="grid-2">
             <div class="card danger">
               <div class="card-head">
                 <div>
-                  <h3>⚠️ Reset</h3>
-                  <div class="note">Il reset non crea nuove grafiche e non reinvia pannelli. Modifica solo ciò che esiste già.</div>
+                  <h3 class="card-title">⚠️ Reset</h3>
+                  <div class="note">Azioni pericolose. Prima viene creato un archivio automatico.</div>
                 </div>
               </div>
 
@@ -1326,30 +1352,14 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3>🔐 Credenziali admin</h3>
-                  <div class="note">Prossimo step: username/password, RooS admin principale, altri account staff con ruoli.</div>
+                  <h3 class="card-title">🧾 Registro attività</h3>
+                  <div class="note">Ultime azioni eseguite da sito, staff e bot.</div>
                 </div>
               </div>
 
-              <div class="item">
-                <div class="item-title">Da fare nel prossimo blocco</div>
-                <div class="note" style="margin-top:8px;">
-                  Per farlo bene dobbiamo aggiornare anche login, server e storage. Qui non metto pulsanti finti.
-                </div>
+              <div class="simple-list" id="auditList">
+                <div class="empty">Nessun log disponibile</div>
               </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>🧾 Registro attività</h3>
-                <div class="note">Ultime azioni eseguite da admin, sito e bot.</div>
-              </div>
-            </div>
-
-            <div class="simple-list" id="auditList">
-              <div class="empty">Nessun log disponibile</div>
             </div>
           </div>
         </section>
@@ -1357,6 +1367,70 @@
         <div class="status-bar" id="statusBar">Dashboard pronta</div>
       </div>
     </main>
+  </div>
+
+  <div class="modal" id="editModal" onclick="editBackdrop(event)">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="editTitle">Modifica</div>
+          <div class="note" id="editNote">Aggiorna il valore selezionato.</div>
+        </div>
+        <button class="close" onclick="closeEditModal()">×</button>
+      </div>
+
+      <input type="hidden" id="editType" />
+      <input type="hidden" id="editTeamOldName" />
+      <input type="hidden" id="editPlayerIndex" />
+      <input type="hidden" id="editTargetName" />
+
+      <div class="field">
+        <label id="editLabel">Nuovo valore</label>
+        <input id="editValue" type="text" />
+      </div>
+
+      <div class="row">
+        <button class="btn btn-red" onclick="closeEditModal()">Annulla</button>
+        <button class="btn btn-green" onclick="saveInlineEdit()">Salva modifica</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="teamModal" onclick="teamBackdrop(event)">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">➕ Aggiungi team</div>
+          <div class="note">Crea un team manualmente senza pannelli sparsi.</div>
+        </div>
+        <button class="close" onclick="closeTeamModal()">×</button>
+      </div>
+
+      <div class="field">
+        <label>Nome team</label>
+        <input id="createTeamName" type="text" />
+      </div>
+
+      <div class="field">
+        <label>Giocatore 1</label>
+        <input id="createTeamP1" type="text" />
+      </div>
+
+      <div class="field">
+        <label>Giocatore 2</label>
+        <input id="createTeamP2" type="text" />
+      </div>
+
+      <div class="field">
+        <label>Giocatore 3</label>
+        <input id="createTeamP3" type="text" />
+      </div>
+
+      <div class="row">
+        <button class="btn btn-red" onclick="closeTeamModal()">Annulla</button>
+        <button class="btn btn-green" onclick="createTeam()">Crea team</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal" id="manualModal" onclick="manualBackdrop(event)">
@@ -1369,25 +1443,20 @@
         <button class="close" onclick="closeManualModal()">×</button>
       </div>
 
-      <input type="hidden" id="manualTeam" />
-      <input type="hidden" id="manualMatch" />
+      <div class="field">
+        <label>Team</label>
+        <select id="manualTeam" onchange="loadManualPlayers()"></select>
+      </div>
 
-      <div class="boxes">
-        <div class="box">
-          <span>Team</span>
-          <strong id="manualTeamLabel">-</strong>
-        </div>
-
-        <div class="box">
-          <span>Match</span>
-          <strong id="manualMatchLabel">-</strong>
-        </div>
+      <div class="field">
+        <label>Match</label>
+        <select id="manualMatch"></select>
       </div>
 
       <div class="manual-row">
         <div>
           <label class="field label">Giocatore 1</label>
-          <div class="player-name" id="manualP1Name">Giocatore 1</div>
+          <div class="fake-input" id="manualP1Name">Giocatore 1</div>
         </div>
         <div class="field">
           <label>Kill</label>
@@ -1398,7 +1467,7 @@
       <div class="manual-row">
         <div>
           <label class="field label">Giocatore 2</label>
-          <div class="player-name" id="manualP2Name">Giocatore 2</div>
+          <div class="fake-input" id="manualP2Name">Giocatore 2</div>
         </div>
         <div class="field">
           <label>Kill</label>
@@ -1409,7 +1478,7 @@
       <div class="manual-row">
         <div>
           <label class="field label">Giocatore 3</label>
-          <div class="player-name" id="manualP3Name">Giocatore 3</div>
+          <div class="fake-input" id="manualP3Name">Giocatore 3</div>
         </div>
         <div class="field">
           <label>Kill</label>
@@ -1439,13 +1508,14 @@
     let loading = false;
 
     const pageInfo = {
-      overview: ['Panoramica', 'Controllo rapido del torneo.'],
-      tournament: ['Torneo', 'Regole, match e messaggi ufficiali.'],
-      teams: ['Team', 'Gestione iscritti e giocatori.'],
-      results: ['Risultati', 'Controllo match, mancanti e approvazioni.'],
+      dashboard: ['Dashboard', 'Controllo rapido del torneo.'],
+      results: ['Risultati', 'Gestione match, screen e inserimenti manuali.'],
+      teams: ['Team', 'Modifica rapida con pennini su team e player.'],
+      tournament: ['Torneo', 'Regole, punteggio e messaggi ufficiali.'],
       discord: ['Discord', 'Categoria, stanze, pannelli e codice lobby.'],
       archive: ['Archivio', 'Snapshot e storico tornei.'],
-      system: ['Sistema', 'Reset, log e prossime funzioni.']
+      staff: ['Staff', 'Account admin e staff.'],
+      system: ['Sistema', 'Reset e registro attività.']
     };
 
     function qs(id){
@@ -1479,15 +1549,18 @@
     }
 
     function switchPage(pageId){
-      document.querySelectorAll('.page').forEach(page => {
-        page.classList.toggle('active', page.id === pageId);
+      const page = qs(pageId);
+      if(!page) return;
+
+      document.querySelectorAll('.page').forEach(item => {
+        item.classList.toggle('active', item.id === pageId);
       });
 
       document.querySelectorAll('.nav button').forEach(button => {
         button.classList.toggle('active', button.dataset.page === pageId);
       });
 
-      const info = pageInfo[pageId] || pageInfo.overview;
+      const info = pageInfo[pageId] || pageInfo.dashboard;
       qs('pageTitle').textContent = info[0];
       qs('pageSub').textContent = info[1];
       window.scrollTo({ top:0, behavior:'smooth' });
@@ -1529,7 +1602,7 @@
           return;
         }
 
-        qs('staffInfo').textContent = 'Connesso come ' + (session.data.email || '-');
+        qs('staffInfo').textContent = `${session.data.username || session.data.email || '-'} • ${session.data.role || 'staff'}`;
 
         const result = await api('/api/dashboard');
         if(!result) return;
@@ -1559,7 +1632,6 @@
       const leaderboard = data.classificaTeam || [];
       const fraggers = data.classificaFragger || [];
       const match = data.statoMatchCorrente || {};
-      const missing = data.teamMancantiMatchCorrente || [];
       const summary = data.riepilogoMatch || [];
       const botConfig = data.botConfig || {};
       const tournament = data.impostazioniTorneo || {};
@@ -1568,13 +1640,23 @@
       const points = data.puntiUfficiali || {};
       const archives = data.archivi || [];
       const audit = data.auditLog || [];
+      const session = data.session || {};
+      const isOwner = session.role === 'proprietario';
+
+      document.querySelectorAll('.staff-only').forEach(item => {
+        item.classList.toggle('hidden', !isOwner);
+      });
+
+      if(!isOwner && qs('staff')?.classList.contains('active')){
+        switchPage('dashboard');
+      }
 
       qs('topPill').textContent = `RØDA CUP • Match ${data.matchCorrente || 1}/${tournament.totalMatches || 3}`;
 
       qs('statMatch').textContent = data.matchCorrente || 1;
       qs('statTotalMatches').textContent = tournament.totalMatches || 3;
       qs('statTeams').textContent = teams.length;
-      qs('statMissing').textContent = missing.length;
+      qs('statMissing').textContent = match.teamMancanti?.length || data.teamMancantiMatchCorrente?.length || 0;
 
       qs('currentMatchPill').textContent = `Match ${match.matchNumber || data.matchCorrente || 1}`;
       qs('matchTotal').textContent = match.totaleTeam || 0;
@@ -1601,13 +1683,14 @@
       renderLeaderboards(leaderboard, fraggers);
       renderPoints(points);
       renderTeams(teams);
-      renderTeamSelect(teams);
-      renderMissing(missing);
+      renderMatchFilterOptions(summary);
+      renderMatchFilter();
       renderPending(pending);
       renderSummary(summary);
-      renderFraggerSelect(fraggers);
       renderArchives(archives);
+      renderStaff(data.adminUsers || []);
       renderAudit(audit);
+      renderManualSelectors();
     }
 
     function renderCurrentMatch(rows){
@@ -1632,7 +1715,12 @@
         <tr>
           <td><span class="rank">${row.posizione}</span></td>
           <td><strong>${html(row.team)}</strong></td>
-          <td>${Number(row.punti || 0)}</td>
+          <td>
+            <span class="editable">
+              <strong>${Number(row.punti || 0)}</strong>
+              <button class="icon-btn" title="Modifica punti" onclick="openEditPoints('${html(row.team)}', ${Number(row.punti || 0)})">✏️</button>
+            </span>
+          </td>
         </tr>
       `).join('') : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
 
@@ -1640,7 +1728,12 @@
         <tr>
           <td><span class="rank">${row.posizione}</span></td>
           <td><strong>${html(row.nome)}</strong></td>
-          <td>${Number(row.uccisioni || 0)}</td>
+          <td>
+            <span class="editable">
+              <strong>${Number(row.uccisioni || 0)}</strong>
+              <button class="icon-btn" title="Modifica kill" onclick="openEditFragger('${html(row.nome)}', ${Number(row.uccisioni || 0)})">✏️</button>
+            </span>
+          </td>
         </tr>
       `).join('') : `<tr><td colspan="3" class="empty">Nessun dato</td></tr>`;
     }
@@ -1650,12 +1743,12 @@
       const rows = Object.entries(placement).sort((a,b) => Number(a[0]) - Number(b[0]));
 
       qs('pointsBox').innerHTML = `
-        <div class="stat compact">
+        <div class="stat">
           <span>Kill</span>
           <strong>${Number(points.kill || 1)} pt</strong>
         </div>
         ${rows.map(([pos, value]) => `
-          <div class="stat compact">
+          <div class="stat">
             <span>${Number(pos)}° posto</span>
             <strong>${Number(value || 0)} pt</strong>
           </div>
@@ -1664,36 +1757,71 @@
     }
 
     function renderTeams(rows){
-      qs('teamsBody').innerHTML = rows.length ? rows.map(team => `
-        <tr>
-          <td><span class="slot">#${team.slot || '-'}</span></td>
-          <td><strong>${html(team.team)}</strong></td>
-          <td>${(team.players || []).map(player => `<span class="chip">${html(player || '-')}</span>`).join('')}</td>
-        </tr>
-      `).join('') : `<tr><td colspan="3" class="empty">Nessun team registrato</td></tr>`;
+      qs('teamsBody').innerHTML = rows.length ? rows.map(team => {
+        const p = team.players || [];
+        return `
+          <tr>
+            <td><span class="slot">#${team.slot || '-'}</span></td>
+            <td>
+              <span class="editable">
+                <strong>${html(team.team)}</strong>
+                <button class="icon-btn" title="Modifica nome team" onclick="openEditTeamName('${html(team.team)}')">✏️</button>
+              </span>
+            </td>
+            ${[0,1,2].map(index => `
+              <td>
+                <span class="editable">
+                  <span>${html(p[index] || `Giocatore ${index + 1}`)}</span>
+                  <button class="icon-btn" title="Modifica giocatore" onclick="openEditPlayer('${html(team.team)}', ${index})">✏️</button>
+                </span>
+              </td>
+            `).join('')}
+            <td>
+              <button class="btn btn-red" onclick="deleteTeam('${html(team.team)}')">Elimina</button>
+            </td>
+          </tr>
+        `;
+      }).join('') : `<tr><td colspan="6" class="empty">Nessun team registrato</td></tr>`;
     }
 
-    function renderTeamSelect(rows){
-      const current = qs('teamSelect').value;
-      qs('teamSelect').innerHTML = `<option value="">Nuovo team</option>` + rows.map(team => `
-        <option value="${html(team.team)}">#${team.slot || '-'} • ${html(team.team)}</option>
-      `).join('');
+    function renderMatchFilterOptions(summary){
+      const current = qs('matchFilter').value || String(dashboard?.matchCorrente || 1);
+      qs('matchFilter').innerHTML = summary.length ? summary.map(item => `
+        <option value="${Number(item.matchNumber || 1)}">Match ${Number(item.matchNumber || 1)}</option>
+      `).join('') : `<option value="${dashboard?.matchCorrente || 1}">Match ${dashboard?.matchCorrente || 1}</option>`;
 
-      if(rows.some(team => team.team === current)) qs('teamSelect').value = current;
+      qs('matchFilter').value = current;
     }
 
-    function renderMissing(rows){
-      qs('missingPill').textContent = `${rows.length} mancanti`;
+    function renderMatchFilter(){
+      const matchNumber = Number(qs('matchFilter').value || dashboard?.matchCorrente || 1);
+      const source = dashboard?.riepilogoMatch || [];
+      const activeSummary = source.find(item => Number(item.matchNumber) === matchNumber);
+      const currentRows = Number(dashboard?.statoMatchCorrente?.matchNumber) === matchNumber
+        ? dashboard?.statoMatchCorrente?.righe || []
+        : [];
 
-      qs('missingBody').innerHTML = rows.length ? rows.map(row => `
+      qs('matchRowsBody').innerHTML = currentRows.length ? currentRows.map(row => `
         <tr>
           <td><span class="slot">#${row.slot || '-'}</span></td>
           <td><strong>${html(row.team)}</strong></td>
           <td>${(row.players || []).map(player => `<span class="chip">${html(player || '-')}</span>`).join('')}</td>
           <td><span class="state ${statusClass(row.stato)}">${html(row.statoTesto || '-')}</span></td>
-          <td><button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci risultato</button></td>
+          <td>
+            ${row.stato === 'in_attesa'
+              ? `<span class="note">Controlla sotto</span>`
+              : row.stato === 'approvato' || row.stato === 'inserito_manualmente'
+                ? `<span class="note">Completo</span>`
+                : `<button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || matchNumber)})">Inserisci risultato</button>`}
+          </td>
         </tr>
-      `).join('') : `<tr><td colspan="5" class="empty">Nessun team mancante</td></tr>`;
+      `).join('') : `
+        <tr>
+          <td colspan="5" class="empty">
+            ${activeSummary ? 'Apri il match corrente per vedere i team nel dettaglio.' : 'Nessun dato'}
+          </td>
+        </tr>
+      `;
     }
 
     function renderPending(rows){
@@ -1752,15 +1880,6 @@
       `).join('') : `<tr><td colspan="6" class="empty">Nessun dato</td></tr>`;
     }
 
-    function renderFraggerSelect(rows){
-      const current = qs('fraggerSelect').value;
-      qs('fraggerSelect').innerHTML = `<option value="">Seleziona</option>` + rows.map(row => `
-        <option value="${html(row.nome)}">${html(row.nome)} • ${Number(row.uccisioni || 0)} kill</option>
-      `).join('');
-
-      if(rows.some(row => row.nome === current)) qs('fraggerSelect').value = current;
-    }
-
     function renderArchives(rows){
       qs('archiveList').innerHTML = rows.length ? rows.map(item => `
         <div class="item">
@@ -1779,10 +1898,35 @@
           </div>
 
           <div class="note" style="margin:10px 0;">${html(item.note || 'Nessuna nota')}</div>
-
           <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina</button>
         </div>
       `).join('') : `<div class="empty">Nessun archivio disponibile</div>`;
+    }
+
+    function renderStaff(rows){
+      qs('staffList').innerHTML = rows.length ? rows.map(user => `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${html(user.username)}</div>
+              <div class="note">Ruolo: ${html(user.role)} • Stato: ${user.active ? 'attivo' : 'disattivato'}</div>
+            </div>
+            <span class="state ${user.active ? 'state-ok' : 'state-bad'}">${user.active ? 'Attivo' : 'Disattivato'}</span>
+          </div>
+
+          <div class="row">
+            ${user.role !== 'proprietario' ? `
+              <button class="btn btn-blue" onclick="toggleStaffActive('${html(user.username)}', ${user.active ? 'false' : 'true'}, '${html(user.role)}')">${user.active ? 'Disattiva' : 'Attiva'}</button>
+              <button class="btn btn-purple" onclick="changeStaffRole('${html(user.username)}', '${html(user.role)}')">Ruolo</button>
+              <button class="btn btn-yellow" onclick="changeStaffPassword('${html(user.username)}')">Password</button>
+              <button class="btn btn-red" onclick="deleteStaffUser('${html(user.username)}')">Elimina</button>
+            ` : `
+              <span class="pill">Proprietario bloccato</span>
+              <button class="btn btn-yellow" onclick="changeStaffPassword('${html(user.username)}')">Cambia password</button>
+            `}
+          </div>
+        </div>
+      `).join('') : `<div class="empty">Nessun account disponibile</div>`;
     }
 
     function renderAudit(rows){
@@ -1799,62 +1943,280 @@
       `).join('') : `<div class="empty">Nessun log disponibile</div>`;
     }
 
-    function loadSelectedTeam(){
-      const selected = qs('teamSelect').value;
-      const team = dashboard?.teams?.[selected];
+    function renderManualSelectors(){
+      const teams = dashboard?.teamOrdinati || [];
+      const tournament = dashboard?.impostazioniTorneo || {};
+      const total = Number(tournament.totalMatches || 3);
 
-      if(!selected || !team){
-        newTeam();
-        return;
-      }
+      const selectedTeam = qs('manualTeam').value;
+      qs('manualTeam').innerHTML = `<option value="">Seleziona team</option>` + teams.map(team => `
+        <option value="${html(team.team)}">#${team.slot || '-'} • ${html(team.team)}</option>
+      `).join('');
+      if(teams.some(team => team.team === selectedTeam)) qs('manualTeam').value = selectedTeam;
 
-      qs('teamName').value = selected;
-      qs('teamP1').value = team.players?.[0] || '';
-      qs('teamP2').value = team.players?.[1] || '';
-      qs('teamP3').value = team.players?.[2] || '';
+      const selectedMatch = qs('manualMatch').value || String(dashboard?.matchCorrente || 1);
+      qs('manualMatch').innerHTML = Array.from({length:total}, (_,i) => i + 1).map(match => `
+        <option value="${match}">Match ${match}</option>
+      `).join('');
+      qs('manualMatch').value = selectedMatch;
+
+      loadManualPlayers();
     }
 
-    function newTeam(){
-      qs('teamSelect').value = '';
-      qs('teamName').value = '';
-      qs('teamP1').value = '';
-      qs('teamP2').value = '';
-      qs('teamP3').value = '';
-    }
-
-    function loadSelectedFragger(){
-      const selected = qs('fraggerSelect').value;
-      const row = (dashboard?.classificaFragger || []).find(item => item.nome === selected);
-
-      qs('fraggerName').value = selected || '';
-      qs('fraggerKills').value = row ? Number(row.uccisioni || 0) : '';
-    }
-
-    function toggleRules(){
-      qs('rulesBox').classList.toggle('open');
-    }
-
-    function openManualModal(team, matchNumber){
-      const data = dashboard?.teams?.[team] || {};
-      const players = data.players || [];
-
-      qs('manualTeam').value = team;
-      qs('manualMatch').value = Number(matchNumber || dashboard?.matchCorrente || 1);
-      qs('manualTeamLabel').textContent = team;
-      qs('manualMatchLabel').textContent = `Match ${Number(matchNumber || dashboard?.matchCorrente || 1)}`;
+    function loadManualPlayers(){
+      const teamName = qs('manualTeam').value;
+      const team = dashboard?.teams?.[teamName];
+      const players = team?.players || [];
 
       qs('manualP1Name').textContent = players[0] || 'Giocatore 1';
       qs('manualP2Name').textContent = players[1] || 'Giocatore 2';
       qs('manualP3Name').textContent = players[2] || 'Giocatore 3';
+    }
+
+    function getTeamData(teamName){
+      return dashboard?.teams?.[teamName] || null;
+    }
+
+    function openEditTeamName(teamName){
+      qs('editType').value = 'teamName';
+      qs('editTeamOldName').value = teamName;
+      qs('editPlayerIndex').value = '';
+      qs('editTargetName').value = teamName;
+      qs('editTitle').textContent = '✏️ Modifica nome team';
+      qs('editNote').textContent = 'Il nome verrà aggiornato ovunque.';
+      qs('editLabel').textContent = 'Nuovo nome team';
+      qs('editValue').type = 'text';
+      qs('editValue').value = teamName;
+      showEditModal();
+    }
+
+    function openEditPlayer(teamName, index){
+      const team = getTeamData(teamName);
+      const players = team?.players || [];
+
+      qs('editType').value = 'player';
+      qs('editTeamOldName').value = teamName;
+      qs('editPlayerIndex').value = String(index);
+      qs('editTargetName').value = teamName;
+      qs('editTitle').textContent = `✏️ Modifica giocatore ${index + 1}`;
+      qs('editNote').textContent = 'Il player verrà aggiornato nel team.';
+      qs('editLabel').textContent = 'Nuovo nome giocatore';
+      qs('editValue').type = 'text';
+      qs('editValue').value = players[index] || '';
+      showEditModal();
+    }
+
+    function openEditPoints(teamName, points){
+      qs('editType').value = 'points';
+      qs('editTeamOldName').value = teamName;
+      qs('editPlayerIndex').value = '';
+      qs('editTargetName').value = teamName;
+      qs('editTitle').textContent = '✏️ Modifica punti team';
+      qs('editNote').textContent = 'Il punteggio verrà aggiornato nella classifica.';
+      qs('editLabel').textContent = 'Punti totali';
+      qs('editValue').type = 'number';
+      qs('editValue').value = Number(points || 0);
+      showEditModal();
+    }
+
+    function openEditFragger(player, kills){
+      qs('editType').value = 'fragger';
+      qs('editTeamOldName').value = '';
+      qs('editPlayerIndex').value = '';
+      qs('editTargetName').value = player;
+      qs('editTitle').textContent = '✏️ Modifica kill giocatore';
+      qs('editNote').textContent = 'Le kill verranno aggiornate nella classifica fragger.';
+      qs('editLabel').textContent = 'Kill totali';
+      qs('editValue').type = 'number';
+      qs('editValue').value = Number(kills || 0);
+      showEditModal();
+    }
+
+    function showEditModal(){
+      qs('editModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => qs('editValue').focus(), 80);
+    }
+
+    function closeEditModal(){
+      qs('editModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function editBackdrop(event){
+      if(event.target.id === 'editModal') closeEditModal();
+    }
+
+    async function saveInlineEdit(){
+      const type = qs('editType').value;
+      const value = qs('editValue').value.trim();
+      const teamName = qs('editTeamOldName').value;
+
+      if(!type) return;
+
+      if(type === 'teamName'){
+        const team = getTeamData(teamName);
+        if(!team) return alert('Team non trovato');
+        if(!value) return alert('Inserisci il nome team');
+
+        const result = await api('/api/teams/save', {
+          method:'POST',
+          body:JSON.stringify({
+            oldTeamName:teamName,
+            teamName:value,
+            p1:team.players?.[0] || '',
+            p2:team.players?.[1] || '',
+            p3:team.players?.[2] || ''
+          })
+        });
+
+        if(!result) return;
+        if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica team');
+      }
+
+      if(type === 'player'){
+        const team = getTeamData(teamName);
+        if(!team) return alert('Team non trovato');
+        if(!value) return alert('Inserisci il nome player');
+
+        const players = [...(team.players || [])];
+        const index = Number(qs('editPlayerIndex').value);
+        players[index] = value;
+
+        const result = await api('/api/teams/save', {
+          method:'POST',
+          body:JSON.stringify({
+            oldTeamName:teamName,
+            teamName,
+            p1:players[0] || '',
+            p2:players[1] || '',
+            p3:players[2] || ''
+          })
+        });
+
+        if(!result) return;
+        if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica player');
+      }
+
+      if(type === 'points'){
+        const points = Number(qs('editValue').value || 0);
+
+        const result = await api('/api/scores/set', {
+          method:'POST',
+          body:JSON.stringify({
+            team:teamName,
+            points
+          })
+        });
+
+        if(!result) return;
+        if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica punti');
+      }
+
+      if(type === 'fragger'){
+        const player = qs('editTargetName').value;
+        const kills = Number(qs('editValue').value || 0);
+
+        const result = await api('/api/fragger/set', {
+          method:'POST',
+          body:JSON.stringify({
+            player,
+            kills
+          })
+        });
+
+        if(!result) return;
+        if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica fragger');
+      }
+
+      closeEditModal();
+      await refreshDashboard();
+      setStatus('Modifica salvata');
+    }
+
+    function openCreateTeamModal(){
+      qs('createTeamName').value = '';
+      qs('createTeamP1').value = '';
+      qs('createTeamP2').value = '';
+      qs('createTeamP3').value = '';
+      qs('teamModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => qs('createTeamName').focus(), 80);
+    }
+
+    function closeTeamModal(){
+      qs('teamModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function teamBackdrop(event){
+      if(event.target.id === 'teamModal') closeTeamModal();
+    }
+
+    async function createTeam(){
+      const result = await api('/api/teams/save', {
+        method:'POST',
+        body:JSON.stringify({
+          oldTeamName:'',
+          teamName:qs('createTeamName').value.trim(),
+          p1:qs('createTeamP1').value.trim(),
+          p2:qs('createTeamP2').value.trim(),
+          p3:qs('createTeamP3').value.trim()
+        })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore creazione team');
+
+      closeTeamModal();
+      await refreshDashboard();
+      setStatus('Team creato');
+    }
+
+    async function deleteTeam(teamName){
+      if(!teamName) return;
+      if(!confirm(`Confermi eliminazione del team ${teamName}?`)) return;
+
+      const result = await api('/api/teams/delete', {
+        method:'POST',
+        body:JSON.stringify({ teamName })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore eliminazione team');
+
+      await refreshDashboard();
+      setStatus('Team eliminato');
+    }
+
+    function openQuickManualModal(){
+      openManualModal('', dashboard?.matchCorrente || 1);
+    }
+
+    function openManualModal(teamName = '', matchNumber = null){
+      renderManualSelectors();
+
+      if(teamName){
+        qs('manualTeam').value = teamName;
+      }
+
+      if(matchNumber){
+        qs('manualMatch').value = String(matchNumber);
+      }
 
       qs('manualK1').value = '';
       qs('manualK2').value = '';
       qs('manualK3').value = '';
       qs('manualPos').value = '';
 
+      loadManualPlayers();
+
       qs('manualModal').classList.add('show');
       document.body.style.overflow = 'hidden';
-      setTimeout(() => qs('manualK1').focus(), 50);
+      setTimeout(() => {
+        if(!qs('manualTeam').value) qs('manualTeam').focus();
+        else qs('manualK1').focus();
+      }, 80);
     }
 
     function closeManualModal(){
@@ -1915,44 +2277,6 @@
       setStatus('Messaggi salvati');
     }
 
-    async function saveTeam(){
-      const result = await api('/api/teams/save', {
-        method:'POST',
-        body:JSON.stringify({
-          oldTeamName:qs('teamSelect').value,
-          teamName:qs('teamName').value.trim(),
-          p1:qs('teamP1').value.trim(),
-          p2:qs('teamP2').value.trim(),
-          p3:qs('teamP3').value.trim()
-        })
-      });
-
-      if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore salvataggio team');
-
-      await refreshDashboard();
-      qs('teamSelect').value = qs('teamName').value.trim();
-      setStatus('Team salvato');
-    }
-
-    async function deleteTeam(){
-      const teamName = qs('teamSelect').value || qs('teamName').value.trim();
-      if(!teamName) return alert('Seleziona un team');
-      if(!confirm('Confermi eliminazione team?')) return;
-
-      const result = await api('/api/teams/delete', {
-        method:'POST',
-        body:JSON.stringify({ teamName })
-      });
-
-      if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore eliminazione team');
-
-      newTeam();
-      await refreshDashboard();
-      setStatus('Team eliminato');
-    }
-
     async function saveRegistrationSettings(){
       const result = await api('/api/registration-settings/save', {
         method:'POST',
@@ -1971,6 +2295,8 @@
     }
 
     async function submitManualResult(){
+      if(!qs('manualTeam').value) return alert('Seleziona un team');
+
       const btn = qs('manualSaveBtn');
       btn.disabled = true;
       btn.textContent = 'Salvo...';
@@ -2016,42 +2342,6 @@
 
       await refreshDashboard();
       setStatus('Risultato rifiutato');
-    }
-
-    async function saveFragger(){
-      const result = await api('/api/fragger/set', {
-        method:'POST',
-        body:JSON.stringify({
-          player:qs('fraggerName').value.trim(),
-          kills:Number(qs('fraggerKills').value || 0)
-        })
-      });
-
-      if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore fragger');
-
-      await refreshDashboard();
-      setStatus('Fragger salvato');
-    }
-
-    async function deleteFragger(){
-      const player = qs('fraggerSelect').value || qs('fraggerName').value.trim();
-      if(!player) return alert('Seleziona un giocatore');
-      if(!confirm('Confermi eliminazione giocatore?')) return;
-
-      const result = await api('/api/fragger/delete', {
-        method:'POST',
-        body:JSON.stringify({ player })
-      });
-
-      if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore eliminazione fragger');
-
-      qs('fraggerName').value = '';
-      qs('fraggerKills').value = '';
-      qs('fraggerSelect').value = '';
-      await refreshDashboard();
-      setStatus('Fragger eliminato');
     }
 
     async function saveDiscordSettings(){
@@ -2192,6 +2482,91 @@
       setStatus('Archivio ripristinato');
     }
 
+    async function createStaffUser(){
+      const result = await api('/api/admin-users/create', {
+        method:'POST',
+        body:JSON.stringify({
+          username:qs('newStaffUsername').value.trim(),
+          password:qs('newStaffPassword').value,
+          role:qs('newStaffRole').value
+        })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore creazione account');
+
+      qs('newStaffUsername').value = '';
+      qs('newStaffPassword').value = '';
+      qs('newStaffRole').value = 'staff';
+
+      await refreshDashboard();
+      setStatus('Account creato');
+    }
+
+    async function toggleStaffActive(username, active, role){
+      const result = await api('/api/admin-users/update', {
+        method:'POST',
+        body:JSON.stringify({ username, active, role })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore modifica account');
+
+      await refreshDashboard();
+      setStatus('Account aggiornato');
+    }
+
+    async function changeStaffRole(username, currentRole){
+      const next = prompt('Nuovo ruolo: admin oppure staff', currentRole || 'staff');
+      if(!next) return;
+
+      const result = await api('/api/admin-users/update', {
+        method:'POST',
+        body:JSON.stringify({
+          username,
+          role:next,
+          active:true
+        })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore ruolo');
+
+      await refreshDashboard();
+      setStatus('Ruolo aggiornato');
+    }
+
+    async function changeStaffPassword(username){
+      const password = prompt(`Nuova password per ${username}`);
+      if(!password) return;
+
+      const result = await api('/api/admin-users/password', {
+        method:'POST',
+        body:JSON.stringify({ username, password })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore password');
+
+      await refreshDashboard();
+      setStatus('Password aggiornata');
+    }
+
+    async function deleteStaffUser(username){
+      if(!confirm(`Confermi eliminazione account ${username}?`)) return;
+
+      const result = await api('/api/admin-users/delete', {
+        method:'POST',
+        body:JSON.stringify({ username })
+      });
+
+      if(!result) return;
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore eliminazione account');
+
+      await refreshDashboard();
+      setStatus('Account eliminato');
+    }
+
     async function resetData(){
       if(!confirm('Confermi reset classifica, fragger e match?')) return;
 
@@ -2229,8 +2604,14 @@
 
     document.addEventListener('keydown', event => {
       if(event.key === 'Escape'){
+        closeEditModal();
+        closeTeamModal();
         closeManualModal();
         closeImageModal();
+      }
+
+      if(event.key === 'Enter' && qs('editModal').classList.contains('show')){
+        saveInlineEdit();
       }
     });
 
