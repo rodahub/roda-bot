@@ -48,11 +48,8 @@ const REGISTRATION_STATUS_CHANNEL = process.env.REGISTRATION_STATUS_CHANNEL || '
 
 const LEADERBOARD_TEMPLATE_PATH = path.join(__dirname, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(__dirname, 'top-fragger.png');
-const CUSTOM_FONT_PATH = path.join(__dirname, 'NeltridetrialRegular-q2nmr.otf');
-const CUSTOM_FONT_FAMILY = 'NeltriTrial';
-
-const LEADERBOARD_GRAPHIC_PREFIX = '🏆 **CLASSIFICA LIVE**';
-const TOP_FRAGGER_GRAPHIC_PREFIX = '🔥 **TOP FRAGGER**';
+const GRAPHIC_FONT_PATH = path.join(__dirname, 'NeltridetrialRegular-q2nmr.otf');
+const GRAPHIC_FONT_FAMILY = 'RodaLedFont';
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -67,7 +64,7 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
-let customFontRegistered = false;
+let graphicFontRegistered = false;
 
 function sanitizeText(value) {
   return String(value || '').trim();
@@ -150,6 +147,14 @@ function ensureDataStructures() {
 
   if (!data.fragger || typeof data.fragger !== 'object') {
     data.fragger = {};
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data, 'leaderboardGraphicMessageId')) {
+    data.leaderboardGraphicMessageId = null;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data, 'topFraggerGraphicMessageId')) {
+    data.topFraggerGraphicMessageId = null;
   }
 }
 
@@ -307,6 +312,26 @@ function fileExists(filePath) {
   }
 }
 
+function registerGraphicFont() {
+  if (graphicFontRegistered) return;
+
+  try {
+    if (fileExists(GRAPHIC_FONT_PATH)) {
+      registerFont(GRAPHIC_FONT_PATH, { family: GRAPHIC_FONT_FAMILY });
+      graphicFontRegistered = true;
+      console.log(`Font grafico caricato: ${GRAPHIC_FONT_PATH}`);
+    } else {
+      console.warn(`Font grafico non trovato: ${GRAPHIC_FONT_PATH}. Verrà usato un font di fallback.`);
+    }
+  } catch (error) {
+    console.error('Errore caricamento font grafico:', error);
+  }
+}
+
+function getGraphicFontFamily() {
+  return graphicFontRegistered ? GRAPHIC_FONT_FAMILY : 'Arial';
+}
+
 function formatGraphicUpdateTime(date = new Date()) {
   return date.toLocaleTimeString('it-IT', {
     hour: '2-digit',
@@ -314,62 +339,127 @@ function formatGraphicUpdateTime(date = new Date()) {
   });
 }
 
-function applyTextShadow(ctx, color = 'rgba(122, 44, 255, 0.18)', blur = 8) {
-  ctx.shadowColor = color;
-  ctx.shadowBlur = blur;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-}
-
-function clearTextShadow(ctx) {
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-}
-
-function normalizeGraphicText(value) {
+function sanitizeGraphicText(value) {
   return String(value || '')
     .normalize('NFKC')
-    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[^\p{L}\p{N}\s._\-&+@#()'’]/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function registerCustomGraphicFont() {
-  if (customFontRegistered) return;
-
-  if (!fileExists(CUSTOM_FONT_PATH)) {
-    console.warn(`Font custom non trovato: ${CUSTOM_FONT_PATH}`);
-    return;
-  }
-
-  try {
-    registerFont(CUSTOM_FONT_PATH, { family: CUSTOM_FONT_FAMILY });
-    customFontRegistered = true;
-    console.log(`Font registrato correttamente: ${CUSTOM_FONT_FAMILY}`);
-  } catch (error) {
-    console.error('Errore registrazione font custom:', error);
-  }
+function sanitizeGraphicNumber(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return '0';
+  return String(Math.round(numeric));
 }
 
-function buildCanvasFont(size, weight = 'normal') {
-  const family = customFontRegistered ? `"${CUSTOM_FONT_FAMILY}"` : 'Arial';
-  return `${weight} ${size}px ${family}`;
+function setCanvasFont(ctx, size, weight = '700', family = getGraphicFontFamily()) {
+  ctx.font = `${weight} ${size}px "${family}"`;
 }
 
-function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = 'normal') {
+function fitText(ctx, text, maxWidth, startSize, minSize = 16, weight = '700', family = getGraphicFontFamily()) {
+  const safeText = sanitizeGraphicText(text);
   let size = startSize;
 
   while (size >= minSize) {
-    ctx.font = buildCanvasFont(size, weight);
-    if (ctx.measureText(text).width <= maxWidth) {
+    setCanvasFont(ctx, size, weight, family);
+    if (ctx.measureText(safeText).width <= maxWidth) {
       return size;
     }
     size -= 1;
   }
 
   return minSize;
+}
+
+function drawGlowText(ctx, text, x, y, options = {}) {
+  const safeText = String(text || '');
+  if (!safeText) return;
+
+  const {
+    size = 30,
+    minSize = 16,
+    maxWidth = null,
+    align = 'center',
+    baseline = 'middle',
+    weight = '700',
+    family = getGraphicFontFamily(),
+    fill = '#341b58',
+    stroke = '#f2e6ff',
+    glow = '#b15eff',
+    glowBlur = 16,
+    strokeWidth = 2.5,
+    clipRect = null
+  } = options;
+
+  const finalSize = maxWidth
+    ? fitText(ctx, safeText, maxWidth, size, minSize, weight, family)
+    : size;
+
+  ctx.save();
+
+  if (clipRect) {
+    ctx.beginPath();
+    ctx.rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+    ctx.clip();
+  }
+
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = strokeWidth;
+  setCanvasFont(ctx, finalSize, weight, family);
+
+  // Glow pass
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = glowBlur;
+  ctx.fillStyle = fill;
+  ctx.fillText(safeText, x, y);
+
+  // Clean stroke + fill pass
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = stroke;
+  if (strokeWidth > 0) {
+    ctx.strokeText(safeText, x, y);
+  }
+  ctx.fillStyle = fill;
+  ctx.fillText(safeText, x, y);
+
+  ctx.restore();
+}
+
+function drawFooterInfo(ctx, matchNumber, updatedAt, canvasWidth, canvasHeight) {
+  const family = getGraphicFontFamily();
+
+  drawGlowText(ctx, `MATCH ${sanitizeGraphicNumber(matchNumber)}`, 200, canvasHeight - 72, {
+    size: 24,
+    minSize: 18,
+    weight: '700',
+    family,
+    align: 'left',
+    baseline: 'middle',
+    fill: '#5a2eb8',
+    stroke: '#f5eaff',
+    glow: 'rgba(157, 92, 255, 0.65)',
+    glowBlur: 12,
+    strokeWidth: 1.6
+  });
+
+  drawGlowText(ctx, `AGGIORNATO ${updatedAt}`, canvasWidth - 180, canvasHeight - 72, {
+    size: 24,
+    minSize: 18,
+    weight: '700',
+    family,
+    align: 'right',
+    baseline: 'middle',
+    fill: '#5a2eb8',
+    stroke: '#f5eaff',
+    glow: 'rgba(157, 92, 255, 0.65)',
+    glowBlur: 12,
+    strokeWidth: 1.6
+  });
 }
 
 function ensureGraphicTemplates() {
@@ -380,191 +470,244 @@ function ensureGraphicTemplates() {
   if (!fileExists(TOP_FRAGGER_TEMPLATE_PATH)) {
     throw new Error('Template top-fragger.png non trovato nella cartella principale del progetto');
   }
+
+  registerGraphicFont();
 }
 
 async function generateLeaderboardGraphicBuffer() {
   ensureGraphicTemplates();
-  registerCustomGraphicFont();
 
   const template = await loadImage(LEADERBOARD_TEMPLATE_PATH);
   const canvas = createCanvas(template.width, template.height);
   const ctx = canvas.getContext('2d');
 
-  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedScores().slice(0, 16);
   const updatedAt = formatGraphicUpdateTime();
   const matchNumber = Number(data.currentMatch || 1);
+  const family = getGraphicFontFamily();
 
-  const teamX = 470;
-  const pointsX = 1578;
-  const startY = 266;
-  const rowHeight = 43;
-  const maxTeamWidth = 920;
+  // Box layout ottimizzato per il template classifica
+  const teamBox = { x: 455, y: 248, width: 930, height: 45 };
+  const pointsBox = { x: 1390, y: 248, width: 255, height: 45 };
+  const rowHeight = 49;
 
   for (let i = 0; i < 16; i++) {
     const row = rows[i];
     if (!row) continue;
 
-    const teamName = normalizeGraphicText(row.teamName);
-    const points = String(Number(row.points || 0));
-    const y = startY + (i * rowHeight);
+    const teamName = sanitizeGraphicText(row.teamName);
+    const pointsText = sanitizeGraphicNumber(row.points);
     const isTop3 = i < 3;
 
-    const teamFontSize = fitText(
+    const currentTeamBox = {
+      x: teamBox.x,
+      y: teamBox.y + (i * rowHeight),
+      width: teamBox.width,
+      height: teamBox.height
+    };
+
+    const currentPointsBox = {
+      x: pointsBox.x,
+      y: pointsBox.y + (i * rowHeight),
+      width: pointsBox.width,
+      height: pointsBox.height
+    };
+
+    const teamCenterY = currentTeamBox.y + (currentTeamBox.height / 2);
+    const pointsCenterY = currentPointsBox.y + (currentPointsBox.height / 2);
+
+    drawGlowText(
       ctx,
       teamName,
-      maxTeamWidth,
-      isTop3 ? 30 : 27,
-      16,
-      isTop3 ? 'bold' : 'normal'
+      currentTeamBox.x + (currentTeamBox.width / 2),
+      teamCenterY,
+      {
+        size: isTop3 ? 30 : 27,
+        minSize: 18,
+        maxWidth: currentTeamBox.width - 70,
+        weight: isTop3 ? '800' : '700',
+        family,
+        align: 'center',
+        baseline: 'middle',
+        fill: isTop3 ? '#32165d' : '#442977',
+        stroke: '#f5ebff',
+        glow: isTop3 ? 'rgba(173, 100, 255, 0.80)' : 'rgba(157, 92, 255, 0.55)',
+        glowBlur: isTop3 ? 18 : 13,
+        strokeWidth: isTop3 ? 2.3 : 1.8,
+        clipRect: {
+          x: currentTeamBox.x + 10,
+          y: currentTeamBox.y + 2,
+          width: currentTeamBox.width - 20,
+          height: currentTeamBox.height - 4
+        }
+      }
     );
 
-    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.18)' : 'rgba(79, 61, 131, 0.10)', isTop3 ? 10 : 6);
-
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = isTop3 ? '#311b56' : '#3c2963';
-    ctx.font = buildCanvasFont(teamFontSize, isTop3 ? 'bold' : 'normal');
-    ctx.fillText(teamName, teamX, y);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = isTop3 ? '#241241' : '#33204f';
-    ctx.font = buildCanvasFont(isTop3 ? 28 : 26, 'bold');
-    ctx.fillText(points, pointsX, y);
-
-    clearTextShadow(ctx);
+    drawGlowText(
+      ctx,
+      pointsText,
+      currentPointsBox.x + (currentPointsBox.width / 2),
+      pointsCenterY,
+      {
+        size: isTop3 ? 32 : 29,
+        minSize: 22,
+        maxWidth: currentPointsBox.width - 20,
+        weight: '800',
+        family,
+        align: 'center',
+        baseline: 'middle',
+        fill: '#381a6b',
+        stroke: '#fff3ff',
+        glow: 'rgba(176, 109, 255, 0.85)',
+        glowBlur: isTop3 ? 19 : 15,
+        strokeWidth: 2.1,
+        clipRect: {
+          x: currentPointsBox.x + 6,
+          y: currentPointsBox.y + 2,
+          width: currentPointsBox.width - 12,
+          height: currentPointsBox.height - 4
+        }
+      }
+    );
   }
 
-  applyTextShadow(ctx, 'rgba(122, 44, 255, 0.15)', 6);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#372257';
-  ctx.font = buildCanvasFont(24, 'bold');
-  ctx.fillText(`Match ${matchNumber}`, 170, 1010);
-
-  ctx.textAlign = 'right';
-  ctx.font = buildCanvasFont(22, 'normal');
-  ctx.fillText(`Aggiornato alle ${updatedAt}`, 1750, 1010);
-  clearTextShadow(ctx);
-
+  drawFooterInfo(ctx, matchNumber, updatedAt, canvas.width, canvas.height);
   return canvas.toBuffer('image/png');
 }
 
 async function generateTopFraggerGraphicBuffer() {
   ensureGraphicTemplates();
-  registerCustomGraphicFont();
 
   const template = await loadImage(TOP_FRAGGER_TEMPLATE_PATH);
   const canvas = createCanvas(template.width, template.height);
   const ctx = canvas.getContext('2d');
 
-  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(template, 0, 0, template.width, template.height);
 
   const rows = getSortedFraggers().slice(0, 10);
   const updatedAt = formatGraphicUpdateTime();
   const matchNumber = Number(data.currentMatch || 1);
+  const family = getGraphicFontFamily();
 
-  const playerX = 520;
-  const killsX = 1560;
-  const startY = 278;
-  const rowHeight = 60;
-  const maxPlayerWidth = 860;
+  // Box layout ottimizzato per il template top fragger
+  const playerBox = { x: 455, y: 248, width: 930, height: 45 };
+  const killsBox = { x: 1390, y: 248, width: 255, height: 45 };
+  const rowHeight = 57;
 
   for (let i = 0; i < 10; i++) {
     const row = rows[i];
     if (!row) continue;
 
-    const playerName = normalizeGraphicText(row.playerName);
-    const kills = String(Number(row.kills || 0));
-    const y = startY + (i * rowHeight);
+    const playerName = sanitizeGraphicText(row.playerName);
+    const killsText = sanitizeGraphicNumber(row.kills);
     const isTop3 = i < 3;
 
-    const playerFontSize = fitText(
+    const currentPlayerBox = {
+      x: playerBox.x,
+      y: playerBox.y + (i * rowHeight),
+      width: playerBox.width,
+      height: playerBox.height
+    };
+
+    const currentKillsBox = {
+      x: killsBox.x,
+      y: killsBox.y + (i * rowHeight),
+      width: killsBox.width,
+      height: killsBox.height
+    };
+
+    const playerCenterY = currentPlayerBox.y + (currentPlayerBox.height / 2);
+    const killsCenterY = currentKillsBox.y + (currentKillsBox.height / 2);
+
+    drawGlowText(
       ctx,
       playerName,
-      maxPlayerWidth,
-      isTop3 ? 34 : 30,
-      16,
-      isTop3 ? 'bold' : 'normal'
+      currentPlayerBox.x + (currentPlayerBox.width / 2),
+      playerCenterY,
+      {
+        size: isTop3 ? 31 : 28,
+        minSize: 18,
+        maxWidth: currentPlayerBox.width - 70,
+        weight: isTop3 ? '800' : '700',
+        family,
+        align: 'center',
+        baseline: 'middle',
+        fill: isTop3 ? '#32165d' : '#442977',
+        stroke: '#f5ebff',
+        glow: isTop3 ? 'rgba(173, 100, 255, 0.80)' : 'rgba(157, 92, 255, 0.55)',
+        glowBlur: isTop3 ? 18 : 13,
+        strokeWidth: isTop3 ? 2.3 : 1.8,
+        clipRect: {
+          x: currentPlayerBox.x + 10,
+          y: currentPlayerBox.y + 2,
+          width: currentPlayerBox.width - 20,
+          height: currentPlayerBox.height - 4
+        }
+      }
     );
 
-    applyTextShadow(ctx, isTop3 ? 'rgba(122, 44, 255, 0.18)' : 'rgba(79, 61, 131, 0.10)', isTop3 ? 10 : 6);
-
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = isTop3 ? '#311b56' : '#3c2963';
-    ctx.font = buildCanvasFont(playerFontSize, isTop3 ? 'bold' : 'normal');
-    ctx.fillText(playerName, playerX, y);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = isTop3 ? '#241241' : '#33204f';
-    ctx.font = buildCanvasFont(isTop3 ? 31 : 28, 'bold');
-    ctx.fillText(kills, killsX, y);
-
-    clearTextShadow(ctx);
+    drawGlowText(
+      ctx,
+      killsText,
+      currentKillsBox.x + (currentKillsBox.width / 2),
+      killsCenterY,
+      {
+        size: isTop3 ? 33 : 30,
+        minSize: 22,
+        maxWidth: currentKillsBox.width - 20,
+        weight: '800',
+        family,
+        align: 'center',
+        baseline: 'middle',
+        fill: '#381a6b',
+        stroke: '#fff3ff',
+        glow: 'rgba(176, 109, 255, 0.85)',
+        glowBlur: isTop3 ? 19 : 15,
+        strokeWidth: 2.1,
+        clipRect: {
+          x: currentKillsBox.x + 6,
+          y: currentKillsBox.y + 2,
+          width: currentKillsBox.width - 12,
+          height: currentKillsBox.height - 4
+        }
+      }
+    );
   }
 
-  applyTextShadow(ctx, 'rgba(122, 44, 255, 0.15)', 6);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#372257';
-  ctx.font = buildCanvasFont(24, 'bold');
-  ctx.fillText(`Match ${matchNumber}`, 170, 1010);
-
-  ctx.textAlign = 'right';
-  ctx.font = buildCanvasFont(22, 'normal');
-  ctx.fillText(`Aggiornato alle ${updatedAt}`, 1750, 1010);
-  clearTextShadow(ctx);
-
+  drawFooterInfo(ctx, matchNumber, updatedAt, canvas.width, canvas.height);
   return canvas.toBuffer('image/png');
 }
 
-async function findBotMessageByPrefix(channel, prefix) {
-  try {
-    const messages = await channel.messages.fetch({ limit: 50 });
-
-    for (const message of messages.values()) {
-      if (message.author?.id !== client.user?.id) continue;
-      if (String(message.content || '').startsWith(prefix)) {
-        return message;
-      }
-    }
-  } catch (error) {
-    console.error(`Errore ricerca messaggio con prefix "${prefix}":`, error);
-  }
-
-  return null;
-}
-
-async function sendOrReplaceGraphicMessage({
+async function sendOrUpdateGraphicMessage({
   channel,
-  prefix,
+  messageId,
   fileName,
   buffer,
   content
 }) {
-  const oldMessage = await findBotMessageByPrefix(channel, prefix);
-
-  if (oldMessage) {
-    await oldMessage.delete().catch(() => {});
-  }
-
   const attachment = new AttachmentBuilder(buffer, { name: fileName });
+
+  if (messageId) {
+    try {
+      const msg = await channel.messages.fetch(messageId);
+      await msg.edit({
+        content,
+        files: [attachment]
+      });
+      return { updated: true, messageId: msg.id };
+    } catch (error) {
+      console.error(`Errore update messaggio grafico ${fileName}:`, error);
+    }
+  }
 
   const sent = await channel.send({
     content,
     files: [attachment]
   });
 
-  return {
-    ok: true,
-    replaced: Boolean(oldMessage),
-    created: !oldMessage,
-    messageId: sent.id
-  };
+  return { created: true, messageId: sent.id };
 }
 
 async function updateLeaderboardGraphics() {
@@ -573,31 +716,31 @@ async function updateLeaderboardGraphics() {
 
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
   const matchNumber = Number(data.currentMatch || 1);
+  const stamp = Date.now();
 
   const leaderboardBuffer = await generateLeaderboardGraphicBuffer();
   const topFraggerBuffer = await generateTopFraggerGraphicBuffer();
 
-  const leaderboardGraphicResult = await sendOrReplaceGraphicMessage({
+  const leaderboardGraphicResult = await sendOrUpdateGraphicMessage({
     channel,
-    prefix: LEADERBOARD_GRAPHIC_PREFIX,
-    fileName: 'classifica-live-output.png',
+    messageId: data.leaderboardGraphicMessageId,
+    fileName: `classifica-live-output-match-${matchNumber}-${stamp}.png`,
     buffer: leaderboardBuffer,
-    content: `${LEADERBOARD_GRAPHIC_PREFIX} • Match ${matchNumber}`
+    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`
   });
 
-  const topFraggerGraphicResult = await sendOrReplaceGraphicMessage({
+  data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
+
+  const topFraggerGraphicResult = await sendOrUpdateGraphicMessage({
     channel,
-    prefix: TOP_FRAGGER_GRAPHIC_PREFIX,
-    fileName: 'top-fragger-output.png',
+    messageId: data.topFraggerGraphicMessageId,
+    fileName: `top-fragger-output-match-${matchNumber}-${stamp}.png`,
     buffer: topFraggerBuffer,
-    content: `${TOP_FRAGGER_GRAPHIC_PREFIX} • Match ${matchNumber}`
+    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`
   });
 
-  logAudit('bot', 'discord', 'leaderboard_graphics_updated', {
-    currentMatch: matchNumber,
-    leaderboardGraphicMessageId: leaderboardGraphicResult.messageId,
-    topFraggerGraphicMessageId: topFraggerGraphicResult.messageId
-  });
+  data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
+  saveState();
 
   return {
     ok: true,
@@ -1104,7 +1247,9 @@ async function updateLeaderboard() {
   logAudit('bot', 'discord', updated ? 'leaderboard_updated' : 'leaderboard_created', {
     currentMatch: data.currentMatch,
     updated,
-    created
+    created,
+    leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
+    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
   });
 
   return {
@@ -1620,14 +1765,13 @@ client.once('ready', async () => {
   if (readyResolver) readyResolver(client);
 
   refreshStateFromDisk();
-  registerCustomGraphicFont();
+  registerGraphicFont();
 
   logAudit('bot', 'discord', 'bot_ready', {
     guildId: GUILD_ID
   });
 
   await handleRegistrationStateChange();
-
   await updateLeaderboard().catch(error => {
     console.error('Errore aggiornamento classifica al ready:', error);
   });
