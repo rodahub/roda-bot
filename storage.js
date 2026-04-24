@@ -24,6 +24,30 @@ const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
 const MAX_TEAMS = 16;
 const PLAYERS_PER_TEAM = 3;
 
+const TOURNAMENT_STATES = {
+  DRAFT: 'bozza',
+  REGISTRATIONS_OPEN: 'iscrizioni_aperte',
+  REGISTRATIONS_CLOSED: 'iscrizioni_chiuse',
+  RUNNING: 'torneo_in_corso',
+  FINISHED: 'torneo_finito'
+};
+
+const MATCH_STATES = {
+  NOT_STARTED: 'non_iniziato',
+  RUNNING: 'in_corso',
+  COMPLETED: 'completato',
+  FORCED: 'forzato'
+};
+
+const TEAM_MATCH_STATES = {
+  NOT_SUBMITTED: 'non_inviato',
+  PENDING: 'in_attesa',
+  APPROVED: 'approvato',
+  REJECTED: 'rifiutato',
+  MANUAL: 'inserito_manualmente',
+  ABSENT: 'assente'
+};
+
 console.log('RAILWAY_VOLUME_MOUNT_PATH:', process.env.RAILWAY_VOLUME_MOUNT_PATH || '(non presente)');
 console.log('STORAGE_DIR attuale:', STORAGE_DIR);
 console.log('DATA_FILE attuale:', DATA_FILE);
@@ -46,8 +70,16 @@ function sanitizeText(value) {
 
 function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
   const num = Number(value);
-  if (!Number.isInteger(num) || num <= 0) return fallback;
+
+  if (!Number.isInteger(num) || num <= 0) {
+    return fallback;
+  }
+
   return Math.min(num, max);
+}
+
+function getNowIso() {
+  return new Date().toISOString();
 }
 
 function getDefaultProjectSettings() {
@@ -66,6 +98,7 @@ function getDefaultTournamentSettings() {
     totalMatches: 3,
     playersPerTeam: PLAYERS_PER_TEAM,
     maxTeams: MAX_TEAMS,
+    autoNextMatch: true,
     lockedRules: true,
     lockedPoints: true,
     createdAt: null,
@@ -75,32 +108,94 @@ function getDefaultTournamentSettings() {
   };
 }
 
+function getDefaultTournamentLifecycle() {
+  return {
+    state: TOURNAMENT_STATES.DRAFT,
+    registrationsOpen: false,
+    tournamentStarted: false,
+    tournamentFinished: false,
+    createdAt: null,
+    createdBy: '',
+    registrationsOpenedAt: null,
+    registrationsOpenedBy: '',
+    registrationsClosedAt: null,
+    registrationsClosedBy: '',
+    startedAt: null,
+    startedBy: '',
+    finishedAt: null,
+    finishedBy: '',
+    lastStateChangeAt: null,
+    lastStateChangeBy: ''
+  };
+}
+
 function getDefaultTournamentMessages() {
   return {
-    generalAnnouncement:
+    openRegistrationsAnnouncement:
       '@everyone\n\n' +
-      '**🏆 BENVENUTI ALLA RØDA CUP**\n\n' +
+      '**🏆 ISCRIZIONI RØDA CUP APERTE**\n\n' +
+      'Le iscrizioni al torneo sono aperte.\n' +
+      'Iscrivetevi nel canale dedicato e controllate la lista team per verificare che il vostro team sia stato registrato correttamente.\n\n' +
       '**Leggete il regolamento ufficiale prima dell’inizio del torneo.**\n\n' +
-      'Ogni team userà la propria stanza vocale ufficiale.\n' +
-      'Dentro la stanza del team troverete il pannello per inviare i risultati.\n' +
-      'Il codice lobby verrà mandato nelle stanze ufficiali dei team.\n\n' +
-      '**Buona fortuna a tutti. 🔥**',
+      'Slot massimi: **16 team**\n' +
+      'Formato: **Terzetti**',
+
+    closeRegistrationsAnnouncement:
+      '@everyone\n\n' +
+      '**🔒 ISCRIZIONI RØDA CUP CHIUSE**\n\n' +
+      'I team registrati sono confermati.\n' +
+      'Lo staff sta preparando l’inizio del torneo.',
+
+    tournamentStartAnnouncement:
+      '@everyone\n\n' +
+      '**🏆 RØDA CUP INIZIATA**\n\n' +
+      'Si parte dal **Match 1**.\n\n' +
+      'Ogni team deve restare nella propria vocale ufficiale.\n' +
+      'Il codice lobby verrà mandato nelle stanze team.\n' +
+      'A fine match inviate il risultato dal pannello nella vostra stanza.',
+
+    nextMatchAnnouncement:
+      '**✅ MATCH {match} COMPLETATO**\n\n' +
+      'Tutti i risultati sono stati registrati.\n' +
+      'Si passa al **Match {nextMatch}**.',
+
+    forcedNextMatchAnnouncement:
+      '**⏭️ MATCH {match} CHIUSO DALLO STAFF**\n\n' +
+      'Lo staff ha chiuso manualmente il match.\n' +
+      'Si passa al **Match {nextMatch}**.',
+
+    tournamentFinishedAnnouncement:
+      '@everyone\n\n' +
+      '**🏆 RØDA CUP TERMINATA**\n\n' +
+      'Il torneo è concluso.\n' +
+      'La classifica finale verrà pubblicata dallo staff.',
+
     lobbyInfoMessage:
       '**🎮 CODICE LOBBY**\n\n' +
-      'Il codice lobby verrà inviato nelle stanze ufficiali dei team.\n' +
-      'Controllate sempre la vostra stanza durante il torneo.',
+      'Codice: **{code}**\n\n' +
+      'Entrate appena possibile e restate nella vostra vocale ufficiale.',
+
+    generalReminder:
+      '@everyone\n\n' +
+      '**📌 PROMEMORIA RØDA CUP**\n\n' +
+      'Leggete il regolamento ufficiale.\n' +
+      'Durante il torneo dovete restare nelle vocali ufficiali.\n' +
+      'I risultati vanno inviati dal pannello nella stanza del vostro team.',
+
     regulationText:
       '🏆 RØDA CUP\n\n' +
       '👥 FORMATO TORNEO\n\n' +
       'Il torneo si svolge in modalità TERZETTI (TRIO).\n\n' +
       'Ogni squadra deve essere composta da 3 giocatori titolari.\n' +
       'Non sono ammessi quartetti o cambi non autorizzati dallo staff.\n\n' +
+
       '🎮 OBBLIGO UTILIZZO DISCORD\n\n' +
       'Per tutta la durata dell’evento è obbligatorio:\n\n' +
       '• Utilizzare le stanze vocali Discord ufficiali\n' +
       '• Aprire una stanza temporanea Trio nella sezione RØDA HUB\n' +
       '• Restare presenti in vocale per tutto il torneo\n\n' +
       '⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.\n\n' +
+
       '🚫 RESTRIZIONI EQUIPAGGIAMENTO\n\n' +
       'È severamente vietato l’utilizzo di:\n\n' +
       '❌ Mine\n' +
@@ -110,17 +205,20 @@ function getDefaultTournamentMessages() {
       '❌ Lacrimogeni\n' +
       '❌ Scarica Elettrica\n' +
       '❌ Skin Terminator\n\n' +
+
       '⚖️ SISTEMA DISCIPLINARE\n\n' +
       '• 1ª infrazione → Richiamo ufficiale\n' +
       '• 2ª infrazione → Sottrazione punti\n' +
       '• 3ª infrazione → Squalifica dal torneo\n\n' +
       'Lo staff può applicare sanzioni immediate in caso di violazioni gravi.\n\n' +
+
       '🔫 ARMI CONSENTITE\n\n' +
       '✅ Solo ARMI META approvate dallo staff\n' +
       '🎯 È ammesso 1 SOLO CECCHINO per team\n\n' +
       '⚠️ Violazioni:\n\n' +
       '• Utilizzo di 2 cecchini → Penalità immediata\n' +
       '• Uso di armi non consentite → Kill annullate o sottrazione punti\n\n' +
+
       '🏆 SISTEMA DI PUNTEGGIO\n\n' +
       '🔹 Kill di squadra\n\n' +
       '👉 Si sommano tutte le kill del team\n\n' +
@@ -135,6 +233,7 @@ function getDefaultTournamentMessages() {
       '6° Posto → 2 punti\n' +
       '7° Posto → 1 punto\n' +
       '8° Posto → 1 punto\n\n' +
+
       '📸 VALIDAZIONE RISULTATI OBBLIGATORIA\n\n' +
       'Ogni team deve inviare il risultato dal pannello nella propria stanza ufficiale.\n\n' +
       'Lo screenshot deve mostrare chiaramente:\n\n' +
@@ -146,10 +245,12 @@ function getDefaultTournamentMessages() {
       '• Posizione ottenuta\n' +
       '• Kill totali di squadra\n\n' +
       'Se una di queste informazioni manca, il risultato non verrà convalidato.\n\n' +
+
       '✅ ESEMPIO CORRETTO INVIO RISULTATO\n\n' +
       'Team: RØDA Black\n' +
       'Posizione: 2° Posto\n' +
       'Kill Totali Squadra: 18\n\n' +
+
       '⚖️ FAIR PLAY\n\n' +
       '• Vietato glitch, exploit o vantaggi illeciti\n' +
       '• Vietato comportamento tossico o antisportivo\n' +
@@ -162,34 +263,50 @@ function getDefaultBotSettings() {
   return {
     registerPanelMessageId: null,
     registerPanelChannelId: '',
+    registrationStatusMessageId: null,
+
     resultsPanelMessageId: null,
     resultsPanelChannelId: '',
+
     roomsCategoryId: '',
     generalChannelId: '',
     rulesChannelId: '',
-    lobbyChannelId: ''
+    lobbyChannelId: '',
+
+    leaderboardMessageId: null,
+    leaderboardGraphicMessageId: null,
+    topFraggerGraphicMessageId: null
   };
 }
 
 function getDefaultData() {
   return {
     currentMatch: 1,
+
+    tournamentLifecycle: getDefaultTournamentLifecycle(),
+    tournamentSettings: getDefaultTournamentSettings(),
+    tournamentMessages: getDefaultTournamentMessages(),
+
+    matches: {},
+
     pending: {},
     tempSubmit: {},
     resultSubmissions: {},
+
     scores: {},
     fragger: {},
+
     leaderboardMessageId: null,
     leaderboardGraphicMessageId: null,
     topFraggerGraphicMessageId: null,
+
     registrationStatusMessageId: null,
     registrationClosedAnnounced: false,
     registrationMaxTeams: MAX_TEAMS,
     registrationStatusTitle: '📋 Slot Team Registrati',
     registrationStatusText: 'Lista team attualmente registrati nel torneo.',
+
     projectSettings: getDefaultProjectSettings(),
-    tournamentSettings: getDefaultTournamentSettings(),
-    tournamentMessages: getDefaultTournamentMessages(),
     botSettings: getDefaultBotSettings()
   };
 }
@@ -200,6 +317,49 @@ function getDefaultTeams() {
 
 function getDefaultAuditLog() {
   return [];
+}
+
+function getDefaultTeamMatchState(teamName, matchNumber) {
+  return {
+    team: sanitizeText(teamName),
+    matchNumber: sanitizePositiveInteger(matchNumber, 1, 50),
+    status: TEAM_MATCH_STATES.NOT_SUBMITTED,
+    kills: [0, 0, 0],
+    totalKills: 0,
+    placement: 0,
+    points: 0,
+    source: '',
+    pendingId: null,
+    image: '',
+    submittedBy: '',
+    approvedBy: '',
+    rejectedBy: '',
+    manualBy: '',
+    absentBy: '',
+    updatedAt: '',
+    createdAt: getNowIso()
+  };
+}
+
+function getDefaultMatch(matchNumber) {
+  return {
+    matchNumber: sanitizePositiveInteger(matchNumber, 1, 50),
+    status: MATCH_STATES.NOT_STARTED,
+    startedAt: null,
+    completedAt: null,
+    forcedAt: null,
+    closedBy: '',
+    autoAdvanced: false,
+    teams: {}
+  };
+}
+
+function isFinalTeamMatchStatus(status) {
+  return [
+    TEAM_MATCH_STATES.APPROVED,
+    TEAM_MATCH_STATES.MANUAL,
+    TEAM_MATCH_STATES.ABSENT
+  ].includes(status);
 }
 
 function normalizeProjectSettings(value) {
@@ -223,6 +383,7 @@ function normalizeTournamentSettings(value) {
   base.totalMatches = sanitizePositiveInteger(safe.totalMatches, base.totalMatches, 50);
   base.playersPerTeam = PLAYERS_PER_TEAM;
   base.maxTeams = MAX_TEAMS;
+  base.autoNextMatch = safe.autoNextMatch === false ? false : true;
   base.lockedRules = true;
   base.lockedPoints = true;
   base.createdAt = safe.createdAt || null;
@@ -233,12 +394,117 @@ function normalizeTournamentSettings(value) {
   return base;
 }
 
+function normalizeTournamentLifecycle(value) {
+  const base = getDefaultTournamentLifecycle();
+  const safe = isObject(value) ? value : {};
+
+  const allowedStates = Object.values(TOURNAMENT_STATES);
+  const state = sanitizeText(safe.state || base.state);
+
+  base.state = allowedStates.includes(state) ? state : TOURNAMENT_STATES.DRAFT;
+
+  base.registrationsOpen =
+    typeof safe.registrationsOpen === 'boolean'
+      ? safe.registrationsOpen
+      : base.state === TOURNAMENT_STATES.REGISTRATIONS_OPEN;
+
+  base.tournamentStarted =
+    typeof safe.tournamentStarted === 'boolean'
+      ? safe.tournamentStarted
+      : base.state === TOURNAMENT_STATES.RUNNING || base.state === TOURNAMENT_STATES.FINISHED;
+
+  base.tournamentFinished =
+    typeof safe.tournamentFinished === 'boolean'
+      ? safe.tournamentFinished
+      : base.state === TOURNAMENT_STATES.FINISHED;
+
+  base.createdAt = safe.createdAt || null;
+  base.createdBy = sanitizeText(safe.createdBy || '');
+
+  base.registrationsOpenedAt = safe.registrationsOpenedAt || null;
+  base.registrationsOpenedBy = sanitizeText(safe.registrationsOpenedBy || '');
+
+  base.registrationsClosedAt = safe.registrationsClosedAt || null;
+  base.registrationsClosedBy = sanitizeText(safe.registrationsClosedBy || '');
+
+  base.startedAt = safe.startedAt || null;
+  base.startedBy = sanitizeText(safe.startedBy || '');
+
+  base.finishedAt = safe.finishedAt || null;
+  base.finishedBy = sanitizeText(safe.finishedBy || '');
+
+  base.lastStateChangeAt = safe.lastStateChangeAt || null;
+  base.lastStateChangeBy = sanitizeText(safe.lastStateChangeBy || '');
+
+  if (base.state === TOURNAMENT_STATES.DRAFT) {
+    base.registrationsOpen = false;
+    base.tournamentStarted = false;
+    base.tournamentFinished = false;
+  }
+
+  if (base.state === TOURNAMENT_STATES.REGISTRATIONS_OPEN) {
+    base.registrationsOpen = true;
+    base.tournamentStarted = false;
+    base.tournamentFinished = false;
+  }
+
+  if (base.state === TOURNAMENT_STATES.REGISTRATIONS_CLOSED) {
+    base.registrationsOpen = false;
+    base.tournamentStarted = false;
+    base.tournamentFinished = false;
+  }
+
+  if (base.state === TOURNAMENT_STATES.RUNNING) {
+    base.registrationsOpen = false;
+    base.tournamentStarted = true;
+    base.tournamentFinished = false;
+  }
+
+  if (base.state === TOURNAMENT_STATES.FINISHED) {
+    base.registrationsOpen = false;
+    base.tournamentStarted = true;
+    base.tournamentFinished = true;
+  }
+
+  return base;
+}
+
 function normalizeTournamentMessages(value) {
   const base = getDefaultTournamentMessages();
   const safe = isObject(value) ? value : {};
 
-  base.generalAnnouncement = sanitizeText(safe.generalAnnouncement || base.generalAnnouncement) || base.generalAnnouncement;
-  base.lobbyInfoMessage = sanitizeText(safe.lobbyInfoMessage || base.lobbyInfoMessage) || base.lobbyInfoMessage;
+  base.openRegistrationsAnnouncement =
+    sanitizeText(safe.openRegistrationsAnnouncement || safe.generalAnnouncement || base.openRegistrationsAnnouncement) ||
+    base.openRegistrationsAnnouncement;
+
+  base.closeRegistrationsAnnouncement =
+    sanitizeText(safe.closeRegistrationsAnnouncement || base.closeRegistrationsAnnouncement) ||
+    base.closeRegistrationsAnnouncement;
+
+  base.tournamentStartAnnouncement =
+    sanitizeText(safe.tournamentStartAnnouncement || base.tournamentStartAnnouncement) ||
+    base.tournamentStartAnnouncement;
+
+  base.nextMatchAnnouncement =
+    sanitizeText(safe.nextMatchAnnouncement || base.nextMatchAnnouncement) ||
+    base.nextMatchAnnouncement;
+
+  base.forcedNextMatchAnnouncement =
+    sanitizeText(safe.forcedNextMatchAnnouncement || base.forcedNextMatchAnnouncement) ||
+    base.forcedNextMatchAnnouncement;
+
+  base.tournamentFinishedAnnouncement =
+    sanitizeText(safe.tournamentFinishedAnnouncement || base.tournamentFinishedAnnouncement) ||
+    base.tournamentFinishedAnnouncement;
+
+  base.lobbyInfoMessage =
+    sanitizeText(safe.lobbyInfoMessage || base.lobbyInfoMessage) ||
+    base.lobbyInfoMessage;
+
+  base.generalReminder =
+    sanitizeText(safe.generalReminder || base.generalReminder) ||
+    base.generalReminder;
+
   base.regulationText = getDefaultTournamentMessages().regulationText;
 
   return base;
@@ -250,12 +516,20 @@ function normalizeBotSettings(value) {
 
   base.registerPanelMessageId = safe.registerPanelMessageId || null;
   base.registerPanelChannelId = sanitizeText(safe.registerPanelChannelId || '');
+
+  base.registrationStatusMessageId = safe.registrationStatusMessageId || safe.registerPanelMessageId || null;
+
   base.resultsPanelMessageId = safe.resultsPanelMessageId || null;
   base.resultsPanelChannelId = sanitizeText(safe.resultsPanelChannelId || '');
+
   base.roomsCategoryId = sanitizeText(safe.roomsCategoryId || safe.categoryId || '');
   base.generalChannelId = sanitizeText(safe.generalChannelId || '');
   base.rulesChannelId = sanitizeText(safe.rulesChannelId || '');
   base.lobbyChannelId = sanitizeText(safe.lobbyChannelId || '');
+
+  base.leaderboardMessageId = safe.leaderboardMessageId || null;
+  base.leaderboardGraphicMessageId = safe.leaderboardGraphicMessageId || null;
+  base.topFraggerGraphicMessageId = safe.topFraggerGraphicMessageId || null;
 
   return base;
 }
@@ -268,8 +542,8 @@ function normalizePending(pendingValue) {
     if (!isObject(entry)) continue;
 
     const kills = Array.isArray(entry.kills) ? entry.kills : [];
-
     const team = sanitizeText(entry.team);
+
     if (!team) continue;
 
     out[String(id)] = {
@@ -303,6 +577,7 @@ function normalizeTempSubmit(tempValue) {
 
     const kills = Array.isArray(entry.kills) ? entry.kills : [];
     const team = sanitizeText(entry.team);
+
     if (!team) continue;
 
     out[String(userId)] = {
@@ -335,21 +610,14 @@ function normalizeResultSubmissions(value) {
 
     if (!team) continue;
 
-    const cleanKey = sanitizeText(key) || `${team.toLowerCase()}::match_${matchNumber}`;
+    const cleanKey = sanitizeText(key) || buildSubmissionKey(team, matchNumber);
 
-    let status = sanitizeText(entry.status || 'non_inviato');
+    let status = sanitizeText(entry.status || TEAM_MATCH_STATES.NOT_SUBMITTED);
 
-    const allowedStatuses = [
-      'non_inviato',
-      'in_attesa',
-      'approvato',
-      'rifiutato',
-      'assente',
-      'inserito_manualmente'
-    ];
+    const allowedStatuses = Object.values(TEAM_MATCH_STATES);
 
     if (!allowedStatuses.includes(status)) {
-      status = 'non_inviato';
+      status = TEAM_MATCH_STATES.NOT_SUBMITTED;
     }
 
     out[cleanKey] = {
@@ -373,6 +641,7 @@ function normalizeScores(value) {
   for (const [key, points] of Object.entries(safe)) {
     const cleanKey = sanitizeText(key);
     if (!cleanKey) continue;
+
     out[cleanKey] = Number(points || 0);
   }
 
@@ -386,10 +655,92 @@ function normalizeFragger(value) {
   for (const [key, kills] of Object.entries(safe)) {
     const cleanKey = sanitizeText(key);
     if (!cleanKey) continue;
+
     out[cleanKey] = Number(kills || 0);
   }
 
   return out;
+}
+
+function normalizeTeamMatchState(value, teamName, matchNumber) {
+  const base = getDefaultTeamMatchState(teamName, matchNumber);
+  const safe = isObject(value) ? value : {};
+
+  const allowedStatuses = Object.values(TEAM_MATCH_STATES);
+  const status = sanitizeText(safe.status || base.status);
+
+  base.status = allowedStatuses.includes(status) ? status : TEAM_MATCH_STATES.NOT_SUBMITTED;
+
+  const kills = Array.isArray(safe.kills) ? safe.kills : base.kills;
+
+  base.kills = [
+    Number(kills[0] || 0),
+    Number(kills[1] || 0),
+    Number(kills[2] || 0)
+  ];
+
+  base.totalKills = Number(safe.totalKills || safe.total || base.kills.reduce((sum, k) => sum + Number(k || 0), 0));
+  base.placement = Number(safe.placement || safe.pos || 0);
+  base.points = Number(safe.points || 0);
+
+  base.source = sanitizeText(safe.source || '');
+  base.pendingId = safe.pendingId || null;
+  base.image = sanitizeText(safe.image || '');
+
+  base.submittedBy = sanitizeText(safe.submittedBy || '');
+  base.approvedBy = sanitizeText(safe.approvedBy || '');
+  base.rejectedBy = sanitizeText(safe.rejectedBy || '');
+  base.manualBy = sanitizeText(safe.manualBy || '');
+  base.absentBy = sanitizeText(safe.absentBy || '');
+
+  base.updatedAt = sanitizeText(safe.updatedAt || '');
+  base.createdAt = sanitizeText(safe.createdAt || getNowIso());
+
+  return base;
+}
+
+function normalizeMatch(value, matchNumber) {
+  const base = getDefaultMatch(matchNumber);
+  const safe = isObject(value) ? value : {};
+
+  const allowedStatuses = Object.values(MATCH_STATES);
+  const status = sanitizeText(safe.status || base.status);
+
+  base.status = allowedStatuses.includes(status) ? status : MATCH_STATES.NOT_STARTED;
+
+  base.startedAt = safe.startedAt || null;
+  base.completedAt = safe.completedAt || null;
+  base.forcedAt = safe.forcedAt || null;
+  base.closedBy = sanitizeText(safe.closedBy || '');
+  base.autoAdvanced = Boolean(safe.autoAdvanced);
+
+  const teams = isObject(safe.teams) ? safe.teams : {};
+  base.teams = {};
+
+  for (const [teamName, teamState] of Object.entries(teams)) {
+    const cleanTeam = sanitizeText(teamName);
+    if (!cleanTeam) continue;
+
+    base.teams[cleanTeam] = normalizeTeamMatchState(teamState, cleanTeam, base.matchNumber);
+  }
+
+  return base;
+}
+
+function normalizeMatches(value) {
+  const safe = isObject(value) ? value : {};
+  const out = {};
+
+  for (const [matchNumberRaw, matchData] of Object.entries(safe)) {
+    const matchNumber = sanitizePositiveInteger(matchNumberRaw, 1, 50);
+    out[String(matchNumber)] = normalizeMatch(matchData, matchNumber);
+  }
+
+  return out;
+}
+
+function buildSubmissionKey(teamName, matchNumber) {
+  return `${sanitizeText(teamName).toLowerCase()}::match_${sanitizePositiveInteger(matchNumber, 1, 50)}`;
 }
 
 function normalizeData(data) {
@@ -398,25 +749,33 @@ function normalizeData(data) {
 
   base.currentMatch = sanitizePositiveInteger(safe.currentMatch, 1, 50);
 
+  base.projectSettings = normalizeProjectSettings(safe.projectSettings);
+  base.tournamentSettings = normalizeTournamentSettings(safe.tournamentSettings);
+  base.tournamentLifecycle = normalizeTournamentLifecycle(safe.tournamentLifecycle || safe.lifecycle);
+  base.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
+
+  base.matches = normalizeMatches(safe.matches);
+
   base.pending = normalizePending(safe.pending);
   base.tempSubmit = normalizeTempSubmit(safe.tempSubmit);
   base.resultSubmissions = normalizeResultSubmissions(safe.resultSubmissions);
+
   base.scores = normalizeScores(safe.scores);
   base.fragger = normalizeFragger(safe.fragger);
 
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
   base.leaderboardGraphicMessageId = safe.leaderboardGraphicMessageId || null;
   base.topFraggerGraphicMessageId = safe.topFraggerGraphicMessageId || null;
+
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
   base.registrationMaxTeams = MAX_TEAMS;
-  base.registrationStatusTitle = sanitizeText(safe.registrationStatusTitle || base.registrationStatusTitle) || base.registrationStatusTitle;
-  base.registrationStatusText = sanitizeText(safe.registrationStatusText || '');
+  base.registrationStatusTitle =
+    sanitizeText(safe.registrationStatusTitle || base.registrationStatusTitle) ||
+    base.registrationStatusTitle;
 
-  base.projectSettings = normalizeProjectSettings(safe.projectSettings);
-  base.tournamentSettings = normalizeTournamentSettings(safe.tournamentSettings);
-  base.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
+  base.registrationStatusText = sanitizeText(safe.registrationStatusText || '');
 
   base.botSettings = normalizeBotSettings(
     safe.botSettings || {
@@ -427,13 +786,12 @@ function normalizeData(data) {
       roomsCategoryId: safe.roomsCategoryId || safe.categoryId,
       generalChannelId: safe.generalChannelId,
       rulesChannelId: safe.rulesChannelId,
-      lobbyChannelId: safe.lobbyChannelId
+      lobbyChannelId: safe.lobbyChannelId,
+      leaderboardMessageId: safe.leaderboardMessageId,
+      leaderboardGraphicMessageId: safe.leaderboardGraphicMessageId,
+      topFraggerGraphicMessageId: safe.topFraggerGraphicMessageId
     }
   );
-
-  if (base.currentMatch > base.tournamentSettings.totalMatches) {
-    base.currentMatch = base.tournamentSettings.totalMatches;
-  }
 
   base.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
   base.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
@@ -441,6 +799,14 @@ function normalizeData(data) {
   base.tournamentSettings.maxTeams = MAX_TEAMS;
   base.tournamentSettings.lockedRules = true;
   base.tournamentSettings.lockedPoints = true;
+
+  if (base.currentMatch > base.tournamentSettings.totalMatches) {
+    base.currentMatch = base.tournamentSettings.totalMatches;
+  }
+
+  if (!base.matches[String(base.currentMatch)]) {
+    base.matches[String(base.currentMatch)] = getDefaultMatch(base.currentMatch);
+  }
 
   return base;
 }
@@ -478,7 +844,9 @@ function normalizeTeams(teams) {
       ]
     };
 
-    if (!slot) needsSlot.push(teamName);
+    if (!slot) {
+      needsSlot.push(teamName);
+    }
   }
 
   const sortedNeeding = needsSlot.sort((a, b) => a.localeCompare(b, 'it'));
@@ -506,7 +874,11 @@ function normalizeTeams(teams) {
     .sort((a, b) => {
       const slotA = Number(a[1]?.slot || 999999);
       const slotB = Number(b[1]?.slot || 999999);
-      if (slotA !== slotB) return slotA - slotB;
+
+      if (slotA !== slotB) {
+        return slotA - slotB;
+      }
+
       return a[0].localeCompare(b[0], 'it');
     })
     .slice(0, MAX_TEAMS);
@@ -528,13 +900,15 @@ function normalizeTeams(teams) {
 }
 
 function normalizeAuditLog(value) {
-  if (!Array.isArray(value)) return getDefaultAuditLog();
+  if (!Array.isArray(value)) {
+    return getDefaultAuditLog();
+  }
 
   return value
     .filter(entry => isObject(entry))
     .map(entry => ({
       id: sanitizeText(entry.id || '') || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: sanitizeText(entry.timestamp || new Date().toISOString()),
+      timestamp: sanitizeText(entry.timestamp || getNowIso()),
       actor: sanitizeText(entry.actor || 'system') || 'system',
       source: sanitizeText(entry.source || 'system') || 'system',
       action: sanitizeText(entry.action || 'unknown') || 'unknown',
@@ -695,7 +1069,7 @@ function appendAuditLog(entry) {
 
   const newEntry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    timestamp: new Date().toISOString(),
+    timestamp: getNowIso(),
     actor: sanitizeText(entry?.actor || 'system') || 'system',
     source: sanitizeText(entry?.source || 'system') || 'system',
     action: sanitizeText(entry?.action || 'unknown') || 'unknown',
@@ -732,6 +1106,7 @@ function createTournamentArchive(data, teams, meta = {}) {
     },
     summary: {
       tournamentName: FIXED_TOURNAMENT_NAME,
+      tournamentState: safeData.tournamentLifecycle?.state || TOURNAMENT_STATES.DRAFT,
       currentMatch: Number(safeData.currentMatch || 1),
       totalMatches: Number(safeData.tournamentSettings?.totalMatches || 3),
       teamCount: Object.keys(safeTeams || {}).length,
@@ -775,6 +1150,7 @@ function listTournamentArchives() {
       note: sanitizeText(payload.meta?.note || ''),
       source: sanitizeText(payload.meta?.source || ''),
       tournamentName: FIXED_TOURNAMENT_NAME,
+      tournamentState: safeData.tournamentLifecycle?.state || TOURNAMENT_STATES.DRAFT,
       teamCount: Object.keys(safeTeams || {}).length,
       pendingCount: Object.keys(safeData.pending || {}).length,
       scoreCount: Object.keys(safeData.scores || {}).length,
@@ -812,6 +1188,370 @@ function getTournamentArchive(archiveId) {
   };
 }
 
+function createFreshTournamentData(actor = 'system', options = {}) {
+  const now = getNowIso();
+
+  const totalMatches = sanitizePositiveInteger(options.totalMatches, 3, 50);
+
+  const data = getDefaultData();
+
+  data.currentMatch = 1;
+
+  data.tournamentSettings = {
+    ...getDefaultTournamentSettings(),
+    totalMatches,
+    autoNextMatch: options.autoNextMatch === false ? false : true,
+    createdAt: now,
+    createdBy: sanitizeText(actor),
+    lastConfiguredAt: now,
+    lastConfiguredBy: sanitizeText(actor)
+  };
+
+  data.tournamentLifecycle = {
+    ...getDefaultTournamentLifecycle(),
+    state: TOURNAMENT_STATES.DRAFT,
+    createdAt: now,
+    createdBy: sanitizeText(actor),
+    lastStateChangeAt: now,
+    lastStateChangeBy: sanitizeText(actor)
+  };
+
+  data.matches = {};
+
+  for (let i = 1; i <= totalMatches; i++) {
+    data.matches[String(i)] = getDefaultMatch(i);
+  }
+
+  data.pending = {};
+  data.tempSubmit = {};
+  data.resultSubmissions = {};
+  data.scores = {};
+  data.fragger = {};
+
+  data.registrationClosedAnnounced = false;
+  data.registrationMaxTeams = MAX_TEAMS;
+
+  return normalizeData(data);
+}
+
+function archiveAndCreateFreshTournament(meta = {}) {
+  const currentData = loadData();
+  const currentTeams = loadTeams();
+
+  const archive = createTournamentArchive(currentData, currentTeams, {
+    label: sanitizeText(meta.label || '') || `Archivio automatico prima nuovo torneo ${new Date().toLocaleString('it-IT')}`,
+    note: sanitizeText(meta.note || 'Archivio automatico creato prima di iniziare un nuovo torneo.'),
+    actor: sanitizeText(meta.actor || 'system'),
+    source: sanitizeText(meta.source || 'web')
+  });
+
+  const freshData = createFreshTournamentData(meta.actor || 'system', {
+    totalMatches: meta.totalMatches || currentData.tournamentSettings?.totalMatches || 3,
+    autoNextMatch: meta.autoNextMatch !== false
+  });
+
+  const freshTeams = {};
+
+  saveData(freshData);
+  saveTeams(freshTeams);
+
+  appendAuditLog({
+    actor: sanitizeText(meta.actor || 'system'),
+    source: sanitizeText(meta.source || 'web'),
+    action: 'archivia_e_crea_nuovo_torneo',
+    details: {
+      archiveId: archive.archiveId,
+      totalMatches: freshData.tournamentSettings.totalMatches,
+      autoNextMatch: freshData.tournamentSettings.autoNextMatch
+    }
+  });
+
+  return {
+    archive,
+    data: freshData,
+    teams: freshTeams
+  };
+}
+
+function ensureMatchForTeams(data, teams, matchNumber) {
+  const safeData = normalizeData(data);
+  const safeTeams = normalizeTeams(teams);
+  const targetMatch = sanitizePositiveInteger(matchNumber, Number(safeData.currentMatch || 1), 50);
+
+  if (!safeData.matches[String(targetMatch)]) {
+    safeData.matches[String(targetMatch)] = getDefaultMatch(targetMatch);
+  }
+
+  const match = normalizeMatch(safeData.matches[String(targetMatch)], targetMatch);
+
+  for (const teamName of Object.keys(safeTeams)) {
+    if (!match.teams[teamName]) {
+      match.teams[teamName] = getDefaultTeamMatchState(teamName, targetMatch);
+    }
+  }
+
+  for (const teamName of Object.keys(match.teams)) {
+    if (!safeTeams[teamName]) {
+      delete match.teams[teamName];
+    }
+  }
+
+  safeData.matches[String(targetMatch)] = match;
+
+  return safeData;
+}
+
+function openRegistrations(data, actor = 'system') {
+  const safeData = normalizeData(data);
+  const now = getNowIso();
+
+  safeData.tournamentLifecycle = {
+    ...normalizeTournamentLifecycle(safeData.tournamentLifecycle),
+    state: TOURNAMENT_STATES.REGISTRATIONS_OPEN,
+    registrationsOpen: true,
+    tournamentStarted: false,
+    tournamentFinished: false,
+    registrationsOpenedAt: now,
+    registrationsOpenedBy: sanitizeText(actor),
+    lastStateChangeAt: now,
+    lastStateChangeBy: sanitizeText(actor)
+  };
+
+  safeData.registrationClosedAnnounced = false;
+
+  return saveData(safeData);
+}
+
+function closeRegistrations(data, actor = 'system') {
+  const safeData = normalizeData(data);
+  const now = getNowIso();
+
+  safeData.tournamentLifecycle = {
+    ...normalizeTournamentLifecycle(safeData.tournamentLifecycle),
+    state: TOURNAMENT_STATES.REGISTRATIONS_CLOSED,
+    registrationsOpen: false,
+    tournamentStarted: false,
+    tournamentFinished: false,
+    registrationsClosedAt: now,
+    registrationsClosedBy: sanitizeText(actor),
+    lastStateChangeAt: now,
+    lastStateChangeBy: sanitizeText(actor)
+  };
+
+  safeData.registrationClosedAnnounced = true;
+
+  return saveData(safeData);
+}
+
+function startTournament(data, teams, actor = 'system') {
+  let safeData = normalizeData(data);
+  const safeTeams = normalizeTeams(teams);
+  const now = getNowIso();
+
+  safeData.currentMatch = 1;
+
+  safeData.tournamentLifecycle = {
+    ...normalizeTournamentLifecycle(safeData.tournamentLifecycle),
+    state: TOURNAMENT_STATES.RUNNING,
+    registrationsOpen: false,
+    tournamentStarted: true,
+    tournamentFinished: false,
+    startedAt: now,
+    startedBy: sanitizeText(actor),
+    lastStateChangeAt: now,
+    lastStateChangeBy: sanitizeText(actor)
+  };
+
+  safeData = ensureMatchForTeams(safeData, safeTeams, 1);
+  safeData.matches['1'].status = MATCH_STATES.RUNNING;
+  safeData.matches['1'].startedAt = safeData.matches['1'].startedAt || now;
+
+  return saveData(safeData);
+}
+
+function finishTournament(data, actor = 'system') {
+  const safeData = normalizeData(data);
+  const now = getNowIso();
+
+  safeData.tournamentLifecycle = {
+    ...normalizeTournamentLifecycle(safeData.tournamentLifecycle),
+    state: TOURNAMENT_STATES.FINISHED,
+    registrationsOpen: false,
+    tournamentStarted: true,
+    tournamentFinished: true,
+    finishedAt: now,
+    finishedBy: sanitizeText(actor),
+    lastStateChangeAt: now,
+    lastStateChangeBy: sanitizeText(actor)
+  };
+
+  return saveData(safeData);
+}
+
+function getMatchCompletion(data, teams, matchNumber) {
+  const safeData = ensureMatchForTeams(data, teams, matchNumber);
+  const safeTeams = normalizeTeams(teams);
+  const targetMatch = sanitizePositiveInteger(matchNumber, Number(safeData.currentMatch || 1), 50);
+  const match = safeData.matches[String(targetMatch)] || getDefaultMatch(targetMatch);
+
+  const rows = Object.keys(safeTeams).map(teamName => {
+    const state = match.teams[teamName] || getDefaultTeamMatchState(teamName, targetMatch);
+
+    return {
+      team: teamName,
+      slot: safeTeams[teamName]?.slot || null,
+      players: safeTeams[teamName]?.players || [],
+      matchNumber: targetMatch,
+      status: state.status,
+      final: isFinalTeamMatchStatus(state.status),
+      data: state
+    };
+  });
+
+  const total = rows.length;
+  const finalCount = rows.filter(row => row.final).length;
+  const pendingCount = rows.filter(row => row.status === TEAM_MATCH_STATES.PENDING).length;
+  const missingCount = rows.filter(row => row.status === TEAM_MATCH_STATES.NOT_SUBMITTED || row.status === TEAM_MATCH_STATES.REJECTED).length;
+
+  return {
+    matchNumber: targetMatch,
+    total,
+    finalCount,
+    pendingCount,
+    missingCount,
+    complete: total > 0 && finalCount === total,
+    rows
+  };
+}
+
+function markTeamMatchState(data, teams, matchNumber, teamName, patch = {}) {
+  let safeData = ensureMatchForTeams(data, teams, matchNumber);
+  const safeTeams = normalizeTeams(teams);
+  const targetMatch = sanitizePositiveInteger(matchNumber, Number(safeData.currentMatch || 1), 50);
+  const cleanTeam = sanitizeText(teamName);
+
+  if (!cleanTeam || !safeTeams[cleanTeam]) {
+    throw new Error('Team non trovato');
+  }
+
+  const match = safeData.matches[String(targetMatch)] || getDefaultMatch(targetMatch);
+  const current = match.teams[cleanTeam] || getDefaultTeamMatchState(cleanTeam, targetMatch);
+
+  const next = normalizeTeamMatchState({
+    ...current,
+    ...patch,
+    team: cleanTeam,
+    matchNumber: targetMatch,
+    updatedAt: getNowIso()
+  }, cleanTeam, targetMatch);
+
+  match.teams[cleanTeam] = next;
+  safeData.matches[String(targetMatch)] = match;
+
+  const key = buildSubmissionKey(cleanTeam, targetMatch);
+  safeData.resultSubmissions[key] = {
+    team: cleanTeam,
+    matchNumber: targetMatch,
+    status: next.status,
+    pendingId: next.pendingId || null,
+    updatedAt: next.updatedAt,
+    updatedBy: patch.updatedBy || patch.approvedBy || patch.manualBy || patch.absentBy || patch.rejectedBy || '',
+    source: next.source || ''
+  };
+
+  return saveData(safeData);
+}
+
+function forceCompleteCurrentMatch(data, teams, actor = 'system') {
+  let safeData = ensureMatchForTeams(data, teams, data.currentMatch);
+  const safeTeams = normalizeTeams(teams);
+  const targetMatch = Number(safeData.currentMatch || 1);
+  const now = getNowIso();
+
+  const match = safeData.matches[String(targetMatch)] || getDefaultMatch(targetMatch);
+
+  for (const teamName of Object.keys(safeTeams)) {
+    const current = match.teams[teamName] || getDefaultTeamMatchState(teamName, targetMatch);
+
+    if (!isFinalTeamMatchStatus(current.status)) {
+      match.teams[teamName] = normalizeTeamMatchState({
+        ...current,
+        status: TEAM_MATCH_STATES.ABSENT,
+        absentBy: sanitizeText(actor),
+        updatedAt: now
+      }, teamName, targetMatch);
+
+      const key = buildSubmissionKey(teamName, targetMatch);
+      safeData.resultSubmissions[key] = {
+        team: teamName,
+        matchNumber: targetMatch,
+        status: TEAM_MATCH_STATES.ABSENT,
+        pendingId: null,
+        updatedAt: now,
+        updatedBy: sanitizeText(actor),
+        source: 'staff'
+      };
+    }
+  }
+
+  match.status = MATCH_STATES.FORCED;
+  match.forcedAt = now;
+  match.completedAt = now;
+  match.closedBy = sanitizeText(actor);
+  match.autoAdvanced = false;
+
+  safeData.matches[String(targetMatch)] = match;
+
+  return saveData(safeData);
+}
+
+function advanceToNextMatch(data, teams, actor = 'system', options = {}) {
+  let safeData = normalizeData(data);
+  const safeTeams = normalizeTeams(teams);
+  const now = getNowIso();
+
+  const currentMatch = Number(safeData.currentMatch || 1);
+  const totalMatches = Number(safeData.tournamentSettings?.totalMatches || 3);
+
+  if (currentMatch >= totalMatches) {
+    safeData = finishTournament(safeData, actor);
+    return {
+      data: safeData,
+      advanced: false,
+      finished: true,
+      currentMatch,
+      nextMatch: currentMatch
+    };
+  }
+
+  safeData = ensureMatchForTeams(safeData, safeTeams, currentMatch);
+
+  if (safeData.matches[String(currentMatch)]) {
+    safeData.matches[String(currentMatch)].status = options.forced ? MATCH_STATES.FORCED : MATCH_STATES.COMPLETED;
+    safeData.matches[String(currentMatch)].completedAt = safeData.matches[String(currentMatch)].completedAt || now;
+    safeData.matches[String(currentMatch)].closedBy = sanitizeText(actor);
+    safeData.matches[String(currentMatch)].autoAdvanced = Boolean(options.autoAdvanced);
+  }
+
+  const nextMatch = currentMatch + 1;
+
+  safeData.currentMatch = nextMatch;
+  safeData = ensureMatchForTeams(safeData, safeTeams, nextMatch);
+
+  safeData.matches[String(nextMatch)].status = MATCH_STATES.RUNNING;
+  safeData.matches[String(nextMatch)].startedAt = safeData.matches[String(nextMatch)].startedAt || now;
+
+  safeData = saveData(safeData);
+
+  return {
+    data: safeData,
+    advanced: true,
+    finished: false,
+    currentMatch,
+    nextMatch
+  };
+}
+
 module.exports = {
   STORAGE_DIR,
   BACKUP_DIR,
@@ -820,6 +1560,14 @@ module.exports = {
   TEAMS_FILE,
   AUDIT_LOG_FILE,
   UPLOADS_DIR,
+
+  FIXED_TOURNAMENT_NAME,
+  MAX_TEAMS,
+  PLAYERS_PER_TEAM,
+
+  TOURNAMENT_STATES,
+  MATCH_STATES,
+  TEAM_MATCH_STATES,
 
   initializeFiles,
 
@@ -838,18 +1586,42 @@ module.exports = {
   listTournamentArchives,
   getTournamentArchive,
 
+  archiveAndCreateFreshTournament,
+  createFreshTournamentData,
+
+  openRegistrations,
+  closeRegistrations,
+  startTournament,
+  finishTournament,
+
+  ensureMatchForTeams,
+  getMatchCompletion,
+  markTeamMatchState,
+  forceCompleteCurrentMatch,
+  advanceToNextMatch,
+
+  isFinalTeamMatchStatus,
+  buildSubmissionKey,
+
   getDefaultData,
   getDefaultTeams,
   getDefaultAuditLog,
   getDefaultProjectSettings,
   getDefaultTournamentSettings,
+  getDefaultTournamentLifecycle,
   getDefaultTournamentMessages,
   getDefaultBotSettings,
+  getDefaultMatch,
+  getDefaultTeamMatchState,
 
   normalizeData,
   normalizeTeams,
   normalizeProjectSettings,
   normalizeTournamentSettings,
+  normalizeTournamentLifecycle,
   normalizeTournamentMessages,
-  normalizeBotSettings
+  normalizeBotSettings,
+  normalizeMatches,
+  normalizeMatch,
+  normalizeTeamMatchState
 };
