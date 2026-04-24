@@ -486,6 +486,165 @@ function getNextAvailableSlot(teams, maxTeams) {
   return null;
 }
 
+function loadPointsConfig() {
+  const defaultConfig = {
+    kill: 1,
+    placement: {
+      1: 10,
+      2: 6,
+      3: 5,
+      4: 4,
+      5: 3,
+      6: 2,
+      7: 1,
+      8: 1
+    }
+  };
+
+  const possibleFiles = [
+    path.join(__dirname, 'points.json'),
+    path.join(__dirname, 'points.js')
+  ];
+
+  for (const pointsPath of possibleFiles) {
+    try {
+      if (!fs.existsSync(pointsPath)) continue;
+
+      const raw = fs.readFileSync(pointsPath, 'utf8');
+      const parsed = JSON.parse(raw);
+
+      return {
+        kill: Number(parsed.kill || 1),
+        placement: parsed.placement && typeof parsed.placement === 'object'
+          ? parsed.placement
+          : defaultConfig.placement
+      };
+    } catch (error) {
+      console.error(`Errore lettura ${pointsPath}:`, error);
+    }
+  }
+
+  return defaultConfig;
+}
+
+function calcPoints(pos, kills) {
+  const pointsConfig = loadPointsConfig();
+  const killPoints = Number(pointsConfig.kill || 1);
+  const placementBonus = Number(pointsConfig.placement?.[String(Number(pos))] || 0);
+
+  return Number(kills || 0) * killPoints + placementBonus;
+}
+
+function canManualInsertResult(data, teamName, matchNumber) {
+  const record = getResultSubmissionRecord(data, teamName, matchNumber);
+
+  if (record.stato === 'approvato' || record.stato === 'inserito_manualmente') {
+    return {
+      allowed: false,
+      message: 'Questo team ha già un risultato valido per questo match.'
+    };
+  }
+
+  if (record.stato === 'in_attesa') {
+    return {
+      allowed: false,
+      message: 'Questo team ha già un risultato in attesa. Approvalo o rifiutalo prima di inserire un risultato manuale.'
+    };
+  }
+
+  return {
+    allowed: true,
+    message: ''
+  };
+}
+
+async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
+  const data = loadData();
+  const teams = loadTeams();
+
+  const teamName = sanitizeText(team);
+  const targetMatch = sanitizePositiveInteger(matchNumber, Number(data.currentMatch || 1));
+
+  if (!teamName || !teams[teamName]) {
+    throw new Error('Team non trovato');
+  }
+
+  const check = canManualInsertResult(data, teamName, targetMatch);
+  if (!check.allowed) {
+    throw new Error(check.message);
+  }
+
+  const kills = [
+    Number(k1 || 0),
+    Number(k2 || 0),
+    Number(k3 || 0)
+  ];
+
+  if (!kills.every(value => Number.isFinite(value) && value >= 0)) {
+    throw new Error('Uccisioni non valide');
+  }
+
+  const placement = Number(pos || 0);
+  if (!Number.isFinite(placement) || placement <= 0) {
+    throw new Error('Posizione non valida');
+  }
+
+  const totalKills = kills.reduce((sum, value) => sum + Number(value || 0), 0);
+  const addedPoints = calcPoints(placement, totalKills);
+  const players = Array.isArray(teams[teamName]?.players) ? teams[teamName].players : [];
+
+  data.scores[teamName] = Number(data.scores[teamName] || 0) + addedPoints;
+
+  kills.forEach((killValue, index) => {
+    const playerName = sanitizeText(players[index]) || `Giocatore ${index + 1}`;
+    data.fragger[playerName] = Number(data.fragger[playerName] || 0) + Number(killValue || 0);
+  });
+
+  const key = buildSubmissionKey(teamName, targetMatch);
+
+  data.resultSubmissions[key] = {
+    team: teamName,
+    matchNumber: targetMatch,
+    status: 'inserito_manualmente',
+    pendingId: null,
+    updatedAt: new Date().toISOString(),
+    updatedBy: sanitizeText(req.staffUser || 'admin')
+  };
+
+  const saved = saveData(data);
+
+  bot.setDataState(saved);
+  bot.setTeamsState(teams);
+
+  await bot.refreshTeamResultPanels().catch(error => {
+    console.error('Errore aggiornamento pannelli dopo risultato manuale:', error);
+  });
+
+  await bot.updateLeaderboard().catch(error => {
+    console.error('Errore aggiornamento classifica dopo risultato manuale:', error);
+  });
+
+  logAudit(req.staffUser, 'web', 'risultato_inserito_manualmente', {
+    team: teamName,
+    matchNumber: targetMatch,
+    kills,
+    totalKills,
+    pos: placement,
+    addedPoints
+  });
+
+  return {
+    ok: true,
+    team: teamName,
+    matchNumber: targetMatch,
+    kills,
+    totalKills,
+    pos: placement,
+    addedPoints,
+    totalScore: saved.scores[teamName]
+  };
+}
+
 function buildDashboardPayload() {
   const data = loadData();
   const teams = loadTeams();
@@ -1190,6 +1349,27 @@ app.post('/api/reject/:id', authRequired, async (req, res) => {
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, message: error.message || 'Errore rifiuto' });
+  }
+});
+
+app.post('/api/manual-result', authRequired, async (req, res) => {
+  try {
+    const result = await applyManualResult({
+      req,
+      team: sanitizeText(req.body.team),
+      k1: Number(req.body.k1 || 0),
+      k2: Number(req.body.k2 || 0),
+      k3: Number(req.body.k3 || 0),
+      pos: Number(req.body.pos || 0),
+      matchNumber: sanitizePositiveInteger(req.body.matchNumber, Number(loadData().currentMatch || 1))
+    });
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore inserimento risultato manuale'
+    });
   }
 });
 
