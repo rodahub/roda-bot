@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accesso area admin</title>
+  <title>Accesso area admin • RØDA CUP</title>
+
   <style>
     :root{
       --line:rgba(160,110,255,.18);
@@ -11,6 +12,7 @@
       --muted:#aaa6c5;
       --purple:#7b2cff;
       --purple-2:#9c5cff;
+      --red:#ff4d6d;
       --shadow:0 0 0 1px rgba(162,109,255,.12), 0 0 35px rgba(123,44,255,.20);
     }
 
@@ -25,8 +27,8 @@
       min-height:100vh;
       font-family:Inter,Arial,sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(123,44,255,.18), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(123,44,255,.14), transparent 28%),
+        radial-gradient(circle at top left, rgba(123,44,255,.20), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(123,44,255,.16), transparent 30%),
         linear-gradient(180deg, #050507 0%, #08080d 100%);
       color:var(--text);
     }
@@ -40,11 +42,11 @@
 
     .login-box{
       width:100%;
-      max-width:460px;
-      background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,17,.98));
+      max-width:470px;
+      background:linear-gradient(180deg, rgba(18,18,31,.97), rgba(10,10,17,.99));
       border:1px solid var(--line);
-      border-radius:28px;
-      padding:28px;
+      border-radius:30px;
+      padding:30px;
       box-shadow:var(--shadow);
       overflow:hidden;
     }
@@ -55,12 +57,12 @@
       justify-content:center;
       flex-direction:column;
       text-align:center;
-      margin-bottom:22px;
+      margin-bottom:24px;
     }
 
     .logo{
-      width:86px;
-      height:86px;
+      width:88px;
+      height:88px;
       object-fit:contain;
       filter: drop-shadow(0 0 18px rgba(123,44,255,.55));
       margin-bottom:10px;
@@ -71,19 +73,21 @@
       width:auto;
       object-fit:contain;
       filter: drop-shadow(0 0 12px rgba(123,44,255,.38));
-      margin-bottom:8px;
+      margin-bottom:10px;
     }
 
     .title{
-      font-size:24px;
-      font-weight:900;
+      font-size:25px;
+      font-weight:950;
       margin-bottom:8px;
+      line-height:1.1;
     }
 
     .subtitle{
       color:var(--muted);
       font-size:14px;
       line-height:1.45;
+      max-width:360px;
     }
 
     .field{
@@ -93,52 +97,71 @@
     .field label{
       display:block;
       font-size:13px;
-      font-weight:700;
+      font-weight:850;
       color:#d9d4ef;
       margin-bottom:8px;
     }
 
     .field input{
       width:100%;
-      height:52px;
-      border-radius:16px;
+      height:54px;
+      border-radius:17px;
       border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.03);
+      background:rgba(255,255,255,.035);
       color:#fff;
-      padding:0 14px;
+      padding:0 15px;
       font-size:15px;
       outline:none;
+      transition:.16s ease;
+    }
+
+    .field input:focus{
+      border-color:rgba(160,110,255,.35);
+      box-shadow:0 0 0 3px rgba(123,44,255,.12);
     }
 
     .login-btn{
       width:100%;
-      height:54px;
+      height:56px;
       border:0;
-      border-radius:16px;
+      border-radius:17px;
       background:linear-gradient(135deg, var(--purple), var(--purple-2));
       color:#fff;
       font-size:15px;
-      font-weight:900;
+      font-weight:950;
       cursor:pointer;
       box-shadow:0 0 24px rgba(123,44,255,.28);
+      transition:.16s ease;
+      margin-top:4px;
+    }
+
+    .login-btn:hover{
+      transform:translateY(-1px);
     }
 
     .login-btn:disabled{
       opacity:.65;
       cursor:not-allowed;
+      transform:none;
     }
 
     .secondary-btn{
       width:100%;
       height:50px;
       border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;
-      background:rgba(255,255,255,.03);
+      border-radius:17px;
+      background:rgba(255,255,255,.035);
       color:#fff;
       font-size:14px;
-      font-weight:800;
+      font-weight:850;
       cursor:pointer;
       margin-top:10px;
+      transition:.16s ease;
+    }
+
+    .secondary-btn:hover{
+      background:rgba(255,255,255,.055);
+      transform:translateY(-1px);
     }
 
     .msg{
@@ -147,21 +170,54 @@
       text-align:center;
       font-size:14px;
       color:#ff97aa;
+      line-height:1.4;
+    }
+
+    .hint{
+      margin-top:18px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(160,110,255,.16);
+      background:rgba(255,255,255,.035);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      text-align:center;
+    }
+
+    .hint strong{
+      color:#f1eaff;
+    }
+
+    @media(max-width:520px){
+      body{
+        padding:16px;
+      }
+
+      .login-box{
+        padding:24px;
+        border-radius:26px;
+      }
+
+      .title{
+        font-size:22px;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="login-box">
     <div class="head">
-      <img src="/roda-logo.png" alt="Logo" class="logo" />
+      <img src="/roda-logo.png" alt="Logo RØDA" class="logo" />
       <img src="/roda-text.png" alt="RØDA" class="text-logo" />
       <div class="title">Accesso area admin</div>
-      <div class="subtitle">Inserisci email e password per entrare nella dashboard staff privata.</div>
+      <div class="subtitle">Inserisci nome utente e password per entrare nella dashboard privata RØDA CUP.</div>
     </div>
 
     <div class="field">
-      <label for="email">Email admin</label>
-      <input id="email" type="email" autocomplete="username" placeholder="Inserisci email admin" />
+      <label for="username">Nome utente</label>
+      <input id="username" type="text" autocomplete="username" placeholder="Inserisci nome utente" />
     </div>
 
     <div class="field">
@@ -173,13 +229,17 @@
     <button id="homeBtn" class="secondary-btn">TORNA AL SITO PUBBLICO</button>
 
     <div id="msg" class="msg"></div>
+
+    <div class="hint">
+      Account principale: <strong>RooS</strong>
+    </div>
   </div>
 
   <script>
     const loginBtn = document.getElementById('loginBtn');
     const homeBtn = document.getElementById('homeBtn');
     const msg = document.getElementById('msg');
-    const emailInput = document.getElementById('email');
+    const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
 
     async function checkSession() {
@@ -189,6 +249,7 @@
         });
 
         const data = await res.json().catch(() => null);
+
         if (res.ok && data?.ok) {
           window.location.href = '/admin';
         }
@@ -196,8 +257,13 @@
     }
 
     async function doLogin() {
-      const email = emailInput.value.trim();
+      const username = usernameInput.value.trim();
       const password = passwordInput.value;
+
+      if (!username || !password) {
+        msg.textContent = 'Inserisci nome utente e password';
+        return;
+      }
 
       msg.textContent = '';
       loginBtn.disabled = true;
@@ -210,10 +276,13 @@
             'Content-Type': 'application/json'
           },
           credentials: 'same-origin',
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({
+            username,
+            password
+          })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok || !data.ok) {
           msg.textContent = data.message || 'Accesso fallito';
@@ -236,13 +305,17 @@
       window.location.href = '/';
     };
 
-    emailInput.addEventListener('keydown', e => {
+    usernameInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
 
     passwordInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
+
+    setTimeout(() => {
+      usernameInput.focus();
+    }, 100);
 
     checkSession();
   </script>
