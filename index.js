@@ -29,7 +29,7 @@ const {
 const {
   generateLeaderboardGraphicBuffer,
   generateTopFraggerGraphicBuffer
-} = require('./graphics/renderer');
+} = require('./renderer');
 
 const client = new Client({
   intents: [
@@ -748,6 +748,78 @@ function createStaffActionRow(id) {
     new ButtonBuilder().setCustomId(`ok_${id}`).setLabel('APPROVA').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId(`no_${id}`).setLabel('RIFIUTA').setStyle(ButtonStyle.Danger)
   );
+}
+
+async function updateLeaderboardGraphics() {
+  await waitReady();
+  ensureDataStructures();
+
+  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  const matchNumber = Number(data.currentMatch || 1);
+  const stamp = Date.now();
+
+  const leaderboardRows = getSortedScores();
+  const topFraggerRows = getSortedFraggers();
+
+  const leaderboardBuffer = await generateLeaderboardGraphicBuffer(leaderboardRows);
+  const topFraggerBuffer = await generateTopFraggerGraphicBuffer(topFraggerRows);
+
+  const leaderboardGraphicResult = await sendOrUpdateGraphicMessage({
+    channel,
+    messageId: data.leaderboardGraphicMessageId,
+    fileName: `classifica-live-output-match-${matchNumber}-${stamp}.png`,
+    buffer: leaderboardBuffer,
+    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`
+  });
+
+  data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
+
+  const topFraggerGraphicResult = await sendOrUpdateGraphicMessage({
+    channel,
+    messageId: data.topFraggerGraphicMessageId,
+    fileName: `top-fragger-output-match-${matchNumber}-${stamp}.png`,
+    buffer: topFraggerBuffer,
+    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`
+  });
+
+  data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
+  saveState();
+
+  return {
+    ok: true,
+    leaderboardGraphicResult,
+    topFraggerGraphicResult
+  };
+}
+
+async function sendOrUpdateGraphicMessage({
+  channel,
+  messageId,
+  fileName,
+  buffer,
+  content
+}) {
+  const attachment = new AttachmentBuilder(buffer, { name: fileName });
+
+  if (messageId) {
+    try {
+      const msg = await channel.messages.fetch(messageId);
+      await msg.edit({
+        content,
+        files: [attachment]
+      });
+      return { updated: true, messageId: msg.id };
+    } catch (error) {
+      console.error(`Errore update messaggio grafico ${fileName}:`, error);
+    }
+  }
+
+  const sent = await channel.send({
+    content,
+    files: [attachment]
+  });
+
+  return { created: true, messageId: sent.id };
 }
 
 async function updateLeaderboard() {
