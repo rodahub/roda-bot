@@ -187,7 +187,7 @@ function getRegistrationLimit() {
 function getSortedTeamEntries() {
   return Object.entries(teams).sort((a, b) => {
     const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(b[1]?.slot || 999999);
+    const slotB = Number(a[1]?.slot || 999999);
     if (slotA !== slotB) return slotA - slotB;
     return a[0].localeCompare(b[0], 'it');
   });
@@ -399,19 +399,16 @@ function drawGraphicText(ctx, text, box, options = {}) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-
   ctx.shadowColor = glow;
   ctx.shadowBlur = glowBlur;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
   ctx.fillStyle = fill;
   ctx.fillText(safeText, x, y);
-
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.fillStyle = fill;
   ctx.fillText(safeText, x, y);
-
   ctx.restore();
 }
 
@@ -439,8 +436,8 @@ async function generateLeaderboardGraphicBuffer() {
   const rows = getSortedScores().slice(0, 16);
   const family = getGraphicFontFamily();
 
-  const teamBox = { x: 428, y: 258, width: 792, height: 44 };
-  const pointsBox = { x: 1222, y: 258, width: 244, height: 44 };
+  const teamBox = { x: 428, y: 266, width: 792, height: 44 };
+  const pointsBox = { x: 1222, y: 266, width: 244, height: 44 };
   const rowHeight = 49;
 
   for (let i = 0; i < 16; i++) {
@@ -474,7 +471,7 @@ async function generateLeaderboardGraphicBuffer() {
       fill: isTop3 ? '#331b63' : '#4a2d80',
       glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
       glowBlur: isTop3 ? 6 : 4,
-      offsetY: 4
+      offsetY: 7
     });
 
     drawGraphicText(ctx, pointsText, currentPointsBox, {
@@ -486,7 +483,7 @@ async function generateLeaderboardGraphicBuffer() {
       fill: '#3b1d71',
       glow: 'rgba(176,109,255,0.14)',
       glowBlur: 3,
-      offsetY: 4
+      offsetY: 7
     });
   }
 
@@ -505,8 +502,8 @@ async function generateTopFraggerGraphicBuffer() {
   const rows = getSortedFraggers().slice(0, 10);
   const family = getGraphicFontFamily();
 
-  const playerBox = { x: 428, y: 258, width: 792, height: 44 };
-  const killsBox = { x: 1222, y: 258, width: 244, height: 44 };
+  const playerBox = { x: 428, y: 266, width: 792, height: 44 };
+  const killsBox = { x: 1222, y: 266, width: 244, height: 44 };
   const rowHeight = 57;
 
   for (let i = 0; i < 10; i++) {
@@ -540,7 +537,7 @@ async function generateTopFraggerGraphicBuffer() {
       fill: isTop3 ? '#331b63' : '#4a2d80',
       glow: isTop3 ? 'rgba(176,109,255,0.22)' : 'rgba(157,92,255,0.16)',
       glowBlur: isTop3 ? 6 : 4,
-      offsetY: 4
+      offsetY: 7
     });
 
     drawGraphicText(ctx, killsText, currentKillsBox, {
@@ -552,7 +549,7 @@ async function generateTopFraggerGraphicBuffer() {
       fill: '#3b1d71',
       glow: 'rgba(176,109,255,0.14)',
       glowBlur: 3,
-      offsetY: 4
+      offsetY: 7
     });
   }
 
