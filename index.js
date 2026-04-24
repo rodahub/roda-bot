@@ -28,7 +28,8 @@ const {
 
 const {
   generateLeaderboardGraphicBuffer,
-  generateTopFraggerGraphicBuffer
+  generateTopFraggerGraphicBuffer,
+  generateRegisteredTeamsGraphicBuffer
 } = require('./renderer');
 
 const client = new Client({
@@ -56,6 +57,144 @@ const GENERAL_CHANNEL_NAME = '💬・generale';
 const RULES_CHANNEL_NAME = '📜・regolamento';
 const MAX_TEAMS = 16;
 const PLAYERS_PER_TEAM = 3;
+
+const LOCKED_REGULATION_TEXT = `🏆 RØDA CUP
+
+👥 FORMATO TORNEO
+
+Il torneo si svolge in modalità TERZETTI (TRIO).
+
+Ogni squadra deve essere composta da 3 giocatori titolari.
+Non sono ammessi quartetti o cambi non autorizzati dallo staff.
+
+🎮 OBBLIGO UTILIZZO DISCORD
+
+Per tutta la durata dell’evento è obbligatorio:
+
+• Utilizzare le stanze vocali Discord ufficiali
+• Aprire una stanza temporanea Trio nella sezione RØDA HUB
+• Restare presenti in vocale per tutto il torneo
+
+⚠️ La mancata presenza in stanza comporta penalità o annullamento del match.
+
+🚫 RESTRIZIONI EQUIPAGGIAMENTO
+
+È severamente vietato l’utilizzo di:
+
+❌ Mine
+❌ Claymore
+❌ Psicogranate
+❌ Granate Stordenti
+❌ Lacrimogeni
+❌ Scarica Elettrica
+❌ Skin Terminator
+
+⚖️ Sistema disciplinare
+
+• 1ª infrazione → Richiamo ufficiale
+• 2ª infrazione → Sottrazione punti
+• 3ª infrazione → Squalifica dal torneo
+
+Lo staff può applicare sanzioni immediate in caso di violazioni gravi.
+
+🔫 ARMI CONSENTITE
+
+✅ Solo ARMI META approvate dallo staff
+🎯 È ammesso 1 SOLO CECCHINO per team
+
+⚠️ Violazioni:
+
+• Utilizzo di 2 cecchini → Penalità immediata
+• Uso di armi non consentite → Kill annullate o sottrazione punti
+
+🏆 SISTEMA DI PUNTEGGIO
+
+🔹 Kill di squadra
+
+👉 Si sommano tutte le kill del team
+
+📊 Formula ufficiale:
+
+(Kill totali di squadra) + Bonus Posizionamento
+
+🔹 Bonus Posizionamento
+
+🥇 1° Posto → 10 punti
+🥈 2° Posto → 6 punti
+🥉 3° Posto → 5 punti
+4° Posto → 4 punti
+5° Posto → 3 punti
+6° Posto → 2 punti
+7° Posto → 1 punto
+8° Posto → 1 punto
+
+📸 VALIDAZIONE RISULTATI (OBBLIGATORIO)
+
+Ogni team deve caricare lo screen nel canale dedicato.
+
+Lo screen deve mostrare chiaramente:
+
+• Classifica finale
+• Numero totale kill di squadra
+• Posizionamento
+
+📝 Nel messaggio è obbligatorio scrivere:
+
+• Nome Team
+• Posizione ottenuta
+• Kill totali di squadra
+
+Se una di queste informazioni manca, il risultato non verrà convalidato.
+
+✅ ESEMPIO CORRETTO INVIO RISULTATO
+
+Team: RØDA Black
+Posizione: 2° Posto
+Kill Totali Squadra: 18
+
+(Allegare screenshot sotto il messaggio)
+
+⚖️ FAIR PLAY
+
+• Vietato glitch, exploit o vantaggi illeciti
+• Vietato comportamento tossico o antisportivo
+• Rispetto obbligatorio verso staff e avversari
+• Le decisioni dello staff sono definitive`;
+
+function getLockedTournamentSettingsDefaults() {
+  return {
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    totalMatches: 3,
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    createdAt: null,
+    createdBy: '',
+    lastConfiguredAt: null,
+    lastConfiguredBy: ''
+  };
+}
+
+function getLockedTournamentMessagesDefaults() {
+  return {
+    generalAnnouncement:
+      `@everyone\n\n` +
+      `# 🏆 BENVENUTI ALLA RØDA CUP\n\n` +
+      `Le iscrizioni sono aperte.\n` +
+      `Controllate il canale dedicato alle iscrizioni per registrarvi correttamente.\n` +
+      `Nel canale regolamento trovate tutte le regole ufficiali del torneo.\n\n` +
+      `Durante il torneo, nelle vostre stanze team troverete il pannello per inviare i risultati.\n` +
+      `Il codice lobby verrà inviato direttamente nelle chat delle vostre stanze.\n\n` +
+      `Leggete tutto con attenzione e preparatevi. 🔥`,
+    lobbyInfoMessage:
+      `🎮 **CODICE LOBBY**\n\n` +
+      `Il codice lobby viene sempre inviato nelle chat delle stanze ufficiali dei team.\n` +
+      `Controllate la vostra stanza per entrare nella partita.\n\n` +
+      `Buon game 🔥`,
+    regulationText: LOCKED_REGULATION_TEXT
+  };
+}
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -115,33 +254,32 @@ function ensureDataStructures() {
   }
 
   const defaults = getDefaultData();
+  const lockedTournamentDefaults = getLockedTournamentSettingsDefaults();
+  const lockedMessageDefaults = getLockedTournamentMessagesDefaults();
 
   if (!data.projectSettings || typeof data.projectSettings !== 'object') {
-    data.projectSettings = defaults.projectSettings;
+    data.projectSettings = defaults.projectSettings || {};
   }
 
   data.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
 
   if (!data.tournamentSettings || typeof data.tournamentSettings !== 'object') {
-    data.tournamentSettings = defaults.tournamentSettings;
+    data.tournamentSettings = { ...lockedTournamentDefaults };
   }
 
-  data.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
-  data.tournamentSettings.playersPerTeam = PLAYERS_PER_TEAM;
-  data.tournamentSettings.maxTeams = MAX_TEAMS;
-  data.tournamentSettings.lockedRules = true;
-  data.tournamentSettings.lockedPoints = true;
-
-  if (!Number.isInteger(Number(data.tournamentSettings.totalMatches)) || Number(data.tournamentSettings.totalMatches) <= 0) {
-    data.tournamentSettings.totalMatches = 3;
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(data.tournamentSettings, 'autoNextMatch')) {
-    data.tournamentSettings.autoNextMatch = true;
-  }
+  data.tournamentSettings = {
+    ...lockedTournamentDefaults,
+    ...data.tournamentSettings,
+    tournamentName: FIXED_TOURNAMENT_NAME,
+    playersPerTeam: PLAYERS_PER_TEAM,
+    maxTeams: MAX_TEAMS,
+    lockedRules: true,
+    lockedPoints: true,
+    totalMatches: sanitizePositiveInteger(data.tournamentSettings.totalMatches, 3, 50)
+  };
 
   if (!data.botSettings || typeof data.botSettings !== 'object') {
-    data.botSettings = defaults.botSettings;
+    data.botSettings = defaults.botSettings || {};
   }
 
   if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'generalChannelId')) {
@@ -157,10 +295,14 @@ function ensureDataStructures() {
   }
 
   if (!data.tournamentMessages || typeof data.tournamentMessages !== 'object') {
-    data.tournamentMessages = defaults.tournamentMessages;
+    data.tournamentMessages = { ...lockedMessageDefaults };
   }
 
-  data.tournamentMessages.regulationText = defaults.tournamentMessages.regulationText;
+  data.tournamentMessages = {
+    ...lockedMessageDefaults,
+    ...data.tournamentMessages,
+    regulationText: lockedMessageDefaults.regulationText
+  };
 
   if (!data.pending || typeof data.pending !== 'object') data.pending = {};
   if (!data.tempSubmit || typeof data.tempSubmit !== 'object') data.tempSubmit = {};
@@ -175,6 +317,14 @@ function ensureDataStructures() {
   if (!Object.prototype.hasOwnProperty.call(data, 'registrationClosedAnnounced')) data.registrationClosedAnnounced = false;
 
   data.registrationMaxTeams = MAX_TEAMS;
+
+  if (!data.registrationStatusTitle) {
+    data.registrationStatusTitle = '🏆 TEAM REGISTRATI';
+  }
+
+  if (!data.registrationStatusText) {
+    data.registrationStatusText = 'Lista team attualmente registrati nel torneo.';
+  }
 }
 
 function saveState() {
@@ -212,77 +362,28 @@ function getProjectSettings() {
 
 function getTournamentSettings() {
   const safe = data?.tournamentSettings || {};
+  const lockedDefaults = getLockedTournamentSettingsDefaults();
 
   return {
+    ...lockedDefaults,
+    ...safe,
     tournamentName: FIXED_TOURNAMENT_NAME,
     totalMatches: sanitizePositiveInteger(safe.totalMatches, 3, 50),
     playersPerTeam: PLAYERS_PER_TEAM,
     maxTeams: MAX_TEAMS,
-    autoNextMatch: safe.autoNextMatch === false ? false : true,
     lockedRules: true,
-    lockedPoints: true,
-    createdAt: safe.createdAt || null,
-    createdBy: sanitizeText(safe.createdBy),
-    lastConfiguredAt: safe.lastConfiguredAt || null,
-    lastConfiguredBy: sanitizeText(safe.lastConfiguredBy)
+    lockedPoints: true
   };
 }
 
 function getTournamentMessages() {
-  const defaults = getDefaultData().tournamentMessages || {};
+  const defaults = getLockedTournamentMessagesDefaults();
   const safe = data?.tournamentMessages || {};
 
   return {
-    generalAnnouncement:
-      sanitizeText(safe.generalAnnouncement) ||
-      sanitizeText(safe.openRegistrationsAnnouncement) ||
-      defaults.openRegistrationsAnnouncement ||
-      '',
-
-    openRegistrationsAnnouncement:
-      sanitizeText(safe.openRegistrationsAnnouncement) ||
-      defaults.openRegistrationsAnnouncement ||
-      '',
-
-    closeRegistrationsAnnouncement:
-      sanitizeText(safe.closeRegistrationsAnnouncement) ||
-      defaults.closeRegistrationsAnnouncement ||
-      '',
-
-    tournamentStartAnnouncement:
-      sanitizeText(safe.tournamentStartAnnouncement) ||
-      defaults.tournamentStartAnnouncement ||
-      '',
-
-    nextMatchAnnouncement:
-      sanitizeText(safe.nextMatchAnnouncement) ||
-      defaults.nextMatchAnnouncement ||
-      '',
-
-    forcedNextMatchAnnouncement:
-      sanitizeText(safe.forcedNextMatchAnnouncement) ||
-      defaults.forcedNextMatchAnnouncement ||
-      '',
-
-    tournamentFinishedAnnouncement:
-      sanitizeText(safe.tournamentFinishedAnnouncement) ||
-      defaults.tournamentFinishedAnnouncement ||
-      '',
-
-    lobbyInfoMessage:
-      sanitizeText(safe.lobbyInfoMessage) ||
-      defaults.lobbyInfoMessage ||
-      '',
-
-    generalReminder:
-      sanitizeText(safe.generalReminder) ||
-      defaults.generalReminder ||
-      '',
-
-    regulationText:
-      defaults.regulationText ||
-      safe.regulationText ||
-      ''
+    generalAnnouncement: sanitizeText(safe.generalAnnouncement) || defaults.generalAnnouncement || '',
+    lobbyInfoMessage: sanitizeText(safe.lobbyInfoMessage) || defaults.lobbyInfoMessage || '',
+    regulationText: defaults.regulationText
   };
 }
 
@@ -1043,107 +1144,106 @@ async function deleteTeamRooms(customCategoryId) {
   };
 }
 
-function buildRegistrationTextPages() {
-  refreshStateFromDisk();
-
+function buildRegisteredTeamsGraphicCaption() {
   const project = getProjectSettings();
-  const displayTeams = getDisplayTeams();
-  const title = sanitizeText(data.registrationStatusTitle) || '🏆 TEAM REGISTRATI';
-  const intro = sanitizeText(data.registrationStatusText) || 'Lista team attualmente registrati nel torneo.';
+  const registered = Object.keys(teams || {}).length;
   const limit = getRegistrationLimit();
-  const freeSpots = Math.max(limit - displayTeams.length, 0);
-  const isFull = displayTeams.length >= limit;
+  const freeSpots = Math.max(limit - registered, 0);
 
-  const pages = [];
-  const pageTeams = chunkArray(displayTeams, 10);
-
-  const header =
-    `# ${title}\n` +
-    `**Torneo:** ${project.tournamentName}\n` +
-    `${intro}\n\n` +
-    `**Team registrati:** ${displayTeams.length}/${limit}\n` +
-    `**Posti disponibili:** ${freeSpots}\n` +
-    `**Stato:** ${isFull ? 'Iscrizioni chiuse' : 'Iscrizioni aperte'}\n`;
-
-  if (!pageTeams.length) {
-    pages.push(`${header}\n**Nessun team registrato al momento.**`);
-    return pages;
-  }
-
-  pageTeams.forEach((teamsChunk, pageIndex) => {
-    const lines = teamsChunk.map(team => {
-      const p1 = sanitizeText(team.players?.[0]) || 'Giocatore 1';
-      const p2 = sanitizeText(team.players?.[1]) || 'Giocatore 2';
-      const p3 = sanitizeText(team.players?.[2]) || 'Giocatore 3';
-
-      return (
-        `🏆 **#${team.slot} • ${team.teamName}**\n` +
-        `👤 ${p1} • ${p2} • ${p3}`
-      );
-    });
-
-    const pageHeader = pageTeams.length > 1
-      ? `${header}\n**Pagina ${pageIndex + 1}/${pageTeams.length}**\n`
-      : header;
-
-    pages.push(`${pageHeader}\n${lines.join('\n\n')}`);
-  });
-
-  return pages;
+  return (
+    `🏆 **${project.tournamentName} • TEAM REGISTRATI**\n` +
+    `Team registrati: **${registered}/${limit}**\n` +
+    `Posti disponibili: **${freeSpots}**`
+  );
 }
 
-function buildRegistrationEmbeds() {
-  const project = getProjectSettings();
-  const logoUrl = getLogoUrl();
-  const pages = buildRegistrationTextPages();
+async function sendOrUpdateRegisteredTeamsGraphic(options = {}) {
+  await waitReady();
+  refreshStateFromDisk();
 
-  return pages.map((pageText, index) => {
-    const embed = new EmbedBuilder()
-      .setColor(0x7b2cff)
-      .setTitle(index === 0 ? `🏆 ${project.tournamentName}` : `📑 Elenco team • Pagina ${index + 1}/${pages.length}`)
-      .setDescription(pageText);
+  const allowCreate = options.allowCreate !== false;
+  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
+  const registered = Object.keys(teams || {}).length;
+  const stamp = Date.now();
 
-    if (logoUrl) embed.setThumbnail(logoUrl);
-
-    return embed;
+  const buffer = await generateRegisteredTeamsGraphicBuffer();
+  const attachment = new AttachmentBuilder(buffer, {
+    name: `team-registrati-output-${registered}-${stamp}.png`
   });
+
+  const content = buildRegisteredTeamsGraphicCaption();
+
+  if (data.registrationStatusMessageId) {
+    try {
+      const msg = await channel.messages.fetch(data.registrationStatusMessageId);
+      await msg.edit({
+        content,
+        embeds: [],
+        components: [],
+        attachments: [],
+        files: [attachment]
+      });
+
+      logAudit('bot', 'discord', 'grafica_team_registrati_aggiornata', {
+        channelId: REGISTRATION_STATUS_CHANNEL,
+        registered,
+        maxTeams: getRegistrationLimit(),
+        updated: true,
+        created: false
+      });
+
+      return {
+        ok: true,
+        updated: true,
+        created: false,
+        messageId: msg.id
+      };
+    } catch (error) {
+      console.error('Errore update grafica team registrati:', error);
+    }
+  }
+
+  if (!allowCreate) {
+    return {
+      ok: false,
+      updated: false,
+      created: false,
+      messageId: data.registrationStatusMessageId || null,
+      skipped: true
+    };
+  }
+
+  const msg = await channel.send({
+    content,
+    files: [attachment]
+  });
+
+  data.registrationStatusMessageId = msg.id;
+  saveState();
+
+  logAudit('bot', 'discord', 'grafica_team_registrati_creata', {
+    channelId: REGISTRATION_STATUS_CHANNEL,
+    registered,
+    maxTeams: getRegistrationLimit(),
+    updated: false,
+    created: true
+  });
+
+  return {
+    ok: true,
+    updated: false,
+    created: true,
+    messageId: msg.id
+  };
 }
 
 function queueRegistrationStatusUpdate() {
   registrationStatusUpdateQueue = registrationStatusUpdateQueue
     .then(async () => {
-      await waitReady();
-      refreshStateFromDisk();
-
-      const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
-      const embeds = buildRegistrationEmbeds();
-
-      if (data.registrationStatusMessageId) {
-        try {
-          const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit({
-            content: '',
-            embeds,
-            components: [],
-            attachments: []
-          });
-          return true;
-        } catch (error) {
-          console.error('Errore update messaggio slot team:', error);
-        }
-      }
-
-      const msg = await channel.send({
-        content: '',
-        embeds
-      });
-
-      data.registrationStatusMessageId = msg.id;
-      saveState();
-      return true;
+      return sendOrUpdateRegisteredTeamsGraphic({ allowCreate: true });
     })
     .catch(error => {
-      console.error('Errore queue pannello slot team:', error);
+      console.error('Errore queue grafica team registrati:', error);
     });
 
   return registrationStatusUpdateQueue;
@@ -1193,8 +1293,7 @@ async function handleRegistrationStateChange() {
   refreshStateFromDisk();
   await updateRegistrationStatusMessage();
   await updateSavedRegisterPanelIfExists().catch(() => {});
-  await refreshTeamResultPanels().catch(() => {});
-  await cleanupLegacyTextPanels().catch(() => {});
+  await updateSavedResultsPanelIfExists().catch(() => {});
   await maybeAnnounceTournamentFull();
 }
 
@@ -1206,7 +1305,8 @@ async function updateSavedRegisterPanelIfExists() {
 }
 
 async function updateSavedResultsPanelIfExists() {
-  return refreshTeamResultPanels();
+  const settings = getBotSettings();
+  return spawnResultsPanel(settings.resultsPanelChannelId);
 }
 
 async function refreshSavedPanels() {
@@ -1226,12 +1326,10 @@ async function refreshSavedPanels() {
   }
 
   try {
-    results.resultsPanel = await refreshTeamResultPanels();
+    results.resultsPanel = await spawnResultsPanel(settings.resultsPanelChannelId);
   } catch (error) {
     console.error('Errore refresh pannelli risultati team:', error);
   }
-
-  await cleanupLegacyTextPanels().catch(() => {});
 
   return results;
 }
@@ -1321,146 +1419,6 @@ function createStaffActionRow(id) {
   );
 }
 
-async function deleteMessageSilently(message) {
-  try {
-    if (!message || !message.deletable) return false;
-    await message.delete();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function isLegacyLeaderboardTextMessage(message) {
-  if (!message || message.author?.id !== client.user?.id) return false;
-
-  const content = sanitizeText(message.content);
-  const firstEmbed = message.embeds?.[0];
-  const title = sanitizeText(firstEmbed?.title);
-  const description = sanitizeText(firstEmbed?.description);
-
-  if (title.includes('CLASSIFICA MATCH')) return true;
-  if (title.includes('CLASSIFICA') && description.includes('Nessun dato')) return true;
-  if (content.includes('RØDA CUP • CLASSIFICA MATCH')) return true;
-  if (content.includes('CLASSIFICA MATCH')) return true;
-
-  return false;
-}
-
-function isLegacyResultsPanelMessage(message) {
-  if (!message || message.author?.id !== client.user?.id) return false;
-
-  const content = sanitizeText(message.content);
-  const firstEmbed = message.embeds?.[0];
-  const title = sanitizeText(firstEmbed?.title);
-  const description = sanitizeText(firstEmbed?.description);
-
-  if (title.includes('Invio risultati')) return true;
-  if (description.includes('I risultati non vengono più inviati da un pannello unico')) return true;
-  if (description.includes('Ogni team usa il proprio pannello nella propria stanza vocale')) return true;
-  if (content.includes('Invio risultati')) return true;
-
-  return false;
-}
-
-async function cleanupLegacyLeaderboardTextMessages() {
-  await waitReady();
-  ensureDataStructures();
-
-  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL).catch(() => null);
-  if (!channel || !channel.messages) {
-    return { ok: false, skipped: true, reason: 'Canale classifica non trovato' };
-  }
-
-  let deleted = 0;
-
-  if (data.leaderboardMessageId) {
-    try {
-      const msg = await channel.messages.fetch(data.leaderboardMessageId);
-      if (await deleteMessageSilently(msg)) deleted++;
-    } catch {}
-    data.leaderboardMessageId = null;
-    saveState();
-  }
-
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  if (!messages) return { ok: true, deleted };
-
-  for (const message of messages.values()) {
-    if (isLegacyLeaderboardTextMessage(message)) {
-      if (await deleteMessageSilently(message)) deleted++;
-    }
-  }
-
-  return { ok: true, deleted };
-}
-
-async function cleanupLegacyResultsPanelMessages() {
-  await waitReady();
-  ensureDataStructures();
-
-  const settings = getBotSettings();
-  const targetChannelId = sanitizeText(settings.resultsPanelChannelId);
-
-  if (!targetChannelId) {
-    data.botSettings.resultsPanelMessageId = null;
-    saveState();
-    return { ok: true, skipped: true, reason: 'Nessun canale screen salvato' };
-  }
-
-  const channel = await client.channels.fetch(targetChannelId).catch(() => null);
-  if (!channel || !channel.messages) {
-    data.botSettings.resultsPanelMessageId = null;
-    saveState();
-    return { ok: true, skipped: true, reason: 'Canale screen non trovato' };
-  }
-
-  let deleted = 0;
-
-  if (settings.resultsPanelMessageId) {
-    try {
-      const msg = await channel.messages.fetch(settings.resultsPanelMessageId);
-      if (await deleteMessageSilently(msg)) deleted++;
-    } catch {}
-    data.botSettings.resultsPanelMessageId = null;
-    saveState();
-  }
-
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  if (!messages) return { ok: true, deleted };
-
-  for (const message of messages.values()) {
-    if (isLegacyResultsPanelMessage(message)) {
-      if (await deleteMessageSilently(message)) deleted++;
-    }
-  }
-
-  return { ok: true, deleted };
-}
-
-async function cleanupLegacyTextPanels() {
-  const leaderboard = await cleanupLegacyLeaderboardTextMessages().catch(error => {
-    console.error('Errore pulizia classifica testuale:', error);
-    return { ok: false, error: true };
-  });
-
-  const results = await cleanupLegacyResultsPanelMessages().catch(error => {
-    console.error('Errore pulizia pannello risultati vecchio:', error);
-    return { ok: false, error: true };
-  });
-
-  logAudit('bot', 'discord', 'pannelli_testuali_vecchi_puliti', {
-    leaderboardDeleted: Number(leaderboard?.deleted || 0),
-    resultsDeleted: Number(results?.deleted || 0)
-  });
-
-  return {
-    ok: true,
-    leaderboard,
-    results
-  };
-}
-
 async function sendOrUpdateGraphicMessage({
   channel,
   messageId,
@@ -1476,8 +1434,8 @@ async function sendOrUpdateGraphicMessage({
       const msg = await channel.messages.fetch(messageId);
       await msg.edit({
         content,
-        files: [attachment],
-        attachments: []
+        attachments: [],
+        files: [attachment]
       });
       return {
         updated: true,
@@ -1571,12 +1529,47 @@ async function updateLeaderboard(options = {}) {
   const allowCreate = options.allowCreate !== false;
   const updateGraphics = options.updateGraphics !== false;
 
-  let cleanupResult = null;
+  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  const project = getProjectSettings();
 
-  try {
-    cleanupResult = await cleanupLegacyLeaderboardTextMessages();
-  } catch (error) {
-    console.error('Errore pulizia pannelli classifica testuali:', error);
+  const sorted = Object.entries(data.scores || {}).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
+  const desc = sorted.map((t, i) => `#${i + 1} ${t[0]} - ${t[1]} pt`).join('\n') || 'Nessun dato';
+
+  const frag = Object.entries(data.fragger || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 5)
+    .map(f => `${f[0]} (${f[1]})`)
+    .join('\n') || 'Nessuno';
+
+  const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
+    .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
+    .setDescription(desc)
+    .addFields({ name: '🔥 Top Fragger', value: frag });
+
+  let created = false;
+  let updated = false;
+  let skipped = false;
+
+  if (data.leaderboardMessageId) {
+    try {
+      const msg = await channel.messages.fetch(data.leaderboardMessageId);
+      await msg.edit({ embeds: [embed] });
+      updated = true;
+    } catch (error) {
+      console.error('Errore update classifica testuale:', error);
+    }
+  }
+
+  if (!updated) {
+    if (!allowCreate) {
+      skipped = true;
+    } else {
+      const msg = await channel.send({ embeds: [embed] });
+      data.leaderboardMessageId = msg.id;
+      created = true;
+      saveState();
+    }
   }
 
   let graphicsResult = null;
@@ -1589,22 +1582,23 @@ async function updateLeaderboard(options = {}) {
     }
   }
 
-  logAudit('bot', 'discord', 'grafiche_classifica_aggiornate', {
+  logAudit('bot', 'discord', created ? 'classifica_creata' : updated ? 'classifica_aggiornata' : 'classifica_saltata', {
     currentMatch: data.currentMatch,
     allowCreate,
+    updated,
+    created,
+    skipped,
     leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
-    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null,
-    removedLegacyTextMessages: Number(cleanupResult?.deleted || 0)
+    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
   });
 
   return {
     ok: true,
     allowCreate,
-    updated: Boolean(graphicsResult?.leaderboardGraphicResult?.updated || graphicsResult?.topFraggerGraphicResult?.updated),
-    created: Boolean(graphicsResult?.leaderboardGraphicResult?.created || graphicsResult?.topFraggerGraphicResult?.created),
-    skipped: Boolean(graphicsResult?.leaderboardGraphicResult?.skipped && graphicsResult?.topFraggerGraphicResult?.skipped),
-    graphicsResult,
-    cleanupResult
+    updated,
+    created,
+    skipped,
+    graphicsResult
   };
 }
 
@@ -1898,15 +1892,12 @@ async function spawnResultsPanel(channelId) {
 
   if (targetChannelId) {
     data.botSettings.resultsPanelChannelId = targetChannelId;
-    data.botSettings.resultsPanelMessageId = null;
     saveState();
   }
 
-  await cleanupLegacyResultsPanelMessages().catch(() => {});
-
   const teamPanels = await refreshTeamResultPanels();
 
-  logAudit('dashboard', 'web', 'pannelli_risultati_team_generati_senza_pannello_screen', {
+  logAudit('dashboard', 'web', 'pannelli_risultati_team_generati', {
     savedChannelId: targetChannelId || null,
     teamPanelsCreated: Number(teamPanels?.created || 0),
     teamPanelsUpdated: Number(teamPanels?.updated || 0),
@@ -1918,7 +1909,6 @@ async function spawnResultsPanel(channelId) {
     ok: true,
     created: false,
     updated: false,
-    removedOldTextPanel: true,
     teamPanels
   };
 }
@@ -2054,7 +2044,6 @@ async function setCurrentMatchAndRefresh(match) {
   setCurrentMatch(match);
   await refreshTeamResultPanels();
   await updateLeaderboard({ allowCreate: true });
-  await cleanupLegacyTextPanels().catch(() => {});
   return data.currentMatch;
 }
 
@@ -2075,12 +2064,12 @@ async function nextMatchAndRefresh() {
   nextMatch();
   await refreshTeamResultPanels();
   await updateLeaderboard({ allowCreate: true });
-  await cleanupLegacyTextPanels().catch(() => {});
   return data.currentMatch;
 }
 
 function resetAllState() {
   data = getDefaultData();
+  ensureDataStructures();
   saveState();
 }
 
@@ -2093,7 +2082,6 @@ function saveBotPanelSettings(settings = {}) {
 
   if (Object.prototype.hasOwnProperty.call(settings, 'resultsPanelChannelId')) {
     data.botSettings.resultsPanelChannelId = sanitizeText(settings.resultsPanelChannelId);
-    data.botSettings.resultsPanelMessageId = null;
   }
 
   if (Object.prototype.hasOwnProperty.call(settings, 'roomsCategoryId')) {
@@ -2156,37 +2144,9 @@ function getBotConfig() {
     tournamentName: FIXED_TOURNAMENT_NAME,
     premiumMode: project.premiumMode,
     totalMatches: tournament.totalMatches,
-    autoNextMatch: tournament.autoNextMatch,
     playersPerTeam: PLAYERS_PER_TEAM,
     maxTeams: MAX_TEAMS
   };
-}
-
-async function sendGeneralAnnouncement(channelId, message) {
-  await waitReady();
-
-  const cleanChannelId = sanitizeText(channelId);
-  const cleanMessage = sanitizeText(message);
-
-  if (!cleanChannelId) {
-    throw new Error('Canale generale non valido');
-  }
-
-  if (!cleanMessage) {
-    throw new Error('Messaggio non valido');
-  }
-
-  const channel = await client.channels.fetch(cleanChannelId);
-  await channel.send({ content: cleanMessage });
-
-  return {
-    ok: true,
-    channelId: cleanChannelId
-  };
-}
-
-async function sendMessageToChannel(channelId, message) {
-  return sendGeneralAnnouncement(channelId, message);
 }
 
 client.once('ready', async () => {
@@ -2198,10 +2158,6 @@ client.once('ready', async () => {
 
   logAudit('bot', 'discord', 'bot_online', {
     guildId: GUILD_ID
-  });
-
-  await cleanupLegacyTextPanels().catch(error => {
-    console.error('Errore pulizia pannelli vecchi al ready:', error);
   });
 
   await handleRegistrationStateChange();
@@ -2566,8 +2522,6 @@ module.exports = {
   createTeamRooms,
   deleteTeamRooms,
   sendLobbyCodeToTeamRooms,
-  sendGeneralAnnouncement,
-  sendMessageToChannel,
   nextMatch,
   nextMatchAndRefresh,
   setCurrentMatch,
@@ -2577,10 +2531,8 @@ module.exports = {
   resetAllState,
   saveBotPanelSettings,
   refreshTeamResultPanels,
-  cleanupLegacyTextPanels,
-  cleanupLegacyLeaderboardTextMessages,
-  cleanupLegacyResultsPanelMessages,
   getTournamentSettings,
   getTournamentMessages,
-  calcPoints
+  calcPoints,
+  sendOrUpdateRegisteredTeamsGraphic
 };
