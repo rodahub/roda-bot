@@ -138,7 +138,13 @@ async function generateTopFraggerGraphicBuffer() {
   return takePreviewScreenshot(url, '.preview-wrapper');
 }
 
+async function generateRegisteredTeamsGraphicBuffer() {
+  const url = buildPreviewUrl('/team-registrati-preview.html');
+  return takePreviewScreenshot(url, '.preview-wrapper');
+}
+
 module.exports = {
   generateLeaderboardGraphicBuffer,
-  generateTopFraggerGraphicBuffer
+  generateTopFraggerGraphicBuffer,
+  generateRegisteredTeamsGraphicBuffer
 };
