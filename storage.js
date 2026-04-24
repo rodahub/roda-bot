@@ -18,10 +18,6 @@ const AUDIT_LOG_FILE = path.join(STORAGE_DIR, 'audit-log.json');
 const AUDIT_BACKUP_FILE = path.join(BACKUP_DIR, 'audit-log.latest.json');
 
 const ARCHIVES_DIR = path.join(STORAGE_DIR, 'archives');
-
-/*
-  Screenshot e upload salvati nel volume persistente
-*/
 const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
 
 console.log('RAILWAY_VOLUME_MOUNT_PATH:', process.env.RAILWAY_VOLUME_MOUNT_PATH || '(non presente)');
@@ -135,7 +131,9 @@ function normalizePending(pendingValue) {
       image: String(entry.image || '').trim(),
       source: String(entry.source || '').trim(),
       submittedBy: String(entry.submittedBy || '').trim(),
-      staffMessageId: entry.staffMessageId || null
+      staffMessageId: entry.staffMessageId || null,
+      matchNumber: Number(entry.matchNumber || 0),
+      teamResultChannelId: String(entry.teamResultChannelId || '').trim()
     };
   }
 
@@ -153,13 +151,16 @@ function normalizeTempSubmit(tempValue) {
 
     out[String(userId)] = {
       team: String(entry.team || '').trim(),
+      slot: Number(entry.slot || 0),
       kills: [
         Number(kills[0] || 0),
         Number(kills[1] || 0),
         Number(kills[2] || 0)
       ],
       total: Number(entry.total || 0),
-      pos: Number(entry.pos || 0)
+      pos: Number(entry.pos || 0),
+      matchNumber: Number(entry.matchNumber || 0),
+      teamResultChannelId: String(entry.teamResultChannelId || '').trim()
     };
   }
 
