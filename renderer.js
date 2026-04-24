@@ -7,7 +7,7 @@ const ROOT_DIR = __dirname;
 const LEADERBOARD_TEMPLATE_PATH = path.join(ROOT_DIR, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(ROOT_DIR, 'top-fragger.png');
 
-const TITLE_FONT_PATH = path.join(ROOT_DIR, 'NetlridettrialRegular-q2nmr.otf');
+const TITLE_FONT_PATH = path.join(ROOT_DIR, 'NeltridetrialRegular-q2nmr.otf');
 const BODY_FONT_PATH = path.join(ROOT_DIR, 'rajdhani.bold.ttf');
 
 const TITLE_FONT_FAMILY = 'RodaTitleFont';
@@ -166,11 +166,9 @@ function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
     fontSize = 28,
     minFontSize = 16,
     fontWeight = 'bold',
-    fillStyle = '#4b2a76',
-    shadowColor = 'rgba(173, 120, 255, 0.18)',
-    shadowBlur = 2,
-    strokeStyle = null,
-    strokeWidth = 0
+    fillStyle = '#4a2b75',
+    shadowColor = 'rgba(170, 118, 255, 0.16)',
+    shadowBlur = 1
   } = options;
 
   const familyToUse = fontsRegistered ? fontFamily : fallbackFamily;
@@ -192,87 +190,87 @@ function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
   ctx.shadowBlur = shadowBlur;
 
   setFont(ctx, fittedSize, familyToUse, fontWeight);
-
-  if (strokeStyle && strokeWidth > 0) {
-    ctx.lineWidth = strokeWidth;
-    ctx.strokeStyle = strokeStyle;
-    ctx.strokeText(value, centerX, centerY);
-  }
-
   ctx.fillText(value, centerX, centerY);
+
   ctx.restore();
 }
 
-function drawLeaderboardRows(ctx, rows) {
-  // IMPORTANTE:
-  // NON ridisegniamo la colonna POSIZIONE
-  // perché i numeri sono già presenti nel template.
-  const layout = {
-    teamCenterX: 824,
-    pointsCenterX: 1342,
-    firstRowCenterY: 301,
-    rowGap: 47.9,
-    maxRows: 16
-  };
+/*
+  IMPORTANTE:
+  Non disegniamo MAI la colonna posizione a sinistra,
+  perché i numeri sono già dentro i template PNG.
+*/
 
-  const visibleRows = rows.slice(0, layout.maxRows);
+const CLASSIFICA_LAYOUT = {
+  teamCenterX: 824,
+  pointsCenterX: 1342,
+  rowY: [
+    316, 364, 412, 460, 508, 556, 604, 652,
+    700, 748, 796, 844, 892, 940, 988, 1036
+  ],
+  teamMaxWidth: 660,
+  pointsMaxWidth: 150
+};
+
+const FRAGGER_LAYOUT = {
+  playerCenterX: 826,
+  killsCenterX: 1340,
+  rowY: [
+    304, 356, 408, 460, 512, 564, 616, 668, 720, 772
+  ],
+  playerMaxWidth: 660,
+  killsMaxWidth: 150
+};
+
+function drawLeaderboardRows(ctx, rows) {
+  const visibleRows = rows.slice(0, CLASSIFICA_LAYOUT.rowY.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const y = layout.firstRowCenterY + i * layout.rowGap;
+    const y = CLASSIFICA_LAYOUT.rowY[i];
 
-    drawCenteredText(ctx, row.team, layout.teamCenterX, y, {
-      maxWidth: 660,
+    drawCenteredText(ctx, row.team, CLASSIFICA_LAYOUT.teamCenterX, y, {
+      maxWidth: CLASSIFICA_LAYOUT.teamMaxWidth,
       fontSize: 29,
       minFontSize: 17,
-      fillStyle: '#47296f',
-      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      fillStyle: '#47286f',
+      shadowColor: 'rgba(170, 118, 255, 0.12)',
       shadowBlur: 1
     });
 
-    drawCenteredText(ctx, String(Number(row.punti || 0)), layout.pointsCenterX, y, {
-      maxWidth: 150,
+    drawCenteredText(ctx, String(Number(row.punti || 0)), CLASSIFICA_LAYOUT.pointsCenterX, y, {
+      maxWidth: CLASSIFICA_LAYOUT.pointsMaxWidth,
       fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#47296f',
-      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      fillStyle: '#47286f',
+      shadowColor: 'rgba(170, 118, 255, 0.12)',
       shadowBlur: 1
     });
   }
 }
 
 function drawFraggerRows(ctx, rows) {
-  // Anche qui NON ridisegniamo la colonna posizione
-  // perché è già presente nel template.
-  const layout = {
-    playerCenterX: 826,
-    killsCenterX: 1340,
-    firstRowCenterY: 304,
-    rowGap: 52.0,
-    maxRows: 10
-  };
-
-  const visibleRows = rows.slice(0, layout.maxRows);
+  const visibleRows = rows.slice(0, FRAGGER_LAYOUT.rowY.length);
 
   for (let i = 0; i < visibleRows.length; i++) {
     const row = visibleRows[i];
-    const y = layout.firstRowCenterY + i * layout.rowGap;
+    const y = FRAGGER_LAYOUT.rowY[i];
 
-    drawCenteredText(ctx, row.nome, layout.playerCenterX, y, {
-      maxWidth: 660,
+    drawCenteredText(ctx, row.nome, FRAGGER_LAYOUT.playerCenterX, y, {
+      maxWidth: FRAGGER_LAYOUT.playerMaxWidth,
       fontSize: 29,
       minFontSize: 17,
-      fillStyle: '#47296f',
-      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      fillStyle: '#47286f',
+      shadowColor: 'rgba(170, 118, 255, 0.12)',
       shadowBlur: 1
     });
 
-    drawCenteredText(ctx, String(Number(row.kills || 0)), layout.killsCenterX, y, {
-      maxWidth: 150,
+    drawCenteredText(ctx, String(Number(row.kills || 0)), FRAGGER_LAYOUT.killsCenterX, y, {
+      maxWidth: FRAGGER_LAYOUT.killsMaxWidth,
       fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#47296f',
-      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      fillStyle: '#47286f',
+      shadowColor: 'rgba(170, 118, 255, 0.12)',
       shadowBlur: 1
     });
   }
@@ -308,21 +306,17 @@ async function generateTopFraggerGraphicBuffer(fraggerInput) {
 
 async function generateLeaderboardGraphic(leaderboardInput, outputPath) {
   const buffer = await generateLeaderboardGraphicBuffer(leaderboardInput);
-
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
-
   return buffer;
 }
 
 async function generateTopFraggerGraphic(fraggerInput, outputPath) {
   const buffer = await generateTopFraggerGraphicBuffer(fraggerInput);
-
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
-
   return buffer;
 }
 
