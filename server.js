@@ -10,15 +10,14 @@ const {
   loadAuditLog,
   saveData,
   saveTeams,
-  saveAll,
   appendAuditLog,
   createTournamentArchive,
   listTournamentArchives,
   getTournamentArchive,
   getDefaultData,
-  getDefaultTeams,
   getDefaultProjectSettings,
   getDefaultBotSettings,
+  STORAGE_DIR,
   UPLOADS_DIR
 } = require('./storage');
 
@@ -39,9 +38,14 @@ const DASHBOARD_COOKIE_SECRET = process.env.DASHBOARD_COOKIE_SECRET || 'change-t
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 
+const ADMIN_USERS_FILE = path.join(STORAGE_DIR, 'admin-users.json');
+
 const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
 const MAX_TEAMS = 16;
 const PLAYERS_PER_TEAM = 3;
+
+const OWNER_USERNAME = 'RooS';
+const OWNER_INITIAL_PASSWORD = process.env.ADMIN_PASSWORD || '17112003r';
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -51,6 +55,56 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function isObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sanitizeText(value) {
+  return String(value || '').trim();
+}
+
+function sanitizeOptionalText(value, maxLength = 200) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
+  const num = Number(value);
+  if (!Number.isInteger(num) || num <= 0) return fallback;
+  return Math.min(num, max);
+}
+
+function sanitizeBoolean(value) {
+  return value === true || value === 'true' || value === 1 || value === '1' || value === 'on';
+}
+
+function normalizeBaseUrl(value) {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  return clean.endsWith('/') ? clean.slice(0, -1) : clean;
+}
+
+function getPublicBaseUrl(req) {
+  const explicit = normalizeBaseUrl(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL);
+  if (explicit) return explicit;
+
+  const railwayDomain = sanitizeText(process.env.RAILWAY_PUBLIC_DOMAIN);
+  if (railwayDomain) return `https://${railwayDomain}`;
+
+  if (req) {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    if (host) return `${protocol}://${host}`;
+  }
+
+  return '';
+}
 
 function getDefaultTournamentSettings() {
   return {
@@ -150,6 +204,209 @@ function getDefaultTournamentMessages() {
   };
 }
 
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto
+    .pbkdf2Sync(String(password || ''), salt, 120000, 64, 'sha512')
+    .toString('hex');
+
+  return {
+    salt,
+    hash
+  };
+}
+
+function verifyPassword(password, passwordData) {
+  if (!passwordData || !passwordData.salt || !passwordData.hash) return false;
+
+  const attempt = hashPassword(password, passwordData.salt).hash;
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(attempt, 'hex'), Buffer.from(passwordData.hash, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+function createAdminUser({ username, password, role = 'staff', createdBy = 'system', locked = false }) {
+  const cleanUsername = sanitizeOptionalText(username, 40);
+  const cleanRole = ['proprietario', 'admin', 'staff'].includes(role) ? role : 'staff';
+  const passwordData = hashPassword(password);
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    username: cleanUsername,
+    role: cleanRole,
+    active: true,
+    locked: Boolean(locked),
+    password: passwordData,
+    createdAt: new Date().toISOString(),
+    createdBy: sanitizeText(createdBy || 'system'),
+    updatedAt: new Date().toISOString(),
+    updatedBy: sanitizeText(createdBy || 'system'),
+    lastLoginAt: null
+  };
+}
+
+function normalizeAdminUsers(value) {
+  const list = Array.isArray(value) ? value : [];
+  const out = [];
+  const used = new Set();
+
+  for (const entry of list) {
+    if (!isObject(entry)) continue;
+
+    const username = sanitizeOptionalText(entry.username, 40);
+    if (!username) continue;
+
+    const key = username.toLowerCase();
+    if (used.has(key)) continue;
+    used.add(key);
+
+    const role = ['proprietario', 'admin', 'staff'].includes(entry.role) ? entry.role : 'staff';
+
+    out.push({
+      id: sanitizeText(entry.id) || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username,
+      role,
+      active: entry.active !== false,
+      locked: Boolean(entry.locked),
+      password: isObject(entry.password) ? entry.password : { salt: '', hash: '' },
+      createdAt: sanitizeText(entry.createdAt) || new Date().toISOString(),
+      createdBy: sanitizeText(entry.createdBy) || 'system',
+      updatedAt: sanitizeText(entry.updatedAt) || new Date().toISOString(),
+      updatedBy: sanitizeText(entry.updatedBy) || 'system',
+      lastLoginAt: entry.lastLoginAt || null
+    });
+  }
+
+  const hasOwner = out.some(user => user.username.toLowerCase() === OWNER_USERNAME.toLowerCase());
+
+  if (!hasOwner) {
+    out.unshift(createAdminUser({
+      username: OWNER_USERNAME,
+      password: OWNER_INITIAL_PASSWORD,
+      role: 'proprietario',
+      createdBy: 'system',
+      locked: true
+    }));
+  }
+
+  return out;
+}
+
+function readAdminUsersFile() {
+  try {
+    if (!fs.existsSync(ADMIN_USERS_FILE)) return null;
+
+    const raw = fs.readFileSync(ADMIN_USERS_FILE, 'utf8');
+    if (!raw.trim()) return null;
+
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error('Errore lettura admin-users.json:', error.message);
+    return null;
+  }
+}
+
+function writeAdminUsersFile(users) {
+  ensureDir(path.dirname(ADMIN_USERS_FILE));
+
+  const safe = normalizeAdminUsers(users);
+  const tmp = `${ADMIN_USERS_FILE}.tmp`;
+
+  fs.writeFileSync(tmp, JSON.stringify(safe, null, 2), 'utf8');
+  fs.renameSync(tmp, ADMIN_USERS_FILE);
+
+  return safe;
+}
+
+function loadAdminUsers() {
+  const existing = readAdminUsersFile();
+  const safe = normalizeAdminUsers(existing || []);
+
+  writeAdminUsersFile(safe);
+
+  return safe;
+}
+
+function saveAdminUsers(users) {
+  return writeAdminUsersFile(users);
+}
+
+function publicAdminUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    active: Boolean(user.active),
+    locked: Boolean(user.locked),
+    createdAt: user.createdAt,
+    createdBy: user.createdBy,
+    updatedAt: user.updatedAt,
+    updatedBy: user.updatedBy,
+    lastLoginAt: user.lastLoginAt || null
+  };
+}
+
+function getUserPermissions(role) {
+  if (role === 'proprietario') {
+    return {
+      manageUsers: true,
+      manageTournament: true,
+      manageDiscord: true,
+      manageResults: true,
+      manageTeams: true,
+      manageArchive: true,
+      manageSystem: true
+    };
+  }
+
+  if (role === 'admin') {
+    return {
+      manageUsers: false,
+      manageTournament: true,
+      manageDiscord: true,
+      manageResults: true,
+      manageTeams: true,
+      manageArchive: true,
+      manageSystem: false
+    };
+  }
+
+  return {
+    manageUsers: false,
+    manageTournament: false,
+    manageDiscord: false,
+    manageResults: true,
+    manageTeams: true,
+    manageArchive: false,
+    manageSystem: false
+  };
+}
+
+function findAdminUserByUsername(username) {
+  const users = loadAdminUsers();
+  const clean = sanitizeText(username).toLowerCase();
+
+  return users.find(user => user.username.toLowerCase() === clean) || null;
+}
+
+function updateAdminUserRecord(username, updater) {
+  const users = loadAdminUsers();
+  const index = users.findIndex(user => user.username.toLowerCase() === sanitizeText(username).toLowerCase());
+
+  if (index === -1) return null;
+
+  const updated = updater(users[index], users);
+
+  if (!updated) return null;
+
+  users[index] = updated;
+  saveAdminUsers(users);
+
+  return updated;
+}
+
 function parseCookies(cookieHeader) {
   const out = {};
   if (!cookieHeader) return out;
@@ -189,9 +446,11 @@ function fromBase64Url(str) {
   return Buffer.from(value, 'base64').toString('utf8');
 }
 
-function createToken(email) {
+function createToken(user) {
   const payload = {
-    email,
+    username: user.username,
+    email: user.username,
+    role: user.role,
     exp: Date.now() + COOKIE_DURATION_MS
   };
 
@@ -215,10 +474,19 @@ function verifyToken(token) {
 
     const payload = JSON.parse(fromBase64Url(encoded));
 
-    if (!payload.email || !payload.exp) return null;
+    if (!payload.username || !payload.exp) return null;
     if (Date.now() > payload.exp) return null;
 
-    return payload;
+    const user = findAdminUserByUsername(payload.username);
+    if (!user || user.active === false) return null;
+
+    return {
+      username: user.username,
+      email: user.username,
+      role: user.role,
+      permissions: getUserPermissions(user.role),
+      exp: payload.exp
+    };
   } catch {
     return null;
   }
@@ -272,52 +540,34 @@ function authRequired(req, res, next) {
     return res.redirect('/login');
   }
 
-  req.staffUser = session.email;
+  req.staffUser = session.username;
+  req.staffRole = session.role;
+  req.staffPermissions = session.permissions;
+  req.staffSession = session;
+
   return next();
 }
 
-function sanitizeText(value) {
-  return String(value || '').trim();
-}
-
-function sanitizeOptionalText(value, maxLength = 200) {
-  return String(value || '').trim().slice(0, maxLength);
-}
-
-function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
-  const num = Number(value);
-  if (!Number.isInteger(num) || num <= 0) return fallback;
-  return Math.min(num, max);
-}
-
-function sanitizeBoolean(value) {
-  return value === true || value === 'true' || value === 1 || value === '1' || value === 'on';
-}
-
-function normalizeBaseUrl(value) {
-  const clean = String(value || '').trim();
-  if (!clean) return '';
-  return clean.endsWith('/') ? clean.slice(0, -1) : clean;
-}
-
-function getPublicBaseUrl(req) {
-  const explicit = normalizeBaseUrl(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL);
-  if (explicit) return explicit;
-
-  const railwayDomain = sanitizeText(process.env.RAILWAY_PUBLIC_DOMAIN);
-  if (railwayDomain) return `https://${railwayDomain}`;
-
-  if (req) {
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const host = req.headers['x-forwarded-host'] || req.get('host');
-    if (host) return `${protocol}://${host}`;
+function requireOwner(req, res, next) {
+  if (req.staffRole !== 'proprietario') {
+    return res.status(403).json({
+      ok: false,
+      message: 'Solo il proprietario può gestire gli account staff.'
+    });
   }
 
-  return '';
+  return next();
 }
 
-function isObject(value) {
-  return value && typeof value === 'object' && !Array.isArray(value);
+function requireAdmin(req, res, next) {
+  if (!['proprietario', 'admin'].includes(req.staffRole)) {
+    return res.status(403).json({
+      ok: false,
+      message: 'Permesso insufficiente.'
+    });
+  }
+
+  return next();
 }
 
 function normalizeProjectSettings(projectSettings) {
@@ -924,7 +1174,7 @@ async function applyManualResult({ req, team, k1, k2, k3, pos, matchNumber }) {
   };
 }
 
-function buildDashboardPayload() {
+function buildDashboardPayload(req = null) {
   const data = loadRuntimeData();
   const teams = loadTeams();
   const auditLog = loadAuditLog();
@@ -940,8 +1190,13 @@ function buildDashboardPayload() {
   bot.setDataState(data);
   bot.setTeamsState(teams);
 
+  const session = req?.staffSession || null;
+  const isOwner = session?.role === 'proprietario';
+
   return {
     ok: true,
+    session,
+    adminUsers: isOwner ? loadAdminUsers().map(publicAdminUser) : [],
     matchCorrente: currentMatch,
     classificaTeam: buildLeaderboard(data.scores),
     classificaFragger: buildFraggers(data.fragger),
@@ -1028,6 +1283,8 @@ function buildPublicPayload(req) {
     baseUrl: getPublicBaseUrl(req)
   };
 }
+
+loadAdminUsers();
 
 app.get('/', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
@@ -1135,25 +1392,66 @@ app.post('/api/public/register-team', async (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const email = sanitizeText(req.body.email);
+  const username = sanitizeText(req.body.username || req.body.email);
   const password = String(req.body.password || '');
 
-  if (email !== DASHBOARD_EMAIL || password !== DASHBOARD_PASSWORD) {
-    logAudit(email || 'unknown', 'web', 'login_fallito', {});
-    return res.status(401).json({
-      ok: false,
-      message: 'Credenziali non valide'
+  const user = findAdminUserByUsername(username);
+
+  if (user && user.active !== false && verifyPassword(password, user.password)) {
+    updateAdminUserRecord(user.username, current => ({
+      ...current,
+      lastLoginAt: new Date().toISOString()
+    }));
+
+    const freshUser = findAdminUserByUsername(user.username);
+    const token = createToken(freshUser);
+
+    res.setHeader('Set-Cookie', buildCookie(token));
+
+    logAudit(freshUser.username, 'web', 'login_riuscito', {
+      role: freshUser.role
+    });
+
+    return res.json({
+      ok: true,
+      username: freshUser.username,
+      email: freshUser.username,
+      role: freshUser.role,
+      permissions: getUserPermissions(freshUser.role)
     });
   }
 
-  const token = createToken(email);
-  res.setHeader('Set-Cookie', buildCookie(token));
+  if (username === DASHBOARD_EMAIL && password === DASHBOARD_PASSWORD) {
+    const legacyUser = createAdminUser({
+      username: OWNER_USERNAME,
+      password: OWNER_INITIAL_PASSWORD,
+      role: 'proprietario',
+      createdBy: 'legacy',
+      locked: true
+    });
 
-  logAudit(email, 'web', 'login_riuscito', {});
+    const token = createToken(legacyUser);
 
-  return res.json({
-    ok: true,
-    email
+    res.setHeader('Set-Cookie', buildCookie(token));
+
+    logAudit(OWNER_USERNAME, 'web', 'login_riuscito_legacy', {
+      role: 'proprietario'
+    });
+
+    return res.json({
+      ok: true,
+      username: OWNER_USERNAME,
+      email: OWNER_USERNAME,
+      role: 'proprietario',
+      permissions: getUserPermissions('proprietario')
+    });
+  }
+
+  logAudit(username || 'unknown', 'web', 'login_fallito', {});
+
+  return res.status(401).json({
+    ok: false,
+    message: 'Credenziali non valide'
   });
 });
 
@@ -1172,7 +1470,10 @@ app.get('/api/session', (req, res) => {
   return res.json({
     ok: true,
     autenticato: true,
-    email: session.email
+    username: session.username,
+    email: session.username,
+    role: session.role,
+    permissions: session.permissions
   });
 });
 
@@ -1181,8 +1482,8 @@ app.post('/api/logout', (req, res) => {
   const token = cookies[COOKIE_NAME];
   const session = verifyToken(token);
 
-  if (session?.email) {
-    logAudit(session.email, 'web', 'logout', {});
+  if (session?.username) {
+    logAudit(session.username, 'web', 'logout', {});
   }
 
   res.setHeader('Set-Cookie', clearCookie());
@@ -1192,8 +1493,250 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
+app.get('/api/admin-users', authRequired, requireOwner, (req, res) => {
+  return res.json({
+    ok: true,
+    users: loadAdminUsers().map(publicAdminUser)
+  });
+});
+
+app.post('/api/admin-users/create', authRequired, requireOwner, (req, res) => {
+  try {
+    const username = sanitizeOptionalText(req.body.username, 40);
+    const password = String(req.body.password || '');
+    const role = sanitizeText(req.body.role || 'staff');
+
+    if (!username) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Nome utente obbligatorio'
+      });
+    }
+
+    if (username.length < 3) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Il nome utente deve avere almeno 3 caratteri'
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        ok: false,
+        message: 'La password deve avere almeno 6 caratteri'
+      });
+    }
+
+    if (!['admin', 'staff'].includes(role)) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Ruolo non valido'
+      });
+    }
+
+    const users = loadAdminUsers();
+
+    if (users.some(user => user.username.toLowerCase() === username.toLowerCase())) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Esiste già un account con questo nome utente'
+      });
+    }
+
+    const user = createAdminUser({
+      username,
+      password,
+      role,
+      createdBy: req.staffUser,
+      locked: false
+    });
+
+    users.push(user);
+    saveAdminUsers(users);
+
+    logAudit(req.staffUser, 'web', 'account_staff_creato', {
+      username,
+      role
+    });
+
+    return res.json({
+      ok: true,
+      user: publicAdminUser(user),
+      users: loadAdminUsers().map(publicAdminUser)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore creazione account'
+    });
+  }
+});
+
+app.post('/api/admin-users/update', authRequired, requireOwner, (req, res) => {
+  try {
+    const username = sanitizeText(req.body.username);
+    const role = sanitizeText(req.body.role || '');
+    const active = sanitizeBoolean(req.body.active);
+
+    if (!username) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Nome utente non valido'
+      });
+    }
+
+    if (username.toLowerCase() === OWNER_USERNAME.toLowerCase() && role && role !== 'proprietario') {
+      return res.status(400).json({
+        ok: false,
+        message: 'RooS deve restare proprietario'
+      });
+    }
+
+    const updated = updateAdminUserRecord(username, user => {
+      if (user.locked && user.username.toLowerCase() === OWNER_USERNAME.toLowerCase()) {
+        return {
+          ...user,
+          active: true,
+          role: 'proprietario',
+          updatedAt: new Date().toISOString(),
+          updatedBy: req.staffUser
+        };
+      }
+
+      return {
+        ...user,
+        role: ['admin', 'staff'].includes(role) ? role : user.role,
+        active,
+        updatedAt: new Date().toISOString(),
+        updatedBy: req.staffUser
+      };
+    });
+
+    if (!updated) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Account non trovato'
+      });
+    }
+
+    logAudit(req.staffUser, 'web', 'account_staff_modificato', {
+      username: updated.username,
+      role: updated.role,
+      active: updated.active
+    });
+
+    return res.json({
+      ok: true,
+      user: publicAdminUser(updated),
+      users: loadAdminUsers().map(publicAdminUser)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore modifica account'
+    });
+  }
+});
+
+app.post('/api/admin-users/password', authRequired, requireOwner, (req, res) => {
+  try {
+    const username = sanitizeText(req.body.username);
+    const password = String(req.body.password || '');
+
+    if (!username) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Nome utente non valido'
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        ok: false,
+        message: 'La password deve avere almeno 6 caratteri'
+      });
+    }
+
+    const updated = updateAdminUserRecord(username, user => ({
+      ...user,
+      password: hashPassword(password),
+      updatedAt: new Date().toISOString(),
+      updatedBy: req.staffUser
+    }));
+
+    if (!updated) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Account non trovato'
+      });
+    }
+
+    logAudit(req.staffUser, 'web', 'password_account_staff_modificata', {
+      username: updated.username
+    });
+
+    return res.json({
+      ok: true,
+      user: publicAdminUser(updated),
+      users: loadAdminUsers().map(publicAdminUser)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore modifica password'
+    });
+  }
+});
+
+app.post('/api/admin-users/delete', authRequired, requireOwner, (req, res) => {
+  try {
+    const username = sanitizeText(req.body.username);
+
+    if (!username) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Nome utente non valido'
+      });
+    }
+
+    if (username.toLowerCase() === OWNER_USERNAME.toLowerCase()) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Non puoi eliminare RooS'
+      });
+    }
+
+    const users = loadAdminUsers();
+    const exists = users.some(user => user.username.toLowerCase() === username.toLowerCase());
+
+    if (!exists) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Account non trovato'
+      });
+    }
+
+    const filtered = users.filter(user => user.username.toLowerCase() !== username.toLowerCase());
+    saveAdminUsers(filtered);
+
+    logAudit(req.staffUser, 'web', 'account_staff_eliminato', {
+      username
+    });
+
+    return res.json({
+      ok: true,
+      users: loadAdminUsers().map(publicAdminUser)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore eliminazione account'
+    });
+  }
+});
+
 app.get('/api/dashboard', authRequired, (req, res) => {
-  return res.json(buildDashboardPayload());
+  return res.json(buildDashboardPayload(req));
 });
 
 app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
@@ -1218,7 +1761,7 @@ app.get('/api/tournament/settings', authRequired, (req, res) => {
   });
 });
 
-app.post('/api/tournament/configure', authRequired, async (req, res) => {
+app.post('/api/tournament/configure', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
     const teams = loadTeams();
@@ -1283,7 +1826,7 @@ app.post('/api/tournament/configure', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/tournament/messages/save', authRequired, async (req, res) => {
+app.post('/api/tournament/messages/save', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
     const defaults = getDefaultTournamentMessages();
@@ -1334,7 +1877,7 @@ app.get('/api/archivi', authRequired, (req, res) => {
   });
 });
 
-app.post('/api/archivi/crea', authRequired, (req, res) => {
+app.post('/api/archivi/crea', authRequired, requireAdmin, (req, res) => {
   try {
     const data = loadRuntimeData();
     const teams = loadTeams();
@@ -1363,7 +1906,7 @@ app.post('/api/archivi/crea', authRequired, (req, res) => {
   }
 });
 
-app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
+app.post('/api/archivi/ripristina', authRequired, requireAdmin, async (req, res) => {
   try {
     const archiveId = sanitizeText(req.body.archiveId);
 
@@ -1421,7 +1964,7 @@ app.post('/api/archivi/ripristina', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/project-settings/save', authRequired, async (req, res) => {
+app.post('/api/project-settings/save', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
 
@@ -1457,7 +2000,7 @@ app.post('/api/project-settings/save', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/settings/save', authRequired, async (req, res) => {
+app.post('/api/bot/settings/save', authRequired, requireAdmin, async (req, res) => {
   try {
     const settings = bot.saveBotPanelSettings({
       registerPanelChannelId: sanitizeText(req.body.registerPanelChannelId),
@@ -1637,7 +2180,7 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
   });
 });
 
-app.post('/api/registration-settings/save', authRequired, async (req, res) => {
+app.post('/api/registration-settings/save', authRequired, requireAdmin, async (req, res) => {
   const data = loadRuntimeData();
   const teams = loadTeams();
 
@@ -1669,7 +2212,7 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
   });
 });
 
-app.post('/api/registration-settings/refresh', authRequired, async (req, res) => {
+app.post('/api/registration-settings/refresh', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
     const teams = loadTeams();
@@ -1692,7 +2235,7 @@ app.post('/api/registration-settings/refresh', authRequired, async (req, res) =>
   }
 });
 
-app.post('/api/match/set', authRequired, async (req, res) => {
+app.post('/api/match/set', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
     const tournamentSettings = normalizeTournamentSettings(data.tournamentSettings);
@@ -1723,7 +2266,7 @@ app.post('/api/match/set', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/match/next', authRequired, async (req, res) => {
+app.post('/api/match/next', authRequired, requireAdmin, async (req, res) => {
   try {
     const currentMatch = await bot.nextMatchAndRefresh();
 
@@ -1741,103 +2284,6 @@ app.post('/api/match/next', authRequired, async (req, res) => {
       message: error.message || 'Errore passaggio match'
     });
   }
-});
-
-app.post('/api/scores/add', authRequired, async (req, res) => {
-  const data = loadRuntimeData();
-  const team = sanitizeText(req.body.team);
-  const points = Number(req.body.points || 0);
-
-  if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Dati punti non validi'
-    });
-  }
-
-  data.scores[team] = Number(data.scores[team] || 0) + points;
-
-  const saved = saveRuntimeData(data);
-
-  bot.setDataState(saved);
-
-  await bot.updateLeaderboard({
-    allowCreate: true
-  });
-
-  logAudit(req.staffUser, 'web', 'punti_aggiunti', {
-    team,
-    points,
-    total: saved.scores[team]
-  });
-
-  return res.json({
-    ok: true,
-    score: saved.scores[team]
-  });
-});
-
-app.post('/api/scores/set', authRequired, async (req, res) => {
-  const data = loadRuntimeData();
-  const team = sanitizeText(req.body.team);
-  const points = Number(req.body.points || 0);
-
-  if (!team || !Number.isFinite(points)) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Dati non validi'
-    });
-  }
-
-  data.scores[team] = points;
-
-  const saved = saveRuntimeData(data);
-
-  bot.setDataState(saved);
-
-  await bot.updateLeaderboard({
-    allowCreate: true
-  });
-
-  logAudit(req.staffUser, 'web', 'punti_impostati', {
-    team,
-    points
-  });
-
-  return res.json({
-    ok: true,
-    score: saved.scores[team]
-  });
-});
-
-app.post('/api/scores/reset-team', authRequired, async (req, res) => {
-  const data = loadRuntimeData();
-  const team = sanitizeText(req.body.team);
-
-  if (!team) {
-    return res.status(400).json({
-      ok: false,
-      message: 'Team non valido'
-    });
-  }
-
-  data.scores[team] = 0;
-
-  const saved = saveRuntimeData(data);
-
-  bot.setDataState(saved);
-
-  await bot.updateLeaderboard({
-    allowCreate: true
-  });
-
-  logAudit(req.staffUser, 'web', 'punti_team_azzerati', {
-    team
-  });
-
-  return res.json({
-    ok: true
-  });
 });
 
 app.post('/api/fragger/set', authRequired, async (req, res) => {
@@ -1950,7 +2396,7 @@ app.post('/api/manual-result', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/reset-data', authRequired, async (req, res) => {
+app.post('/api/reset-data', authRequired, requireAdmin, async (req, res) => {
   try {
     const currentTeams = loadTeams();
     const currentData = loadRuntimeData();
@@ -2000,7 +2446,7 @@ app.post('/api/reset-data', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/reset-teams', authRequired, async (req, res) => {
+app.post('/api/reset-teams', authRequired, requireAdmin, async (req, res) => {
   try {
     const data = loadRuntimeData();
     const currentTeams = loadTeams();
@@ -2041,7 +2487,7 @@ app.post('/api/reset-teams', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/reset-all', authRequired, async (req, res) => {
+app.post('/api/reset-all', authRequired, requireAdmin, async (req, res) => {
   try {
     const currentData = loadRuntimeData();
     const currentTeams = loadTeams();
@@ -2089,7 +2535,7 @@ app.post('/api/reset-all', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/prepare-discord-structure', authRequired, async (req, res) => {
+app.post('/api/bot/prepare-discord-structure', authRequired, requireAdmin, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
     const result = await bot.ensureTournamentDiscordStructure(categoryId);
@@ -2105,7 +2551,7 @@ app.post('/api/bot/prepare-discord-structure', authRequired, async (req, res) =>
   }
 });
 
-app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
+app.post('/api/bot/spawn-register-panel', authRequired, requireAdmin, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
     const result = await bot.spawnRegisterPanel(channelId);
@@ -2125,7 +2571,7 @@ app.post('/api/bot/spawn-register-panel', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
+app.post('/api/bot/spawn-results-panel', authRequired, requireAdmin, async (req, res) => {
   try {
     const channelId = sanitizeText(req.body.channelId);
     const result = await bot.spawnResultsPanel(channelId);
@@ -2146,7 +2592,7 @@ app.post('/api/bot/spawn-results-panel', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/refresh-team-result-panels', authRequired, async (req, res) => {
+app.post('/api/bot/refresh-team-result-panels', authRequired, requireAdmin, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
     const result = await bot.refreshTeamResultPanels(categoryId);
@@ -2167,7 +2613,7 @@ app.post('/api/bot/refresh-team-result-panels', authRequired, async (req, res) =
   }
 });
 
-app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
+app.post('/api/bot/create-rooms', authRequired, requireAdmin, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
     const result = await bot.createTeamRooms(categoryId);
@@ -2187,7 +2633,7 @@ app.post('/api/bot/create-rooms', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
+app.post('/api/bot/delete-rooms', authRequired, requireAdmin, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);
     const result = await bot.deleteTeamRooms(categoryId);
@@ -2206,7 +2652,7 @@ app.post('/api/bot/delete-rooms', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/send-lobby-code', authRequired, async (req, res) => {
+app.post('/api/bot/send-lobby-code', authRequired, requireAdmin, async (req, res) => {
   try {
     const lobbyCode = sanitizeText(req.body.lobbyCode);
     const categoryId = sanitizeText(req.body.categoryId);
@@ -2237,7 +2683,7 @@ app.post('/api/bot/send-lobby-code', authRequired, async (req, res) => {
   }
 });
 
-app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
+app.post('/api/bot/update-leaderboard', authRequired, requireAdmin, async (req, res) => {
   try {
     const result = await bot.updateLeaderboard({
       allowCreate: true
@@ -2309,4 +2755,5 @@ app.post('/api/web-submit-result', authRequired, async (req, res) => {
 
 app.listen(PORT, HOST, () => {
   console.log(`🌐 DASHBOARD ONLINE su porta ${PORT}`);
+  console.log(`🔐 Login principale: ${OWNER_USERNAME}`);
 });
