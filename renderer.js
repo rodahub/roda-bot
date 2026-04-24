@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = __dirname;
 
 const LEADERBOARD_TEMPLATE_PATH = path.join(ROOT, 'classifica-live.png');
 const TOP_FRAGGER_TEMPLATE_PATH = path.join(ROOT, 'top-fragger.png');
@@ -318,13 +318,13 @@ function getAssets() {
 async function generateLeaderboardGraphicBuffer(rows) {
   const assets = getAssets();
   const html = buildLeaderboardHtml(rows, assets);
-  return renderHtmlToPngBuffer(html);
+  return await renderHtmlToPngBuffer(html);
 }
 
 async function generateTopFraggerGraphicBuffer(rows) {
   const assets = getAssets();
   const html = buildTopFraggerHtml(rows, assets);
-  return renderHtmlToPngBuffer(html);
+  return await renderHtmlToPngBuffer(html);
 }
 
 module.exports = {
