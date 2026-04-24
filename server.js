@@ -232,11 +232,161 @@ function buildFraggers(fragger) {
     }));
 }
 
+function normalizeSubmissionTeamName(teamName) {
+  return sanitizeText(teamName).toLowerCase();
+}
+
+function buildSubmissionKey(teamName, matchNumber) {
+  return `${normalizeSubmissionTeamName(teamName)}::match_${Number(matchNumber || 1)}`;
+}
+
+function getPendingForTeamMatch(data, teamName, matchNumber) {
+  const safePending = data.pending || {};
+  const targetTeam = normalizeSubmissionTeamName(teamName);
+  const targetMatch = Number(matchNumber || 1);
+
+  for (const [id, entry] of Object.entries(safePending)) {
+    if (
+      normalizeSubmissionTeamName(entry?.team) === targetTeam &&
+      Number(entry?.matchNumber || 1) === targetMatch
+    ) {
+      return {
+        id,
+        ...entry
+      };
+    }
+  }
+
+  return null;
+}
+
+function getResultSubmissionRecord(data, teamName, matchNumber) {
+  const key = buildSubmissionKey(teamName, matchNumber);
+  const saved = data.resultSubmissions?.[key];
+
+  if (saved) {
+    return {
+      team: saved.team || teamName,
+      matchNumber: Number(saved.matchNumber || matchNumber || 1),
+      stato: saved.status || 'non_inviato',
+      pendingId: saved.pendingId || null,
+      aggiornatoIl: saved.updatedAt || '',
+      aggiornatoDa: saved.updatedBy || ''
+    };
+  }
+
+  const pending = getPendingForTeamMatch(data, teamName, matchNumber);
+
+  if (pending) {
+    return {
+      team: pending.team || teamName,
+      matchNumber: Number(pending.matchNumber || matchNumber || 1),
+      stato: 'in_attesa',
+      pendingId: pending.id,
+      aggiornatoIl: '',
+      aggiornatoDa: pending.submittedBy || ''
+    };
+  }
+
+  return {
+    team: teamName,
+    matchNumber: Number(matchNumber || 1),
+    stato: 'non_inviato',
+    pendingId: null,
+    aggiornatoIl: '',
+    aggiornatoDa: ''
+  };
+}
+
+function getItalianStatusLabel(status) {
+  if (status === 'in_attesa') return 'In attesa';
+  if (status === 'approvato') return 'Approvato';
+  if (status === 'rifiutato') return 'Rifiutato';
+  if (status === 'assente') return 'Assente';
+  if (status === 'inserito_manualmente') return 'Inserito manualmente';
+  return 'Non inviato';
+}
+
+function isFinalMatchStatus(status) {
+  return ['approvato', 'assente', 'inserito_manualmente'].includes(status);
+}
+
+function buildMatchTeamRows(data, teams, matchNumber) {
+  const targetMatch = Number(matchNumber || 1);
+
+  return sortTeamsWithSlot(teams).map(([teamName, teamData]) => {
+    const record = getResultSubmissionRecord(data, teamName, targetMatch);
+    const pending = getPendingForTeamMatch(data, teamName, targetMatch);
+
+    return {
+      team: teamName,
+      slot: teamData?.slot || null,
+      players: Array.isArray(teamData?.players) ? teamData.players : [],
+      matchNumber: targetMatch,
+      stato: record.stato,
+      statoTesto: getItalianStatusLabel(record.stato),
+      pendingId: record.pendingId || pending?.id || null,
+      aggiornatoIl: record.aggiornatoIl || '',
+      aggiornatoDa: record.aggiornatoDa || '',
+      risultato: pending
+        ? {
+            id: pending.id,
+            team: pending.team,
+            totaleUccisioni: Number(pending.total || 0),
+            posizione: Number(pending.pos || 0),
+            uccisioni: Array.isArray(pending.kills) ? pending.kills.map(v => Number(v || 0)) : [],
+            immagine: pending.image || '',
+            inviatoDa: pending.submittedBy || '',
+            matchNumber: Number(pending.matchNumber || targetMatch)
+          }
+        : null
+    };
+  });
+}
+
+function buildMatchOverview(data, teams, matchNumber) {
+  const rows = buildMatchTeamRows(data, teams, matchNumber);
+
+  const teamInAttesa = rows.filter(row => row.stato === 'in_attesa');
+  const teamApprovati = rows.filter(row => row.stato === 'approvato' || row.stato === 'inserito_manualmente');
+  const teamRifiutati = rows.filter(row => row.stato === 'rifiutato');
+  const teamNonInviati = rows.filter(row => row.stato === 'non_inviato');
+  const teamAssenti = rows.filter(row => row.stato === 'assente');
+  const teamChiusi = rows.filter(row => isFinalMatchStatus(row.stato));
+
+  return {
+    matchNumber: Number(matchNumber || 1),
+    totaleTeam: rows.length,
+    completato: rows.length > 0 && teamChiusi.length === rows.length,
+    inviati: rows.filter(row => row.stato !== 'non_inviato').length,
+    chiusi: teamChiusi.length,
+    inAttesa: teamInAttesa.length,
+    approvati: teamApprovati.length,
+    rifiutati: teamRifiutati.length,
+    nonInviati: teamNonInviati.length,
+    assenti: teamAssenti.length,
+    righe: rows,
+    teamMancanti: rows.filter(row => row.stato === 'non_inviato' || row.stato === 'rifiutato')
+  };
+}
+
+function buildAllMatchOverviews(data, teams) {
+  const currentMatch = Number(data.currentMatch || 1);
+  const matchCount = Math.max(currentMatch, 1);
+  const out = [];
+
+  for (let i = 1; i <= matchCount; i++) {
+    out.push(buildMatchOverview(data, teams, i));
+  }
+
+  return out;
+}
+
 function buildPending(pending, teams) {
   return Object.entries(pending || {}).map(([id, p]) => ({
     id,
     team: p.team,
-    slot: teams[p.team]?.slot || null,
+    slot: p.slot || teams[p.team]?.slot || null,
     totaleUccisioni: Number(p.total || 0),
     posizione: Number(p.pos || 0),
     uccisioni: Array.isArray(p.kills) ? p.kills.map(v => Number(v || 0)) : [],
@@ -244,7 +394,9 @@ function buildPending(pending, teams) {
     immagine: p.image || '',
     inviatoDa: p.submittedBy || '',
     messaggioStaffId: p.staffMessageId || null,
-    matchNumber: Number(p.matchNumber || 1)
+    matchNumber: Number(p.matchNumber || 1),
+    stato: 'in_attesa',
+    statoTesto: 'In attesa'
   }));
 }
 
@@ -339,13 +491,15 @@ function buildDashboardPayload() {
   const teams = loadTeams();
   const auditLog = loadAuditLog();
   const archives = listTournamentArchives();
+  const currentMatch = Number(data.currentMatch || 1);
+  const statoMatchCorrente = buildMatchOverview(data, teams, currentMatch);
 
   bot.setDataState(data);
   bot.setTeamsState(teams);
 
   return {
     ok: true,
-    matchCorrente: Number(data.currentMatch || 1),
+    matchCorrente: currentMatch,
     classificaTeam: buildLeaderboard(data.scores),
     classificaFragger: buildFraggers(data.fragger),
     risultatiInAttesa: buildPending(data.pending, teams),
@@ -354,6 +508,20 @@ function buildDashboardPayload() {
       team: teamName,
       slot: teamData.slot || null,
       players: teamData.players || []
+    })),
+    statoMatchCorrente,
+    teamMancantiMatchCorrente: statoMatchCorrente.teamMancanti,
+    riepilogoMatch: buildAllMatchOverviews(data, teams).map(match => ({
+      matchNumber: match.matchNumber,
+      totaleTeam: match.totaleTeam,
+      completato: match.completato,
+      inviati: match.inviati,
+      chiusi: match.chiusi,
+      inAttesa: match.inAttesa,
+      approvati: match.approvati,
+      rifiutati: match.rifiutati,
+      nonInviati: match.nonInviati,
+      assenti: match.assenti
     })),
     botConfig: bot.getBotConfig(),
     impostazioniRegistrazione: {
@@ -366,7 +534,9 @@ function buildDashboardPayload() {
     statistiche: {
       totaleTeam: Object.keys(teams).length,
       totalePending: Object.keys(data.pending || {}).length,
-      totaleFragger: Object.keys(data.fragger || {}).length
+      totaleFragger: Object.keys(data.fragger || {}).length,
+      teamMancantiMatchCorrente: statoMatchCorrente.teamMancanti.length,
+      risultatiInAttesaMatchCorrente: statoMatchCorrente.inAttesa
     },
     auditLog: auditLog.slice(-120).reverse(),
     archivi: archives
@@ -545,6 +715,17 @@ app.get('/api/dashboard', authRequired, (req, res) => {
   return res.json(buildDashboardPayload());
 });
 
+app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
+  const data = loadData();
+  const teams = loadTeams();
+  const matchNumber = sanitizePositiveInteger(req.params.matchNumber, Number(data.currentMatch || 1));
+
+  return res.json({
+    ok: true,
+    statoMatch: buildMatchOverview(data, teams, matchNumber)
+  });
+});
+
 app.get('/api/audit-log', authRequired, (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit || 120), 1), 500);
   const auditLog = loadAuditLog().slice(-limit).reverse();
@@ -678,7 +859,7 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
   const p3 = sanitizeOptionalText(req.body.p3, 40);
 
   if (!teamName || !p1 || !p2 || !p3) {
-    return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/player' });
+    return res.status(400).json({ ok: false, message: 'Compila tutti i campi team/giocatori' });
   }
 
   if (oldTeamName && oldTeamName !== teamName && teams[teamName]) {
@@ -710,6 +891,22 @@ app.post('/api/teams/save', authRequired, async (req, res) => {
           data.pending[id].team = teamName;
         }
       }
+
+      const updatedSubmissions = {};
+      for (const [key, record] of Object.entries(data.resultSubmissions || {})) {
+        if (normalizeSubmissionTeamName(record.team) === normalizeSubmissionTeamName(oldTeamName)) {
+          const newKey = buildSubmissionKey(teamName, Number(record.matchNumber || 1));
+          updatedSubmissions[newKey] = {
+            ...record,
+            team: teamName,
+            updatedAt: new Date().toISOString(),
+            updatedBy: req.staffUser
+          };
+        } else {
+          updatedSubmissions[key] = record;
+        }
+      }
+      data.resultSubmissions = updatedSubmissions;
     }
   } else {
     const existingSlot = teams[teamName]?.slot || null;
@@ -754,6 +951,12 @@ app.post('/api/teams/delete', authRequired, async (req, res) => {
     }
   }
 
+  for (const key of Object.keys(data.resultSubmissions || {})) {
+    if (normalizeSubmissionTeamName(data.resultSubmissions[key]?.team) === normalizeSubmissionTeamName(teamName)) {
+      delete data.resultSubmissions[key];
+    }
+  }
+
   if (Object.keys(teams).length < Number(data.registrationMaxTeams || 16)) {
     data.registrationClosedAnnounced = false;
   }
@@ -782,6 +985,13 @@ app.post('/api/registration-settings/save', authRequired, async (req, res) => {
     return res.status(400).json({
       ok: false,
       message: `Hai già ${Object.keys(teams).length} team registrati. Imposta un numero massimo uguale o superiore.`
+    });
+  }
+
+  if (maxTeams > 16) {
+    return res.status(400).json({
+      ok: false,
+      message: 'Il numero massimo consentito è 16 team.'
     });
   }
 
@@ -949,7 +1159,7 @@ app.post('/api/fragger/delete', authRequired, async (req, res) => {
   const player = sanitizeText(req.body.player);
 
   if (!player) {
-    return res.status(400).json({ ok: false, message: 'Player non valido' });
+    return res.status(400).json({ ok: false, message: 'Giocatore non valido' });
   }
 
   delete data.fragger[player];
@@ -1028,6 +1238,7 @@ app.post('/api/reset-teams', authRequired, async (req, res) => {
 
   data.pending = {};
   data.tempSubmit = {};
+  data.resultSubmissions = {};
   data.registrationClosedAnnounced = false;
 
   const saved = saveAll(data, emptyTeams);
@@ -1184,7 +1395,7 @@ app.post('/api/bot/update-leaderboard', authRequired, async (req, res) => {
   try {
     const result = await bot.updateLeaderboard();
 
-    logAudit(req.staffUser, 'web', 'classifica_discord_aggiornata_manualemente', {
+    logAudit(req.staffUser, 'web', 'classifica_discord_aggiornata_manualmente', {
       created: Boolean(result.created),
       updated: Boolean(result.updated)
     });
