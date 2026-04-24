@@ -10,28 +10,23 @@
       --canvas-width: 1672px;
       --canvas-height: 941px;
 
-      /* POSIZIONE TABELLA */
       --table-left: 98px;
       --table-top: 242px;
       --table-width: 1440px;
 
-      /* COLONNE */
       --col-pos: 300px;
       --col-team: 820px;
       --col-points: 320px;
 
-      /* DIMENSIONI */
       --header-height: 44px;
       --row-height: 28px;
       --header-gap: 10px;
       --row-gap: 8px;
 
-      /* COLORI */
       --row-border: rgba(173, 120, 255, 0.95);
       --row-bg: rgba(255, 255, 255, 0.06);
       --row-text: #4c219f;
 
-      --header-bg: rgba(76, 29, 156, 0.86);
       --header-border: rgba(223, 188, 255, 0.90);
       --header-text: #ffffff;
     }
@@ -108,7 +103,6 @@
       overflow: hidden;
     }
 
-    /* HEADER: stile più simile a Top Fragger */
     .header-cell {
       background: linear-gradient(
         180deg,
@@ -131,7 +125,6 @@
         inset 0 0 16px rgba(214, 176, 255, 0.12);
     }
 
-    /* RIGHE NORMALI */
     .body-cell {
       background: var(--row-bg);
       border: 2px solid var(--row-border);
@@ -176,7 +169,7 @@
   <div class="canvas">
     <img
       class="background"
-      src="/classifica%20live%201672x941.png"
+      src="/classifica-live-1672x941.png"
       alt="Classifica Live Background"
     />
 
@@ -216,9 +209,7 @@
 
         const team = document.createElement('div');
         team.className = `cell body-cell team-cell ${item ? '' : 'empty'}`;
-        team.textContent = item?.team
-          ? String(item.team).toUpperCase()
-          : '';
+        team.textContent = item?.team ? String(item.team).toUpperCase() : '';
 
         const points = document.createElement('div');
         points.className = `cell body-cell points-cell ${item ? '' : 'empty'}`;
