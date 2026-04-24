@@ -65,12 +65,6 @@ async function getAssets() {
   return cachedAssets;
 }
 
-function formatOrdinal(position) {
-  const n = Number(position || 0);
-  if (!n || n < 1) return '';
-  return `${n}°`;
-}
-
 function cleanText(value) {
   return String(value ?? '').trim();
 }
@@ -154,8 +148,7 @@ function fitFontSize(ctx, text, maxWidth, startSize, minSize, family, weight = '
 
   while (size > minSize) {
     setFont(ctx, size, family, weight);
-    const width = ctx.measureText(text).width;
-    if (width <= maxWidth) return size;
+    if (ctx.measureText(text).width <= maxWidth) return size;
     size -= 1;
   }
 
@@ -173,16 +166,15 @@ function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
     fontSize = 28,
     minFontSize = 16,
     fontWeight = 'bold',
-    fillStyle = '#4c2782',
-    shadowColor = 'rgba(162, 116, 255, 0.22)',
-    shadowBlur = 4,
+    fillStyle = '#4b2a76',
+    shadowColor = 'rgba(173, 120, 255, 0.18)',
+    shadowBlur = 2,
     strokeStyle = null,
-    strokeWidth = 0,
-    yOffset = 0
+    strokeWidth = 0
   } = options;
 
   const familyToUse = fontsRegistered ? fontFamily : fallbackFamily;
-  const fitted = fitFontSize(
+  const fittedSize = fitFontSize(
     ctx,
     value,
     maxWidth,
@@ -199,25 +191,27 @@ function drawCenteredText(ctx, text, centerX, centerY, options = {}) {
   ctx.shadowColor = shadowColor;
   ctx.shadowBlur = shadowBlur;
 
-  setFont(ctx, fitted, familyToUse, fontWeight);
+  setFont(ctx, fittedSize, familyToUse, fontWeight);
 
   if (strokeStyle && strokeWidth > 0) {
     ctx.lineWidth = strokeWidth;
     ctx.strokeStyle = strokeStyle;
-    ctx.strokeText(value, centerX, centerY + yOffset);
+    ctx.strokeText(value, centerX, centerY);
   }
 
-  ctx.fillText(value, centerX, centerY + yOffset);
+  ctx.fillText(value, centerX, centerY);
   ctx.restore();
 }
 
 function drawLeaderboardRows(ctx, rows) {
+  // IMPORTANTE:
+  // NON ridisegniamo la colonna POSIZIONE
+  // perché i numeri sono già presenti nel template.
   const layout = {
-    posCenterX: 308,
     teamCenterX: 824,
-    pointsCenterX: 1346,
-    firstRowCenterY: 306,
-    rowGap: 48.8,
+    pointsCenterX: 1342,
+    firstRowCenterY: 301,
+    rowGap: 47.9,
     maxRows: 16
   };
 
@@ -227,42 +221,34 @@ function drawLeaderboardRows(ctx, rows) {
     const row = visibleRows[i];
     const y = layout.firstRowCenterY + i * layout.rowGap;
 
-    drawCenteredText(ctx, formatOrdinal(row.posizione || i + 1), layout.posCenterX, y, {
-      maxWidth: 180,
-      fontSize: 28,
-      minFontSize: 20,
-      fillStyle: '#7a4af0',
-      shadowColor: 'rgba(166, 111, 255, 0.15)',
-      shadowBlur: 2
-    });
-
     drawCenteredText(ctx, row.team, layout.teamCenterX, y, {
-      maxWidth: 650,
-      fontSize: 31,
-      minFontSize: 18,
-      fillStyle: '#44236f',
-      shadowColor: 'rgba(166, 111, 255, 0.12)',
-      shadowBlur: 2
+      maxWidth: 660,
+      fontSize: 29,
+      minFontSize: 17,
+      fillStyle: '#47296f',
+      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      shadowBlur: 1
     });
 
     drawCenteredText(ctx, String(Number(row.punti || 0)), layout.pointsCenterX, y, {
       maxWidth: 150,
-      fontSize: 30,
+      fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#44236f',
-      shadowColor: 'rgba(166, 111, 255, 0.12)',
-      shadowBlur: 2
+      fillStyle: '#47296f',
+      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      shadowBlur: 1
     });
   }
 }
 
 function drawFraggerRows(ctx, rows) {
+  // Anche qui NON ridisegniamo la colonna posizione
+  // perché è già presente nel template.
   const layout = {
-    posCenterX: 308,
-    playerCenterX: 824,
-    killsCenterX: 1346,
-    firstRowCenterY: 311,
-    rowGap: 52.5,
+    playerCenterX: 826,
+    killsCenterX: 1340,
+    firstRowCenterY: 304,
+    rowGap: 52.0,
     maxRows: 10
   };
 
@@ -272,31 +258,22 @@ function drawFraggerRows(ctx, rows) {
     const row = visibleRows[i];
     const y = layout.firstRowCenterY + i * layout.rowGap;
 
-    drawCenteredText(ctx, formatOrdinal(row.posizione || i + 1), layout.posCenterX, y, {
-      maxWidth: 180,
-      fontSize: 29,
-      minFontSize: 20,
-      fillStyle: '#7a4af0',
-      shadowColor: 'rgba(166, 111, 255, 0.15)',
-      shadowBlur: 2
-    });
-
     drawCenteredText(ctx, row.nome, layout.playerCenterX, y, {
-      maxWidth: 650,
-      fontSize: 31,
-      minFontSize: 18,
-      fillStyle: '#44236f',
-      shadowColor: 'rgba(166, 111, 255, 0.12)',
-      shadowBlur: 2
+      maxWidth: 660,
+      fontSize: 29,
+      minFontSize: 17,
+      fillStyle: '#47296f',
+      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      shadowBlur: 1
     });
 
     drawCenteredText(ctx, String(Number(row.kills || 0)), layout.killsCenterX, y, {
       maxWidth: 150,
-      fontSize: 30,
+      fontSize: 28,
       minFontSize: 18,
-      fillStyle: '#44236f',
-      shadowColor: 'rgba(166, 111, 255, 0.12)',
-      shadowBlur: 2
+      fillStyle: '#47296f',
+      shadowColor: 'rgba(173, 120, 255, 0.12)',
+      shadowBlur: 1
     });
   }
 }
@@ -331,17 +308,21 @@ async function generateTopFraggerGraphicBuffer(fraggerInput) {
 
 async function generateLeaderboardGraphic(leaderboardInput, outputPath) {
   const buffer = await generateLeaderboardGraphicBuffer(leaderboardInput);
+
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
+
   return buffer;
 }
 
 async function generateTopFraggerGraphic(fraggerInput, outputPath) {
   const buffer = await generateTopFraggerGraphicBuffer(fraggerInput);
+
   if (outputPath) {
     fs.writeFileSync(outputPath, buffer);
   }
+
   return buffer;
 }
 
