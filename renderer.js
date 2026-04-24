@@ -17,6 +17,7 @@ function getPublicBaseUrl() {
   const explicit = normalizeBaseUrl(
     process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL
   );
+
   if (explicit) return explicit;
 
   const railwayDomain = sanitizeText(process.env.RAILWAY_PUBLIC_DOMAIN);
@@ -27,9 +28,10 @@ function getPublicBaseUrl() {
 
 function buildPreviewUrl(pathname) {
   const baseUrl = getPublicBaseUrl();
+
   if (!baseUrl) {
     throw new Error(
-      'Base URL non trovata. Imposta PUBLIC_BASE_URL oppure APP_BASE_URL.'
+      'Base URL non trovata. Imposta PUBLIC_BASE_URL oppure APP_BASE_URL oppure RAILWAY_PUBLIC_DOMAIN.'
     );
   }
 
@@ -60,9 +62,11 @@ async function waitForAssets(page) {
     } catch {}
 
     const images = Array.from(document.images || []);
+
     await Promise.all(
       images.map(img => {
         if (img.complete) return Promise.resolve();
+
         return new Promise(resolve => {
           img.addEventListener('load', resolve, { once: true });
           img.addEventListener('error', resolve, { once: true });
@@ -70,6 +74,19 @@ async function waitForAssets(page) {
       })
     );
   });
+}
+
+async function waitForPreviewReady(page) {
+  try {
+    await page.waitForFunction(
+      () => window.__RODA_RENDER_READY === true,
+      {
+        timeout: 15000
+      }
+    );
+  } catch {
+    console.log('[renderer] ready flag non trovato, continuo comunque');
+  }
 }
 
 async function takePreviewScreenshot(url, selector) {
@@ -92,7 +109,8 @@ async function takePreviewScreenshot(url, selector) {
     });
 
     await waitForAssets(page);
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    await waitForPreviewReady(page);
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     let target = null;
 
