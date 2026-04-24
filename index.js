@@ -164,8 +164,11 @@ function ensureDataStructures() {
   if (!data.scores || typeof data.scores !== 'object') data.scores = {};
   if (!data.fragger || typeof data.fragger !== 'object') data.fragger = {};
 
+  if (!Object.prototype.hasOwnProperty.call(data, 'leaderboardMessageId')) data.leaderboardMessageId = null;
   if (!Object.prototype.hasOwnProperty.call(data, 'leaderboardGraphicMessageId')) data.leaderboardGraphicMessageId = null;
   if (!Object.prototype.hasOwnProperty.call(data, 'topFraggerGraphicMessageId')) data.topFraggerGraphicMessageId = null;
+  if (!Object.prototype.hasOwnProperty.call(data, 'registrationStatusMessageId')) data.registrationStatusMessageId = null;
+  if (!Object.prototype.hasOwnProperty.call(data, 'registrationClosedAnnounced')) data.registrationClosedAnnounced = false;
 
   data.registrationMaxTeams = MAX_TEAMS;
 }
@@ -656,28 +659,26 @@ async function ensureRulesMessage(rulesChannel) {
 
   const recentMessages = await rulesChannel.messages.fetch({ limit: 20 }).catch(() => null);
 
+  const embed = new EmbedBuilder()
+    .setColor(0x7b2cff)
+    .setTitle('📜 REGOLAMENTO UFFICIALE RØDA CUP')
+    .setDescription(regulationText.slice(0, 4000))
+    .setFooter({ text: 'Regolamento bloccato • Decisioni staff definitive' });
+
   if (recentMessages) {
     const existing = recentMessages.find(message =>
       message.author?.id === client.user?.id &&
       message.embeds?.[0]?.title === '📜 REGOLAMENTO UFFICIALE RØDA CUP'
     );
 
-    const embed = new EmbedBuilder()
-      .setColor(0x7b2cff)
-      .setTitle('📜 REGOLAMENTO UFFICIALE RØDA CUP')
-      .setDescription(regulationText.slice(0, 4000))
-      .setFooter({ text: 'Regolamento bloccato • Decisioni staff definitive' });
-
     if (existing) {
       await existing.edit({ embeds: [embed], content: '' }).catch(() => {});
       return { updated: true };
     }
-
-    await rulesChannel.send({ embeds: [embed] }).catch(() => {});
-    return { created: true };
   }
 
-  return { skipped: true };
+  await rulesChannel.send({ embeds: [embed] }).catch(() => {});
+  return { created: true };
 }
 
 async function ensureGeneralMessage(generalChannel) {
@@ -697,12 +698,10 @@ async function ensureGeneralMessage(generalChannel) {
       await existing.edit({ content: announcement }).catch(() => {});
       return { updated: true };
     }
-
-    await generalChannel.send({ content: announcement }).catch(() => {});
-    return { created: true };
   }
 
-  return { skipped: true };
+  await generalChannel.send({ content: announcement }).catch(() => {});
+  return { created: true };
 }
 
 async function ensureTournamentDiscordStructure(customCategoryId = '') {
@@ -1273,7 +1272,8 @@ async function sendOrUpdateGraphicMessage({
   messageId,
   fileName,
   buffer,
-  content
+  content,
+  allowCreate = true
 }) {
   const attachment = new AttachmentBuilder(buffer, { name: fileName });
 
@@ -1284,10 +1284,25 @@ async function sendOrUpdateGraphicMessage({
         content,
         files: [attachment]
       });
-      return { updated: true, messageId: msg.id };
+      return {
+        updated: true,
+        created: false,
+        skipped: false,
+        messageId: msg.id
+      };
     } catch (error) {
       console.error(`Errore update messaggio grafico ${fileName}:`, error);
     }
+  }
+
+  if (!allowCreate) {
+    return {
+      updated: false,
+      created: false,
+      skipped: true,
+      messageId: messageId || null,
+      reason: 'Messaggio grafico non trovato e creazione disattivata'
+    };
   }
 
   const sent = await channel.send({
@@ -1295,13 +1310,19 @@ async function sendOrUpdateGraphicMessage({
     files: [attachment]
   });
 
-  return { created: true, messageId: sent.id };
+  return {
+    updated: false,
+    created: true,
+    skipped: false,
+    messageId: sent.id
+  };
 }
 
-async function updateLeaderboardGraphics() {
+async function updateLeaderboardGraphics(options = {}) {
   await waitReady();
   ensureDataStructures();
 
+  const allowCreate = options.allowCreate !== false;
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
   const matchNumber = Number(data.currentMatch || 1);
   const stamp = Date.now();
@@ -1317,32 +1338,43 @@ async function updateLeaderboardGraphics() {
     messageId: data.leaderboardGraphicMessageId,
     fileName: `classifica-live-output-match-${matchNumber}-${stamp}.png`,
     buffer: leaderboardBuffer,
-    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`
+    content: `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`,
+    allowCreate
   });
 
-  data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
+  if (leaderboardGraphicResult.messageId) {
+    data.leaderboardGraphicMessageId = leaderboardGraphicResult.messageId;
+  }
 
   const topFraggerGraphicResult = await sendOrUpdateGraphicMessage({
     channel,
     messageId: data.topFraggerGraphicMessageId,
     fileName: `top-fragger-output-match-${matchNumber}-${stamp}.png`,
     buffer: topFraggerBuffer,
-    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`
+    content: `🔥 **TOP FRAGGER** • Match ${matchNumber}`,
+    allowCreate
   });
 
-  data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
+  if (topFraggerGraphicResult.messageId) {
+    data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
+  }
+
   saveState();
 
   return {
     ok: true,
+    allowCreate,
     leaderboardGraphicResult,
     topFraggerGraphicResult
   };
 }
 
-async function updateLeaderboard() {
+async function updateLeaderboard(options = {}) {
   await waitReady();
   ensureDataStructures();
+
+  const allowCreate = options.allowCreate !== false;
+  const updateGraphics = options.updateGraphics !== false;
 
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
   const project = getProjectSettings();
@@ -1364,42 +1396,55 @@ async function updateLeaderboard() {
 
   let created = false;
   let updated = false;
+  let skipped = false;
 
   if (data.leaderboardMessageId) {
     try {
       const msg = await channel.messages.fetch(data.leaderboardMessageId);
       await msg.edit({ embeds: [embed] });
       updated = true;
-    } catch {}
+    } catch (error) {
+      console.error('Errore update classifica testuale:', error);
+    }
   }
 
   if (!updated) {
-    const msg = await channel.send({ embeds: [embed] });
-    data.leaderboardMessageId = msg.id;
-    created = true;
-    saveState();
+    if (!allowCreate) {
+      skipped = true;
+    } else {
+      const msg = await channel.send({ embeds: [embed] });
+      data.leaderboardMessageId = msg.id;
+      created = true;
+      saveState();
+    }
   }
 
   let graphicsResult = null;
 
-  try {
-    graphicsResult = await updateLeaderboardGraphics();
-  } catch (error) {
-    console.error('Errore aggiornamento grafiche classifica:', error);
+  if (updateGraphics) {
+    try {
+      graphicsResult = await updateLeaderboardGraphics({ allowCreate });
+    } catch (error) {
+      console.error('Errore aggiornamento grafiche classifica:', error);
+    }
   }
 
-  logAudit('bot', 'discord', updated ? 'classifica_aggiornata' : 'classifica_creata', {
+  logAudit('bot', 'discord', created ? 'classifica_creata' : updated ? 'classifica_aggiornata' : 'classifica_saltata', {
     currentMatch: data.currentMatch,
+    allowCreate,
     updated,
     created,
+    skipped,
     leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
     topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
   });
 
   return {
     ok: true,
+    allowCreate,
     updated,
     created,
+    skipped,
     graphicsResult
   };
 }
@@ -1505,7 +1550,7 @@ async function approvePending(id, actor = 'system', source = 'system') {
 
   await sendResultToStorico(storicoEmbed);
   await sendTeamResultStatus(entry, true);
-  await updateLeaderboard();
+  await updateLeaderboard({ allowCreate: true });
   await refreshTeamResultPanels().catch(() => {});
 
   logAudit(actor, source, 'risultato_approvato', {
@@ -1845,7 +1890,7 @@ function setCurrentMatch(match) {
 async function setCurrentMatchAndRefresh(match) {
   setCurrentMatch(match);
   await refreshTeamResultPanels();
-  await updateLeaderboard();
+  await updateLeaderboard({ allowCreate: true });
   return data.currentMatch;
 }
 
@@ -1865,7 +1910,7 @@ function nextMatch() {
 async function nextMatchAndRefresh() {
   nextMatch();
   await refreshTeamResultPanels();
-  await updateLeaderboard();
+  await updateLeaderboard({ allowCreate: true });
   return data.currentMatch;
 }
 
@@ -1963,7 +2008,7 @@ client.once('ready', async () => {
 
   await handleRegistrationStateChange();
 
-  await updateLeaderboard().catch(error => {
+  await updateLeaderboard({ allowCreate: true }).catch(error => {
     console.error('Errore aggiornamento classifica al ready:', error);
   });
 });
