@@ -694,6 +694,83 @@ async function sendGeneralAnnouncement(channelId, message) {
   return sendMessageToChannel(channelId, message);
 }
 
+function getDiscordChannelTypeLabel(type) {
+  if (type === ChannelType.GuildCategory) return 'category';
+  if (type === ChannelType.GuildText) return 'text';
+  if (type === ChannelType.GuildVoice) return 'voice';
+  if (type === ChannelType.GuildAnnouncement) return 'announcement';
+  if (type === ChannelType.GuildStageVoice) return 'stage';
+  if (type === ChannelType.GuildForum) return 'forum';
+  return 'other';
+}
+
+async function listDiscordChannels() {
+  await waitReady();
+
+  const guild = await client.guilds.fetch(GUILD_ID);
+  await guild.channels.fetch();
+
+  const allChannels = [...guild.channels.cache.values()]
+    .sort((a, b) => {
+      const parentA = a.parentId || '';
+      const parentB = b.parentId || '';
+
+      if (a.type === ChannelType.GuildCategory && b.type !== ChannelType.GuildCategory) return -1;
+      if (a.type !== ChannelType.GuildCategory && b.type === ChannelType.GuildCategory) return 1;
+
+      if (parentA !== parentB) return parentA.localeCompare(parentB);
+
+      const posA = Number(a.rawPosition ?? a.position ?? 0);
+      const posB = Number(b.rawPosition ?? b.position ?? 0);
+
+      if (posA !== posB) return posA - posB;
+
+      return String(a.name || '').localeCompare(String(b.name || ''), 'it');
+    });
+
+  const categories = allChannels
+    .filter(channel => channel.type === ChannelType.GuildCategory)
+    .map(category => ({
+      id: category.id,
+      name: category.name,
+      type: 'category',
+      rawPosition: Number(category.rawPosition ?? category.position ?? 0),
+      channels: allChannels
+        .filter(channel => channel.parentId === category.id)
+        .map(channel => ({
+          id: channel.id,
+          name: channel.name,
+          type: getDiscordChannelTypeLabel(channel.type),
+          rawType: channel.type,
+          parentId: channel.parentId || null,
+          rawPosition: Number(channel.rawPosition ?? channel.position ?? 0),
+          sendable: typeof channel.send === 'function'
+        }))
+    }));
+
+  const withoutCategory = allChannels
+    .filter(channel => channel.type !== ChannelType.GuildCategory && !channel.parentId)
+    .map(channel => ({
+      id: channel.id,
+      name: channel.name,
+      type: getDiscordChannelTypeLabel(channel.type),
+      rawType: channel.type,
+      parentId: null,
+      rawPosition: Number(channel.rawPosition ?? channel.position ?? 0),
+      sendable: typeof channel.send === 'function'
+    }));
+
+  return {
+    ok: true,
+    guild: {
+      id: guild.id,
+      name: guild.name
+    },
+    categories,
+    withoutCategory
+  };
+}
+
 async function findOrCreateTournamentCategory(guild, preferredCategoryId = '') {
   await guild.channels.fetch();
 
@@ -1692,6 +1769,8 @@ async function sendOrUpdateGraphicMessage({
       const msg = await channel.messages.fetch(messageId);
       await msg.edit({
         content,
+        embeds: [],
+        components: [],
         files: [attachment]
       });
       return {
@@ -1728,6 +1807,42 @@ async function sendOrUpdateGraphicMessage({
   };
 }
 
+async function deleteOldTextLeaderboardMessage(channel) {
+  if (!data.leaderboardMessageId) {
+    return {
+      deleted: false,
+      skipped: true,
+      reason: 'Nessun vecchio pannello testuale salvato'
+    };
+  }
+
+  const oldId = data.leaderboardMessageId;
+
+  try {
+    const msg = await channel.messages.fetch(oldId);
+    await msg.delete().catch(() => {});
+    data.leaderboardMessageId = null;
+    saveState();
+
+    return {
+      deleted: true,
+      skipped: false,
+      messageId: oldId
+    };
+  } catch (error) {
+    data.leaderboardMessageId = null;
+    saveState();
+
+    return {
+      deleted: false,
+      skipped: false,
+      cleared: true,
+      messageId: oldId,
+      error: error.message || 'Vecchio pannello testuale non trovato'
+    };
+  }
+}
+
 async function updateLeaderboardGraphics(options = {}) {
   await waitReady();
   ensureDataStructures();
@@ -1736,6 +1851,10 @@ async function updateLeaderboardGraphics(options = {}) {
   const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
   const matchNumber = Number(data.currentMatch || 1);
   const stamp = Date.now();
+
+  await deleteOldTextLeaderboardMessage(channel).catch(error => {
+    console.error('Errore eliminazione vecchia classifica testuale:', error);
+  });
 
   const leaderboardRows = getSortedScores();
   const topFraggerRows = getSortedFraggers();
@@ -1779,38 +1898,6 @@ async function updateLeaderboardGraphics(options = {}) {
   };
 }
 
-async function deleteSavedTextLeaderboardMessage() {
-  await waitReady();
-  ensureDataStructures();
-
-  if (!data.leaderboardMessageId) {
-    return {
-      deleted: false,
-      skipped: true,
-      messageId: null
-    };
-  }
-
-  const oldMessageId = data.leaderboardMessageId;
-
-  try {
-    const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
-    const msg = await channel.messages.fetch(oldMessageId);
-    await msg.delete().catch(() => {});
-  } catch (error) {
-    console.error('Vecchia classifica testuale non trovata o già eliminata:', error.message);
-  }
-
-  data.leaderboardMessageId = null;
-  saveState();
-
-  return {
-    deleted: true,
-    skipped: false,
-    messageId: oldMessageId
-  };
-}
-
 async function updateLeaderboard(options = {}) {
   await waitReady();
   ensureDataStructures();
@@ -1818,30 +1905,18 @@ async function updateLeaderboard(options = {}) {
   const allowCreate = options.allowCreate !== false;
   const updateGraphics = options.updateGraphics !== false;
 
-  let deletedTextLeaderboard = null;
-
-  try {
-    deletedTextLeaderboard = await deleteSavedTextLeaderboardMessage();
-  } catch (error) {
-    console.error('Errore eliminazione classifica testuale:', error);
-  }
-
   let graphicsResult = null;
 
   if (updateGraphics) {
-    try {
-      graphicsResult = await updateLeaderboardGraphics({ allowCreate });
-    } catch (error) {
-      console.error('Errore aggiornamento grafiche classifica:', error);
-    }
+    graphicsResult = await updateLeaderboardGraphics({ allowCreate });
   }
 
-  logAudit('bot', 'discord', 'classifica_grafica_aggiornata', {
+  logAudit('bot', 'discord', 'classifiche_grafiche_aggiornate', {
     currentMatch: data.currentMatch,
     allowCreate,
-    deletedTextLeaderboard,
     leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
-    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
+    topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null,
+    textLeaderboardDisabled: true
   });
 
   return {
@@ -1849,9 +1924,8 @@ async function updateLeaderboard(options = {}) {
     allowCreate,
     updated: Boolean(graphicsResult?.leaderboardGraphicResult?.updated || graphicsResult?.topFraggerGraphicResult?.updated),
     created: Boolean(graphicsResult?.leaderboardGraphicResult?.created || graphicsResult?.topFraggerGraphicResult?.created),
-    skipped: false,
+    skipped: Boolean(graphicsResult?.leaderboardGraphicResult?.skipped && graphicsResult?.topFraggerGraphicResult?.skipped),
     textLeaderboardDisabled: true,
-    deletedTextLeaderboard,
     graphicsResult
   };
 }
@@ -2406,57 +2480,6 @@ function getBotConfig() {
   };
 }
 
-async function listDiscordChannels() {
-  await waitReady();
-
-  const guild = await client.guilds.fetch(GUILD_ID);
-  await guild.channels.fetch();
-
-  function getTypeLabel(type) {
-    if (type === ChannelType.GuildCategory) return 'Categoria';
-    if (type === ChannelType.GuildText) return 'Testuale';
-    if (type === ChannelType.GuildVoice) return 'Vocale';
-    if (type === ChannelType.GuildAnnouncement) return 'Annunci';
-    if (type === ChannelType.GuildStageVoice) return 'Stage';
-    if (type === ChannelType.GuildForum) return 'Forum';
-    if (type === ChannelType.GuildMedia) return 'Media';
-    return 'Altro';
-  }
-
-  const channels = [...guild.channels.cache.values()]
-    .sort((a, b) => {
-      const parentA = a.parent?.rawPosition ?? a.rawPosition ?? 0;
-      const parentB = b.parent?.rawPosition ?? b.rawPosition ?? 0;
-
-      if (parentA !== parentB) return parentA - parentB;
-
-      return (a.rawPosition || 0) - (b.rawPosition || 0);
-    })
-    .map(channel => ({
-      id: channel.id,
-      name: channel.name,
-      type: channel.type,
-      typeLabel: getTypeLabel(channel.type),
-      parentId: channel.parentId || '',
-      parentName: channel.parent?.name || '',
-      position: channel.rawPosition || 0,
-      isCategory: channel.type === ChannelType.GuildCategory,
-      isText:
-        channel.type === ChannelType.GuildText ||
-        channel.type === ChannelType.GuildAnnouncement,
-      isVoice:
-        channel.type === ChannelType.GuildVoice ||
-        channel.type === ChannelType.GuildStageVoice
-    }));
-
-  return {
-    ok: true,
-    guildId: guild.id,
-    guildName: guild.name,
-    channels
-  };
-}
-
 client.once('ready', async () => {
   console.log('ONLINE');
 
@@ -2854,7 +2877,6 @@ module.exports = {
   sendLobbyCodeToTeamRooms,
   sendMessageToChannel,
   sendGeneralAnnouncement,
-  listDiscordChannels,
   nextMatch,
   nextMatchAndRefresh,
   setCurrentMatch,
@@ -2866,5 +2888,6 @@ module.exports = {
   refreshTeamResultPanels,
   getTournamentSettings,
   getTournamentMessages,
-  calcPoints
+  calcPoints,
+  listDiscordChannels
 };
