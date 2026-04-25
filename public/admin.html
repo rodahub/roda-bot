@@ -282,6 +282,37 @@
       max-width:720px;
     }
 
+    .next-action{
+      width:100%;
+      margin-bottom:18px;
+      border:1px solid rgba(190,145,255,.26);
+      border-radius:26px;
+      padding:18px;
+      background:
+        radial-gradient(circle at left,rgba(123,44,255,.18),transparent 34%),
+        linear-gradient(135deg,rgba(18,18,33,.96),rgba(9,9,17,.98));
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .next-action strong{
+      display:block;
+      font-size:20px;
+      font-weight:950;
+      margin-bottom:5px;
+    }
+
+    .next-action span{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+      font-weight:750;
+    }
+
     .flow-actions{
       display:grid;
       grid-template-columns:repeat(6,minmax(0,1fr));
@@ -990,6 +1021,7 @@
       table{min-width:780px;}
       .top-actions{width:100%;}
       .modal-card{padding:18px;border-radius:24px;}
+      .next-action{align-items:flex-start;}
     }
   </style>
 </head>
@@ -1085,17 +1117,25 @@
               <div class="hero-actions">
                 <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
                 <button class="btn btn-yellow" onclick="forceNextMatch()">Forza prossimo match</button>
-                <button class="btn btn-blue" onclick="forceLeaderboard()">Aggiorna Discord</button>
+                <button class="btn btn-blue" onclick="syncEverything()">Sincronizza tutto</button>
               </div>
             </div>
           </div>
 
+          <div class="next-action" id="nextActionBox">
+            <div>
+              <strong id="nextActionTitle">Prossima azione</strong>
+              <span id="nextActionText">Caricamento suggerimento...</span>
+            </div>
+            <button class="btn btn-purple" id="nextActionButton" onclick="runSuggestedAction()">Esegui</button>
+          </div>
+
           <div class="flow-actions">
-            <button class="flow-btn" id="btnNewTournament" onclick="openNewTournamentModal()">
+            <button class="flow-btn" id="btnNewTournament" onclick="createNewTournamentDirect()">
               <div class="flow-icon">🆕</div>
               <div>
-                <strong>Archivia e crea nuovo</strong>
-                <span>Salva tutto e riparte da torneo pulito.</span>
+                <strong>Crea nuovo torneo</strong>
+                <span>Riparte pulito salvando automaticamente lo storico.</span>
               </div>
             </button>
 
@@ -1103,7 +1143,7 @@
               <div class="flow-icon">🟢</div>
               <div>
                 <strong>Apri iscrizioni</strong>
-                <span>Il bot avvisa in generale con @everyone.</span>
+                <span>Il bot avvisa in generale e abilita il pannello.</span>
               </div>
             </button>
 
@@ -1111,7 +1151,7 @@
               <div class="flow-icon">🔒</div>
               <div>
                 <strong>Chiudi iscrizioni</strong>
-                <span>Blocca nuovi team e conferma la lista.</span>
+                <span>Blocca nuovi team e disabilita il pannello.</span>
               </div>
             </button>
 
@@ -1126,7 +1166,7 @@
             <button class="flow-btn" id="btnForceNext" onclick="forceNextMatch()">
               <div class="flow-icon">⏭️</div>
               <div>
-                <strong>Forza prossimo match</strong>
+                <strong>Prossimo match</strong>
                 <span>I mancanti diventano assenti e si va avanti.</span>
               </div>
             </button>
@@ -1135,7 +1175,7 @@
               <div class="flow-icon">🏆</div>
               <div>
                 <strong>Termina torneo</strong>
-                <span>Chiude la RØDA CUP e prepara archivio.</span>
+                <span>Chiude la RØDA CUP.</span>
               </div>
             </button>
           </div>
@@ -1474,6 +1514,18 @@
                 </div>
               </div>
 
+              <div class="grid-2">
+                <div class="stat">
+                  <span>Iscrizioni Discord</span>
+                  <strong id="discordRegistrationState" style="font-size:22px;">-</strong>
+                </div>
+
+                <div class="stat">
+                  <span>Canale iscrizioni</span>
+                  <strong id="discordRegisterChannelState" style="font-size:22px;">-</strong>
+                </div>
+              </div>
+
               <div class="field">
                 <label>ID categoria RØDA CUP</label>
                 <input id="categoryInput" type="text" placeholder="Lascia vuoto per crearla automaticamente" />
@@ -1523,6 +1575,10 @@
                 <button class="btn btn-blue" onclick="forceLeaderboard()">Aggiorna classifica</button>
               </div>
 
+              <div class="row" style="margin-top:10px;">
+                <button class="btn btn-green" onclick="syncEverything()">Sincronizza tutto</button>
+              </div>
+
               <div class="field" style="margin-top:16px;">
                 <label>Codice lobby</label>
                 <input id="lobbyCodeInput" type="text" placeholder="Inserisci codice lobby" />
@@ -1538,13 +1594,13 @@
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3 class="card-title">🗂️ Crea archivio</h3>
+                  <h3 class="card-title">🗂️ Crea storico</h3>
                   <div class="note">Salva stato torneo, team, risultati, fragger e classifica.</div>
                 </div>
               </div>
 
               <div class="field">
-                <label>Nome archivio</label>
+                <label>Nome storico</label>
                 <input id="archiveLabel" type="text" placeholder="Es. Finale RØDA CUP" />
               </div>
 
@@ -1553,19 +1609,19 @@
                 <textarea id="archiveNote" placeholder="Nota opzionale"></textarea>
               </div>
 
-              <button class="btn btn-blue" onclick="createArchive()">Crea archivio</button>
+              <button class="btn btn-blue" onclick="createArchive()">Crea storico</button>
             </div>
 
             <div class="card">
               <div class="card-head">
                 <div>
-                  <h3 class="card-title">📁 Archivi salvati</h3>
+                  <h3 class="card-title">📁 Storico salvato</h3>
                   <div class="note">Snapshot disponibili per consultazione o ripristino.</div>
                 </div>
               </div>
 
               <div class="simple-list" id="archiveList">
-                <div class="empty">Nessun archivio disponibile</div>
+                <div class="empty">Nessuno storico disponibile</div>
               </div>
             </div>
           </div>
@@ -1622,14 +1678,14 @@
             <div class="card danger">
               <div class="card-head">
                 <div>
-                  <h3 class="card-title">⚠️ Reset</h3>
-                  <div class="note">Azioni pericolose. Prima viene creato un archivio automatico.</div>
+                  <h3 class="card-title">⚠️ Pulizia dati</h3>
+                  <div class="note">Azioni pericolose. Prima viene creato automaticamente uno storico.</div>
                 </div>
               </div>
 
               <div class="row">
-                <button class="btn btn-yellow" onclick="resetData()">Reset classifica e match</button>
-                <button class="btn btn-red" onclick="resetTeams()">Reset team</button>
+                <button class="btn btn-yellow" onclick="resetData()">Reset classifica</button>
+                <button class="btn btn-red" onclick="resetTeams()">Svuota team</button>
               </div>
             </div>
 
@@ -1651,45 +1707,6 @@
         <div class="status-bar" id="statusBar">Dashboard pronta</div>
       </div>
     </main>
-  </div>
-
-  <div class="modal" id="newTournamentModal" onclick="newTournamentBackdrop(event)">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div>
-          <div class="modal-title">🆕 Archivia e crea nuovo torneo</div>
-          <div class="note">Il torneo attuale viene sempre archiviato prima di pulire i dati.</div>
-        </div>
-        <button class="close" onclick="closeNewTournamentModal()">×</button>
-      </div>
-
-      <div class="field">
-        <label>Nome archivio</label>
-        <input id="newTournamentArchiveLabel" type="text" placeholder="Es. Backup prima nuova RØDA CUP" />
-      </div>
-
-      <div class="field">
-        <label>Nota archivio</label>
-        <textarea id="newTournamentArchiveNote" placeholder="Nota opzionale"></textarea>
-      </div>
-
-      <div class="field">
-        <label>Numero match nuovo torneo</label>
-        <input id="newTournamentTotalMatches" type="number" min="1" max="50" value="3" />
-      </div>
-
-      <div class="field">
-        <label>
-          <input type="checkbox" id="newTournamentAutoNext" checked style="width:auto;min-height:auto;margin-right:8px;" />
-          Passaggio automatico match attivo
-        </label>
-      </div>
-
-      <div class="row">
-        <button class="btn btn-red" onclick="closeNewTournamentModal()">Annulla</button>
-        <button class="btn btn-green" onclick="createNewTournament()">Archivia e crea</button>
-      </div>
-    </div>
   </div>
 
   <div class="modal" id="editModal" onclick="editBackdrop(event)">
@@ -1845,6 +1862,7 @@
     let loading = false;
     let selectedMatchRows = null;
     let selectedMatchNumber = null;
+    let suggestedAction = null;
 
     const pageInfo = {
       regia: ['Regia torneo', 'Vista live per gestire il torneo senza confusione.'],
@@ -1852,13 +1870,36 @@
       team: ['Team', 'Modifica rapida con pennini su team e player.'],
       torneo: ['Torneo', 'Regole, punteggio e messaggi ufficiali.'],
       discord: ['Discord', 'Categoria, stanze, pannelli e codice lobby.'],
-      archivio: ['Archivio', 'Snapshot e storico tornei.'],
+      archivio: ['Storico', 'Snapshot e storico tornei.'],
       staff: ['Staff', 'Account admin e staff.'],
       sistema: ['Sistema', 'Reset e registro attività.']
     };
 
     const stateLabels = {
-      bozza: 'Bozza',
+      bozza: 'Preparazione',
+      draft: 'Preparazione',
+      iscrizioni_aperte: 'Iscrizioni aperte',
+      registrazioni_aperte: 'Iscrizioni aperte',
+      registrations_open: 'Iscrizioni aperte',
+      registration_open: 'Iscrizioni aperte',
+      open_registrations: 'Iscrizioni aperte',
+      iscrizioni_chiuse: 'Iscrizioni chiuse',
+      registrazioni_chiuse: 'Iscrizioni chiuse',
+      registrations_closed: 'Iscrizioni chiuse',
+      registration_closed: 'Iscrizioni chiuse',
+      close_registrations: 'Iscrizioni chiuse',
+      torneo_in_corso: 'Torneo in corso',
+      running: 'Torneo in corso',
+      started: 'Torneo in corso',
+      in_progress: 'Torneo in corso',
+      torneo_finito: 'Torneo finito',
+      finished: 'Torneo finito',
+      ended: 'Torneo finito',
+      completed: 'Torneo finito'
+    };
+
+    const normalizedStateLabels = {
+      bozza: 'Preparazione',
       iscrizioni_aperte: 'Iscrizioni aperte',
       iscrizioni_chiuse: 'Iscrizioni chiuse',
       torneo_in_corso: 'Torneo in corso',
@@ -1884,11 +1925,78 @@
       return date.toLocaleString('it-IT');
     }
 
+    function normalizeTournamentState(value){
+      const state = String(value || '').trim().toLowerCase();
+
+      if(['bozza','draft','created','idle','setup'].includes(state)) return 'bozza';
+
+      if([
+        'iscrizioni_aperte',
+        'registrazioni_aperte',
+        'registrations_open',
+        'registration_open',
+        'open_registrations'
+      ].includes(state)) return 'iscrizioni_aperte';
+
+      if([
+        'iscrizioni_chiuse',
+        'registrazioni_chiuse',
+        'registrations_closed',
+        'registration_closed',
+        'close_registrations',
+        'closed_registrations'
+      ].includes(state)) return 'iscrizioni_chiuse';
+
+      if([
+        'torneo_in_corso',
+        'running',
+        'started',
+        'in_progress',
+        'tournament_running'
+      ].includes(state)) return 'torneo_in_corso';
+
+      if([
+        'torneo_finito',
+        'finished',
+        'ended',
+        'completed',
+        'tournament_finished'
+      ].includes(state)) return 'torneo_finito';
+
+      return state || 'bozza';
+    }
+
+    function normalizeTeamMatchStatus(value){
+      const status = String(value || '').trim().toLowerCase();
+
+      if(['in_attesa','pending','waiting','awaiting_review'].includes(status)) return 'in_attesa';
+      if(['approvato','approved','ok'].includes(status)) return 'approvato';
+      if(['inserito_manualmente','manual','manually_inserted','manual_inserted'].includes(status)) return 'inserito_manualmente';
+      if(['rifiutato','rejected','denied'].includes(status)) return 'rifiutato';
+      if(['assente','absent','missing_absent'].includes(status)) return 'assente';
+      if(['non_inviato','not_submitted','not_sent','missing',''].includes(status)) return 'non_inviato';
+
+      return status || 'non_inviato';
+    }
+
+    function matchStatusText(row){
+      const normalized = normalizeTeamMatchStatus(row?.stato);
+
+      if(normalized === 'in_attesa') return 'In attesa';
+      if(normalized === 'approvato') return 'Approvato';
+      if(normalized === 'inserito_manualmente') return 'Manuale';
+      if(normalized === 'rifiutato') return 'Rifiutato';
+      if(normalized === 'assente') return 'Assente';
+      return 'Non inviato';
+    }
+
     function statusClass(status){
-      if(status === 'approvato' || status === 'inserito_manualmente') return 'state-ok';
-      if(status === 'in_attesa') return 'state-warn';
-      if(status === 'rifiutato') return 'state-bad';
-      if(status === 'assente') return 'state-bad';
+      const normalized = normalizeTeamMatchStatus(status);
+
+      if(normalized === 'approvato' || normalized === 'inserito_manualmente') return 'state-ok';
+      if(normalized === 'in_attesa') return 'state-warn';
+      if(normalized === 'rifiutato') return 'state-bad';
+      if(normalized === 'assente') return 'state-bad';
       return 'state-muted';
     }
 
@@ -1990,7 +2098,9 @@
       const audit = data.auditLog || [];
       const session = data.session || {};
       const lifecycle = data.statoTorneo || {};
-      const state = lifecycle.state || 'bozza';
+      const rawState = lifecycle.state || 'bozza';
+      const state = normalizeTournamentState(rawState);
+      const stateLabel = normalizedStateLabels[state] || stateLabels[rawState] || rawState || 'Preparazione';
       const isOwner = session.role === 'proprietario';
 
       document.querySelectorAll('.staff-only').forEach(item => {
@@ -2007,14 +2117,27 @@
       const totalTeams = Number(match.totaleTeam || teams.length || 0);
       const progress = totalTeams > 0 ? Math.round((completed / totalTeams) * 100) : 0;
       const autoNext = tournament.autoNextMatch !== false;
+      const discordOpen = state === 'iscrizioni_aperte';
 
-      qs('topPill').textContent = `RØDA CUP • ${stateLabels[state] || state} • Match ${current}/${total}`;
-      qs('heroTitle').textContent = state === 'torneo_in_corso'
-        ? `RØDA CUP • Match ${current} di ${total}`
-        : `RØDA CUP • ${stateLabels[state] || state}`;
-      qs('heroSub').textContent = state === 'torneo_in_corso'
-        ? `${completed} / ${totalTeams} team completati • ${Number(match.inAttesa || 0)} da controllare • ${Number(match.nonInviati || 0)} mancanti • auto match ${autoNext ? 'attivo' : 'spento'}`
-        : `Team iscritti: ${teams.length} / 16 • match configurati: ${total} • auto match ${autoNext ? 'attivo' : 'spento'}`;
+      qs('topPill').textContent = `RØDA CUP • ${stateLabel} • Match ${current}/${total}`;
+
+      if(state === 'torneo_in_corso'){
+        qs('heroTitle').textContent = `RØDA CUP • Match ${current} di ${total}`;
+        qs('heroSub').textContent = `${completed} / ${totalTeams} team completati • ${Number(match.inAttesa || 0)} da controllare • ${Number(match.nonInviati || 0)} mancanti • auto match ${autoNext ? 'attivo' : 'spento'}`;
+      } else if(state === 'iscrizioni_aperte'){
+        qs('heroTitle').textContent = 'RØDA CUP';
+        qs('heroSub').textContent = `Iscrizioni aperte • team iscritti: ${teams.length} / 16 • il pannello Discord è attivo.`;
+      } else if(state === 'iscrizioni_chiuse'){
+        qs('heroTitle').textContent = 'RØDA CUP';
+        qs('heroSub').textContent = `Iscrizioni chiuse • team pronti: ${teams.length} / 16 • puoi iniziare il torneo quando vuoi.`;
+      } else if(state === 'torneo_finito'){
+        qs('heroTitle').textContent = 'RØDA CUP';
+        qs('heroSub').textContent = `Torneo terminato • puoi consultare lo storico o creare un nuovo torneo.`;
+      } else {
+        qs('heroTitle').textContent = 'RØDA CUP';
+        qs('heroSub').textContent = `Prepara il torneo e apri le iscrizioni quando sei pronto • match configurati: ${total}.`;
+      }
+
       qs('heroProgress').style.width = `${progress}%`;
 
       qs('completeBanner').classList.toggle('show', Boolean(match.completato && current < total && state === 'torneo_in_corso'));
@@ -2042,7 +2165,11 @@
       qs('rulesInput').value = botConfig.rulesChannelId || '';
       qs('registerChannelInput').value = botConfig.registerPanelChannelId || '';
 
+      qs('discordRegistrationState').textContent = discordOpen ? 'Attive' : 'Non attive';
+      qs('discordRegisterChannelState').textContent = botConfig.registerPanelChannelId ? 'Configurato' : 'Mancante';
+
       updateFlowButtons(state);
+      renderSuggestedAction(state, teams, match, current, total);
       renderControlLists(match.righe || []);
       renderLeaderboards(leaderboard, fraggers);
       renderPoints(points);
@@ -2056,13 +2183,15 @@
     }
 
     function updateFlowButtons(state){
+      const normalized = normalizeTournamentState(state);
+
       const map = {
         btnNewTournament: true,
-        btnOpenRegistrations: state === 'bozza' || state === 'torneo_finito',
-        btnCloseRegistrations: state === 'iscrizioni_aperte',
-        btnStartTournament: state === 'iscrizioni_chiuse',
-        btnForceNext: state === 'torneo_in_corso',
-        btnFinishTournament: state === 'torneo_in_corso'
+        btnOpenRegistrations: normalized === 'bozza' || normalized === 'torneo_finito',
+        btnCloseRegistrations: normalized === 'iscrizioni_aperte',
+        btnStartTournament: normalized === 'iscrizioni_chiuse',
+        btnForceNext: normalized === 'torneo_in_corso',
+        btnFinishTournament: normalized === 'torneo_in_corso'
       };
 
       Object.entries(map).forEach(([id, enabled]) => {
@@ -2073,15 +2202,127 @@
       });
     }
 
+    function renderSuggestedAction(state, teams, match, current, total){
+      const pending = Number(match.inAttesa || 0);
+      const missing = Number(match.nonInviati || 0);
+      const completed = Boolean(match.completato);
+      const teamCount = teams.length;
+
+      suggestedAction = null;
+
+      if(state === 'bozza'){
+        suggestedAction = 'openRegistrations';
+        qs('nextActionTitle').textContent = 'Prossima azione: apri le iscrizioni';
+        qs('nextActionText').textContent = 'Quando sei pronto, abilita il pannello Discord e fai registrare i team.';
+        qs('nextActionButton').textContent = 'Apri iscrizioni';
+        qs('nextActionButton').disabled = false;
+        return;
+      }
+
+      if(state === 'iscrizioni_aperte'){
+        suggestedAction = 'closeRegistrations';
+        qs('nextActionTitle').textContent = 'Prossima azione: chiudi le iscrizioni';
+        qs('nextActionText').textContent = `Ci sono ${teamCount} team iscritti. Quando la lista è pronta, chiudi le iscrizioni.`;
+        qs('nextActionButton').textContent = 'Chiudi iscrizioni';
+        qs('nextActionButton').disabled = false;
+        return;
+      }
+
+      if(state === 'iscrizioni_chiuse'){
+        suggestedAction = teamCount > 0 ? 'startTournament' : 'openRegistrations';
+        qs('nextActionTitle').textContent = teamCount > 0 ? 'Prossima azione: inizia il torneo' : 'Nessun team iscritto';
+        qs('nextActionText').textContent = teamCount > 0
+          ? `Sono pronti ${teamCount} team. Puoi partire dal match 1.`
+          : 'Prima di iniziare servono team iscritti.';
+        qs('nextActionButton').textContent = teamCount > 0 ? 'Inizia torneo' : 'Apri iscrizioni';
+        qs('nextActionButton').disabled = false;
+        return;
+      }
+
+      if(state === 'torneo_in_corso'){
+        if(pending > 0){
+          suggestedAction = 'goResults';
+          qs('nextActionTitle').textContent = `Prossima azione: controlla ${pending} risultati`;
+          qs('nextActionText').textContent = 'Ci sono risultati in attesa di approvazione. Apri la sezione risultati e validali.';
+          qs('nextActionButton').textContent = 'Vai ai risultati';
+          qs('nextActionButton').disabled = false;
+          return;
+        }
+
+        if(completed && current < total){
+          suggestedAction = 'nextMatch';
+          qs('nextActionTitle').textContent = 'Prossima azione: prossimo match';
+          qs('nextActionText').textContent = `Il match ${current} è completo. Puoi passare al match ${current + 1}.`;
+          qs('nextActionButton').textContent = 'Prossimo match';
+          qs('nextActionButton').disabled = false;
+          return;
+        }
+
+        if(completed && current >= total){
+          suggestedAction = 'finishTournament';
+          qs('nextActionTitle').textContent = 'Prossima azione: termina il torneo';
+          qs('nextActionText').textContent = 'Tutti i match risultano completati. Puoi chiudere il torneo.';
+          qs('nextActionButton').textContent = 'Termina torneo';
+          qs('nextActionButton').disabled = false;
+          return;
+        }
+
+        if(missing > 0){
+          suggestedAction = 'goResults';
+          qs('nextActionTitle').textContent = `Prossima azione: attendi o inserisci ${missing} risultati`;
+          qs('nextActionText').textContent = 'Mancano ancora risultati. Puoi aspettare i team oppure inserirli manualmente.';
+          qs('nextActionButton').textContent = 'Vai ai risultati';
+          qs('nextActionButton').disabled = false;
+          return;
+        }
+
+        suggestedAction = 'syncEverything';
+        qs('nextActionTitle').textContent = 'Prossima azione: sincronizza';
+        qs('nextActionText').textContent = 'Aggiorna Discord per tenere pannelli e grafiche allineati.';
+        qs('nextActionButton').textContent = 'Sincronizza';
+        qs('nextActionButton').disabled = false;
+        return;
+      }
+
+      if(state === 'torneo_finito'){
+        suggestedAction = 'newTournament';
+        qs('nextActionTitle').textContent = 'Prossima azione: crea nuovo torneo';
+        qs('nextActionText').textContent = 'Il torneo è finito. Puoi ripartire pulito mantenendo lo storico.';
+        qs('nextActionButton').textContent = 'Crea nuovo torneo';
+        qs('nextActionButton').disabled = false;
+        return;
+      }
+
+      suggestedAction = 'syncEverything';
+      qs('nextActionTitle').textContent = 'Prossima azione: sincronizza';
+      qs('nextActionText').textContent = 'Aggiorna i dati della dashboard e i pannelli Discord.';
+      qs('nextActionButton').textContent = 'Sincronizza';
+      qs('nextActionButton').disabled = false;
+    }
+
+    async function runSuggestedAction(){
+      if(suggestedAction === 'openRegistrations') return openRegistrations();
+      if(suggestedAction === 'closeRegistrations') return closeRegistrations();
+      if(suggestedAction === 'startTournament') return startTournament();
+      if(suggestedAction === 'nextMatch') return forceNextMatch();
+      if(suggestedAction === 'finishTournament') return finishTournament();
+      if(suggestedAction === 'goResults') return switchPage('risultati');
+      if(suggestedAction === 'newTournament') return createNewTournamentDirect();
+      return syncEverything();
+    }
+
     function renderControlLists(rows){
-      const pendingRows = rows.filter(row => row.stato === 'in_attesa');
-      const missingRows = rows.filter(row => row.stato === 'non_inviato' || row.stato === 'rifiutato');
+      const pendingRows = rows.filter(row => normalizeTeamMatchStatus(row.stato) === 'in_attesa');
+      const missingRows = rows.filter(row => {
+        const status = normalizeTeamMatchStatus(row.stato);
+        return status === 'non_inviato' || status === 'rifiutato';
+      });
 
       qs('controlList').innerHTML = pendingRows.length ? pendingRows.map(row => `
         <div class="mini-row">
           <div>
             <strong>#${row.slot || '-'} • ${html(row.team)}</strong>
-            <div class="note">${html(row.statoTesto || 'In attesa')}</div>
+            <div class="note">${html(matchStatusText(row))}</div>
           </div>
           <button class="btn btn-blue" onclick="openPendingById('${html(row.pendingId || '')}')">Apri</button>
         </div>
@@ -2091,7 +2332,7 @@
         <div class="mini-row">
           <div>
             <strong>#${row.slot || '-'} • ${html(row.team)}</strong>
-            <div class="note">${html(row.statoTesto || 'Non inviato')}</div>
+            <div class="note">${html(matchStatusText(row))}</div>
           </div>
           <div class="row" style="flex:0 0 auto;">
             <button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || dashboard.matchCorrente || 1)})">Inserisci</button>
@@ -2217,6 +2458,7 @@
 
       qs('matchRowsBody').innerHTML = rows.length ? rows.map(row => {
         const result = row.risultato || null;
+        const normalizedStatus = normalizeTeamMatchStatus(row.stato);
         const kills = result ? Number(result.totaleUccisioni || 0) : Number(row.kills || 0) || '-';
         const pos = result ? `${Number(result.posizione || 0)}°` : row.placement ? `${Number(row.placement)}°` : '-';
         const points = Number(row.points || 0) || '-';
@@ -2225,14 +2467,14 @@
           <tr>
             <td><span class="slot">#${row.slot || '-'}</span></td>
             <td><strong>${html(row.team)}</strong></td>
-            <td><span class="state ${statusClass(row.stato)}">${html(row.statoTesto || '-')}</span></td>
+            <td><span class="state ${statusClass(row.stato)}">${html(matchStatusText(row))}</span></td>
             <td>${kills}</td>
             <td>${pos}</td>
             <td>${points}</td>
             <td>
-              ${row.stato === 'in_attesa'
+              ${normalizedStatus === 'in_attesa'
                 ? `<button class="btn btn-blue" onclick="openPendingById('${html(row.pendingId || '')}')">Apri risultato</button>`
-                : row.stato === 'approvato' || row.stato === 'inserito_manualmente'
+                : normalizedStatus === 'approvato' || normalizedStatus === 'inserito_manualmente'
                   ? `<button class="btn btn-ghost" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Modifica</button>`
                   : `<div class="row"><button class="btn btn-yellow" onclick="openManualModal('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Inserisci</button><button class="btn btn-red" onclick="markAbsent('${html(row.team)}', ${Number(row.matchNumber || selectedMatchNumber || 1)})">Assente</button></div>`}
             </td>
@@ -2262,7 +2504,7 @@
               <div class="item-title">${html(item.label || item.archiveId)}</div>
               <div class="note">${html(formatDate(item.createdAt))}</div>
             </div>
-            <span class="state state-muted">Archivio</span>
+            <span class="state state-muted">Storico</span>
           </div>
 
           <div>
@@ -2274,7 +2516,7 @@
           <div class="note" style="margin:10px 0;">${html(item.note || 'Nessuna nota')}</div>
           <button class="btn btn-yellow" onclick="restoreArchive('${encodeURIComponent(item.archiveId || '')}')">Ripristina</button>
         </div>
-      `).join('') : `<div class="empty">Nessun archivio disponibile</div>`;
+      `).join('') : `<div class="empty">Nessuno storico disponibile</div>`;
     }
 
     function renderStaff(rows){
@@ -2351,43 +2593,27 @@
       return dashboard?.teams?.[teamName] || null;
     }
 
-    function openNewTournamentModal(){
-      qs('newTournamentArchiveLabel').value = '';
-      qs('newTournamentArchiveNote').value = '';
-      qs('newTournamentTotalMatches').value = dashboard?.impostazioniTorneo?.totalMatches || 3;
-      qs('newTournamentAutoNext').checked = true;
-      qs('newTournamentModal').classList.add('show');
-      document.body.style.overflow = 'hidden';
-    }
+    async function createNewTournamentDirect(){
+      if(!confirm('Confermi creazione nuovo torneo? Il torneo attuale resterà salvato nello storico.')) return;
 
-    function closeNewTournamentModal(){
-      qs('newTournamentModal').classList.remove('show');
-      document.body.style.overflow = '';
-    }
-
-    function newTournamentBackdrop(event){
-      if(event.target.id === 'newTournamentModal') closeNewTournamentModal();
-    }
-
-    async function createNewTournament(){
-      if(!confirm('Confermi? Il torneo attuale verrà archiviato e poi verrà creato un torneo nuovo pulito.')) return;
+      const totalMatches = Number(dashboard?.impostazioniTorneo?.totalMatches || 3);
+      const autoNextMatch = dashboard?.impostazioniTorneo?.autoNextMatch !== false;
 
       const result = await api('/api/tournament/new', {
         method:'POST',
         body:JSON.stringify({
-          archiveLabel:qs('newTournamentArchiveLabel').value.trim(),
-          archiveNote:qs('newTournamentArchiveNote').value.trim(),
-          totalMatches:Number(qs('newTournamentTotalMatches').value || 3),
-          autoNextMatch:qs('newTournamentAutoNext').checked
+          archiveLabel:'',
+          archiveNote:'',
+          totalMatches,
+          autoNextMatch
         })
       });
 
       if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore nuovo torneo');
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore creazione nuovo torneo');
 
-      closeNewTournamentModal();
       await refreshDashboard();
-      setStatus('Torneo archiviato e nuovo torneo creato');
+      setStatus('Nuovo torneo creato');
     }
 
     async function openRegistrations(){
@@ -2396,7 +2622,7 @@
       if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore apertura iscrizioni');
 
       await refreshDashboard();
-      setStatus('Iscrizioni aperte');
+      setStatus('Iscrizioni aperte: il pannello Discord ora permette la registrazione');
     }
 
     async function closeRegistrations(){
@@ -2405,7 +2631,7 @@
       if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore chiusura iscrizioni');
 
       await refreshDashboard();
-      setStatus('Iscrizioni chiuse');
+      setStatus('Iscrizioni chiuse: il pannello Discord non permette nuove registrazioni');
     }
 
     async function startTournament(){
@@ -2981,6 +3207,39 @@
       setStatus(`Pannelli risultati aggiornati • creati: ${Number(result.data.created || 0)} • modificati: ${Number(result.data.updated || 0)}`);
     }
 
+    async function syncEverything(){
+      if(!dashboard) return;
+
+      setStatus('Sincronizzazione in corso...');
+
+      const categoryId = qs('categoryInput').value.trim();
+      const registerChannelId = qs('registerChannelInput').value.trim();
+
+      try{
+        if(registerChannelId){
+          await api('/api/bot/spawn-register-panel', {
+            method:'POST',
+            body:JSON.stringify({ channelId:registerChannelId })
+          });
+        }
+
+        await api('/api/registration-settings/refresh', { method:'POST' });
+
+        await api('/api/bot/refresh-team-result-panels', {
+          method:'POST',
+          body:JSON.stringify({ categoryId })
+        });
+
+        await api('/api/bot/update-leaderboard', { method:'POST' });
+
+        await refreshDashboard();
+        setStatus('Sincronizzazione completata');
+      }catch(error){
+        console.error(error);
+        setStatus('Errore durante la sincronizzazione');
+      }
+    }
+
     async function sendReminder(){
       const result = await api('/api/tournament/send-reminder', { method:'POST' });
       if(!result) return;
@@ -3019,17 +3278,17 @@
       });
 
       if(!result) return;
-      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore archivio');
+      if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore storico');
 
       qs('archiveLabel').value = '';
       qs('archiveNote').value = '';
       await refreshDashboard();
-      setStatus('Archivio creato');
+      setStatus('Storico creato');
     }
 
     async function restoreArchive(id){
-      if(!id) return alert('Archivio non valido');
-      if(!confirm('Confermi ripristino archivio?')) return;
+      if(!id) return alert('Storico non valido');
+      if(!confirm('Confermi ripristino storico?')) return;
 
       const result = await api('/api/archivi/ripristina', {
         method:'POST',
@@ -3040,7 +3299,7 @@
       if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore ripristino');
 
       await refreshDashboard();
-      setStatus('Archivio ripristinato');
+      setStatus('Storico ripristinato');
     }
 
     async function createStaffUser(){
@@ -3136,18 +3395,18 @@
       if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore reset dati');
 
       await refreshDashboard();
-      setStatus('Dati torneo azzerati');
+      setStatus('Classifica e match azzerati');
     }
 
     async function resetTeams(){
-      if(!confirm('Confermi reset team?')) return;
+      if(!confirm('Confermi svuotamento team?')) return;
 
       const result = await api('/api/reset-teams', { method:'POST' });
       if(!result) return;
       if(!result.response.ok || !result.data.ok) return alert(result.data.message || 'Errore reset team');
 
       await refreshDashboard();
-      setStatus('Team azzerati');
+      setStatus('Team svuotati');
     }
 
     async function logout(){
@@ -3165,7 +3424,6 @@
 
     document.addEventListener('keydown', event => {
       if(event.key === 'Escape'){
-        closeNewTournamentModal();
         closeEditModal();
         closeTeamModal();
         closeManualModal();
