@@ -257,6 +257,47 @@
       justify-content:flex-end;
       max-width:720px
     }
+    .master-match-btn{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:18px 32px;
+      border-radius:22px;
+      border:2px solid rgba(190,145,255,.55);
+      background:linear-gradient(135deg,#7b2cff 0%,#4a9eff 100%);
+      color:#fff;
+      cursor:pointer;
+      transition:.18s ease;
+      min-width:230px;
+      text-align:center;
+      box-shadow:0 4px 28px rgba(123,44,255,.45);
+      gap:4px
+    }
+    .master-match-btn:hover:not(:disabled){
+      transform:translateY(-3px);
+      box-shadow:0 10px 36px rgba(123,44,255,.65)
+    }
+    .master-match-btn:disabled{
+      opacity:.38;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+      background:rgba(60,60,80,.7);
+      border-color:rgba(150,150,190,.18)
+    }
+    .master-match-btn .mm-label{
+      font-size:20px;
+      font-weight:950;
+      letter-spacing:-.3px;
+      line-height:1.15
+    }
+    .master-match-btn .mm-sub{
+      font-size:12px;
+      font-weight:600;
+      opacity:.72;
+      line-height:1.3
+    }
     .next-action{
       width:100%;
       margin-bottom:18px;
@@ -285,7 +326,7 @@
     }
     .flow-actions{
       display:grid;
-      grid-template-columns:repeat(6,minmax(0,1fr));
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:12px;
       margin-bottom:18px;
       width:100%
@@ -1028,7 +1069,7 @@
     }
     @media(max-width:1600px){
       .flow-actions{
-        grid-template-columns:repeat(3,minmax(0,1fr))
+        grid-template-columns:repeat(2,minmax(0,1fr))
       }
     }
     @media(max-width:1320px){
@@ -1197,9 +1238,10 @@
                   </div>
                 </div>
                 <div class="hero-actions">
-                  <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
-                  <button class="btn btn-yellow" onclick="forceNextMatch()">Forza prossimo match</button>
-                  <button class="btn btn-blue" onclick="syncEverything()">Sincronizza tutto</button>
+                  <button class="master-match-btn" id="masterMatchBtn" onclick="runMasterMatchAction()" disabled>
+                    <span class="mm-label" id="masterMatchLabel">Caricamento...</span>
+                    <span class="mm-sub" id="masterMatchSub"></span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1232,20 +1274,6 @@
                   <span>Blocca nuovi team e disabilita il pannello.</span>
                 </div>
               </button>
-              <button class="flow-btn" id="btnStartTournament" onclick="startTournament()">
-                <div class="flow-icon">🏁</div>
-                <div>
-                  <strong>Inizia torneo</strong>
-                  <span>Parte dal match 1 e aggiorna i pannelli.</span>
-                </div>
-              </button>
-              <button class="flow-btn" id="btnForceNext" onclick="forceNextMatch()">
-                <div class="flow-icon">⏭️</div>
-                <div>
-                  <strong>Prossimo match</strong>
-                  <span>I mancanti diventano assenti e si va avanti.</span>
-                </div>
-              </button>
               <button class="flow-btn" id="btnFinishTournament" onclick="finishTournament()">
                 <div class="flow-icon">🏆</div>
                 <div>
@@ -1258,9 +1286,8 @@
               <div class="card-head" style="margin:0;">
                 <div>
                   <h3 class="card-title">✅ Match completato</h3>
-                  <div class="note">Tutti i team hanno un risultato valido.</div>
+                  <div class="note">Tutti i team hanno un risultato valido. Usa il bottone in alto per passare al match successivo.</div>
                 </div>
-                <button class="btn btn-green" onclick="forceNextMatch()">Passa al match successivo</button>
               </div>
             </div>
             <div class="grid-4">
@@ -2265,6 +2292,7 @@
       qs('discordRegisterChannelState').textContent=botConfig.registerPanelChannelId?'Configurato':'Mancante';
       qs('discordGuildState').textContent=discordChannels?.guild?.name||'-';
       updateFlowButtons(state);
+      renderMasterMatchButton(state,current,total,teams.length);
       renderSuggestedAction(state,teams,match,current,total);
       renderControlLists(match.righe||[]);
       renderLeaderboards(leaderboard,fraggers);
@@ -2281,7 +2309,10 @@
     function updateFlowButtons(state){
       const normalized=normalizeTournamentState(state);
       const map={
-        btnNewTournament:true,btnOpenRegistrations:normalized==='bozza'||normalized==='torneo_finito',btnCloseRegistrations:normalized==='iscrizioni_aperte',btnStartTournament:normalized==='iscrizioni_chiuse',btnForceNext:normalized==='torneo_in_corso',btnFinishTournament:normalized==='torneo_in_corso'
+        btnNewTournament:true,
+        btnOpenRegistrations:normalized==='bozza'||normalized==='torneo_finito',
+        btnCloseRegistrations:normalized==='iscrizioni_aperte',
+        btnFinishTournament:normalized==='torneo_in_corso'
       };
       Object.entries(map).forEach(([id,enabled])=>{
         const btn=qs(id);
@@ -2289,6 +2320,52 @@
         btn.classList.toggle('disabled',!enabled);
         btn.disabled=!enabled
       })
+    }
+    function renderMasterMatchButton(state,current,total,teamCount){
+      const btn=qs('masterMatchBtn');
+      const label=qs('masterMatchLabel');
+      const sub=qs('masterMatchSub');
+      if(!btn||!label||!sub)return;
+      const normalized=normalizeTournamentState(state);
+      if(normalized==='torneo_in_corso'){
+        if(current<total){
+          label.textContent=`⏭ Passa al Match ${current+1}`;
+          sub.textContent=`Match corrente: ${current} di ${total}`;
+          btn.disabled=false
+        } else {
+          label.textContent='🏆 Chiudi Torneo';
+          sub.textContent=`Ultimo match (${current} di ${total})`;
+          btn.disabled=false
+        }
+      } else if(normalized==='iscrizioni_chiuse'){
+        label.textContent='▶ Inizia Match 1';
+        sub.textContent=teamCount>0?`${teamCount} team pronti al via`:'Nessun team iscritto';
+        btn.disabled=teamCount===0
+      } else if(normalized==='iscrizioni_aperte'){
+        label.textContent='▶ Inizia Match 1';
+        sub.textContent='Chiudi prima le iscrizioni';
+        btn.disabled=true
+      } else if(normalized==='bozza'){
+        label.textContent='▶ Inizia Match 1';
+        sub.textContent='Apri e chiudi le iscrizioni prima';
+        btn.disabled=true
+      } else if(normalized==='torneo_finito'){
+        label.textContent='✅ Torneo Concluso';
+        sub.textContent='Crea un nuovo torneo per ripartire';
+        btn.disabled=true
+      } else {
+        label.textContent='Caricamento...';
+        sub.textContent='';
+        btn.disabled=true
+      }
+    }
+    async function runMasterMatchAction(){
+      const normalized=normalizeTournamentState(dashboard?.stato);
+      const current=Number(dashboard?.matchCorrente||1);
+      const total=Number(dashboard?.tournament?.totalMatches||3);
+      if(normalized==='iscrizioni_chiuse')return startTournament();
+      if(normalized==='torneo_in_corso'&&current<total)return forceNextMatch();
+      if(normalized==='torneo_in_corso'&&current>=total)return finishTournament();
     }
     function renderSuggestedAction(state,teams,match,current,total){
       const pending=Number(match.inAttesa||0),missing=Number(match.nonInviati||0),completed=Boolean(match.completato),teamCount=teams.length;
