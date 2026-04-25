@@ -1888,6 +1888,15 @@ function deleteReport(id) {
   return true;
 }
 
+function updateReportProofUrl(id, proofUrl) {
+  if (!Array.isArray(data.reports)) return false;
+  const r = data.reports.find(r => r.id === id);
+  if (!r) return false;
+  r.proofUrl = sanitizeText(proofUrl || '');
+  saveState();
+  return true;
+}
+
 module.exports = {
   STORAGE_DIR,
   BACKUP_DIR,
@@ -1972,5 +1981,6 @@ module.exports = {
   addReport,
   getReports,
   markReportReviewed,
-  deleteReport
+  deleteReport,
+  updateReportProofUrl
 };

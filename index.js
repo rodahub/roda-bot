@@ -26,7 +26,8 @@ const {
   markReminderSent,
   REMINDER_TYPES,
   UPLOADS_DIR,
-  addReport
+  addReport,
+  updateReportProofUrl
 } = require('./storage');
 
 const {
@@ -93,6 +94,8 @@ const readyPromise = new Promise(resolve => {
 
 let registrationStatusUpdateQueue = Promise.resolve();
 let leaderboardUpdateQueue = Promise.resolve();
+
+const pendingReportProof = new Map();
 
 function sanitizeText(value) {
   return String(value || '').trim();
@@ -3336,26 +3339,20 @@ client.on('interactionCreate', async interaction => {
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
             .setCustomId('player_name')
-            .setLabel('Giocatore segnalato (vuoto = prob. generale)')
+            .setLabel('Giocatore da segnalare (opzionale)')
             .setStyle(TextInputStyle.Short)
             .setRequired(false)
             .setMaxLength(60)
+            .setPlaceholder('Lascia vuoto per problema generale')
         ),
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
             .setCustomId('description')
-            .setLabel('Descrizione del problema / irregolarità')
+            .setLabel('Cosa è successo?')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true)
             .setMaxLength(900)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId('proof_url')
-            .setLabel('Link foto/video come prova (opzionale)')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(false)
-            .setMaxLength(500)
+            .setPlaceholder('Descrivi il problema o l\'irregolarità nel dettaglio…')
         )
       );
 
@@ -3369,7 +3366,6 @@ client.on('interactionCreate', async interaction => {
 
       const playerName = (interaction.fields.getTextInputValue('player_name') || '').trim();
       const description = (interaction.fields.getTextInputValue('description') || '').trim();
-      const proofUrl = (interaction.fields.getTextInputValue('proof_url') || '').trim();
 
       if (!description) {
         return interaction.reply({
@@ -3386,7 +3382,7 @@ client.on('interactionCreate', async interaction => {
         reporterDiscordTag: interaction.user.tag,
         playerName,
         description,
-        proofUrl,
+        proofUrl: '',
         timestamp: Date.now()
       });
 
@@ -3395,16 +3391,20 @@ client.on('interactionCreate', async interaction => {
         team: teamInfo?.teamName,
         slot,
         matchNumber,
-        playerName,
-        hasProof: Boolean(proofUrl)
+        playerName
       });
 
-      const proofNote = proofUrl
-        ? `\n📎 **Prova allegata:** ${proofUrl}`
-        : '\n📎 Per allegare screenshot/video come prova, caricali direttamente in questa stanza vocale (trascina il file in chat).';
+      pendingReportProof.set(interaction.user.id, {
+        reportId: report.id,
+        channelId: interaction.channelId,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
 
       return interaction.reply({
-        content: `✅ **Segnalazione ricevuta!** (ID: \`${report.id}\`)\n\nLo staff esaminerà quanto segnalato al più presto.${proofNote}`,
+        content:
+          `✅ **Segnalazione ricevuta!** (ID: \`${report.id}\`)\n\n` +
+          `Lo staff esaminerà quanto segnalato al più presto.\n\n` +
+          `📎 **Hai 5 minuti per inviare foto o video come prova:** trascina il file qui in questa stanza vocale (come faresti per un normale messaggio Discord) e il bot lo allegherà automaticamente alla tua segnalazione.`,
         ephemeral: true
       });
     }
@@ -3474,6 +3474,36 @@ client.on('messageCreate', async message => {
     if (!message.attachments.size) return;
 
     refreshStateFromDisk();
+
+    const pendingProof = pendingReportProof.get(message.author.id);
+    if (pendingProof) {
+      pendingReportProof.delete(message.author.id);
+
+      if (Date.now() > pendingProof.expiresAt) {
+        await message.reply({
+          content: '⏰ Il tempo per allegare la prova è scaduto (5 minuti). La segnalazione è stata salvata senza allegato.'
+        }).catch(() => {});
+        return;
+      }
+
+      const attachment = message.attachments.first();
+      let proofUrl = attachment.proxyURL || attachment.url || '';
+
+      try {
+        const saved = await saveDiscordAttachmentLocally(attachment);
+        proofUrl = saved;
+      } catch {
+        /* se il salvataggio locale fallisce usiamo l'URL originale */
+      }
+
+      updateReportProofUrl(pendingProof.reportId, proofUrl);
+
+      await message.reply({
+        content: '✅ **Prova allegata alla segnalazione!** Lo staff potrà visualizzarla nel pannello admin.',
+      }).catch(() => {});
+
+      return;
+    }
 
     const temp = data.tempSubmit[message.author.id];
     if (!temp) return;
