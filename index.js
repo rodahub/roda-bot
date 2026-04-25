@@ -239,6 +239,16 @@ function ensureDataStructures() {
 
 function saveState() {
   ensureDataStructures();
+  // Preserva i report dal disco: se data in memoria è stale (senza report),
+  // non sovrascrivere quelli già salvati sul file da addReport()
+  try {
+    const diskData = loadData();
+    if (Array.isArray(diskData.reports) && diskData.reports.length > 0) {
+      if (!Array.isArray(data.reports) || data.reports.length < diskData.reports.length) {
+        data.reports = diskData.reports;
+      }
+    }
+  } catch {}
   data = saveData(data);
 }
 
@@ -3360,6 +3370,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
+      refreshStateFromDisk();
       const slot = Number(interaction.customId.replace('report_modal_', ''));
       const teamInfo = getTeamBySlot(slot);
       const matchNumber = Number(data.currentMatch || 1);
