@@ -2,8 +2,21 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+
+let helmet = null;
+let rateLimit = null;
+
+try {
+  helmet = require('helmet');
+} catch {
+  helmet = null;
+}
+
+try {
+  rateLimit = require('express-rate-limit');
+} catch {
+  rateLimit = null;
+}
 
 const {
   initializeFiles,
@@ -74,6 +87,14 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET && !pro
   console.warn('⚠️ ATTENZIONE: SESSION_SECRET non impostato. Le sessioni cambieranno a ogni riavvio.');
 }
 
+if (!helmet) {
+  console.warn('⚠️ helmet non installato: uso protezioni manuali base.');
+}
+
+if (!rateLimit) {
+  console.warn('⚠️ express-rate-limit non installato: rate limit disattivato.');
+}
+
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 
@@ -89,10 +110,12 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
+if (helmet) {
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+  }));
+}
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -102,7 +125,15 @@ app.use((req, res, next) => {
   next();
 });
 
-const generalLimiter = rateLimit({
+function createLimiter(options) {
+  if (!rateLimit) {
+    return (req, res, next) => next();
+  }
+
+  return rateLimit(options);
+}
+
+const generalLimiter = createLimiter({
   windowMs: 60 * 1000,
   limit: 180,
   standardHeaders: true,
@@ -113,7 +144,7 @@ const generalLimiter = rateLimit({
   }
 });
 
-const loginLimiter = rateLimit({
+const loginLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 8,
   standardHeaders: true,
@@ -124,7 +155,7 @@ const loginLimiter = rateLimit({
   }
 });
 
-const publicRegisterLimiter = rateLimit({
+const publicRegisterLimiter = createLimiter({
   windowMs: 10 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
@@ -1851,6 +1882,26 @@ app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
   });
 });
 
+app.get('/api/bot/discord-channels', authRequired, requireAdmin, async (req, res) => {
+  try {
+    const result = await safeBotCall('listDiscordChannels');
+
+    logAudit(req.staffUser, 'web', 'lista_canali_discord_letta', {
+      ok: Boolean(result?.ok)
+    });
+
+    return res.json({
+      ok: true,
+      ...result
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore lettura canali Discord'
+    });
+  }
+});
+
 app.post('/api/tournament/new', authRequired, requireAdmin, async (req, res) => {
   try {
     const totalMatches = sanitizePositiveInteger(req.body.totalMatches, 3, 50);
@@ -3046,6 +3097,7 @@ app.post('/api/reset-data', authRequired, requireAdmin, async (req, res) => {
     data.registrationStatusText = currentData.registrationStatusText || data.registrationStatusText;
     data.registrationMaxTeams = MAX_TEAMS;
     data.registrationStatusMessageId = currentData.registrationStatusMessageId || null;
+    data.registrationGraphicMessageId = currentData.registrationGraphicMessageId || null;
 
     data.leaderboardMessageId = currentData.leaderboardMessageId || null;
     data.leaderboardGraphicMessageId = currentData.leaderboardGraphicMessageId || null;
