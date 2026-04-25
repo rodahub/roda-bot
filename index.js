@@ -2570,11 +2570,15 @@ async function sendLobbyCodeToTeamRooms(lobbyCode, customCategoryId, customMessa
 
 async function saveDiscordAttachmentLocally(attachment) {
   const tryUrls = [attachment.url, attachment.proxyURL].filter(Boolean);
+  const errors = [];
 
   for (const target of tryUrls) {
     try {
       const response = await fetch(target);
-      if (!response.ok) continue;
+      if (!response.ok) {
+        errors.push(`HTTP ${response.status} su ${target}`);
+        continue;
+      }
 
       const contentType = response.headers.get('content-type') || '';
       let ext = 'jpg';
@@ -2593,10 +2597,13 @@ async function saveDiscordAttachmentLocally(attachment) {
 
       fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
       return buildPublicUploadUrl(fileName);
-    } catch {}
+    } catch (err) {
+      errors.push(err.message || String(err));
+    }
   }
 
-  return attachment.url;
+  console.error('[saveDiscordAttachmentLocally] impossibile scaricare lo screenshot da Discord:', errors);
+  throw new Error('Non sono riuscito a salvare il tuo screenshot. Riprova fra qualche secondo o invia un altro file.');
 }
 
 function setCurrentMatch(match) {
@@ -2639,7 +2646,8 @@ async function nextMatchAndRefresh() {
 
 function resetAllState() {
   data = getDefaultData();
-  saveState();
+  ensureDataStructures();
+  data = saveData(data, { allowReset: true });
 }
 
 function saveBotPanelSettings(settings = {}) {
@@ -3077,7 +3085,16 @@ client.on('messageCreate', async message => {
     }
 
     const attachment = message.attachments.first();
-    const image = await saveDiscordAttachmentLocally(attachment);
+    let image;
+    try {
+      image = await saveDiscordAttachmentLocally(attachment);
+    } catch (saveErr) {
+      console.error('[messageCreate] errore salvataggio screenshot:', saveErr);
+      await message.reply({
+        content: `❌ ${saveErr.message || 'Non sono riuscito a salvare lo screenshot.'} Il tuo invio NON è stato registrato: prova ad inviare di nuovo lo screenshot.`
+      }).catch(() => {});
+      return;
+    }
 
     delete data.tempSubmit[message.author.id];
     saveState();
@@ -3091,7 +3108,12 @@ client.on('messageCreate', async message => {
 
     await message.delete().catch(() => {});
   } catch (error) {
-    console.error(error);
+    console.error('[messageCreate] errore inatteso:', error);
+    try {
+      await message.reply({
+        content: '❌ Errore inatteso nel registrare il tuo invio. Riprova fra qualche secondo.'
+      });
+    } catch {}
   }
 });
 

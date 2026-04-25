@@ -3143,7 +3143,7 @@ app.post('/api/reset-data', authRequired, requireAdmin, async (req, res) => {
     data.scores = {};
     data.fragger = {};
 
-    const saved = saveData(data);
+    const saved = saveData(data, { allowReset: true });
 
     syncBotState(saved, currentTeams);
 
