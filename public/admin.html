@@ -2555,7 +2555,6 @@
       })
     }
     async function finishTournament(){
-      if(!confirm('Confermi termine torneo?'))return;
       return runAction('finishTournament','Termino torneo...',async()=>{
         const result=await api('/api/tournament/finish',{method:'POST'});
         if(!result)return;
@@ -2565,7 +2564,6 @@
       })
     }
     async function forceNextMatch(){
-      if(!confirm('Confermi prossimo match? I team mancanti verranno segnati assenti per questo match.'))return;
       return runAction('forceNextMatch','Passo al prossimo match...',async()=>{
         const result=await api('/api/match/next',{
           method:'POST',body:JSON.stringify({forceMissingAbsent:true})
@@ -2577,7 +2575,6 @@
       })
     }
     async function markAbsent(team,matchNumber){
-      if(!confirm(`Segnare ${team} assente per il match ${matchNumber}?`))return;
       return runAction('markAbsent:'+team+':'+matchNumber,'Segno assente...',async()=>{
         const result=await api('/api/match/mark-absent',{
           method:'POST',body:JSON.stringify({team,matchNumber})
@@ -2932,7 +2929,6 @@
       })
     }
     async function deleteRooms(){
-      if(!confirm('Eliminare solo le stanze vocali team?'))return;
       syncDiscordSelectsToInputs();
       return runAction('deleteRooms','Elimino stanze...',async()=>{
         const result=await api('/api/bot/delete-rooms',{
