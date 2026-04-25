@@ -1238,7 +1238,7 @@
                   </div>
                 </div>
                 <div class="hero-actions">
-                  <button class="master-match-btn" id="masterMatchBtn" onclick="runMasterMatchAction()" disabled>
+                  <button class="master-match-btn" id="masterMatchBtn" data-managed="1" onclick="runMasterMatchAction()" disabled>
                     <span class="mm-label" id="masterMatchLabel">Caricamento...</span>
                     <span class="mm-sub" id="masterMatchSub"></span>
                   </button>
@@ -2059,11 +2059,14 @@
       if(inFlightActions.has(actionId))return;
       inFlightActions.add(actionId);
       const btn=lastClickedButton;
-      let originalText='';
-      if(btn){
-        originalText=btn.textContent;
+      const isManagedBtn=btn&&btn.dataset.managed==='1';
+      let originalHTML='';
+      if(btn&&!isManagedBtn){
+        originalHTML=btn.innerHTML;
         btn.disabled=true;
         if(label)btn.textContent=label;
+      } else if(btn&&isManagedBtn){
+        btn.disabled=true;
       }
       if(label)setStatus(label);
       try{
@@ -2075,9 +2078,11 @@
       }
       finally{
         inFlightActions.delete(actionId);
-        if(btn){
+        if(btn&&!isManagedBtn){
           btn.disabled=false;
-          btn.textContent=originalText;
+          btn.innerHTML=originalHTML;
+        } else if(btn&&isManagedBtn){
+          btn.disabled=false;
         }
       }
     }
@@ -2219,6 +2224,31 @@
         loading=false;
         qs('refreshBtn').disabled=false;
         qs('refreshBtn').textContent='Aggiorna'
+      }
+    }
+    async function quickRefreshMatch(){
+      try{
+        const result=await api('/api/dashboard');
+        if(!result||!result.response.ok||!result.data.ok)return refreshDashboard();
+        dashboard=result.data;
+        const data=dashboard,match=data.statoMatchCorrente||{},current=Number(data.matchCorrente||1),total=Number((data.impostazioniTorneo||{}).totalMatches||3),state=data.stato,teams=data.teamOrdinati||[];
+        renderMasterMatchButton(state,current,total,teams.length);
+        renderSuggestedAction(state,teams,match,current,total);
+        renderControlLists(match.righe||[]);
+        updateFlowButtons(state);
+        qs('statReceived').textContent=Number(match.inviati||0);
+        qs('statPending').textContent=Number(match.inAttesa||0);
+        qs('statMissing').textContent=Number(match.nonInviati||0);
+        qs('statTeams').textContent=teams.length;
+        qs('topPill').textContent=`RØDA CUP • ${stateLabels[state]||state} • Match ${current}/${total}`;
+        qs('completeBanner').classList.toggle('show',Boolean(match.completato&&current<total&&normalizeTournamentState(state)==='torneo_in_corso'));
+        selectedMatchRows=null;
+        await loadSelectedMatchStatus(false);
+        if(document.querySelector('.page#segnalazioni.active'))await loadReports();
+        setStatus('Aggiornato: '+new Date().toLocaleTimeString('it-IT'))
+      } catch(e){
+        console.error(e);
+        return refreshDashboard()
       }
     }
     function renderDashboard(){
@@ -2870,7 +2900,7 @@
         });
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore segna assente');
-        await refreshDashboard();
+        await quickRefreshMatch();
         setStatus('Team segnato assente')
       })
     }
@@ -3249,23 +3279,23 @@
       })
     }
     async function approvePending(id){
-      return runAction('approvePending:'+id,'Approvo risultato...',async()=>{
+      return runAction('approvePending:'+id,'Approvo...',async()=>{
         const result=await api('/api/approve/'+id,{method:'POST'});
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore approvazione');
         closeReviewModal();
-        await refreshDashboard();
-        setStatus('Risultato approvato')
+        await quickRefreshMatch();
+        setStatus('✅ Risultato approvato')
       })
     }
     async function rejectPending(id){
-      return runAction('rejectPending:'+id,'Rifiuto risultato...',async()=>{
+      return runAction('rejectPending:'+id,'Rifiuto...',async()=>{
         const result=await api('/api/reject/'+id,{method:'POST'});
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore rifiuto');
         closeReviewModal();
-        await refreshDashboard();
-        setStatus('Risultato rifiutato')
+        await quickRefreshMatch();
+        setStatus('❌ Risultato rifiutato')
       })
     }
     async function forceLeaderboard(){

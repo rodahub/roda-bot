@@ -1071,10 +1071,23 @@ function atomicWriteJson(filePath, data) {
   fs.renameSync(tmpPath, filePath);
 }
 
+function asyncWriteJson(filePath, data) {
+  const tmpPath = `${filePath}.tmp`;
+  const serialized = JSON.stringify(data, null, 2);
+  fs.writeFile(tmpPath, serialized, 'utf8', (err) => {
+    if (err) return;
+    fs.rename(tmpPath, filePath, () => {});
+  });
+}
+
 function writeBackup(filePath, backupPath, data) {
   atomicWriteJson(filePath, data);
-  atomicWriteJson(backupPath, data);
+  asyncWriteJson(backupPath, data);
 }
+
+let _memData = null;
+let _memTeams = null;
+let _memAudit = null;
 
 function initializeFiles() {
   ensureDir(STORAGE_DIR);
@@ -1089,85 +1102,93 @@ function initializeFiles() {
   const auditMain = readJsonSafe(AUDIT_LOG_FILE);
   const auditBackup = readJsonSafe(AUDIT_BACKUP_FILE);
 
-  const safeData = normalizeData(dataMain || dataBackup || getDefaultData());
-  const safeTeams = normalizeTeams(teamsMain || teamsBackup || getDefaultTeams());
-  const safeAudit = normalizeAuditLog(auditMain || auditBackup || getDefaultAuditLog());
+  _memData = normalizeData(dataMain || dataBackup || getDefaultData());
+  _memTeams = normalizeTeams(teamsMain || teamsBackup || getDefaultTeams());
+  _memAudit = normalizeAuditLog(auditMain || auditBackup || getDefaultAuditLog());
 
-  writeBackup(DATA_FILE, DATA_BACKUP_FILE, safeData);
-  writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safeTeams);
-  writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safeAudit);
+  atomicWriteJson(DATA_FILE, _memData);
+  asyncWriteJson(DATA_BACKUP_FILE, _memData);
+  atomicWriteJson(TEAMS_FILE, _memTeams);
+  asyncWriteJson(TEAMS_BACKUP_FILE, _memTeams);
+  atomicWriteJson(AUDIT_LOG_FILE, _memAudit);
+  asyncWriteJson(AUDIT_BACKUP_FILE, _memAudit);
+
+  lastSavedDataFingerprint = computeDataFingerprint(_memData);
 
   console.log('Storage inizializzato correttamente');
 }
 
 function loadData() {
+  if (_memData) return _memData;
+
   const main = readJsonSafe(DATA_FILE);
 
   if (main) {
-    const safe = normalizeData(main);
-    writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
-    lastSavedDataFingerprint = computeDataFingerprint(safe);
-    return safe;
+    _memData = normalizeData(main);
+    lastSavedDataFingerprint = computeDataFingerprint(_memData);
+    return _memData;
   }
 
   const backup = readJsonSafe(DATA_BACKUP_FILE);
 
   if (backup) {
-    const safe = normalizeData(backup);
-    writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
-    lastSavedDataFingerprint = computeDataFingerprint(safe);
+    _memData = normalizeData(backup);
+    atomicWriteJson(DATA_FILE, _memData);
+    lastSavedDataFingerprint = computeDataFingerprint(_memData);
     console.warn('[loadData] data.json mancante o corrotto: ripristinato dal backup data.latest.json');
-    return safe;
+    return _memData;
   }
 
-  const safe = getDefaultData();
-  writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
-  lastSavedDataFingerprint = computeDataFingerprint(safe);
-  return safe;
+  _memData = getDefaultData();
+  atomicWriteJson(DATA_FILE, _memData);
+  lastSavedDataFingerprint = computeDataFingerprint(_memData);
+  return _memData;
 }
 
 function loadTeams() {
+  if (_memTeams) return _memTeams;
+
   const main = readJsonSafe(TEAMS_FILE);
 
   if (main) {
-    const safe = normalizeTeams(main);
-    writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safe);
-    return safe;
+    _memTeams = normalizeTeams(main);
+    return _memTeams;
   }
 
   const backup = readJsonSafe(TEAMS_BACKUP_FILE);
 
   if (backup) {
-    const safe = normalizeTeams(backup);
-    writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safe);
-    return safe;
+    _memTeams = normalizeTeams(backup);
+    atomicWriteJson(TEAMS_FILE, _memTeams);
+    return _memTeams;
   }
 
-  const safe = getDefaultTeams();
-  writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safe);
-  return safe;
+  _memTeams = getDefaultTeams();
+  atomicWriteJson(TEAMS_FILE, _memTeams);
+  return _memTeams;
 }
 
 function loadAuditLog() {
+  if (_memAudit) return _memAudit;
+
   const main = readJsonSafe(AUDIT_LOG_FILE);
 
   if (main) {
-    const safe = normalizeAuditLog(main);
-    writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safe);
-    return safe;
+    _memAudit = normalizeAuditLog(main);
+    return _memAudit;
   }
 
   const backup = readJsonSafe(AUDIT_BACKUP_FILE);
 
   if (backup) {
-    const safe = normalizeAuditLog(backup);
-    writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safe);
-    return safe;
+    _memAudit = normalizeAuditLog(backup);
+    atomicWriteJson(AUDIT_LOG_FILE, _memAudit);
+    return _memAudit;
   }
 
-  const safe = getDefaultAuditLog();
-  writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safe);
-  return safe;
+  _memAudit = getDefaultAuditLog();
+  atomicWriteJson(AUDIT_LOG_FILE, _memAudit);
+  return _memAudit;
 }
 
 let lastSavedDataFingerprint = null;
@@ -1213,7 +1234,9 @@ function saveData(data, options = {}) {
     throw new Error('Salvataggio bloccato: i dati risulterebbero svuotati. Se vuoi davvero resettare il torneo usa il pulsante reset dedicato.');
   }
 
-  writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
+  _memData = safe;
+  atomicWriteJson(DATA_FILE, safe);
+  asyncWriteJson(DATA_BACKUP_FILE, safe);
   lastSavedDataFingerprint = newFp;
   return safe;
 }
@@ -1224,13 +1247,17 @@ function resetSavedDataFingerprint(safe) {
 
 function saveTeams(teams) {
   const safe = normalizeTeams(teams);
-  writeBackup(TEAMS_FILE, TEAMS_BACKUP_FILE, safe);
+  _memTeams = safe;
+  atomicWriteJson(TEAMS_FILE, safe);
+  asyncWriteJson(TEAMS_BACKUP_FILE, safe);
   return safe;
 }
 
 function saveAuditLog(logs) {
   const safe = normalizeAuditLog(logs);
-  writeBackup(AUDIT_LOG_FILE, AUDIT_BACKUP_FILE, safe);
+  _memAudit = safe;
+  atomicWriteJson(AUDIT_LOG_FILE, safe);
+  asyncWriteJson(AUDIT_BACKUP_FILE, safe);
   return safe;
 }
 
