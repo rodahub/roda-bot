@@ -1556,6 +1556,47 @@ function computeRegistrationGraphicSignature() {
   }
 }
 
+async function findExistingRegistrationMessage(channel) {
+  const knownIds = [
+    data.registrationGraphicMessageId,
+    data.registrationStatusMessageId
+  ].filter(Boolean);
+
+  for (const id of knownIds) {
+    try {
+      const msg = await channel.messages.fetch(id);
+      if (msg && msg.author?.id === client.user?.id) return msg;
+    } catch (error) {
+      // continua a cercare in cronologia
+    }
+  }
+
+  try {
+    const recent = await channel.messages.fetch({ limit: 50 });
+    const botMessages = Array.from(recent.values())
+      .filter(m => m.author?.id === client.user?.id)
+      .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
+
+    if (botMessages.length === 0) return null;
+
+    const keep = botMessages[0];
+    const duplicates = botMessages.slice(1);
+    for (const dup of duplicates) {
+      await dup.delete().catch(error => {
+        console.error('Errore eliminazione duplicato registrazioni:', error.message);
+      });
+    }
+    if (duplicates.length) {
+      console.log(`[registrazioni] eliminati ${duplicates.length} messaggi duplicati nel canale`);
+    }
+
+    return keep;
+  } catch (error) {
+    console.error('Errore scansione canale registrazioni:', error.message);
+    return null;
+  }
+}
+
 function queueRegistrationStatusUpdate(options = {}) {
   const force = options && options.force === true;
 
@@ -1581,6 +1622,17 @@ function queueRegistrationStatusUpdate(options = {}) {
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
 
+      const existingMsg = await findExistingRegistrationMessage(channel);
+
+      if (existingMsg) {
+        const trackedId = data.registrationGraphicMessageId || data.registrationStatusMessageId || null;
+        if (trackedId !== existingMsg.id) {
+          data.registrationGraphicMessageId = existingMsg.id;
+          data.registrationStatusMessageId = existingMsg.id;
+          saveState();
+        }
+      }
+
       let graphicBuffer = null;
       let graphicError = null;
 
@@ -1597,27 +1649,26 @@ function queueRegistrationStatusUpdate(options = {}) {
           name: `team-registrati-${stamp}.png`
         });
 
-        if (data.registrationGraphicMessageId) {
+        if (existingMsg) {
           try {
-            const msg = await channel.messages.fetch(data.registrationGraphicMessageId);
-            await msg.edit({
+            await existingMsg.edit({
               content: '',
               embeds: [],
               components: [],
               files: [attachment]
             });
 
-            if (signature) {
-              data.lastRegistrationGraphicSignature = signature;
-              saveState();
-            }
+            data.registrationGraphicMessageId = existingMsg.id;
+            data.registrationStatusMessageId = existingMsg.id;
+            if (signature) data.lastRegistrationGraphicSignature = signature;
+            saveState();
 
             return {
               ok: true,
               updated: true,
               created: false,
               graphic: true,
-              messageId: msg.id
+              messageId: existingMsg.id
             };
           } catch (error) {
             console.error('Errore update grafica team registrati:', error);
@@ -1645,20 +1696,18 @@ function queueRegistrationStatusUpdate(options = {}) {
 
       const embeds = buildRegistrationEmbeds();
 
-      if (data.registrationStatusMessageId) {
+      if (existingMsg) {
         try {
-          const msg = await channel.messages.fetch(data.registrationStatusMessageId);
-          await msg.edit({
+          await existingMsg.edit({
             content: '',
             embeds,
             components: [],
             attachments: []
           });
 
-          if (signature) {
-            data.lastRegistrationGraphicSignature = signature;
-            saveState();
-          }
+          data.registrationStatusMessageId = existingMsg.id;
+          if (signature) data.lastRegistrationGraphicSignature = signature;
+          saveState();
 
           return {
             ok: true,
@@ -1667,7 +1716,7 @@ function queueRegistrationStatusUpdate(options = {}) {
             graphic: false,
             fallback: true,
             error: graphicError?.message || null,
-            messageId: msg.id
+            messageId: existingMsg.id
           };
         } catch (error) {
           console.error('Errore update messaggio slot team:', error);
