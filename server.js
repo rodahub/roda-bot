@@ -1522,6 +1522,12 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
   maxAge: '1h'
 }));
 
+// Fallback specifico: se il file in /uploads non esiste, restituisce 404 chiaro
+// (evita che il catch-all serva la pagina pubblica al posto del file)
+app.use('/uploads', (req, res) => {
+  res.status(404).send('File non trovato o scaduto. Richiedi al giocatore di reinviare la prova.');
+});
+
 app.use(express.static(PUBLIC_DIR, {
   index: false,
   dotfiles: 'deny',

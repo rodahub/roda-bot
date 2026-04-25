@@ -3523,14 +3523,10 @@ client.on('messageCreate', async message => {
       }
 
       const attachment = message.attachments.first();
-      let proofUrl = attachment.proxyURL || attachment.url || '';
-
-      try {
-        const saved = await saveDiscordAttachmentLocally(attachment);
-        proofUrl = saved;
-      } catch {
-        /* se il salvataggio locale fallisce usiamo l'URL originale */
-      }
+      // Per le prove segnalazioni usiamo la URL Discord CDN direttamente:
+      // è affidabile per ore/giorni (quanto basta per lo staff) e non dipende
+      // dal filesystem locale che su Railway può essere effimero.
+      const proofUrl = attachment.url || attachment.proxyURL || '';
 
       updateReportProofUrl(pendingProof.reportId, proofUrl);
 
