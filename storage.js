@@ -375,6 +375,8 @@ function getDefaultData() {
     registrationStatusTitle: '📋 Slot Team Registrati',
     registrationStatusText: 'Lista team attualmente registrati nel torneo.',
 
+    reports: [],
+
     projectSettings: getDefaultProjectSettings(),
     botSettings: getDefaultBotSettings()
   };
@@ -847,6 +849,25 @@ function buildSubmissionKey(teamName, matchNumber) {
   return `${sanitizeText(teamName).toLowerCase()}::match_${sanitizePositiveInteger(matchNumber, 1, 50)}`;
 }
 
+function normalizeReport(r) {
+  const safe = isObject(r) ? r : {};
+  return {
+    id: sanitizeText(safe.id || ''),
+    teamName: sanitizeText(safe.teamName || ''),
+    slot: Number.isFinite(Number(safe.slot)) ? Number(safe.slot) : 0,
+    matchNumber: sanitizePositiveInteger(safe.matchNumber, 1, 50),
+    reporterDiscordId: sanitizeText(safe.reporterDiscordId || ''),
+    reporterDiscordTag: sanitizeText(safe.reporterDiscordTag || ''),
+    playerName: sanitizeText(safe.playerName || ''),
+    description: sanitizeText(safe.description || ''),
+    proofUrl: sanitizeText(safe.proofUrl || ''),
+    timestamp: typeof safe.timestamp === 'number' ? safe.timestamp : Date.now(),
+    reviewed: Boolean(safe.reviewed),
+    reviewedBy: sanitizeText(safe.reviewedBy || ''),
+    reviewedAt: typeof safe.reviewedAt === 'number' ? safe.reviewedAt : null
+  };
+}
+
 function normalizeData(data) {
   const base = getDefaultData();
   const safe = isObject(data) ? data : {};
@@ -897,6 +918,10 @@ function normalizeData(data) {
       topFraggerGraphicMessageId: safe.topFraggerGraphicMessageId
     }
   );
+
+  base.reports = Array.isArray(safe.reports)
+    ? safe.reports.filter(isObject).map(normalizeReport)
+    : [];
 
   base.projectSettings.tournamentName = FIXED_TOURNAMENT_NAME;
   base.tournamentSettings.tournamentName = FIXED_TOURNAMENT_NAME;
@@ -1826,6 +1851,43 @@ function advanceToNextMatch(data, teams, actor = 'system', options = {}) {
   };
 }
 
+function _genReportId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function addReport(reportRaw) {
+  const id = sanitizeText(reportRaw.id || '') || _genReportId();
+  const report = normalizeReport({ ...reportRaw, id });
+  if (!Array.isArray(data.reports)) data.reports = [];
+  data.reports.push(report);
+  saveState();
+  return report;
+}
+
+function getReports() {
+  return Array.isArray(data.reports) ? [...data.reports].reverse() : [];
+}
+
+function markReportReviewed(id, reviewedBy) {
+  if (!Array.isArray(data.reports)) return false;
+  const r = data.reports.find(r => r.id === id);
+  if (!r) return false;
+  r.reviewed = true;
+  r.reviewedBy = sanitizeText(reviewedBy || 'admin');
+  r.reviewedAt = Date.now();
+  saveState();
+  return true;
+}
+
+function deleteReport(id) {
+  if (!Array.isArray(data.reports)) return false;
+  const idx = data.reports.findIndex(r => r.id === id);
+  if (idx === -1) return false;
+  data.reports.splice(idx, 1);
+  saveState();
+  return true;
+}
+
 module.exports = {
   STORAGE_DIR,
   BACKUP_DIR,
@@ -1904,5 +1966,11 @@ module.exports = {
   normalizeBotSettings,
   normalizeMatches,
   normalizeMatch,
-  normalizeTeamMatchState
+  normalizeTeamMatchState,
+  normalizeReport,
+
+  addReport,
+  getReports,
+  markReportReviewed,
+  deleteReport
 };

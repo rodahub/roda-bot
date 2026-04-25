@@ -69,7 +69,11 @@ const {
   TEAM_MATCH_STATES,
 
   STORAGE_DIR,
-  UPLOADS_DIR
+  UPLOADS_DIR,
+
+  getReports,
+  markReportReviewed,
+  deleteReport
 } = require('./storage');
 
 initializeFiles();
@@ -3617,6 +3621,38 @@ app.post('/api/bot/update-leaderboard', authRequired, requireAdmin, async (req, 
       ok: false,
       message: error.message || 'Errore aggiornamento classifica Discord'
     });
+  }
+});
+
+app.get('/api/reports', requireAuth, (req, res) => {
+  try {
+    const reports = getReports();
+    res.json({ ok: true, reports });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
+  }
+});
+
+app.patch('/api/reports/:id/review', requireAuth, express.json(), (req, res) => {
+  try {
+    const { id } = req.params;
+    const reviewedBy = (req.body && req.body.reviewedBy) || req.session?.username || 'admin';
+    const success = markReportReviewed(id, reviewedBy);
+    if (!success) return res.json({ ok: false, message: 'Segnalazione non trovata' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
+  }
+});
+
+app.delete('/api/reports/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = deleteReport(id);
+    if (!success) return res.json({ ok: false, message: 'Segnalazione non trovata' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
   }
 });
 

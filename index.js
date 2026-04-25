@@ -25,7 +25,8 @@ const {
   getDefaultData,
   markReminderSent,
   REMINDER_TYPES,
-  UPLOADS_DIR
+  UPLOADS_DIR,
+  addReport
 } = require('./storage');
 
 const {
@@ -705,13 +706,18 @@ function createTeamResultPanelPayload(teamName, teamData) {
     }
   }
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(buildResultButtonCustomId(slot))
-      .setLabel(alreadySent ? `Risultato Match ${matchNumber} già inviato` : `Invia risultato Match ${matchNumber}`)
-      .setStyle(alreadySent ? ButtonStyle.Secondary : ButtonStyle.Primary)
-      .setDisabled(alreadySent)
-  );
+  const submitBtn = new ButtonBuilder()
+    .setCustomId(buildResultButtonCustomId(slot))
+    .setLabel(alreadySent ? `Risultato Match ${matchNumber} già inviato` : `Invia risultato Match ${matchNumber}`)
+    .setStyle(alreadySent ? ButtonStyle.Secondary : ButtonStyle.Primary)
+    .setDisabled(alreadySent);
+
+  const reportBtn = new ButtonBuilder()
+    .setCustomId(`report_slot_${slot}`)
+    .setLabel('⚠️ Segnala problema')
+    .setStyle(ButtonStyle.Danger);
+
+  const row = new ActionRowBuilder().addComponents(submitBtn, reportBtn);
 
   return {
     embeds: [embed],
@@ -1486,7 +1492,8 @@ async function refreshTeamResultPanels(customCategoryId) {
       const existing = await findPanelMessageByButtonCustomId(channel, customId);
 
       if (existing) {
-        await safeEditTeamPanelMessage(existing, payload);
+        try { await existing.delete(); } catch { /* già eliminato o permission denied */ }
+        await safeSendToTeamVoiceChannel(channel, payload);
         updated++;
 
         details.push({
@@ -3313,6 +3320,91 @@ client.on('interactionCreate', async interaction => {
 
       return interaction.reply({
         content: '📸 Ora invia qui sotto lo screenshot della partita. È obbligatorio per la verifica dello staff.',
+        ephemeral: true
+      });
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('report_slot_')) {
+      const slot = Number(interaction.customId.replace('report_slot_', ''));
+      const matchNumber = Number(data.currentMatch || 1);
+
+      const modal = new ModalBuilder()
+        .setCustomId(`report_modal_${slot}`)
+        .setTitle(`⚠️ Segnalazione • Match ${matchNumber}`.slice(0, 45));
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('player_name')
+            .setLabel('Giocatore segnalato (vuoto = prob. generale)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setMaxLength(60)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('description')
+            .setLabel('Descrizione del problema / irregolarità')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setMaxLength(900)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('proof_url')
+            .setLabel('Link foto/video come prova (opzionale)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setMaxLength(500)
+        )
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('report_modal_')) {
+      const slot = Number(interaction.customId.replace('report_modal_', ''));
+      const teamInfo = getTeamBySlot(slot);
+      const matchNumber = Number(data.currentMatch || 1);
+
+      const playerName = (interaction.fields.getTextInputValue('player_name') || '').trim();
+      const description = (interaction.fields.getTextInputValue('description') || '').trim();
+      const proofUrl = (interaction.fields.getTextInputValue('proof_url') || '').trim();
+
+      if (!description) {
+        return interaction.reply({
+          content: '❌ La descrizione non può essere vuota.',
+          ephemeral: true
+        });
+      }
+
+      const report = addReport({
+        teamName: teamInfo?.teamName || `Slot #${slot}`,
+        slot,
+        matchNumber,
+        reporterDiscordId: interaction.user.id,
+        reporterDiscordTag: interaction.user.tag,
+        playerName,
+        description,
+        proofUrl,
+        timestamp: Date.now()
+      });
+
+      logAudit(interaction.user.tag, 'discord', 'segnalazione_inviata', {
+        reportId: report.id,
+        team: teamInfo?.teamName,
+        slot,
+        matchNumber,
+        playerName,
+        hasProof: Boolean(proofUrl)
+      });
+
+      const proofNote = proofUrl
+        ? `\n📎 **Prova allegata:** ${proofUrl}`
+        : '\n📎 Per allegare screenshot/video come prova, caricali direttamente in questa stanza vocale (trascina il file in chat).';
+
+      return interaction.reply({
+        content: `✅ **Segnalazione ricevuta!** (ID: \`${report.id}\`)\n\nLo staff esaminerà quanto segnalato al più presto.${proofNote}`,
         ephemeral: true
       });
     }
