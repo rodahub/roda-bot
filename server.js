@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const {
   initializeFiles,
@@ -61,9 +63,16 @@ const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
-const DASHBOARD_EMAIL = process.env.DASHBOARD_EMAIL || 'admin@example.com';
-const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'admin123';
-const DASHBOARD_COOKIE_SECRET = process.env.DASHBOARD_COOKIE_SECRET || 'change-this-secret-now';
+const DASHBOARD_EMAIL = process.env.DASHBOARD_EMAIL || '';
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+const DASHBOARD_COOKIE_SECRET =
+  process.env.SESSION_SECRET ||
+  process.env.DASHBOARD_COOKIE_SECRET ||
+  crypto.randomBytes(64).toString('hex');
+
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET && !process.env.DASHBOARD_COOKIE_SECRET) {
+  console.warn('⚠️ ATTENZIONE: SESSION_SECRET non impostato. Le sessioni cambieranno a ogni riavvio.');
+}
 
 const COOKIE_NAME = 'staff_auth';
 const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
@@ -79,8 +88,57 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 180,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    message: 'Troppe richieste. Riprova tra poco.'
+  }
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    message: 'Troppi tentativi di login. Riprova tra 15 minuti.'
+  }
+});
+
+const publicRegisterLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    message: 'Troppe registrazioni da questo indirizzo. Riprova tra poco.'
+  }
+});
+
+app.use(generalLimiter);
+
+app.use(express.json({ limit: '8mb' }));
+app.use(express.urlencoded({ extended: true, limit: '8mb' }));
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -113,6 +171,67 @@ function sanitizePositiveInteger(value, fallback = 1, max = 9999) {
 function sanitizeBoolean(value) {
   return value === true || value === 'true' || value === 1 || value === '1' || value === 'on';
 }
+
+function isSafeSameOrigin(req) {
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+
+  if (!origin && !referer) return true;
+  if (!host) return false;
+
+  try {
+    if (origin) {
+      const originUrl = new URL(origin);
+      return originUrl.host === host;
+    }
+
+    if (referer) {
+      const refererUrl = new URL(referer);
+      return refererUrl.host === host;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function csrfLiteProtection(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  if (!req.originalUrl.startsWith('/api/')) {
+    return next();
+  }
+
+  if (req.originalUrl.startsWith('/api/public/')) {
+    return next();
+  }
+
+  if (!isSafeSameOrigin(req)) {
+    return res.status(403).json({
+      ok: false,
+      message: 'Richiesta bloccata per sicurezza.'
+    });
+  }
+
+  return next();
+}
+
+function noStore(req, res, next) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  return next();
+}
+
+app.use(csrfLiteProtection);
+
+app.use('/admin', noStore);
+app.use('/api/dashboard', noStore);
+app.use('/api/admin-users', noStore);
 
 function normalizeBaseUrl(value) {
   const clean = String(value || '').trim();
@@ -914,11 +1033,25 @@ function saveBase64Image(imageData, req) {
 
   const mime = match[1];
   const base64 = match[2];
+
+  const sizeBytes = Buffer.byteLength(base64, 'base64');
+  const maxBytes = 5 * 1024 * 1024;
+
+  if (sizeBytes > maxBytes) {
+    throw new Error('Immagine troppo grande. Massimo 5MB.');
+  }
+
   const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   const filePath = path.join(UPLOADS_DIR, fileName);
 
-  fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+  const buffer = Buffer.from(base64, 'base64');
+
+  if (!buffer.length) {
+    throw new Error('Immagine vuota o non valida.');
+  }
+
+  fs.writeFileSync(filePath, buffer);
 
   const baseUrl = getPublicBaseUrl(req);
 
@@ -1258,14 +1391,23 @@ app.get('/login', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
 });
 
-app.use('/uploads', express.static(UPLOADS_DIR));
-app.use(express.static(PUBLIC_DIR, { index: false }));
+app.use('/uploads', express.static(UPLOADS_DIR, {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: '1h'
+}));
+
+app.use(express.static(PUBLIC_DIR, {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
+}));
 
 app.get('/api/public/dashboard', (req, res) => {
   return res.json(buildPublicPayload(req));
 });
 
-app.post('/api/public/register-team', async (req, res) => {
+app.post('/api/public/register-team', publicRegisterLimiter, async (req, res) => {
   try {
     const data = loadData();
     const teams = loadTeams();
@@ -1344,7 +1486,7 @@ app.post('/api/public/register-team', async (req, res) => {
   }
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', loginLimiter, (req, res) => {
   const username = sanitizeText(req.body.username || req.body.email);
   const password = String(req.body.password || '');
 
@@ -1374,7 +1516,13 @@ app.post('/api/login', (req, res) => {
     });
   }
 
-  if (username === DASHBOARD_EMAIL && password === DASHBOARD_PASSWORD) {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    DASHBOARD_EMAIL &&
+    DASHBOARD_PASSWORD &&
+    username === DASHBOARD_EMAIL &&
+    password === DASHBOARD_PASSWORD
+  ) {
     const legacyUser = createAdminUser({
       username: OWNER_USERNAME,
       password: OWNER_INITIAL_PASSWORD,
@@ -1883,6 +2031,10 @@ app.post('/api/tournament/configure', authRequired, requireAdmin, async (req, re
 
     if (Number(data.currentMatch || 1) > totalMatches) {
       data.currentMatch = totalMatches;
+    }
+
+    if (!data.matches || typeof data.matches !== 'object') {
+      data.matches = {};
     }
 
     for (let i = 1; i <= totalMatches; i++) {
@@ -3258,6 +3410,34 @@ app.post('/api/bot/update-leaderboard', authRequired, requireAdmin, async (req, 
       message: error.message || 'Errore aggiornamento classifica Discord'
     });
   }
+});
+
+app.use((req, res) => {
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(404).json({
+      ok: false,
+      message: 'Endpoint non trovato'
+    });
+  }
+
+  return res.status(404).sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+app.use((error, req, res, next) => {
+  console.error('Errore server:', error);
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Errore interno del server'
+    });
+  }
+
+  return res.status(500).send('Errore interno del server');
 });
 
 app.listen(PORT, HOST, () => {
