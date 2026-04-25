@@ -1779,6 +1779,38 @@ async function updateLeaderboardGraphics(options = {}) {
   };
 }
 
+async function deleteSavedTextLeaderboardMessage() {
+  await waitReady();
+  ensureDataStructures();
+
+  if (!data.leaderboardMessageId) {
+    return {
+      deleted: false,
+      skipped: true,
+      messageId: null
+    };
+  }
+
+  const oldMessageId = data.leaderboardMessageId;
+
+  try {
+    const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+    const msg = await channel.messages.fetch(oldMessageId);
+    await msg.delete().catch(() => {});
+  } catch (error) {
+    console.error('Vecchia classifica testuale non trovata o già eliminata:', error.message);
+  }
+
+  data.leaderboardMessageId = null;
+  saveState();
+
+  return {
+    deleted: true,
+    skipped: false,
+    messageId: oldMessageId
+  };
+}
+
 async function updateLeaderboard(options = {}) {
   await waitReady();
   ensureDataStructures();
@@ -1786,47 +1818,12 @@ async function updateLeaderboard(options = {}) {
   const allowCreate = options.allowCreate !== false;
   const updateGraphics = options.updateGraphics !== false;
 
-  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
-  const project = getProjectSettings();
+  let deletedTextLeaderboard = null;
 
-  const sorted = Object.entries(data.scores || {}).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0));
-  const desc = sorted.map((t, i) => `#${i + 1} ${t[0]} - ${t[1]} pt`).join('\n') || 'Nessun dato';
-
-  const frag = Object.entries(data.fragger || {})
-    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
-    .slice(0, 5)
-    .map(f => `${f[0]} (${f[1]})`)
-    .join('\n') || 'Nessuno';
-
-  const embed = new EmbedBuilder()
-    .setColor(0x7b2cff)
-    .setTitle(`🏆 ${project.tournamentName} • CLASSIFICA MATCH ${data.currentMatch}`)
-    .setDescription(desc)
-    .addFields({ name: '🔥 Top Fragger', value: frag });
-
-  let created = false;
-  let updated = false;
-  let skipped = false;
-
-  if (data.leaderboardMessageId) {
-    try {
-      const msg = await channel.messages.fetch(data.leaderboardMessageId);
-      await msg.edit({ embeds: [embed] });
-      updated = true;
-    } catch (error) {
-      console.error('Errore update classifica testuale:', error);
-    }
-  }
-
-  if (!updated) {
-    if (!allowCreate) {
-      skipped = true;
-    } else {
-      const msg = await channel.send({ embeds: [embed] });
-      data.leaderboardMessageId = msg.id;
-      created = true;
-      saveState();
-    }
+  try {
+    deletedTextLeaderboard = await deleteSavedTextLeaderboardMessage();
+  } catch (error) {
+    console.error('Errore eliminazione classifica testuale:', error);
   }
 
   let graphicsResult = null;
@@ -1839,12 +1836,10 @@ async function updateLeaderboard(options = {}) {
     }
   }
 
-  logAudit('bot', 'discord', created ? 'classifica_creata' : updated ? 'classifica_aggiornata' : 'classifica_saltata', {
+  logAudit('bot', 'discord', 'classifica_grafica_aggiornata', {
     currentMatch: data.currentMatch,
     allowCreate,
-    updated,
-    created,
-    skipped,
+    deletedTextLeaderboard,
     leaderboardGraphicMessageId: data.leaderboardGraphicMessageId || null,
     topFraggerGraphicMessageId: data.topFraggerGraphicMessageId || null
   });
@@ -1852,9 +1847,11 @@ async function updateLeaderboard(options = {}) {
   return {
     ok: true,
     allowCreate,
-    updated,
-    created,
-    skipped,
+    updated: Boolean(graphicsResult?.leaderboardGraphicResult?.updated || graphicsResult?.topFraggerGraphicResult?.updated),
+    created: Boolean(graphicsResult?.leaderboardGraphicResult?.created || graphicsResult?.topFraggerGraphicResult?.created),
+    skipped: false,
+    textLeaderboardDisabled: true,
+    deletedTextLeaderboard,
     graphicsResult
   };
 }
@@ -2409,6 +2406,57 @@ function getBotConfig() {
   };
 }
 
+async function listDiscordChannels() {
+  await waitReady();
+
+  const guild = await client.guilds.fetch(GUILD_ID);
+  await guild.channels.fetch();
+
+  function getTypeLabel(type) {
+    if (type === ChannelType.GuildCategory) return 'Categoria';
+    if (type === ChannelType.GuildText) return 'Testuale';
+    if (type === ChannelType.GuildVoice) return 'Vocale';
+    if (type === ChannelType.GuildAnnouncement) return 'Annunci';
+    if (type === ChannelType.GuildStageVoice) return 'Stage';
+    if (type === ChannelType.GuildForum) return 'Forum';
+    if (type === ChannelType.GuildMedia) return 'Media';
+    return 'Altro';
+  }
+
+  const channels = [...guild.channels.cache.values()]
+    .sort((a, b) => {
+      const parentA = a.parent?.rawPosition ?? a.rawPosition ?? 0;
+      const parentB = b.parent?.rawPosition ?? b.rawPosition ?? 0;
+
+      if (parentA !== parentB) return parentA - parentB;
+
+      return (a.rawPosition || 0) - (b.rawPosition || 0);
+    })
+    .map(channel => ({
+      id: channel.id,
+      name: channel.name,
+      type: channel.type,
+      typeLabel: getTypeLabel(channel.type),
+      parentId: channel.parentId || '',
+      parentName: channel.parent?.name || '',
+      position: channel.rawPosition || 0,
+      isCategory: channel.type === ChannelType.GuildCategory,
+      isText:
+        channel.type === ChannelType.GuildText ||
+        channel.type === ChannelType.GuildAnnouncement,
+      isVoice:
+        channel.type === ChannelType.GuildVoice ||
+        channel.type === ChannelType.GuildStageVoice
+    }));
+
+  return {
+    ok: true,
+    guildId: guild.id,
+    guildName: guild.name,
+    channels
+  };
+}
+
 client.once('ready', async () => {
   console.log('ONLINE');
 
@@ -2806,6 +2854,7 @@ module.exports = {
   sendLobbyCodeToTeamRooms,
   sendMessageToChannel,
   sendGeneralAnnouncement,
+  listDiscordChannels,
   nextMatch,
   nextMatchAndRefresh,
   setCurrentMatch,
