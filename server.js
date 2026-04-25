@@ -3505,6 +3505,16 @@ app.post('/api/bot/refresh-team-result-panels', authRequired, requireAdmin, asyn
   }
 });
 
+app.get('/api/bot/diagnose-panels', authRequired, requireAdmin, async (req, res) => {
+  try {
+    const categoryId = sanitizeText(req.query.categoryId) || '';
+    const result = await safeBotCall('diagnosePanels', categoryId);
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore diagnostica' });
+  }
+});
+
 app.post('/api/bot/create-rooms', authRequired, requireAdmin, async (req, res) => {
   try {
     const categoryId = sanitizeText(req.body.categoryId);

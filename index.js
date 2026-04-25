@@ -1285,16 +1285,23 @@ async function getVoiceTeamChannels(categoryIdToUse) {
     };
   }
 
-  const channels = guild.channels.cache.filter(channel =>
-    channel.parentId === cleanCategoryId &&
-    channel.type === ChannelType.GuildVoice &&
-    channel.name.startsWith('🏆・#')
-  );
+  const normPrefix = '🏆・#'.normalize('NFKC');
+  const channels = guild.channels.cache.filter(channel => {
+    if (channel.parentId !== cleanCategoryId) return false;
+    if (channel.type !== ChannelType.GuildVoice) return false;
+    const normName = String(channel.name || '').normalize('NFKC');
+    return normName.startsWith(normPrefix) || normName.startsWith('#') || normName.includes('・#') || normName.includes('・# ');
+  });
+
+  const allVoiceInCategory = guild.channels.cache
+    .filter(ch => ch.parentId === cleanCategoryId && ch.type === ChannelType.GuildVoice)
+    .map(ch => ({ id: ch.id, name: ch.name }));
 
   return {
     guild,
     channels,
-    categoryId: cleanCategoryId
+    categoryId: cleanCategoryId,
+    allVoiceInCategory
   };
 }
 
@@ -1342,7 +1349,7 @@ async function refreshTeamResultPanels(customCategoryId) {
     };
   }
 
-  const { channels } = await getVoiceTeamChannels(categoryIdToUse);
+  const { channels, allVoiceInCategory = [] } = await getVoiceTeamChannels(categoryIdToUse);
   const sortedTeams = getSortedTeamEntries();
 
   if (!sortedTeams.length) {
@@ -1353,6 +1360,7 @@ async function refreshTeamResultPanels(customCategoryId) {
       missingRooms: 0,
       failed: 0,
       details: [],
+      allVoiceInCategory,
       reason: 'Nessun team registrato'
     };
   }
@@ -1365,11 +1373,12 @@ async function refreshTeamResultPanels(customCategoryId) {
       missingRooms: sortedTeams.length,
       failed: 0,
       foundChannelNames: [],
+      allVoiceInCategory,
       details: sortedTeams.map(([teamName, teamData]) => ({
         team: teamName,
         slot: Number(teamData?.slot || 0),
         status: 'missing_room',
-        reason: 'Nessuna stanza vocale trovata nella categoria'
+        reason: `Nessuna stanza vocale corrispondente trovata nella categoria (totale canali vocali nella categoria: ${allVoiceInCategory.length})`
       }))
     };
   }
@@ -1475,7 +1484,64 @@ async function refreshTeamResultPanels(customCategoryId) {
     missingRooms,
     failed,
     foundChannelNames,
+    allVoiceInCategory,
     details
+  };
+}
+
+async function diagnosePanels(customCategoryId) {
+  await waitReady();
+  refreshStateFromDisk();
+
+  const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
+  const sortedTeams = getSortedTeamEntries();
+
+  if (!categoryIdToUse) {
+    return {
+      error: 'Categoria non configurata — imposta una categoria nelle impostazioni Discord.',
+      categoryId: '',
+      sortedTeams: sortedTeams.map(([n, t]) => ({ name: n, slot: t?.slot })),
+      allVoiceInCategory: [],
+      filteredChannels: []
+    };
+  }
+
+  const guild = await client.guilds.fetch(GUILD_ID);
+  await guild.channels.fetch();
+
+  const allVoiceInCategory = guild.channels.cache
+    .filter(ch => ch.parentId === categoryIdToUse && ch.type === ChannelType.GuildVoice)
+    .map(ch => ({ id: ch.id, name: ch.name, nameHex: Buffer.from(ch.name).toString('hex') }));
+
+  const normPrefix = '🏆・#'.normalize('NFKC');
+  const filteredChannels = allVoiceInCategory.filter(ch => {
+    const n = String(ch.name || '').normalize('NFKC');
+    return n.startsWith(normPrefix) || n.includes('・#') || n.includes('#');
+  });
+
+  const teamMatchInfo = sortedTeams.map(([teamName, teamData]) => {
+    const slot = Number(teamData?.slot || 0);
+    const slotPrefix = `🏆・#${slot}`.normalize('NFKC');
+    const match = allVoiceInCategory.find(ch => {
+      const n = String(ch.name || '').normalize('NFKC');
+      return n.startsWith(slotPrefix + ' ') || n.startsWith(slotPrefix + '\u3000') || n === slotPrefix || n.includes(`#${slot} `) || n.includes(`#${slot}\u3000`);
+    });
+    return {
+      team: teamName,
+      slot,
+      matchedChannel: match ? match.name : null,
+      matchedChannelId: match ? match.id : null,
+      status: slot === 0 ? 'slot_zero' : match ? 'ok' : 'no_match'
+    };
+  });
+
+  return {
+    categoryId: categoryIdToUse,
+    totalVoiceInCategory: allVoiceInCategory.length,
+    allVoiceInCategory,
+    filteredChannels,
+    teamMatchInfo,
+    totalTeams: sortedTeams.length
   };
 }
 
@@ -3335,6 +3401,7 @@ module.exports = {
   resetAllState,
   saveBotPanelSettings,
   refreshTeamResultPanels,
+  diagnosePanels,
   getTournamentSettings,
   getTournamentMessages,
   calcPoints,

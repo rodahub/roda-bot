@@ -1666,6 +1666,10 @@
                         <button class="btn action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
                         <div class="action-help">Aggiorna (o crea se mancano) i pannelli punteggio dentro ogni stanza vocale team. Servono ai capitani per caricare gli screenshot dei risultati.</div>
                       </div>
+                      <div class="action-tile">
+                        <button class="btn action-btn" style="background:#555" onclick="diagnosePanels()">🔍 Diagnostica stanze vocali</button>
+                        <div class="action-help">Mostra cosa vede il bot nella categoria Discord: stanze trovate, corrispondenze team↔stanza, e eventuali problemi. Utile se i pannelli non appaiono.</div>
+                      </div>
                     </div>
                   </div>
 
@@ -3251,6 +3255,41 @@
         }
         setStatus(msg)
       })
+    }
+    async function diagnosePanels(){
+      syncDiscordSelectsToInputs();
+      const categoryId=qs('categoryInput').value.trim();
+      if(!categoryId)return alert('Seleziona prima la categoria RØDA CUP');
+      return runAction('diagnosePanels','Diagnostica stanze vocali...',async()=>{
+        const result=await api(`/api/bot/diagnose-panels?categoryId=${encodeURIComponent(categoryId)}`);
+        if(!result)return;
+        const d=result.data||{};
+        if(d.error)return alert('Errore diagnostica:\n'+d.error);
+        const lines=[];
+        lines.push(`Categoria: ${d.categoryId||'—'}`);
+        lines.push(`Canali vocali totali nella categoria: ${d.totalVoiceInCategory||0}`);
+        if((d.allVoiceInCategory||[]).length){
+          lines.push(`\nNomi esatti canali vocali trovati:`);
+          (d.allVoiceInCategory||[]).forEach(ch=>lines.push(`  • ${ch.name}`));
+        } else {
+          lines.push('\n⚠️ Nessun canale vocale trovato nella categoria!');
+          lines.push('→ Verifica che la categoria selezionata sia quella corretta e che le stanze esistano.');
+        }
+        lines.push(`\nTeam registrati: ${d.totalTeams||0}`);
+        (d.teamMatchInfo||[]).forEach(t=>{
+          const icon=t.status==='ok'?'✅':t.status==='slot_zero'?'❌ slot=0':t.status==='no_match'?'❌ nessuna stanza':'?';
+          lines.push(`  ${icon} ${t.team} (slot #${t.slot})${t.matchedChannel?' → '+t.matchedChannel:''}`);
+        });
+        if((d.teamMatchInfo||[]).some(t=>t.status==='no_match')){
+          lines.push('\n→ Team senza stanza: le stanze devono chiamarsi 🏆・#<numero> <nomeTeam>');
+          lines.push('→ Se le stanze ci sono ma non compaiono qui: il problema è nei caratteri del nome canale (copia il nome da Discord e confrontalo)');
+        }
+        if((d.teamMatchInfo||[]).some(t=>t.status==='slot_zero')){
+          lines.push('\n→ Team con slot=0: registra il team tramite il pannello iscrizioni Discord oppure salvalo di nuovo dal sito');
+        }
+        alert(lines.join('\n'));
+        setStatus('Diagnostica stanze vocali completata');
+      });
     }
     async function syncEverything(){
       if(!dashboard)return;
