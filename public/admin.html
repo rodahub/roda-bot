@@ -1103,6 +1103,14 @@
         align-items:flex-start
       }
     }
+  #proofOverlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);align-items:center;justify-content:center;flex-direction:column;gap:12px}
+  #proofOverlay.open{display:flex}
+  #proofOverlay img{max-width:92vw;max-height:82vh;border-radius:8px;box-shadow:0 4px 32px #000a;object-fit:contain}
+  #proofOverlay video{max-width:92vw;max-height:82vh;border-radius:8px;box-shadow:0 4px 32px #000a;outline:none}
+  #proofOverlay .proof-close{position:fixed;top:18px;right:22px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:26px;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
+  #proofOverlay .proof-close:hover{background:rgba(255,255,255,.25)}
+  #proofOverlay .proof-open-ext{color:rgba(255,255,255,.55);font-size:11px;text-decoration:none;margin-top:4px}
+  #proofOverlay .proof-open-ext:hover{color:#fff}
   </style>
   </head>
   <body>
@@ -3354,7 +3362,7 @@
             <div><span style="color:var(--text-muted);">Giocatore segnalato:</span> ${r.playerName?escHtml(r.playerName):'<em style="color:var(--text-muted)">Problema generale</em>'}</div>
           </div>
           <div style="background:var(--bg-secondary,#1a1a2e);border-radius:6px;padding:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;">${escHtml(r.description||'—')}</div>
-          ${r.proofUrl?`<div style="font-size:12px;margin-bottom:8px;">📎 <a href="${escHtml(r.proofUrl)}" target="_blank" rel="noopener" style="color:var(--accent);">Visualizza prova allegata</a></div>`:''}
+          ${r.proofUrl?`<div style="font-size:12px;margin-bottom:8px;"><button class="btn" onclick="openProofViewer('${escHtml(r.proofUrl)}')" style="font-size:12px;padding:4px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">📎 Visualizza prova allegata</button></div>`:''}
           ${r.reviewed?`<div style="font-size:11px;color:var(--text-muted);">Esaminata da <strong>${escHtml(r.reviewedBy||'admin')}</strong> il ${revDate}</div>`:`
           <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="reviewReport('${escHtml(r.id)}')">✅ Segna come esaminata</button>
@@ -3558,6 +3566,46 @@
     setInterval(()=>{
       if(!loading)refreshDashboard()
     },10000);
+
+    function openProofViewer(url){
+      const overlay=document.getElementById('proofOverlay');
+      const container=document.getElementById('proofMedia');
+      const extLink=document.getElementById('proofExtLink');
+      if(!overlay||!container)return;
+      container.innerHTML='';
+      const isVideo=/\.(mp4|webm|mov|avi|mkv|m4v)/i.test(url)||(url.includes('video')||url.includes('.mp4')||url.includes('.webm'));
+      if(isVideo){
+        const v=document.createElement('video');
+        v.src=url;v.controls=true;v.autoplay=true;v.style.cssText='max-width:92vw;max-height:82vh;border-radius:8px;';
+        container.appendChild(v);
+      } else {
+        const img=document.createElement('img');
+        img.src=url;img.alt='Prova allegata';
+        img.onerror=()=>{img.style.display='none';container.innerHTML='<p style="color:#fff;font-size:14px;text-align:center;">Impossibile caricare il file.<br>Usa il link esterno qui sotto.</p>';};
+        container.appendChild(img);
+      }
+      if(extLink){extLink.href=url;}
+      overlay.classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeProofViewer(){
+      const overlay=document.getElementById('proofOverlay');
+      const container=document.getElementById('proofMedia');
+      if(overlay){overlay.classList.remove('open');}
+      if(container){const v=container.querySelector('video');if(v)v.pause();container.innerHTML='';}
+      document.body.style.overflow='';
+    }
+    document.getElementById('proofOverlay')?.addEventListener('click',function(e){
+      if(e.target===this)closeProofViewer();
+    });
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProofViewer();});
   </script>
+
+  <div id="proofOverlay" role="dialog" aria-modal="true">
+    <button class="proof-close" onclick="closeProofViewer()" title="Chiudi">✕</button>
+    <div id="proofMedia"></div>
+    <a id="proofExtLink" href="#" target="_blank" rel="noopener" class="proof-open-ext">↗ Apri in una nuova scheda</a>
+  </div>
+
       </body>
     </html>
