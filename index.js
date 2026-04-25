@@ -954,12 +954,7 @@ async function refreshTeamResultPanels(customCategoryId) {
 
   const channelList = [...channels.values()];
 
-  for (const [teamName, teamData] of Object.entries(teams || {}).sort((a, b) => {
-    const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(b[1]?.slot || 999999);
-    if (slotA !== slotB) return slotA - slotB;
-    return a[0].localeCompare(b[0], 'it');
-  })) {
+  for (const [teamName, teamData] of getSortedTeamEntries()) {
     const slot = Number(teamData?.slot || 0);
     const channel = channelList.find(ch => ch.name.startsWith(`🏆・#${slot} `));
 
@@ -1013,12 +1008,7 @@ async function createTeamRooms(customCategoryId) {
   const structure = await ensureTournamentDiscordStructure(customCategoryId);
   const categoryIdToUse = structure.categoryId;
 
-  const sortedTeams = Object.entries(teams || {}).sort((a, b) => {
-    const slotA = Number(a[1]?.slot || 999999);
-    const slotB = Number(b[1]?.slot || 999999);
-    if (slotA !== slotB) return slotA - slotB;
-    return a[0].localeCompare(b[0], 'it');
-  });
+  const sortedTeams = getSortedTeamEntries();
 
   if (!sortedTeams.length) {
     throw new Error('Nessun team registrato');
@@ -1534,12 +1524,8 @@ async function updateRegisteredTeamsGraphic(options = {}) {
   await waitReady();
   refreshStateFromDisk();
 
-  console.log('==============================');
-  console.log('[team-registrati] AVVIO FORZATO');
+  console.log('[team-registrati] aggiornamento grafica');
   console.log('[team-registrati] REGISTRATION_STATUS_CHANNEL:', REGISTRATION_STATUS_CHANNEL);
-  console.log('[team-registrati] PUBLIC_BASE_URL:', process.env.PUBLIC_BASE_URL || '(non impostato)');
-  console.log('[team-registrati] RAILWAY_PUBLIC_DOMAIN:', process.env.RAILWAY_PUBLIC_DOMAIN || '(non impostato)');
-  console.log('==============================');
 
   const allowCreate = options.allowCreate !== false;
 
@@ -1552,20 +1538,9 @@ async function updateRegisteredTeamsGraphic(options = {}) {
     throw new Error(`Canale team registrati non trovato: ${REGISTRATION_STATUS_CHANNEL}`);
   }
 
-  console.log('[team-registrati] canale trovato:', channel.id, channel.name || '(senza nome)');
-  console.log('[team-registrati] type:', channel.type);
-  console.log('[team-registrati] send disponibile:', typeof channel.send);
-
   if (typeof channel.send !== 'function') {
     throw new Error(`Il canale ${REGISTRATION_STATUS_CHANNEL} non supporta channel.send(). Controlla che sia un canale testuale Discord.`);
   }
-
-  await channel.send({
-    content: '🧪 Test bot: sto provando a generare la grafica Team Registrati...'
-  }).catch(error => {
-    console.error('[team-registrati] ERRORE INVIO TEST:', error);
-    throw error;
-  });
 
   const registered = Object.keys(teams || {}).length;
   const stamp = Date.now();
