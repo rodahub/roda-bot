@@ -3573,14 +3573,16 @@
       const extLink=document.getElementById('proofExtLink');
       if(!overlay||!container)return;
       container.innerHTML='';
+      // Passa sempre attraverso il proxy del server per evitare blocchi CORS di Discord CDN
+      const proxyUrl='/api/proof-proxy?url='+encodeURIComponent(url);
       const isVideo=/\.(mp4|webm|mov|avi|mkv|m4v)/i.test(url)||(url.includes('video')||url.includes('.mp4')||url.includes('.webm'));
       if(isVideo){
         const v=document.createElement('video');
-        v.src=url;v.controls=true;v.autoplay=true;v.style.cssText='max-width:92vw;max-height:82vh;border-radius:8px;';
+        v.src=proxyUrl;v.controls=true;v.autoplay=true;v.style.cssText='max-width:92vw;max-height:82vh;border-radius:8px;';
         container.appendChild(v);
       } else {
         const img=document.createElement('img');
-        img.src=url;img.alt='Prova allegata';
+        img.src=proxyUrl;img.alt='Prova allegata';
         img.onerror=()=>{img.style.display='none';container.innerHTML='<p style="color:#fff;font-size:14px;text-align:center;">Impossibile caricare il file.<br>Usa il link esterno qui sotto.</p>';};
         container.appendChild(img);
       }

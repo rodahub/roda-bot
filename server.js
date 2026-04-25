@@ -1534,6 +1534,41 @@ app.use(express.static(PUBLIC_DIR, {
   maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
 }));
 
+// Proxy per le prove segnalazioni (Discord CDN blocca le richieste cross-origin)
+app.get('/api/proof-proxy', authRequired, async (req, res) => {
+  try {
+    const rawUrl = String(req.query.url || '');
+    if (!rawUrl) return res.status(400).send('URL mancante');
+
+    // Accetta solo URL Discord CDN per sicurezza
+    const allowed = /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//i;
+    if (!allowed.test(rawUrl)) {
+      return res.status(403).send('URL non consentita');
+    }
+
+    const upstream = await fetch(rawUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RodaBot/1.0)' }
+    });
+
+    if (!upstream.ok) {
+      return res.status(502).send('Impossibile recuperare il file da Discord');
+    }
+
+    const ct = upstream.headers.get('content-type') || 'application/octet-stream';
+    const cl = upstream.headers.get('content-length');
+
+    res.setHeader('Content-Type', ct);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    if (cl) res.setHeader('Content-Length', cl);
+
+    const buf = await upstream.arrayBuffer();
+    res.send(Buffer.from(buf));
+  } catch (e) {
+    console.error('[proof-proxy]', e.message);
+    res.status(500).send('Errore proxy');
+  }
+});
+
 app.get('/api/public/dashboard', (req, res) => {
   return res.json(buildPublicPayload(req));
 });
