@@ -1852,6 +1852,38 @@
         </div>
         <script>
     let dashboard=null,loading=false,selectedMatchRows=null,selectedMatchNumber=null,suggestedAction=null,discordChannels=null,discordLoading=false;
+    let lastClickedButton=null;
+    const inFlightActions=new Set();
+    document.addEventListener('click',event=>{
+      const btn=event.target.closest('button');
+      if(btn)lastClickedButton=btn;
+    },true);
+    async function runAction(actionId,label,fn){
+      if(inFlightActions.has(actionId))return;
+      inFlightActions.add(actionId);
+      const btn=lastClickedButton;
+      let originalText='';
+      if(btn){
+        originalText=btn.textContent;
+        btn.disabled=true;
+        if(label)btn.textContent=label;
+      }
+      if(label)setStatus(label);
+      try{
+        return await fn();
+      }
+      catch(error){
+        console.error(error);
+        setStatus('Errore: '+(error&&error.message?error.message:'imprevisto'));
+      }
+      finally{
+        inFlightActions.delete(actionId);
+        if(btn){
+          btn.disabled=false;
+          btn.textContent=originalText;
+        }
+      }
+    }
 
     const pageInfo={
       regia:['Regia torneo','Vista live per gestire il torneo senza confusione.'],risultati:['Risultati','Gestione match, screen e inserimenti manuali.'],team:['Team','Modifica rapida con pennini su team e player.'],torneo:['Torneo','Regole, punteggio e messaggi ufficiali.'],discord:['Discord','Categoria, stanze, pannelli e codice lobby.'],archivio:['Storico','Snapshot e storico tornei.'],staff:['Staff','Account admin e staff.'],sistema:['Sistema','Reset e registro attività.']
@@ -1959,20 +1991,19 @@
       qs('refreshBtn').textContent='Aggiorno...';
       setStatus('Caricamento dati...');
       try{
-        const session=await api('/api/session');
-        if(!session)return;
-        if(!session.response.ok||!session.data.ok){
-          location.href='/login';
-          return
-        }
-        qs('staffInfo').textContent=`${session.data.username||session.data.email||'-'} • ${session.data.role||'staff'}`;
         const result=await api('/api/dashboard');
         if(!result)return;
         if(!result.response.ok||!result.data.ok){
+          if(result.response.status===401){
+            location.href='/login';
+            return
+          }
           setStatus(result.data.message||'Errore caricamento dashboard');
           return
         }
         dashboard=result.data;
+        const session=result.data.session||{};
+        qs('staffInfo').textContent=`${session.username||session.email||'-'} • ${session.role||'staff'}`;
         selectedMatchNumber=Number(qs('matchFilter')?.value||dashboard.matchCorrente||1);
         selectedMatchRows=null;
         renderDashboard();
@@ -2483,77 +2514,79 @@
     }
     async function createNewTournamentDirect(){
       if(!confirm('Confermi creazione nuovo torneo? Il torneo attuale resterà salvato nello storico.'))return;
-      const totalMatches=Number(dashboard?.impostazioniTorneo?.totalMatches||3),autoNextMatch=dashboard?.impostazioniTorneo?.autoNextMatch!==false;
-      const result=await api('/api/tournament/new',{
-        method:'POST',body:JSON.stringify({
-          archiveLabel:'',archiveNote:'',totalMatches,autoNextMatch
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione nuovo torneo');
-      await refreshDashboard();
-      setStatus('Nuovo torneo creato')
+      return runAction('createNewTournamentDirect','Creo nuovo torneo...',async()=>{
+        const totalMatches=Number(dashboard?.impostazioniTorneo?.totalMatches||3),autoNextMatch=dashboard?.impostazioniTorneo?.autoNextMatch!==false;
+        const result=await api('/api/tournament/new',{
+          method:'POST',body:JSON.stringify({
+            archiveLabel:'',archiveNote:'',totalMatches,autoNextMatch
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione nuovo torneo');
+        await refreshDashboard();
+        setStatus('Nuovo torneo creato')
+      })
     }
     async function openRegistrations(){
-      const result=await api('/api/tournament/open-registrations',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore apertura iscrizioni');
-      await refreshDashboard();
-      setStatus('Iscrizioni aperte')
+      return runAction('openRegistrations','Apro iscrizioni...',async()=>{
+        const result=await api('/api/tournament/open-registrations',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore apertura iscrizioni');
+        await refreshDashboard();
+        setStatus('Iscrizioni aperte')
+      })
     }
     async function closeRegistrations(){
-      const result=await api('/api/tournament/close-registrations',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore chiusura iscrizioni');
-      await refreshDashboard();
-      setStatus('Iscrizioni chiuse')
+      return runAction('closeRegistrations','Chiudo iscrizioni...',async()=>{
+        const result=await api('/api/tournament/close-registrations',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore chiusura iscrizioni');
+        await refreshDashboard();
+        setStatus('Iscrizioni chiuse')
+      })
     }
     async function startTournament(){
-      const result=await api('/api/tournament/start',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore avvio torneo');
-      await refreshDashboard();
-      setStatus('Torneo iniziato')
+      return runAction('startTournament','Avvio torneo...',async()=>{
+        const result=await api('/api/tournament/start',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore avvio torneo');
+        await refreshDashboard();
+        setStatus('Torneo iniziato')
+      })
     }
     async function finishTournament(){
       if(!confirm('Confermi termine torneo?'))return;
-      const result=await api('/api/tournament/finish',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore termine torneo');
-      await refreshDashboard();
-      setStatus('Torneo terminato')
+      return runAction('finishTournament','Termino torneo...',async()=>{
+        const result=await api('/api/tournament/finish',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore termine torneo');
+        await refreshDashboard();
+        setStatus('Torneo terminato')
+      })
     }
     async function forceNextMatch(){
       if(!confirm('Confermi prossimo match? I team mancanti verranno segnati assenti per questo match.'))return;
-      const result=await api('/api/match/next',{
-        method:'POST',body:JSON.stringify({
-          forceMissingAbsent:true
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore passaggio match');
-      await refreshDashboard();
-      setStatus(result.data.finished?'Torneo finito':'Passato al match successivo')
+      return runAction('forceNextMatch','Passo al prossimo match...',async()=>{
+        const result=await api('/api/match/next',{
+          method:'POST',body:JSON.stringify({forceMissingAbsent:true})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore passaggio match');
+        await refreshDashboard();
+        setStatus(result.data.finished?'Torneo finito':'Passato al match successivo')
+      })
     }
     async function markAbsent(team,matchNumber){
       if(!confirm(`Segnare ${team} assente per il match ${matchNumber}?`))return;
-      const result=await api('/api/match/mark-absent',{
-        method:'POST',body:JSON.stringify({
-          team,matchNumber
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore segna assente');
-      await refreshDashboard();
-      setStatus('Team segnato assente')
+      return runAction('markAbsent:'+team+':'+matchNumber,'Segno assente...',async()=>{
+        const result=await api('/api/match/mark-absent',{
+          method:'POST',body:JSON.stringify({team,matchNumber})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore segna assente');
+        await refreshDashboard();
+        setStatus('Team segnato assente')
+      })
     }
     function openEditTeamName(teamName){
       qs('editType').value='teamName';
@@ -2619,55 +2652,53 @@
     async function saveInlineEdit(){
       const type=qs('editType').value,value=qs('editValue').value.trim(),teamName=qs('editTeamOldName').value;
       if(!type)return;
-      if(type==='teamName'){
-        const team=getTeamData(teamName);
-        if(!team)return alert('Team non trovato');
-        if(!value)return alert('Inserisci il nome team');
-        const result=await api('/api/teams/save',{
-          method:'POST',body:JSON.stringify({
-            oldTeamName:teamName,teamName:value,p1:team.players?.[0]||'',p2:team.players?.[1]||'',p3:team.players?.[2]||''
-          })
-        });
-        if(!result)return;
-        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica team')
-      }
-      if(type==='player'){
-        const team=getTeamData(teamName);
-        if(!team)return alert('Team non trovato');
-        if(!value)return alert('Inserisci il nome player');
-        const players=[...(team.players||[])],index=Number(qs('editPlayerIndex').value);
-        players[index]=value;
-        const result=await api('/api/teams/save',{
-          method:'POST',body:JSON.stringify({
-            oldTeamName:teamName,teamName,p1:players[0]||'',p2:players[1]||'',p3:players[2]||''
-          })
-        });
-        if(!result)return;
-        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica player')
-      }
-      if(type==='points'){
-        const points=Number(qs('editValue').value||0);
-        const result=await api('/api/scores/set',{
-          method:'POST',body:JSON.stringify({
-            team:teamName,points
-          })
-        });
-        if(!result)return;
-        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica punti')
-      }
-      if(type==='fragger'){
-        const player=qs('editTargetName').value,kills=Number(qs('editValue').value||0);
-        const result=await api('/api/fragger/set',{
-          method:'POST',body:JSON.stringify({
-            player,kills
-          })
-        });
-        if(!result)return;
-        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica fragger')
-      }
-      closeEditModal();
-      await refreshDashboard();
-      setStatus('Modifica salvata')
+      return runAction('saveInlineEdit','Salvo modifica...',async()=>{
+        if(type==='teamName'){
+          const team=getTeamData(teamName);
+          if(!team)return alert('Team non trovato');
+          if(!value)return alert('Inserisci il nome team');
+          const result=await api('/api/teams/save',{
+            method:'POST',body:JSON.stringify({
+              oldTeamName:teamName,teamName:value,p1:team.players?.[0]||'',p2:team.players?.[1]||'',p3:team.players?.[2]||''
+            })
+          });
+          if(!result)return;
+          if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica team')
+        }
+        if(type==='player'){
+          const team=getTeamData(teamName);
+          if(!team)return alert('Team non trovato');
+          if(!value)return alert('Inserisci il nome player');
+          const players=[...(team.players||[])],index=Number(qs('editPlayerIndex').value);
+          players[index]=value;
+          const result=await api('/api/teams/save',{
+            method:'POST',body:JSON.stringify({
+              oldTeamName:teamName,teamName,p1:players[0]||'',p2:players[1]||'',p3:players[2]||''
+            })
+          });
+          if(!result)return;
+          if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica player')
+        }
+        if(type==='points'){
+          const points=Number(qs('editValue').value||0);
+          const result=await api('/api/scores/set',{
+            method:'POST',body:JSON.stringify({team:teamName,points})
+          });
+          if(!result)return;
+          if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica punti')
+        }
+        if(type==='fragger'){
+          const player=qs('editTargetName').value,kills=Number(qs('editValue').value||0);
+          const result=await api('/api/fragger/set',{
+            method:'POST',body:JSON.stringify({player,kills})
+          });
+          if(!result)return;
+          if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica fragger')
+        }
+        closeEditModal();
+        await refreshDashboard();
+        setStatus('Modifica salvata')
+      })
     }
     function openCreateTeamModal(){
       qs('createTeamName').value='';
@@ -2686,29 +2717,31 @@
       if(event.target.id==='teamModal')closeTeamModal()
     }
     async function createTeam(){
-      const result=await api('/api/teams/save',{
-        method:'POST',body:JSON.stringify({
-          oldTeamName:'',teamName:qs('createTeamName').value.trim(),p1:qs('createTeamP1').value.trim(),p2:qs('createTeamP2').value.trim(),p3:qs('createTeamP3').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione team');
-      closeTeamModal();
-      await refreshDashboard();
-      setStatus('Team creato')
+      return runAction('createTeam','Creo team...',async()=>{
+        const result=await api('/api/teams/save',{
+          method:'POST',body:JSON.stringify({
+            oldTeamName:'',teamName:qs('createTeamName').value.trim(),p1:qs('createTeamP1').value.trim(),p2:qs('createTeamP2').value.trim(),p3:qs('createTeamP3').value.trim()
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione team');
+        closeTeamModal();
+        await refreshDashboard();
+        setStatus('Team creato')
+      })
     }
     async function deleteTeam(teamName){
       if(!teamName)return;
       if(!confirm(`Confermi eliminazione del team ${teamName}?`))return;
-      const result=await api('/api/teams/delete',{
-        method:'POST',body:JSON.stringify({
-          teamName
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione team');
-      await refreshDashboard();
-      setStatus('Team eliminato')
+      return runAction('deleteTeam:'+teamName,'Elimino team...',async()=>{
+        const result=await api('/api/teams/delete',{
+          method:'POST',body:JSON.stringify({teamName})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione team');
+        await refreshDashboard();
+        setStatus('Team eliminato')
+      })
     }
     function openQuickManualModal(){
       openManualModal('',selectedMatchNumber||dashboard?.matchCorrente||1)
@@ -2776,45 +2809,48 @@
       if(event.target.id==='imageModal')closeImageModal()
     }
     async function saveTournament(){
-      const result=await api('/api/tournament/configure',{
-        method:'POST',body:JSON.stringify({
-          totalMatches:Number(qs('totalMatchesInput').value||3),resetCurrentMatch:qs('resetMatchInput').checked,autoNextMatch:qs('autoNextMatchInput').checked
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio torneo');
-      qs('resetMatchInput').checked=false;
-      await refreshDashboard();
-      setStatus('Torneo salvato')
+      return runAction('saveTournament','Salvo torneo...',async()=>{
+        const result=await api('/api/tournament/configure',{
+          method:'POST',body:JSON.stringify({
+            totalMatches:Number(qs('totalMatchesInput').value||3),resetCurrentMatch:qs('resetMatchInput').checked,autoNextMatch:qs('autoNextMatchInput').checked
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio torneo');
+        qs('resetMatchInput').checked=false;
+        await refreshDashboard();
+        setStatus('Torneo salvato')
+      })
     }
     async function saveTournamentMessages(){
-      const result=await api('/api/tournament/messages/save',{
-        method:'POST',body:JSON.stringify({
-          openRegistrationsAnnouncement:qs('openRegistrationsMessageInput').value,tournamentStartAnnouncement:qs('startTournamentMessageInput').value,lobbyInfoMessage:qs('lobbyMessageInput').value,generalReminder:qs('generalReminderInput').value
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio messaggi');
-      await refreshDashboard();
-      setStatus('Messaggi salvati')
+      return runAction('saveTournamentMessages','Salvo messaggi...',async()=>{
+        const result=await api('/api/tournament/messages/save',{
+          method:'POST',body:JSON.stringify({
+            openRegistrationsAnnouncement:qs('openRegistrationsMessageInput').value,tournamentStartAnnouncement:qs('startTournamentMessageInput').value,lobbyInfoMessage:qs('lobbyMessageInput').value,generalReminder:qs('generalReminderInput').value
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio messaggi');
+        await refreshDashboard();
+        setStatus('Messaggi salvati')
+      })
     }
     async function saveRegistrationSettings(){
-      const result=await api('/api/registration-settings/save',{
-        method:'POST',body:JSON.stringify({
-          title:qs('registrationTitleInput').value.trim(),text:qs('registrationTextInput').value.trim(),maxTeams:16
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio iscrizioni');
-      await refreshDashboard();
-      setStatus('Messaggio iscrizioni salvato')
+      return runAction('saveRegistrationSettings','Salvo iscrizioni...',async()=>{
+        const result=await api('/api/registration-settings/save',{
+          method:'POST',body:JSON.stringify({
+            title:qs('registrationTitleInput').value.trim(),text:qs('registrationTextInput').value.trim(),maxTeams:16
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio iscrizioni');
+        await refreshDashboard();
+        setStatus('Messaggio iscrizioni salvato')
+      })
     }
     async function submitManualResult(){
       if(!qs('manualTeam').value)return alert('Seleziona un team');
-      const btn=qs('manualSaveBtn');
-      btn.disabled=true;
-      btn.textContent='Salvo...';
-      try{
+      return runAction('submitManualResult','Salvo risultato...',async()=>{
         const result=await api('/api/manual-result',{
           method:'POST',body:JSON.stringify({
             team:qs('manualTeam').value,matchNumber:Number(qs('manualMatch').value||dashboard?.matchCorrente||1),k1:Number(qs('manualK1').value||0),k2:Number(qs('manualK2').value||0),k3:Number(qs('manualK3').value||0),pos:Number(qs('manualPos').value||0)
@@ -2825,279 +2861,266 @@
         closeManualModal();
         await refreshDashboard();
         setStatus('Risultato manuale salvato')
-      }
-      finally{
-        btn.disabled=false;
-        btn.textContent='Salva risultato'
-      }
+      })
     }
     async function approvePending(id){
-      const result=await api('/api/approve/'+id,{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore approvazione');
-      closeReviewModal();
-      await refreshDashboard();
-      setStatus('Risultato approvato')
+      return runAction('approvePending:'+id,'Approvo risultato...',async()=>{
+        const result=await api('/api/approve/'+id,{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore approvazione');
+        closeReviewModal();
+        await refreshDashboard();
+        setStatus('Risultato approvato')
+      })
     }
     async function rejectPending(id){
-      const result=await api('/api/reject/'+id,{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore rifiuto');
-      closeReviewModal();
-      await refreshDashboard();
-      setStatus('Risultato rifiutato')
+      return runAction('rejectPending:'+id,'Rifiuto risultato...',async()=>{
+        const result=await api('/api/reject/'+id,{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore rifiuto');
+        closeReviewModal();
+        await refreshDashboard();
+        setStatus('Risultato rifiutato')
+      })
     }
     async function forceLeaderboard(){
-      const result=await api('/api/bot/update-leaderboard',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore aggiornamento Discord');
-      await refreshDashboard();
-      setStatus('Classifica Discord aggiornata')
+      return runAction('forceLeaderboard','Aggiorno classifica Discord...',async()=>{
+        const result=await api('/api/bot/update-leaderboard',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore aggiornamento Discord');
+        setStatus('Classifica Discord aggiornata')
+      })
     }
     async function saveDiscordSettings(){
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/settings/save',{
-        method:'POST',body:JSON.stringify({
-          roomsCategoryId:qs('categoryInput').value.trim(),generalChannelId:qs('generalInput').value.trim(),rulesChannelId:qs('rulesInput').value.trim(),registerPanelChannelId:qs('registerChannelInput').value.trim(),resultsPanelChannelId:''
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio Discord');
-      await refreshDashboard();
-      await loadDiscordChannels(false);
-      setStatus('Impostazioni Discord salvate')
+      return runAction('saveDiscordSettings','Salvo impostazioni Discord...',async()=>{
+        const result=await api('/api/bot/settings/save',{
+          method:'POST',body:JSON.stringify({
+            roomsCategoryId:qs('categoryInput').value.trim(),generalChannelId:qs('generalInput').value.trim(),rulesChannelId:qs('rulesInput').value.trim(),registerPanelChannelId:qs('registerChannelInput').value.trim(),resultsPanelChannelId:''
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio Discord');
+        await refreshDashboard();
+        setStatus('Impostazioni Discord salvate')
+      })
     }
     async function prepareDiscord(){
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/prepare-discord-structure',{
-        method:'POST',body:JSON.stringify({
-          categoryId:qs('categoryInput').value.trim(),roomsCategoryId:qs('categoryInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore preparazione Discord');
-      await refreshDashboard();
-      await loadDiscordChannels(false);
-      setStatus('Categoria RØDA CUP preparata')
+      return runAction('prepareDiscord','Preparo categoria Discord...',async()=>{
+        const result=await api('/api/bot/prepare-discord-structure',{
+          method:'POST',body:JSON.stringify({
+            categoryId:qs('categoryInput').value.trim(),roomsCategoryId:qs('categoryInput').value.trim()
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore preparazione Discord');
+        await Promise.all([refreshDashboard(),loadDiscordChannels(false)]);
+        setStatus('Categoria RØDA CUP preparata')
+      })
     }
     async function createRooms(){
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/create-rooms',{
-        method:'POST',body:JSON.stringify({
-          categoryId:qs('categoryInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione stanze');
-      await refreshDashboard();
-      await loadDiscordChannels(false);
-      setStatus(`Stanze create: ${Number(result.data.created||0)} • già presenti: ${Number(result.data.skipped||0)}`)
+      return runAction('createRooms','Creo stanze...',async()=>{
+        const result=await api('/api/bot/create-rooms',{
+          method:'POST',body:JSON.stringify({categoryId:qs('categoryInput').value.trim()})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione stanze');
+        await Promise.all([refreshDashboard(),loadDiscordChannels(false)]);
+        setStatus(`Stanze create: ${Number(result.data.created||0)} • già presenti: ${Number(result.data.skipped||0)}`)
+      })
     }
     async function deleteRooms(){
       if(!confirm('Eliminare solo le stanze vocali team?'))return;
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/delete-rooms',{
-        method:'POST',body:JSON.stringify({
-          categoryId:qs('categoryInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione stanze');
-      await refreshDashboard();
-      await loadDiscordChannels(false);
-      setStatus(`Stanze eliminate: ${Number(result.data.deleted||0)}`)
+      return runAction('deleteRooms','Elimino stanze...',async()=>{
+        const result=await api('/api/bot/delete-rooms',{
+          method:'POST',body:JSON.stringify({categoryId:qs('categoryInput').value.trim()})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione stanze');
+        await Promise.all([refreshDashboard(),loadDiscordChannels(false)]);
+        setStatus(`Stanze eliminate: ${Number(result.data.deleted||0)}`)
+      })
     }
     async function spawnRegisterPanel(){
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/spawn-register-panel',{
-        method:'POST',body:JSON.stringify({
-          channelId:qs('registerChannelInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore pannello iscrizioni');
-      await refreshDashboard();
-      setStatus('Pannello iscrizioni aggiornato')
+      const channelId=qs('registerChannelInput').value.trim();
+      if(!channelId)return alert('Seleziona prima il canale iscrizioni');
+      return runAction('spawnRegisterPanel','Pubblico pannello iscrizioni...',async()=>{
+        const result=await api('/api/bot/spawn-register-panel',{
+          method:'POST',body:JSON.stringify({channelId})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore pannello iscrizioni');
+        setStatus('Pannello iscrizioni aggiornato')
+      })
     }
     async function refreshTeamPanels(){
       syncDiscordSelectsToInputs();
-      const result=await api('/api/bot/refresh-team-result-panels',{
-        method:'POST',body:JSON.stringify({
-          categoryId:qs('categoryInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore pannelli risultati');
-      await refreshDashboard();
-      setStatus(`Pannelli risultati aggiornati • creati: ${Number(result.data.created||0)} • modificati: ${Number(result.data.updated||0)}`)
+      const categoryId=qs('categoryInput').value.trim();
+      if(!categoryId)return alert('Seleziona prima la categoria RØDA CUP');
+      return runAction('refreshTeamPanels','Aggiorno pannelli risultati...',async()=>{
+        const result=await api('/api/bot/refresh-team-result-panels',{
+          method:'POST',body:JSON.stringify({categoryId})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore pannelli risultati');
+        setStatus(`Pannelli risultati aggiornati • creati: ${Number(result.data.created||0)} • modificati: ${Number(result.data.updated||0)}`)
+      })
     }
     async function syncEverything(){
       if(!dashboard)return;
       syncDiscordSelectsToInputs();
-      setStatus('Sincronizzazione in corso...');
       const categoryId=qs('categoryInput').value.trim(),registerChannelId=qs('registerChannelInput').value.trim();
-      try{
-        if(registerChannelId)await api('/api/bot/spawn-register-panel',{
-          method:'POST',body:JSON.stringify({
-            channelId:registerChannelId
-          })
-        });
-        await api('/api/registration-settings/refresh',{
-          method:'POST'
-        });
-        await api('/api/bot/refresh-team-result-panels',{
-          method:'POST',body:JSON.stringify({
-            categoryId
-          })
-        });
-        await api('/api/bot/update-leaderboard',{
-          method:'POST'
-        });
+      const steps=[];
+      if(registerChannelId)steps.push({label:'Pannello iscrizioni',call:()=>api('/api/bot/spawn-register-panel',{method:'POST',body:JSON.stringify({channelId:registerChannelId})})});
+      steps.push({label:'Messaggio iscrizioni',call:()=>api('/api/registration-settings/refresh',{method:'POST'})});
+      if(categoryId)steps.push({label:'Pannelli risultati team',call:()=>api('/api/bot/refresh-team-result-panels',{method:'POST',body:JSON.stringify({categoryId})})});
+      steps.push({label:'Classifica Discord',call:()=>api('/api/bot/update-leaderboard',{method:'POST'})});
+      return runAction('syncEverything','Sincronizzazione...',async()=>{
+        for(let i=0;i<steps.length;i++){
+          setStatus(`Sincronizzazione ${i+1}/${steps.length}: ${steps[i].label}...`);
+          try{await steps[i].call()}catch(error){console.error('Step',steps[i].label,error)}
+        }
         await refreshDashboard();
         setStatus('Sincronizzazione completata')
-      }
-      catch(error){
-        console.error(error);
-        setStatus('Errore durante la sincronizzazione')
-      }
+      })
     }
     async function sendReminder(){
-      const result=await api('/api/tournament/send-reminder',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore invio promemoria');
-      await refreshDashboard();
-      setStatus('Promemoria inviato')
+      return runAction('sendReminder','Invio promemoria...',async()=>{
+        const result=await api('/api/tournament/send-reminder',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore invio promemoria');
+        setStatus('Promemoria inviato')
+      })
     }
     async function sendLobbyCode(){
       syncDiscordSelectsToInputs();
       const code=qs('lobbyCodeInput').value.trim();
       if(!code)return alert('Inserisci codice lobby');
-      const result=await api('/api/bot/send-lobby-code',{
-        method:'POST',body:JSON.stringify({
-          lobbyCode:code,categoryId:qs('categoryInput').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore invio codice lobby');
-      qs('lobbyCodeInput').value='';
-      setStatus(`Codice inviato: ${Number(result.data.sent||0)} / ${Number(result.data.total||0)}`)
+      return runAction('sendLobbyCode','Invio codice lobby...',async()=>{
+        const result=await api('/api/bot/send-lobby-code',{
+          method:'POST',body:JSON.stringify({lobbyCode:code,categoryId:qs('categoryInput').value.trim()})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore invio codice lobby');
+        qs('lobbyCodeInput').value='';
+        setStatus(`Codice inviato: ${Number(result.data.sent||0)} / ${Number(result.data.total||0)}`)
+      })
     }
     async function createArchive(){
-      const result=await api('/api/archivi/crea',{
-        method:'POST',body:JSON.stringify({
-          label:qs('archiveLabel').value.trim(),note:qs('archiveNote').value.trim()
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore storico');
-      qs('archiveLabel').value='';
-      qs('archiveNote').value='';
-      await refreshDashboard();
-      setStatus('Storico creato')
+      return runAction('createArchive','Creo storico...',async()=>{
+        const result=await api('/api/archivi/crea',{
+          method:'POST',body:JSON.stringify({
+            label:qs('archiveLabel').value.trim(),note:qs('archiveNote').value.trim()
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore storico');
+        qs('archiveLabel').value='';
+        qs('archiveNote').value='';
+        await refreshDashboard();
+        setStatus('Storico creato')
+      })
     }
     async function restoreArchive(id){
       if(!id)return alert('Storico non valido');
       if(!confirm('Confermi ripristino storico?'))return;
-      const result=await api('/api/archivi/ripristina',{
-        method:'POST',body:JSON.stringify({
-          archiveId:decodeURIComponent(id)
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore ripristino');
-      await refreshDashboard();
-      setStatus('Storico ripristinato')
+      return runAction('restoreArchive:'+id,'Ripristino storico...',async()=>{
+        const result=await api('/api/archivi/ripristina',{
+          method:'POST',body:JSON.stringify({archiveId:decodeURIComponent(id)})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore ripristino');
+        await refreshDashboard();
+        setStatus('Storico ripristinato')
+      })
     }
     async function createStaffUser(){
-      const result=await api('/api/admin-users/create',{
-        method:'POST',body:JSON.stringify({
-          username:qs('newStaffUsername').value.trim(),password:qs('newStaffPassword').value,role:qs('newStaffRole').value
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione account');
-      qs('newStaffUsername').value='';
-      qs('newStaffPassword').value='';
-      qs('newStaffRole').value='staff';
-      await refreshDashboard();
-      setStatus('Account creato')
+      return runAction('createStaffUser','Creo account...',async()=>{
+        const result=await api('/api/admin-users/create',{
+          method:'POST',body:JSON.stringify({
+            username:qs('newStaffUsername').value.trim(),password:qs('newStaffPassword').value,role:qs('newStaffRole').value
+          })
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore creazione account');
+        qs('newStaffUsername').value='';
+        qs('newStaffPassword').value='';
+        qs('newStaffRole').value='staff';
+        await refreshDashboard();
+        setStatus('Account creato')
+      })
     }
     async function toggleStaffActive(username,active,role){
-      const result=await api('/api/admin-users/update',{
-        method:'POST',body:JSON.stringify({
-          username,active,role
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica account');
-      await refreshDashboard();
-      setStatus('Account aggiornato')
+      return runAction('toggleStaffActive:'+username,'Aggiorno account...',async()=>{
+        const result=await api('/api/admin-users/update',{
+          method:'POST',body:JSON.stringify({username,active,role})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore modifica account');
+        await refreshDashboard();
+        setStatus('Account aggiornato')
+      })
     }
     async function changeStaffRole(username,currentRole){
       const next=prompt('Nuovo ruolo: admin oppure staff',currentRole||'staff');
       if(!next)return;
-      const result=await api('/api/admin-users/update',{
-        method:'POST',body:JSON.stringify({
-          username,role:next,active:true
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore ruolo');
-      await refreshDashboard();
-      setStatus('Ruolo aggiornato')
+      return runAction('changeStaffRole:'+username,'Aggiorno ruolo...',async()=>{
+        const result=await api('/api/admin-users/update',{
+          method:'POST',body:JSON.stringify({username,role:next,active:true})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore ruolo');
+        await refreshDashboard();
+        setStatus('Ruolo aggiornato')
+      })
     }
     async function changeStaffPassword(username){
       const password=prompt(`Nuova password per ${username}`);
       if(!password)return;
-      const result=await api('/api/admin-users/password',{
-        method:'POST',body:JSON.stringify({
-          username,password
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore password');
-      await refreshDashboard();
-      setStatus('Password aggiornata')
+      return runAction('changeStaffPassword:'+username,'Aggiorno password...',async()=>{
+        const result=await api('/api/admin-users/password',{
+          method:'POST',body:JSON.stringify({username,password})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore password');
+        setStatus('Password aggiornata')
+      })
     }
     async function deleteStaffUser(username){
       if(!confirm(`Confermi eliminazione account ${username}?`))return;
-      const result=await api('/api/admin-users/delete',{
-        method:'POST',body:JSON.stringify({
-          username
-        })
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione account');
-      await refreshDashboard();
-      setStatus('Account eliminato')
+      return runAction('deleteStaffUser:'+username,'Elimino account...',async()=>{
+        const result=await api('/api/admin-users/delete',{
+          method:'POST',body:JSON.stringify({username})
+        });
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore eliminazione account');
+        await refreshDashboard();
+        setStatus('Account eliminato')
+      })
     }
     async function resetData(){
       if(!confirm('Confermi reset classifica, fragger e match?'))return;
-      const result=await api('/api/reset-data',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore reset dati');
-      await refreshDashboard();
-      setStatus('Classifica e match azzerati')
+      return runAction('resetData','Reset classifica e match...',async()=>{
+        const result=await api('/api/reset-data',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore reset dati');
+        await refreshDashboard();
+        setStatus('Classifica e match azzerati')
+      })
     }
     async function resetTeams(){
       if(!confirm('Confermi svuotamento team?'))return;
-      const result=await api('/api/reset-teams',{
-        method:'POST'
-      });
-      if(!result)return;
-      if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore reset team');
-      await refreshDashboard();
-      setStatus('Team svuotati')
+      return runAction('resetTeams','Svuoto team...',async()=>{
+        const result=await api('/api/reset-teams',{method:'POST'});
+        if(!result)return;
+        if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore reset team');
+        await refreshDashboard();
+        setStatus('Team svuotati')
+      })
     }
     async function logout(){
       await api('/api/logout',{

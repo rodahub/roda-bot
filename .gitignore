@@ -1,5 +1,8 @@
 node_modules
 storage-data
+storage/data
+uploads
 .env
 .env.*
 npm-debug.log*
+*.log

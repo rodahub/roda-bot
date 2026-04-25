@@ -101,7 +101,11 @@ const COOKIE_DURATION_MS = 1000 * 60 * 60 * 12;
 const ADMIN_USERS_FILE = path.join(STORAGE_DIR, 'admin-users.json');
 
 const OWNER_USERNAME = 'RooS';
-const OWNER_INITIAL_PASSWORD = process.env.ADMIN_PASSWORD || '17112003r';
+const OWNER_INITIAL_PASSWORD = process.env.ADMIN_PASSWORD || '';
+
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('⚠️ ATTENZIONE: ADMIN_PASSWORD non impostato. Imposta la variabile ambiente ADMIN_PASSWORD per creare l\'utente RooS con una password sicura.');
+}
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -377,7 +381,7 @@ function normalizeAdminUsers(value) {
 
   const hasOwner = out.some(user => user.username.toLowerCase() === OWNER_USERNAME.toLowerCase());
 
-  if (!hasOwner) {
+  if (!hasOwner && OWNER_INITIAL_PASSWORD) {
     out.unshift(createAdminUser({
       username: OWNER_USERNAME,
       password: OWNER_INITIAL_PASSWORD,
@@ -385,6 +389,8 @@ function normalizeAdminUsers(value) {
       createdBy: 'system',
       locked: true
     }));
+  } else if (!hasOwner && !OWNER_INITIAL_PASSWORD) {
+    console.warn('⚠️ ATTENZIONE: Utente RooS non trovato e ADMIN_PASSWORD non impostato. Imposta ADMIN_PASSWORD per creare l\'account proprietario.');
   }
 
   return out;
