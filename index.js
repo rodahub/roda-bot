@@ -1258,38 +1258,46 @@ async function safeSendToTeamVoiceChannel(channel, payload) {
     throw new Error(`Il canale ${channel.name} non supporta messaggi testuali`);
   }
 
-  // Discord voice channel text chat may require a non-empty content field
-  // alongside embeds/components. Try with invisible content first.
-  const payloadWithContent = { content: '\u200B', ...payload };
+  const logErr = (attempt, err) => console.error(
+    `[safeSend] ${channel.name} tentativo ${attempt} fallito:`,
+    { code: err?.code, status: err?.status, msg: err?.message, raw: JSON.stringify(err?.rawError || {}).substring(0, 300) }
+  );
 
+  // Attempt 1: full embed + button + invisible content
   try {
-    return await channel.send(payloadWithContent);
+    return await channel.send({ content: '\u200B', ...payload });
   } catch (err1) {
-    if (err1?.code !== 50035) throw err1;
+    logErr(1, err1);
+  }
 
-    // Retry without thumbnail (external URLs can be rejected in voice channels)
-    const payloadNoThumb = {
-      content: '\u200B',
-      embeds: (payload.embeds || []).map(e => {
-        const data = e.toJSON ? e.toJSON() : { ...e };
-        delete data.thumbnail;
-        return new EmbedBuilder(data);
-      }),
-      components: payload.components || []
-    };
+  // Attempt 2: embed without thumbnail + button + content
+  try {
+    const embedData = (payload.embeds || []).map(e => {
+      const d = e.toJSON ? e.toJSON() : { ...e };
+      delete d.thumbnail;
+      return new EmbedBuilder(d);
+    });
+    return await channel.send({ content: '\u200B', embeds: embedData, components: payload.components || [] });
+  } catch (err2) {
+    logErr(2, err2);
+  }
 
-    try {
-      return await channel.send(payloadNoThumb);
-    } catch (err2) {
-      if (err2?.code !== 50035) throw err2;
+  // Attempt 3: button only, no embed
+  try {
+    const embedTitle = payload.embeds?.[0]?.data?.title || payload.embeds?.[0]?.title || '';
+    const embedDesc = payload.embeds?.[0]?.data?.description || payload.embeds?.[0]?.description || '';
+    const textContent = [embedTitle, embedDesc].filter(Boolean).join('\n').substring(0, 1800) || 'Pannello risultati team';
+    return await channel.send({ content: textContent, components: payload.components || [] });
+  } catch (err3) {
+    logErr(3, err3);
+  }
 
-      // Last resort: send only the components with a minimal text description
-      const contentOnly = {
-        content: (payload.embeds?.[0]?.data?.title || payload.embeds?.[0]?.title || 'Pannello risultati team') + '\nUsa il bottone qui sotto per inviare il risultato.',
-        components: payload.components || []
-      };
-      return await channel.send(contentOnly);
-    }
+  // Attempt 4: plain text only (confirms channel accepts any message)
+  try {
+    return await channel.send({ content: '📋 Pannello risultati — usa il comando del bot per inviare il risultato.' });
+  } catch (err4) {
+    logErr(4, err4);
+    throw new Error(`Impossibile inviare in ${channel.name}: ${err4?.message || 'errore sconosciuto'} [code:${err4?.code}]`);
   }
 }
 
