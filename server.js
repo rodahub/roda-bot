@@ -1400,6 +1400,83 @@ function buildPublicPayload(req) {
   };
 }
 
+async function handleDiscordChannelsList(req, res) {
+  try {
+    const result = await safeBotCall('listDiscordChannels');
+
+    logAudit(req.staffUser, 'web', 'lista_canali_discord_letta', {
+      ok: Boolean(result?.ok)
+    });
+
+    return res.json({
+      ok: true,
+      ...result
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore lettura canali Discord'
+    });
+  }
+}
+
+async function handleBotSettingsSave(req, res) {
+  try {
+    let data = loadData();
+
+    data.botSettings = {
+      ...(data.botSettings || getDefaultBotSettings()),
+      registerPanelChannelId: sanitizeText(req.body.registerPanelChannelId),
+      resultsPanelChannelId: sanitizeText(req.body.resultsPanelChannelId),
+      roomsCategoryId: sanitizeText(req.body.roomsCategoryId),
+      generalChannelId: sanitizeText(req.body.generalChannelId),
+      rulesChannelId: sanitizeText(req.body.rulesChannelId),
+      lobbyChannelId: sanitizeText(req.body.lobbyChannelId)
+    };
+
+    data = saveData(data);
+
+    syncBotState(data);
+
+    let botSettings = data.botSettings;
+
+    if (typeof bot.saveBotPanelSettings === 'function') {
+      botSettings = bot.saveBotPanelSettings(data.botSettings);
+    }
+
+    logAudit(req.staffUser, 'web', 'impostazioni_bot_salvate', botSettings);
+
+    return res.json({
+      ok: true,
+      settings: botSettings
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore salvataggio impostazioni bot'
+    });
+  }
+}
+
+async function handlePrepareDiscordStructure(req, res) {
+  try {
+    const categoryId = sanitizeText(req.body.categoryId || req.body.roomsCategoryId);
+    const result = await safeBotCall('ensureTournamentDiscordStructure', categoryId);
+
+    logAudit(req.staffUser, 'web', 'struttura_discord_preparata', result);
+
+    return res.json({
+      ok: true,
+      ...result
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: error.message || 'Errore preparazione struttura Discord'
+    });
+  }
+}
+
 loadAdminUsers();
 
 app.get('/', (req, res) => {
@@ -1882,25 +1959,8 @@ app.get('/api/match-status/:matchNumber', authRequired, (req, res) => {
   });
 });
 
-app.get('/api/bot/discord-channels', authRequired, requireAdmin, async (req, res) => {
-  try {
-    const result = await safeBotCall('listDiscordChannels');
-
-    logAudit(req.staffUser, 'web', 'lista_canali_discord_letta', {
-      ok: Boolean(result?.ok)
-    });
-
-    return res.json({
-      ok: true,
-      ...result
-    });
-  } catch (error) {
-    return res.status(500).json({
-      ok: false,
-      message: error.message || 'Errore lettura canali Discord'
-    });
-  }
-});
+app.get('/api/bot/discord-channels', authRequired, requireAdmin, handleDiscordChannelsList);
+app.get('/api/bot/discord/channels', authRequired, requireAdmin, handleDiscordChannelsList);
 
 app.post('/api/tournament/new', authRequired, requireAdmin, async (req, res) => {
   try {
@@ -2262,43 +2322,8 @@ app.post('/api/project-settings/save', authRequired, requireAdmin, async (req, r
   }
 });
 
-app.post('/api/bot/settings/save', authRequired, requireAdmin, async (req, res) => {
-  try {
-    let data = loadData();
-
-    data.botSettings = {
-      ...(data.botSettings || getDefaultBotSettings()),
-      registerPanelChannelId: sanitizeText(req.body.registerPanelChannelId),
-      resultsPanelChannelId: sanitizeText(req.body.resultsPanelChannelId),
-      roomsCategoryId: sanitizeText(req.body.roomsCategoryId),
-      generalChannelId: sanitizeText(req.body.generalChannelId),
-      rulesChannelId: sanitizeText(req.body.rulesChannelId),
-      lobbyChannelId: sanitizeText(req.body.lobbyChannelId)
-    };
-
-    data = saveData(data);
-
-    syncBotState(data);
-
-    let botSettings = data.botSettings;
-
-    if (typeof bot.saveBotPanelSettings === 'function') {
-      botSettings = bot.saveBotPanelSettings(data.botSettings);
-    }
-
-    logAudit(req.staffUser, 'web', 'impostazioni_bot_salvate', botSettings);
-
-    return res.json({
-      ok: true,
-      settings: botSettings
-    });
-  } catch (error) {
-    return res.status(500).json({
-      ok: false,
-      message: error.message || 'Errore salvataggio impostazioni bot'
-    });
-  }
-});
+app.post('/api/bot/settings/save', authRequired, requireAdmin, handleBotSettingsSave);
+app.post('/api/bot/settings', authRequired, requireAdmin, handleBotSettingsSave);
 
 app.post('/api/teams/save', authRequired, async (req, res) => {
   try {
@@ -3274,24 +3299,8 @@ app.post('/api/archivi/ripristina', authRequired, requireAdmin, async (req, res)
   }
 });
 
-app.post('/api/bot/prepare-discord-structure', authRequired, requireAdmin, async (req, res) => {
-  try {
-    const categoryId = sanitizeText(req.body.categoryId);
-    const result = await safeBotCall('ensureTournamentDiscordStructure', categoryId);
-
-    logAudit(req.staffUser, 'web', 'struttura_discord_preparata', result);
-
-    return res.json({
-      ok: true,
-      ...result
-    });
-  } catch (error) {
-    return res.status(500).json({
-      ok: false,
-      message: error.message || 'Errore preparazione struttura Discord'
-    });
-  }
-});
+app.post('/api/bot/prepare-discord-structure', authRequired, requireAdmin, handlePrepareDiscordStructure);
+app.post('/api/bot/prepare-discord', authRequired, requireAdmin, handlePrepareDiscordStructure);
 
 app.post('/api/bot/spawn-register-panel', authRequired, requireAdmin, async (req, res) => {
   try {
