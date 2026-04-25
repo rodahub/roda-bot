@@ -3237,7 +3237,19 @@
         });
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore pannelli risultati');
-        setStatus(`Pannelli risultati aggiornati • creati: ${Number(result.data.created||0)} • modificati: ${Number(result.data.updated||0)}`)
+        const cr=Number(result.data.created||0),up=Number(result.data.updated||0),miss=Number(result.data.missingRooms||0),fail=Number(result.data.failed||0);
+        let msg=`Pannelli risultati • creati: ${cr} • modificati: ${up}`;
+        if(miss>0||fail>0){
+          msg+=` • stanze non trovate: ${miss} • errori: ${fail}`;
+          const dets=(result.data.details||[]).filter(d=>d.status==='missing_room'||d.status==='failed');
+          if(dets.length){
+            const lines=dets.map(d=>`${d.status==='missing_room'?'❌ stanza mancante':'⚠️ errore invio'}: team ${d.team||'?'} slot #${d.slot||'?'}${d.error?' ('+d.error+')':d.reason?' ('+d.reason+')':''}`).join('\n');
+            const found=(result.data.foundChannelNames||[]);
+            const foundInfo=found.length?`\n\nStanze vocali trovate nella categoria (${found.length}):\n${found.join('\n')}`:'\n\nNessuna stanza vocale trovata nella categoria — verifica che la categoria selezionata sia quella corretta.';
+            alert(`Attenzione:\n\n${lines}${foundInfo}\n\nSe le stanze ci sono ma non combaciano: verifica che il nome inizi con 🏆・#<numero>. Se c'è un errore di invio: il bot potrebbe mancare del permesso "Invia messaggi nei canali vocali" su Discord.`)
+          }
+        }
+        setStatus(msg)
       })
     }
     async function syncEverything(){

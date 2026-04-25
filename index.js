@@ -1364,13 +1364,17 @@ async function refreshTeamResultPanels(customCategoryId) {
       created: 0,
       missingRooms: sortedTeams.length,
       failed: 0,
+      foundChannelNames: [],
       details: sortedTeams.map(([teamName, teamData]) => ({
         team: teamName,
         slot: Number(teamData?.slot || 0),
-        status: 'missing_room'
+        status: 'missing_room',
+        reason: 'Nessuna stanza vocale trovata nella categoria'
       }))
     };
   }
+
+  const foundChannelNames = [...channels.values()].map(ch => ch.name);
 
   let updated = 0;
   let created = 0;
@@ -1383,9 +1387,19 @@ async function refreshTeamResultPanels(customCategoryId) {
   for (const [teamName, teamData] of sortedTeams) {
     const slot = Number(teamData?.slot || 0);
 
-    const channel = channelList.find(ch =>
-      ch.name.startsWith(`🏆・#${slot} `)
-    );
+    const normalizeChannelName = str => String(str || '').normalize('NFKC').trim();
+    const slotPrefix = normalizeChannelName(`🏆・#${slot}`);
+
+    const channel = channelList.find(ch => {
+      const normalized = normalizeChannelName(ch.name);
+      return (
+        normalized.startsWith(slotPrefix + ' ') ||
+        normalized.startsWith(slotPrefix + '\u3000') ||
+        normalized === slotPrefix ||
+        normalized.includes(`#${slot} `) ||
+        normalized.includes(`#${slot}\u3000`)
+      );
+    });
 
     if (!channel) {
       missingRooms++;
@@ -1460,6 +1474,7 @@ async function refreshTeamResultPanels(customCategoryId) {
     created,
     missingRooms,
     failed,
+    foundChannelNames,
     details
   };
 }
