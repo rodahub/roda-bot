@@ -271,29 +271,55 @@ function getDefaultAutomaticReminders() {
         enabled: true,
         intervalHours: 12,
         message:
+          '@everyone\n\n' +
           '🎮 **RØDA CUP — ISCRIZIONI APERTE**\n\n' +
-          'Iscrivi il tuo team in {canale_iscrizioni} cliccando su **✋ Iscriviti**.\n' +
-          '📊 Slot disponibili: **{team_iscritti}**\n\n' +
-          'Leggi il regolamento ufficiale in {canale_regolamento} prima di registrarti.',
+          'Le iscrizioni alla RØDA CUP sono ufficialmente aperte! Forma il tuo trio e prendi il tuo posto in griglia.\n\n' +
+          '📊 **Slot iscritti:** {team_iscritti}\n' +
+          '🔓 **Slot ancora liberi:** {slot_liberi}\n\n' +
+          '📝 **Come iscriversi**\n' +
+          'Vai in {canale_iscrizioni} e clicca sul tasto **✋ Iscriviti**, poi inserisci nome team e tag dei 3 player. L\'iscrizione è confermata solo quando il bot risponde con il messaggio di conferma.\n\n' +
+          '📜 **Prima di iscriverti**\n' +
+          'Leggi il regolamento ufficiale in {canale_regolamento}. Iscrivendoti accetti tutte le regole, compresi punteggio, posizionamenti e decisioni dello staff.\n\n' +
+          '⚠️ I posti sono limitati: appena tutti gli slot sono pieni le iscrizioni si chiudono in automatico. Non aspettare l\'ultimo momento!',
         lastSentAt: null
       },
       regolamento: {
         enabled: true,
         intervalHours: 24,
         message:
+          '@everyone\n\n' +
           '📜 **PROMEMORIA REGOLAMENTO RØDA CUP**\n\n' +
-          'Prima di giocare, leggi il regolamento ufficiale in {canale_regolamento}.\n\n' +
-          'Le decisioni dello staff sono definitive.',
+          'Per evitare problemi, dubbi e penalizzazioni, leggi e ri-leggi il regolamento ufficiale in {canale_regolamento} prima di scendere in lobby.\n\n' +
+          '🔑 **I punti chiave da ricordare**\n' +
+          '• Trio fisso: i 3 player iscritti sono gli unici che possono giocare\n' +
+          '• 1 kill = 1 punto + bonus posizionamento finale\n' +
+          '• Vietato l\'uso di cheat, glitch, stream sniping e teaming con altri team\n' +
+          '• Screenshot di fine partita obbligatorio per ogni match\n' +
+          '• Sii puntuale all\'orario di lobby comunicato dallo staff\n\n' +
+          '⚖️ **Decisioni staff**\n' +
+          'Tutte le decisioni dello staff RØDA sono **definitive e non contestabili**. In caso di dubbi o problemi, scrivi in privato a uno staff PRIMA del match, non dopo.\n\n' +
+          '🏆 Torneo in corso: **match {match_corrente}/{match_totali}** — stay focused!',
         lastSentAt: null
       },
       risultati: {
         enabled: true,
         intervalHours: 2,
         message:
-          '📸 **PROMEMORIA INVIO RISULTATI**\n\n' +
-          'Per inviare il risultato del match: vai in {canale_risultati} e premi **📤 Invia risultato**.\n' +
-          'Allega lo screenshot della partita seguendo le istruzioni del bot.\n\n' +
-          'Match in corso: **{match_corrente}/{match_totali}**',
+          '@everyone\n\n' +
+          '📸 **PROMEMORIA INVIO RISULTATI — Match {match_corrente}/{match_totali}**\n\n' +
+          'Ricorda di inviare il risultato del tuo match al più presto: senza screenshot il match non viene conteggiato in classifica.\n\n' +
+          '📥 **Come inviare il risultato**\n' +
+          '1️⃣ Vai nella **stanza vocale del tuo team** (la stessa dove hai ricevuto il codice lobby)\n' +
+          '2️⃣ Trovi il pannello **📤 Invia risultato** direttamente nella tua stanza — ogni team ha il proprio\n' +
+          '3️⃣ Premi il tasto e allega lo **screenshot della schermata fine partita**\n' +
+          '4️⃣ Aspetta la conferma dello staff\n\n' +
+          '⚠️ **Lo screenshot deve essere leggibile**\n' +
+          '• Nickname dei 3 player del trio visibili\n' +
+          '• Posizionamento finale chiaro\n' +
+          '• Kill individuali di ogni player visibili\n' +
+          '• Niente foto sfocate, tagliate o di un\'altra partita\n\n' +
+          '📊 La classifica aggiorna in automatico in {canale_generale} non appena lo staff approva il tuo risultato.\n\n' +
+          '🎯 In bocca al lupo per il match!',
         lastSentAt: null
       }
     }

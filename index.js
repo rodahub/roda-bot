@@ -804,19 +804,32 @@ async function sendAutomaticReminder(type, options = {}) {
   }
 
   const ctx = buildReminderContext(data, teams);
-  const finalMessage = resolveReminderPlaceholders(reminder.message, ctx);
+  let finalMessage = resolveReminderPlaceholders(reminder.message, ctx);
+
+  if (!/@everyone\b/i.test(finalMessage)) {
+    finalMessage = `@everyone\n\n${finalMessage}`;
+  }
 
   if (!finalMessage.trim()) {
     throw new Error(`Il testo del promemoria "${type}" è vuoto.`);
   }
 
-  const result = await sendMessageToChannel(generalChannelId, finalMessage);
+  await waitReady();
+  const channel = await client.channels.fetch(generalChannelId);
+  if (!channel || typeof channel.send !== 'function') {
+    throw new Error('Canale generale Discord non valido o non scrivibile');
+  }
+
+  const sent = await channel.send({
+    content: finalMessage,
+    allowedMentions: { parse: ['everyone'] }
+  });
 
   if (!options.skipMark) {
     data = markReminderSent(data, type);
   }
 
-  return { ok: true, type, channelId: generalChannelId, messageId: result.messageId };
+  return { ok: true, type, channelId: generalChannelId, messageId: sent.id };
 }
 
 function isReminderDueNow(reminder, currentState) {
