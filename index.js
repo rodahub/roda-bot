@@ -3523,10 +3523,29 @@ client.on('messageCreate', async message => {
       }
 
       const attachment = message.attachments.first();
-      // Per le prove segnalazioni usiamo la URL Discord CDN direttamente:
-      // è affidabile per ore/giorni (quanto basta per lo staff) e non dipende
-      // dal filesystem locale che su Railway può essere effimero.
-      const proofUrl = attachment.url || attachment.proxyURL || '';
+      const discordUrl = attachment.url || attachment.proxyURL || '';
+      let proofUrl = discordUrl;
+
+      // Scarica subito il file da Discord e salvalo in locale.
+      // L'URL Discord CDN scade in poche ore; il file locale è permanente.
+      try {
+        const origName = attachment.name || 'proof';
+        const rawExt = origName.includes('.') ? origName.split('.').pop() : 'jpg';
+        const ext = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+        const fileName = `proof_${pendingProof.reportId}_${Date.now()}.${ext}`;
+        const filePath = path.join(UPLOADS_DIR, fileName);
+        const resp = await fetch(discordUrl);
+        if (resp.ok) {
+          const buf = await resp.arrayBuffer();
+          fs.writeFileSync(filePath, Buffer.from(buf));
+          proofUrl = `/uploads/${fileName}`;
+          console.log('[proof] salvato localmente:', filePath);
+        } else {
+          console.warn('[proof] download fallito status', resp.status, '— uso URL Discord');
+        }
+      } catch (dlErr) {
+        console.error('[proof] errore download:', dlErr.message, '— uso URL Discord come fallback');
+      }
 
       updateReportProofUrl(pendingProof.reportId, proofUrl);
 

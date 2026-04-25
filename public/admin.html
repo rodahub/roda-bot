@@ -2180,6 +2180,8 @@
         selectedMatchRows=null;
         renderDashboard();
         await loadSelectedMatchStatus(false);
+        // Se l'utente è già sulla tab Segnalazioni, aggiorna anche quella
+        if(document.querySelector('.page#segnalazioni.active'))await loadReports();
         setStatus('Ultimo aggiornamento: '+new Date().toLocaleTimeString('it-IT'))
       }
       catch(error){
@@ -3325,8 +3327,19 @@
     }
     let _allReports=[];
     async function loadReports(){
+      const container=qs('reportsList');
+      if(container&&!_allReports.length){
+        container.innerHTML='<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento segnalazioni...</p>';
+      }
       const result=await api('/api/reports');
-      if(!result||!result.response.ok||!result.data.ok)return;
+      if(!result){
+        if(container)container.innerHTML='<p style="color:#ef4444;font-size:13px;">❌ Errore di rete. Riprova.</p>';
+        return;
+      }
+      if(!result.response.ok||!result.data.ok){
+        if(container)container.innerHTML='<p style="color:#ef4444;font-size:13px;">❌ '+(result.data?.message||'Errore caricamento segnalazioni.')+'</p>';
+        return;
+      }
       _allReports=result.data.reports||[];
       renderReports();
     }
