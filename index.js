@@ -66,6 +66,23 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 let teams = loadTeams();
 let data = loadData();
 
+try {
+  const lc = data?.tournamentLifecycle || {};
+  const teamCount = Object.keys(teams || {}).length;
+  console.log('[STARTUP] Stato torneo letto dal disco:', {
+    state: lc.state || 'sconosciuto',
+    registrationsOpen: lc.registrationsOpen,
+    tournamentStarted: lc.tournamentStarted,
+    tournamentFinished: lc.tournamentFinished,
+    registrationsOpenedAt: lc.registrationsOpenedAt,
+    registrationsOpenedBy: lc.registrationsOpenedBy,
+    teamRegistrati: teamCount,
+    matchCorrente: data?.currentMatch
+  });
+} catch (e) {
+  console.error('[STARTUP] Errore log diagnostica stato torneo:', e?.message);
+}
+
 let readyResolver;
 const readyPromise = new Promise(resolve => {
   readyResolver = resolve;
