@@ -1258,7 +1258,39 @@ async function safeSendToTeamVoiceChannel(channel, payload) {
     throw new Error(`Il canale ${channel.name} non supporta messaggi testuali`);
   }
 
-  return channel.send(payload);
+  // Discord voice channel text chat may require a non-empty content field
+  // alongside embeds/components. Try with invisible content first.
+  const payloadWithContent = { content: '\u200B', ...payload };
+
+  try {
+    return await channel.send(payloadWithContent);
+  } catch (err1) {
+    if (err1?.code !== 50035) throw err1;
+
+    // Retry without thumbnail (external URLs can be rejected in voice channels)
+    const payloadNoThumb = {
+      content: '\u200B',
+      embeds: (payload.embeds || []).map(e => {
+        const data = e.toJSON ? e.toJSON() : { ...e };
+        delete data.thumbnail;
+        return new EmbedBuilder(data);
+      }),
+      components: payload.components || []
+    };
+
+    try {
+      return await channel.send(payloadNoThumb);
+    } catch (err2) {
+      if (err2?.code !== 50035) throw err2;
+
+      // Last resort: send only the components with a minimal text description
+      const contentOnly = {
+        content: (payload.embeds?.[0]?.data?.title || payload.embeds?.[0]?.title || 'Pannello risultati team') + '\nUsa il bottone qui sotto per inviare il risultato.',
+        components: payload.components || []
+      };
+      return await channel.send(contentOnly);
+    }
+  }
 }
 
 async function safeEditTeamPanelMessage(message, payload) {
