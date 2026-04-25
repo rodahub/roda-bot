@@ -3573,17 +3573,37 @@
       const extLink=document.getElementById('proofExtLink');
       if(!overlay||!container)return;
       container.innerHTML='';
-      // Passa sempre attraverso il proxy del server per evitare blocchi CORS di Discord CDN
-      const proxyUrl='/api/proof-proxy?url='+encodeURIComponent(url);
-      const isVideo=/\.(mp4|webm|mov|avi|mkv|m4v)/i.test(url)||(url.includes('video')||url.includes('.mp4')||url.includes('.webm'));
+
+      // URL Discord CDN → passa dal proxy server (blocco CORS)
+      // Path locali (/uploads/...) o altri → usate direttamente
+      const isDiscord=/^https?:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//i.test(url);
+      const mediaUrl=isDiscord?'/api/proof-proxy?url='+encodeURIComponent(url):url;
+
+      const isVideo=/\.(mp4|webm|mov|avi|mkv|m4v)/i.test(url);
+      const loadErr=(msg)=>{
+        container.innerHTML='<p style="color:#fff;font-size:14px;text-align:center;max-width:300px;">'+msg+'</p>';
+      };
       if(isVideo){
         const v=document.createElement('video');
-        v.src=proxyUrl;v.controls=true;v.autoplay=true;v.style.cssText='max-width:92vw;max-height:82vh;border-radius:8px;';
+        v.src=mediaUrl;v.controls=true;v.autoplay=true;
+        v.style.cssText='max-width:92vw;max-height:82vh;border-radius:8px;';
+        v.onerror=()=>loadErr('Impossibile caricare il video.<br>Usa il link esterno qui sotto.');
         container.appendChild(v);
       } else {
         const img=document.createElement('img');
-        img.src=proxyUrl;img.alt='Prova allegata';
-        img.onerror=()=>{img.style.display='none';container.innerHTML='<p style="color:#fff;font-size:14px;text-align:center;">Impossibile caricare il file.<br>Usa il link esterno qui sotto.</p>';};
+        img.src=mediaUrl;img.alt='Prova allegata';
+        img.onerror=()=>{
+          img.remove();
+          // Se il proxy ha fallito, prova direttamente l'URL originale come ultimo tentativo
+          if(isDiscord){
+            const img2=document.createElement('img');
+            img2.src=url;img2.alt='Prova allegata';
+            img2.onerror=()=>loadErr('Impossibile caricare l\'immagine.<br>Potrebbe essere scaduta.<br>Usa il link esterno qui sotto.');
+            container.appendChild(img2);
+          } else {
+            loadErr('Impossibile caricare l\'immagine.<br>Usa il link esterno qui sotto.');
+          }
+        };
         container.appendChild(img);
       }
       if(extLink){extLink.href=url;}

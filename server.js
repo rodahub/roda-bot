@@ -1540,18 +1540,41 @@ app.get('/api/proof-proxy', authRequired, async (req, res) => {
     const rawUrl = String(req.query.url || '');
     if (!rawUrl) return res.status(400).send('URL mancante');
 
-    // Accetta solo URL Discord CDN per sicurezza
-    const allowed = /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//i;
-    if (!allowed.test(rawUrl)) {
+    const isDiscord = /^https?:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//i.test(rawUrl);
+    const isLocalUpload = /^\/uploads\/[^/]+$/.test(rawUrl);
+
+    // Path locale /uploads/... → serve il file dal disco
+    if (isLocalUpload) {
+      const fileName = path.basename(rawUrl);
+      const filePath = path.join(UPLOADS_DIR, fileName);
+      console.log('[proof-proxy] local file:', filePath);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).send('File locale non trovato. Potrebbe essere stato eliminato.');
+      }
+      return res.sendFile(filePath);
+    }
+
+    // URL Discord CDN → fetch remoto
+    if (!isDiscord) {
+      console.log('[proof-proxy] URL non consentita:', rawUrl.slice(0, 80));
       return res.status(403).send('URL non consentita');
     }
 
+    console.log('[proof-proxy] fetch Discord:', rawUrl.slice(0, 100));
     const upstream = await fetch(rawUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RodaBot/1.0)' }
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Referer': 'https://discord.com/'
+      }
     });
 
+    console.log('[proof-proxy] Discord status:', upstream.status);
+
     if (!upstream.ok) {
-      return res.status(502).send('Impossibile recuperare il file da Discord');
+      if (upstream.status === 404 || upstream.status === 403) {
+        return res.status(410).send('URL scaduta o non più disponibile su Discord');
+      }
+      return res.status(502).send('Impossibile recuperare il file da Discord (status ' + upstream.status + ')');
     }
 
     const ct = upstream.headers.get('content-type') || 'application/octet-stream';
@@ -1564,8 +1587,8 @@ app.get('/api/proof-proxy', authRequired, async (req, res) => {
     const buf = await upstream.arrayBuffer();
     res.send(Buffer.from(buf));
   } catch (e) {
-    console.error('[proof-proxy]', e.message);
-    res.status(500).send('Errore proxy');
+    console.error('[proof-proxy] errore:', e.message);
+    res.status(500).send('Errore proxy: ' + e.message);
   }
 });
 
