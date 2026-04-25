@@ -428,19 +428,6 @@ function getSortedTeamEntries() {
   });
 }
 
-function getDisplayTeams() {
-  return getSortedTeamEntries().map(([teamName, teamData], index) => {
-    const numericSlot = Number(teamData?.slot);
-    const slot = Number.isInteger(numericSlot) && numericSlot > 0 ? numericSlot : index + 1;
-
-    return {
-      teamName,
-      slot,
-      players: Array.isArray(teamData?.players) ? teamData.players : []
-    };
-  });
-}
-
 function getSortedScores() {
   return Object.entries(data.scores || {})
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
@@ -967,7 +954,12 @@ async function refreshTeamResultPanels(customCategoryId) {
 
   const channelList = [...channels.values()];
 
-  for (const [teamName, teamData] of getSortedTeamEntries()) {
+  for (const [teamName, teamData] of Object.entries(teams || {}).sort((a, b) => {
+    const slotA = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
+    if (slotA !== slotB) return slotA - slotB;
+    return a[0].localeCompare(b[0], 'it');
+  })) {
     const slot = Number(teamData?.slot || 0);
     const channel = channelList.find(ch => ch.name.startsWith(`🏆・#${slot} `));
 
@@ -1018,11 +1010,15 @@ async function createTeamRooms(customCategoryId) {
   refreshStateFromDisk();
 
   const guild = await client.guilds.fetch(GUILD_ID);
-
   const structure = await ensureTournamentDiscordStructure(customCategoryId);
   const categoryIdToUse = structure.categoryId;
 
-  const sortedTeams = getSortedTeamEntries();
+  const sortedTeams = Object.entries(teams || {}).sort((a, b) => {
+    const slotA = Number(a[1]?.slot || 999999);
+    const slotB = Number(b[1]?.slot || 999999);
+    if (slotA !== slotB) return slotA - slotB;
+    return a[0].localeCompare(b[0], 'it');
+  });
 
   if (!sortedTeams.length) {
     throw new Error('Nessun team registrato');
@@ -1538,22 +1534,50 @@ async function updateRegisteredTeamsGraphic(options = {}) {
   await waitReady();
   refreshStateFromDisk();
 
-  console.log('[team-registrati] avvio aggiornamento grafica');
+  console.log('==============================');
+  console.log('[team-registrati] AVVIO FORZATO');
   console.log('[team-registrati] REGISTRATION_STATUS_CHANNEL:', REGISTRATION_STATUS_CHANNEL);
   console.log('[team-registrati] PUBLIC_BASE_URL:', process.env.PUBLIC_BASE_URL || '(non impostato)');
   console.log('[team-registrati] RAILWAY_PUBLIC_DOMAIN:', process.env.RAILWAY_PUBLIC_DOMAIN || '(non impostato)');
+  console.log('==============================');
 
   const allowCreate = options.allowCreate !== false;
-  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
 
-  console.log('[team-registrati] canale risolto:', channel.id, channel.name || '(senza nome)');
+  const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL).catch(error => {
+    console.error('[team-registrati] ERRORE FETCH CANALE:', error);
+    return null;
+  });
+
+  if (!channel) {
+    throw new Error(`Canale team registrati non trovato: ${REGISTRATION_STATUS_CHANNEL}`);
+  }
+
+  console.log('[team-registrati] canale trovato:', channel.id, channel.name || '(senza nome)');
+  console.log('[team-registrati] type:', channel.type);
+  console.log('[team-registrati] send disponibile:', typeof channel.send);
+
+  if (typeof channel.send !== 'function') {
+    throw new Error(`Il canale ${REGISTRATION_STATUS_CHANNEL} non supporta channel.send(). Controlla che sia un canale testuale Discord.`);
+  }
+
+  await channel.send({
+    content: '🧪 Test bot: sto provando a generare la grafica Team Registrati...'
+  }).catch(error => {
+    console.error('[team-registrati] ERRORE INVIO TEST:', error);
+    throw error;
+  });
 
   const registered = Object.keys(teams || {}).length;
   const stamp = Date.now();
 
   console.log('[team-registrati] generazione immagine...');
   const buffer = await generateRegisteredTeamsGraphicBuffer();
+
   console.log('[team-registrati] immagine generata bytes:', buffer?.length || 0);
+
+  if (!buffer || !buffer.length) {
+    throw new Error('Buffer grafica Team Registrati vuoto.');
+  }
 
   const result = await sendOrUpdateGraphicMessage({
     channel,
