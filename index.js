@@ -717,10 +717,15 @@ function createTeamResultPanelPayload(teamName, teamData) {
 
   const reportBtn = new ButtonBuilder()
     .setCustomId(`report_slot_${slot}`)
-    .setLabel('⚠️ Segnala problema')
+    .setLabel('⚠️ Segnala')
     .setStyle(ButtonStyle.Danger);
 
-  const row = new ActionRowBuilder().addComponents(submitBtn, reportBtn);
+  const attachBtn = new ButtonBuilder()
+    .setCustomId(`attach_slot_${slot}`)
+    .setLabel('📎 Allega foto')
+    .setStyle(ButtonStyle.Secondary);
+
+  const row = new ActionRowBuilder().addComponents(submitBtn, reportBtn, attachBtn);
 
   return {
     embeds: [embed],
@@ -3407,6 +3412,38 @@ client.on('interactionCreate', async interaction => {
           `Lo staff esaminerà quanto segnalato al più presto.\n\n` +
           `Vuoi allegare uno screenshot o video come prova? Clicca il bottone qui sotto.`,
         components: [proofRow],
+        ephemeral: true
+      });
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('attach_slot_')) {
+      const slot = Number(interaction.customId.replace('attach_slot_', ''));
+      const teamInfo = getTeamBySlot(slot);
+      const matchNumber = Number(data.currentMatch || 1);
+
+      const report = addReport({
+        teamName: teamInfo?.teamName || `Slot #${slot}`,
+        slot,
+        matchNumber,
+        reporterDiscordId: interaction.user.id,
+        reporterDiscordTag: interaction.user.tag,
+        playerName: '',
+        description: '📎 Prova allegata tramite pannello',
+        proofUrl: '',
+        timestamp: Date.now()
+      });
+
+      pendingReportProof.set(interaction.user.id, {
+        reportId: report.id,
+        channelId: interaction.channelId,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
+
+      return interaction.reply({
+        content:
+          `📎 **Invia ORA il file qui nella chat di questa stanza** (trascina la foto o il video nel campo messaggi).\n` +
+          `Il bot lo salverà automaticamente e lo staff potrà visualizzarlo nell'admin.\n\n` +
+          `⏰ Hai **5 minuti** per inviare il file.`,
         ephemeral: true
       });
     }
