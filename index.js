@@ -3501,9 +3501,11 @@ client.on('messageCreate', async message => {
       pendingReportProof.delete(message.author.id);
 
       if (Date.now() > pendingProof.expiresAt) {
-        await message.reply({
-          content: '⏰ Il tempo per allegare la prova è scaduto (5 minuti). La segnalazione è stata salvata senza allegato.'
-        }).catch(() => {});
+        await message.delete().catch(() => {});
+        const expiredMsg = await message.channel.send({
+          content: '⏰ Il tempo per allegare la prova è scaduto (5 min). La segnalazione è stata salvata senza allegato.'
+        }).catch(() => null);
+        if (expiredMsg) setTimeout(() => expiredMsg.delete().catch(() => {}), 3000);
         return;
       }
 
@@ -3519,9 +3521,17 @@ client.on('messageCreate', async message => {
 
       updateReportProofUrl(pendingProof.reportId, proofUrl);
 
-      await message.reply({
-        content: '✅ **Prova allegata alla segnalazione!** Lo staff potrà visualizzarla nel pannello admin.',
-      }).catch(() => {});
+      // Elimina il messaggio dell'utente (con la foto) per tenere la chat pulita
+      await message.delete().catch(() => {});
+
+      // Messaggio temporaneo "Segnalazione inviata" visibile 3 secondi poi cancellato
+      const confirmMsg = await message.channel.send({
+        content: '✅ **Segnalazione inviata!** Lo staff la esaminerà al più presto.'
+      }).catch(() => null);
+
+      if (confirmMsg) {
+        setTimeout(() => confirmMsg.delete().catch(() => {}), 3000);
+      }
 
       return;
     }
