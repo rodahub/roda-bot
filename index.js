@@ -205,6 +205,7 @@ function ensureDataStructures() {
   if (!Object.prototype.hasOwnProperty.call(data, 'registrationStatusMessageId')) data.registrationStatusMessageId = null;
   if (!Object.prototype.hasOwnProperty.call(data, 'registrationGraphicMessageId')) data.registrationGraphicMessageId = null;
   if (!Object.prototype.hasOwnProperty.call(data, 'registrationClosedAnnounced')) data.registrationClosedAnnounced = false;
+  if (!Object.prototype.hasOwnProperty.call(data, 'lastRegistrationGraphicSignature')) data.lastRegistrationGraphicSignature = null;
 
   data.registrationMaxTeams = MAX_TEAMS;
 }
@@ -1515,11 +1516,68 @@ async function generateRegisteredTeamsGraphicSafe() {
   return generateRegisteredTeamsGraphicBuffer();
 }
 
-function queueRegistrationStatusUpdate() {
+function computeRegistrationGraphicSignature() {
+  try {
+    const teamsObj = loadTeams() || {};
+    const entries = Object.entries(teamsObj)
+      .map(([name, team]) => {
+        const slot = Number(team?.slot);
+        const players = Array.isArray(team?.players) ? team.players.slice(0, 3) : [];
+        return {
+          slot: Number.isInteger(slot) && slot > 0 ? slot : 999999,
+          name: String(name || '').toLowerCase(),
+          players: [
+            String(players[0] || '').toLowerCase(),
+            String(players[1] || '').toLowerCase(),
+            String(players[2] || '').toLowerCase()
+          ]
+        };
+      })
+      .sort((a, b) => {
+        if (a.slot !== b.slot) return a.slot - b.slot;
+        return a.name.localeCompare(b.name, 'it');
+      })
+      .slice(0, 16);
+
+    const teamsKey = entries
+      .map(e => `${e.slot}|${e.name}|${e.players.join(',')}`)
+      .join(';');
+
+    const statusKey = [
+      areRegistrationsOpen() ? 'open' : 'closed',
+      String(data.registrationStatusTitle || ''),
+      String(data.registrationStatusText || '')
+    ].join('||');
+
+    return `v1:${entries.length}:${teamsKey}::${statusKey}`;
+  } catch (error) {
+    console.error('Errore calcolo signature grafica registrati:', error);
+    return null;
+  }
+}
+
+function queueRegistrationStatusUpdate(options = {}) {
+  const force = options && options.force === true;
+
   registrationStatusUpdateQueue = registrationStatusUpdateQueue
     .then(async () => {
       await waitReady();
       refreshStateFromDisk();
+
+      const signature = computeRegistrationGraphicSignature();
+      const lastSignature = data.lastRegistrationGraphicSignature || null;
+      const hasGraphicMessage = Boolean(data.registrationGraphicMessageId || data.registrationStatusMessageId);
+
+      if (!force && signature && lastSignature === signature && hasGraphicMessage) {
+        return {
+          ok: true,
+          updated: false,
+          created: false,
+          skipped: true,
+          reason: 'no_changes',
+          messageId: data.registrationGraphicMessageId || data.registrationStatusMessageId
+        };
+      }
 
       const channel = await client.channels.fetch(REGISTRATION_STATUS_CHANNEL);
 
@@ -1549,6 +1607,11 @@ function queueRegistrationStatusUpdate() {
               files: [attachment]
             });
 
+            if (signature) {
+              data.lastRegistrationGraphicSignature = signature;
+              saveState();
+            }
+
             return {
               ok: true,
               updated: true,
@@ -1568,6 +1631,7 @@ function queueRegistrationStatusUpdate() {
 
         data.registrationGraphicMessageId = msg.id;
         data.registrationStatusMessageId = msg.id;
+        if (signature) data.lastRegistrationGraphicSignature = signature;
         saveState();
 
         return {
@@ -1591,6 +1655,11 @@ function queueRegistrationStatusUpdate() {
             attachments: []
           });
 
+          if (signature) {
+            data.lastRegistrationGraphicSignature = signature;
+            saveState();
+          }
+
           return {
             ok: true,
             updated: true,
@@ -1611,6 +1680,7 @@ function queueRegistrationStatusUpdate() {
       });
 
       data.registrationStatusMessageId = msg.id;
+      if (signature) data.lastRegistrationGraphicSignature = signature;
       saveState();
 
       return {
@@ -1635,8 +1705,8 @@ function queueRegistrationStatusUpdate() {
   return registrationStatusUpdateQueue;
 }
 
-async function updateRegistrationStatusMessage() {
-  return queueRegistrationStatusUpdate();
+async function updateRegistrationStatusMessage(options = {}) {
+  return queueRegistrationStatusUpdate(options);
 }
 
 async function maybeAnnounceTournamentFull() {

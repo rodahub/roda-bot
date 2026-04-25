@@ -2542,7 +2542,7 @@ app.post('/api/registration-settings/refresh', authRequired, requireAdmin, async
   try {
     syncBotState();
 
-    const result = await safeBotCall('updateRegistrationStatusMessage');
+    const result = await safeBotCall('updateRegistrationStatusMessage', { force: true });
 
     logAudit(req.staffUser, 'web', 'messaggio_registrazione_aggiornato', result);
 
