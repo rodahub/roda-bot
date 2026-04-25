@@ -1856,44 +1856,49 @@ function _genReportId() {
 }
 
 function addReport(reportRaw) {
+  const safeData = loadData();
   const id = sanitizeText(reportRaw.id || '') || _genReportId();
   const report = normalizeReport({ ...reportRaw, id });
-  if (!Array.isArray(data.reports)) data.reports = [];
-  data.reports.push(report);
-  saveState();
+  if (!Array.isArray(safeData.reports)) safeData.reports = [];
+  safeData.reports.push(report);
+  saveData(safeData);
   return report;
 }
 
 function getReports() {
-  return Array.isArray(data.reports) ? [...data.reports].reverse() : [];
+  const safeData = loadData();
+  return Array.isArray(safeData.reports) ? [...safeData.reports].reverse() : [];
 }
 
 function markReportReviewed(id, reviewedBy) {
-  if (!Array.isArray(data.reports)) return false;
-  const r = data.reports.find(r => r.id === id);
+  const safeData = loadData();
+  if (!Array.isArray(safeData.reports)) return false;
+  const r = safeData.reports.find(r => r.id === id);
   if (!r) return false;
   r.reviewed = true;
   r.reviewedBy = sanitizeText(reviewedBy || 'admin');
   r.reviewedAt = Date.now();
-  saveState();
+  saveData(safeData);
   return true;
 }
 
 function deleteReport(id) {
-  if (!Array.isArray(data.reports)) return false;
-  const idx = data.reports.findIndex(r => r.id === id);
+  const safeData = loadData();
+  if (!Array.isArray(safeData.reports)) return false;
+  const idx = safeData.reports.findIndex(r => r.id === id);
   if (idx === -1) return false;
-  data.reports.splice(idx, 1);
-  saveState();
+  safeData.reports.splice(idx, 1);
+  saveData(safeData);
   return true;
 }
 
 function updateReportProofUrl(id, proofUrl) {
-  if (!Array.isArray(data.reports)) return false;
-  const r = data.reports.find(r => r.id === id);
+  const safeData = loadData();
+  if (!Array.isArray(safeData.reports)) return false;
+  const r = safeData.reports.find(r => r.id === id);
   if (!r) return false;
   r.proofUrl = sanitizeText(proofUrl || '');
-  saveState();
+  saveData(safeData);
   return true;
 }
 
