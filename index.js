@@ -1454,16 +1454,28 @@ async function refreshTeamResultPanels(customCategoryId) {
     } catch (error) {
       failed++;
 
+      const rawDetails = error?.rawError ? JSON.stringify(error.rawError).substring(0, 500) : null;
+      const errorDetail = [
+        error.message || 'Errore invio pannello',
+        error.code ? `[code ${error.code}]` : null,
+        rawDetails ? `raw: ${rawDetails}` : null
+      ].filter(Boolean).join(' | ');
+
       details.push({
         team: teamName,
         slot,
         channelId: channel.id,
         channelName: channel.name,
         status: 'failed',
-        error: error.message || 'Errore invio pannello'
+        error: errorDetail
       });
 
-      console.error(`Errore pannello risultato ${teamName} in ${channel.name}:`, error);
+      console.error(`Errore pannello risultato ${teamName} in ${channel.name}:`, {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        rawError: error.rawError
+      });
     }
   }
 
