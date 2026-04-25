@@ -1500,6 +1500,7 @@
                     </div>
                     <button class="btn btn-blue" id="discordRefreshBtn" onclick="loadDiscordChannels(true)">🔄 Aggiorna lista Discord</button>
                   </div>
+                  <div id="discordUnsavedWarn" style="display:none;background:#3a2818;border:1px solid #d97706;color:#fbbf24;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;">⚠ Modifiche non salvate — premi "Salva configurazione" in fondo per applicarle.</div>
                   <div class="grid-3" style="margin-bottom:18px;">
                     <div class="stat">
                       <span>Server</span>
@@ -1524,14 +1525,14 @@
                   <div class="grid-2">
                     <div class="field">
                       <label># Canale generale <span class="pill" id="badge-general" style="margin-left:8px;">—</span></label>
-                      <select id="generalSelect" onchange="syncDiscordSelectsToInputs()">
+                      <select id="generalSelect" onchange="syncDiscordSelectsToInputs(true)">
                         <option value="">Carica lista Discord...</option>
                       </select>
                       <div class="note">Annunci pubblici (apertura iscrizioni, inizio torneo, ecc.).</div>
                     </div>
                     <div class="field">
                       <label># Canale regolamento <span class="pill" id="badge-rules" style="margin-left:8px;">—</span></label>
-                      <select id="rulesSelect" onchange="syncDiscordSelectsToInputs()">
+                      <select id="rulesSelect" onchange="syncDiscordSelectsToInputs(true)">
                         <option value="">Carica lista Discord...</option>
                       </select>
                       <div class="note">Dove il bot pubblica il regolamento del torneo.</div>
@@ -1540,14 +1541,14 @@
                   <div class="grid-2">
                     <div class="field">
                       <label># Canale pannello iscrizioni <span class="pill" id="badge-register" style="margin-left:8px;">—</span></label>
-                      <select id="registerChannelSelect" onchange="syncDiscordSelectsToInputs()">
+                      <select id="registerChannelSelect" onchange="syncDiscordSelectsToInputs(true)">
                         <option value="">Carica lista Discord...</option>
                       </select>
                       <div class="note">Dove appare il bottone "Iscriviti" per i team.</div>
                     </div>
                     <div class="field">
                       <label>🏆 Canale classifica <span class="pill" id="badge-leaderboard" style="margin-left:8px;">—</span></label>
-                      <select id="leaderboardSelect" onchange="syncDiscordSelectsToInputs()">
+                      <select id="leaderboardSelect" onchange="syncDiscordSelectsToInputs(true)">
                         <option value="">Carica lista Discord...</option>
                       </select>
                       <div class="note">Dove il bot aggiorna la classifica live e i top fragger.</div>
@@ -1870,7 +1871,7 @@
           <img class="modal-img" id="imagePreview" src="" alt="Screenshot risultato" />
         </div>
         <script>
-    let dashboard=null,loading=false,selectedMatchRows=null,selectedMatchNumber=null,suggestedAction=null,discordChannels=null,discordLoading=false;
+    let dashboard=null,loading=false,selectedMatchRows=null,selectedMatchNumber=null,suggestedAction=null,discordChannels=null,discordLoading=false,discordDirty=false;
     let lastClickedButton=null;
     const inFlightActions=new Set();
     document.addEventListener('click',event=>{
@@ -2099,11 +2100,13 @@
       qs('teamsPill').textContent=`${teams.length} / 16`;
       qs('registrationTitleInput').value=registration.titolo||'';
       qs('registrationTextInput').value=registration.testo||'';
-      qs('categoryInput').value=botConfig.roomsCategoryId||botConfig.categoryId||'';
-      qs('generalInput').value=botConfig.generalChannelId||'';
-      qs('rulesInput').value=botConfig.rulesChannelId||'';
-      qs('registerChannelInput').value=botConfig.registerPanelChannelId||'';
-      if(qs('leaderboardInput'))qs('leaderboardInput').value=botConfig.leaderboardChannelId||'';
+      if(!discordDirty){
+        qs('categoryInput').value=botConfig.roomsCategoryId||botConfig.categoryId||'';
+        qs('generalInput').value=botConfig.generalChannelId||'';
+        qs('rulesInput').value=botConfig.rulesChannelId||'';
+        qs('registerChannelInput').value=botConfig.registerPanelChannelId||'';
+        if(qs('leaderboardInput'))qs('leaderboardInput').value=botConfig.leaderboardChannelId||''
+      }
       qs('discordRegistrationState').textContent=discordOpen?'Attive':'Non attive';
       qs('discordRegisterChannelState').textContent=botConfig.registerPanelChannelId?'Configurato':'Mancante';
       qs('discordGuildState').textContent=discordChannels?.guild?.name||'-';
@@ -2419,15 +2422,26 @@
       renderDiscordCategoryChannels();
       renderDiscordFullBrowser()
     }
-    function syncDiscordSelectsToInputs(){
+    function syncDiscordSelectsToInputs(markDirty){
       if(!qs('categorySelect'))return;
       qs('categoryInput').value=qs('categorySelect').value||'';
       qs('generalInput').value=qs('generalSelect').value||'';
       qs('rulesInput').value=qs('rulesSelect').value||'';
       qs('registerChannelInput').value=qs('registerChannelSelect').value||'';
       if(qs('leaderboardSelect')&&qs('leaderboardInput'))qs('leaderboardInput').value=qs('leaderboardSelect').value||'';
+      if(markDirty===true)markDiscordDirty();
       updateAllDiscordBadges();
       renderDiscordCategoryChannels()
+    }
+    function markDiscordDirty(){
+      discordDirty=true;
+      const warn=qs('discordUnsavedWarn');
+      if(warn)warn.style.display='block'
+    }
+    function clearDiscordDirty(){
+      discordDirty=false;
+      const warn=qs('discordUnsavedWarn');
+      if(warn)warn.style.display='none'
     }
     function onDiscordCategoryChanged(){
       if(!qs('categorySelect'))return;
@@ -2447,7 +2461,7 @@
       if(rules)setSelectValueIfExists('rulesSelect',rules.id);
       if(register)setSelectValueIfExists('registerChannelSelect',register.id);
       if(leaderboard&&qs('leaderboardSelect'))setSelectValueIfExists('leaderboardSelect',leaderboard.id);
-      syncDiscordSelectsToInputs()
+      syncDiscordSelectsToInputs(true)
     }
     function getDiscordChannelIcon(type){
       if(type==='category')return'📁';
@@ -2942,6 +2956,7 @@
         });
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio Discord');
+        clearDiscordDirty();
         await refreshDashboard();
         setStatus('Impostazioni Discord salvate')
       })
