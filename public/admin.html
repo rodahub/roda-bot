@@ -3607,6 +3607,14 @@
         container.appendChild(img);
       }
       if(extLink){extLink.href=url;}
+      // Bottone scarica: sempre via proxy con &dl=1 (funziona per Discord e path locali)
+      const dlBtn=document.getElementById('proofDownloadBtn');
+      if(dlBtn){
+        const dlUrl='/api/proof-proxy?url='+encodeURIComponent(url)+'&dl=1';
+        dlBtn.href=dlUrl;
+        const ext=url.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|avi|mkv)/i)?.[1]||'bin';
+        dlBtn.download='prova.'+ext;
+      }
       overlay.classList.add('open');
       document.body.style.overflow='hidden';
     }
@@ -3626,7 +3634,10 @@
   <div id="proofOverlay" role="dialog" aria-modal="true">
     <button class="proof-close" onclick="closeProofViewer()" title="Chiudi">✕</button>
     <div id="proofMedia"></div>
-    <a id="proofExtLink" href="#" target="_blank" rel="noopener" class="proof-open-ext">↗ Apri in una nuova scheda</a>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:6px;">
+      <a id="proofDownloadBtn" href="#" download="prova" style="background:rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:6px 16px;border-radius:6px;font-size:12px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">⬇ Scarica file</a>
+      <a id="proofExtLink" href="#" target="_blank" rel="noopener" class="proof-open-ext">↗ Apri in una nuova scheda</a>
+    </div>
   </div>
 
       </body>

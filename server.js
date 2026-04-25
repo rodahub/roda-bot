@@ -1551,6 +1551,9 @@ app.get('/api/proof-proxy', authRequired, async (req, res) => {
       if (!fs.existsSync(filePath)) {
         return res.status(404).send('File locale non trovato. Potrebbe essere stato eliminato.');
       }
+      if (req.query.dl === '1') {
+        return res.download(filePath, fileName);
+      }
       return res.sendFile(filePath);
     }
 
@@ -1583,6 +1586,10 @@ app.get('/api/proof-proxy', authRequired, async (req, res) => {
     res.setHeader('Content-Type', ct);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     if (cl) res.setHeader('Content-Length', cl);
+    if (req.query.dl === '1') {
+      const ext = rawUrl.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|avi|mkv)/i)?.[1] || 'bin';
+      res.setHeader('Content-Disposition', `attachment; filename="prova.${ext}"`);
+    }
 
     const buf = await upstream.arrayBuffer();
     res.send(Buffer.from(buf));
