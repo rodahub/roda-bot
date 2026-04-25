@@ -1222,7 +1222,6 @@
           </div>
           <div class="top-actions">
             <div class="pill" id="topPill">Caricamento...</div>
-            <button class="btn btn-green" onclick="openQuickManualModal()">+ Risultato</button>
           </div>
         </div>
         <div class="content">
@@ -1244,13 +1243,6 @@
                   </button>
                 </div>
               </div>
-            </div>
-            <div class="next-action" id="nextActionBox">
-              <div>
-                <strong id="nextActionTitle">Prossima azione</strong>
-                <span id="nextActionText">Caricamento suggerimento...</span>
-              </div>
-              <button class="btn btn-purple" id="nextActionButton" onclick="runSuggestedAction()">Esegui</button>
             </div>
             <div class="flow-actions">
               <button class="flow-btn" id="btnNewTournament" onclick="createNewTournamentDirect()">
@@ -1274,11 +1266,11 @@
                   <span>Blocca nuovi team e disabilita il pannello.</span>
                 </div>
               </button>
-              <button class="flow-btn" id="btnFinishTournament" onclick="finishTournament()">
-                <div class="flow-icon">🏆</div>
+              <button class="flow-btn" id="btnFinishTournament" onclick="finishTournament()" style="border-color:rgba(255,80,80,.25);opacity:.6;" title="Usa il bottone principale per chiudere il torneo. Questo è solo per emergenze.">
+                <div class="flow-icon">⚠️</div>
                 <div>
-                  <strong>Termina torneo</strong>
-                  <span>Chiude la RØDA CUP.</span>
+                  <strong>Forza chiusura</strong>
+                  <span>Solo emergenze: chiude il torneo senza controlli.</span>
                 </div>
               </button>
             </div>
@@ -1705,27 +1697,19 @@
                         <button class="btn action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
                         <div class="action-help">Aggiorna (o crea se mancano) i pannelli punteggio dentro ogni stanza vocale team. Servono ai capitani per caricare gli screenshot dei risultati.</div>
                       </div>
-                      <div class="action-tile">
-                        <button class="btn action-btn" style="background:#555" onclick="diagnosePanels()">🔍 Diagnostica stanze vocali</button>
-                        <div class="action-help">Mostra cosa vede il bot nella categoria Discord: stanze trovate, corrispondenze team↔stanza, e eventuali problemi. Utile se i pannelli non appaiono.</div>
-                      </div>
                     </div>
                   </div>
 
                   <div class="action-section">
-                    <div class="action-section-title">3️⃣ Comunicazioni in-tournament</div>
+                    <div class="action-section-title">3️⃣ Aggiornamento Discord</div>
                     <div class="action-grid">
-                      <div class="action-tile">
-                        <button class="btn action-btn" onclick="sendReminder()">📢 Manda promemoria generale</button>
-                        <div class="action-help">Invia un avviso nel canale generale per ricordare ai team la prossima partita o azione richiesta in base allo stato del torneo.</div>
-                      </div>
                       <div class="action-tile">
                         <button class="btn action-btn" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
                         <div class="action-help">Ridisegna immediatamente le immagini della classifica generale e dei top fragger nel canale classifica configurato.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="syncEverything()">♻️ Sincronizza tutto</button>
-                        <div class="action-help">Esegue in sequenza tutte le operazioni Discord: pannello iscrizioni + pannelli risultati team + classifica. Usalo per riallineare Discord con i dati del sito in un colpo solo.</div>
+                        <button class="btn action-btn" onclick="syncEverything()">🔄 Aggiorna Discord</button>
+                        <div class="action-help">Riallinea tutto Discord con i dati del sito: pannello iscrizioni + pannelli team + classifica. Usalo se qualcosa non è sincronizzato.</div>
                       </div>
                     </div>
                   </div>
@@ -1739,6 +1723,16 @@
                         <input id="lobbyCodeInput" type="text" placeholder="Es. ABC-123" />
                       </div>
                       <button class="btn action-btn" style="flex:0 0 auto;min-width:220px;" onclick="sendLobbyCode()">📨 Invia codice nelle stanze team</button>
+                    </div>
+                  </div>
+
+                  <div class="action-section" style="margin-top:10px;border-top:1px solid rgba(255,255,255,.07);padding-top:16px;">
+                    <div class="action-section-title" style="opacity:.55;font-size:11px;">🔧 Strumenti avanzati</div>
+                    <div class="action-grid">
+                      <div class="action-tile">
+                        <button class="btn action-btn" style="background:rgba(60,60,80,.8);" onclick="diagnosePanels()">🔍 Diagnostica stanze vocali</button>
+                        <div class="action-help">Mostra cosa vede il bot nella categoria Discord: stanze trovate, corrispondenze team↔stanza, e problemi. Usa solo se i pannelli non appaiono.</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2048,7 +2042,7 @@
           <img class="modal-img" id="imagePreview" src="" alt="Screenshot risultato" />
         </div>
         <script>
-    let dashboard=null,loading=false,selectedMatchRows=null,selectedMatchNumber=null,suggestedAction=null,discordChannels=null,discordLoading=false,discordDirty=false;
+    let dashboard=null,loading=false,selectedMatchRows=null,selectedMatchNumber=null,discordChannels=null,discordLoading=false,discordDirty=false;
     let lastClickedButton=null;
     const inFlightActions=new Set();
     document.addEventListener('click',event=>{
@@ -2233,7 +2227,6 @@
         dashboard=result.data;
         const data=dashboard,match=data.statoMatchCorrente||{},current=Number(data.matchCorrente||1),total=Number((data.impostazioniTorneo||{}).totalMatches||3),state=data.stato,teams=data.teamOrdinati||[];
         renderMasterMatchButton(state,current,total,teams.length);
-        renderSuggestedAction(state,teams,match,current,total);
         renderControlLists(match.righe||[]);
         updateFlowButtons(state);
         qs('statReceived').textContent=Number(match.inviati||0);
@@ -2323,7 +2316,6 @@
       qs('discordGuildState').textContent=discordChannels?.guild?.name||'-';
       updateFlowButtons(state);
       renderMasterMatchButton(state,current,total,teams.length);
-      renderSuggestedAction(state,teams,match,current,total);
       renderControlLists(match.righe||[]);
       renderLeaderboards(leaderboard,fraggers);
       renderPoints(points);
@@ -2396,97 +2388,6 @@
       if(normalized==='iscrizioni_chiuse')return startTournament();
       if(normalized==='torneo_in_corso'&&current<total)return forceNextMatch();
       if(normalized==='torneo_in_corso'&&current>=total)return finishTournament();
-    }
-    function renderSuggestedAction(state,teams,match,current,total){
-      const pending=Number(match.inAttesa||0),missing=Number(match.nonInviati||0),completed=Boolean(match.completato),teamCount=teams.length;
-      suggestedAction=null;
-      if(state==='bozza'){
-        suggestedAction='openRegistrations';
-        qs('nextActionTitle').textContent='Prossima azione: apri le iscrizioni';
-        qs('nextActionText').textContent='Quando sei pronto, abilita il pannello Discord e fai registrare i team.';
-        qs('nextActionButton').textContent='Apri iscrizioni';
-        qs('nextActionButton').disabled=false;
-        return
-      }
-      if(state==='iscrizioni_aperte'){
-        suggestedAction='closeRegistrations';
-        qs('nextActionTitle').textContent='Prossima azione: chiudi le iscrizioni';
-        qs('nextActionText').textContent=`Ci sono ${teamCount} team iscritti. Quando la lista è pronta, chiudi le iscrizioni.`;
-        qs('nextActionButton').textContent='Chiudi iscrizioni';
-        qs('nextActionButton').disabled=false;
-        return
-      }
-      if(state==='iscrizioni_chiuse'){
-        suggestedAction=teamCount>0?'startTournament':'openRegistrations';
-        qs('nextActionTitle').textContent=teamCount>0?'Prossima azione: inizia il torneo':'Nessun team iscritto';
-        qs('nextActionText').textContent=teamCount>0?`Sono pronti ${teamCount} team. Puoi partire dal match 1.`:'Prima di iniziare servono team iscritti.';
-        qs('nextActionButton').textContent=teamCount>0?'Inizia torneo':'Apri iscrizioni';
-        qs('nextActionButton').disabled=false;
-        return
-      }
-      if(state==='torneo_in_corso'){
-        if(pending>0){
-          suggestedAction='goResults';
-          qs('nextActionTitle').textContent=`Prossima azione: controlla ${pending} risultati`;
-          qs('nextActionText').textContent='Ci sono risultati in attesa di approvazione.';
-          qs('nextActionButton').textContent='Vai ai risultati';
-          qs('nextActionButton').disabled=false;
-          return
-        }
-        if(completed&&current<total){
-          suggestedAction='nextMatch';
-          qs('nextActionTitle').textContent='Prossima azione: prossimo match';
-          qs('nextActionText').textContent=`Il match ${current} è completo. Puoi passare al match ${current+1}.`;
-          qs('nextActionButton').textContent='Prossimo match';
-          qs('nextActionButton').disabled=false;
-          return
-        }
-        if(completed&&current>=total){
-          suggestedAction='finishTournament';
-          qs('nextActionTitle').textContent='Prossima azione: termina il torneo';
-          qs('nextActionText').textContent='Tutti i match risultano completati.';
-          qs('nextActionButton').textContent='Termina torneo';
-          qs('nextActionButton').disabled=false;
-          return
-        }
-        if(missing>0){
-          suggestedAction='goResults';
-          qs('nextActionTitle').textContent=`Prossima azione: attendi o inserisci ${missing} risultati`;
-          qs('nextActionText').textContent='Mancano ancora risultati.';
-          qs('nextActionButton').textContent='Vai ai risultati';
-          qs('nextActionButton').disabled=false;
-          return
-        }
-        suggestedAction='syncEverything';
-        qs('nextActionTitle').textContent='Prossima azione: sincronizza';
-        qs('nextActionText').textContent='Aggiorna Discord.';
-        qs('nextActionButton').textContent='Sincronizza';
-        qs('nextActionButton').disabled=false;
-        return
-      }
-      if(state==='torneo_finito'){
-        suggestedAction='newTournament';
-        qs('nextActionTitle').textContent='Prossima azione: crea nuovo torneo';
-        qs('nextActionText').textContent='Il torneo è finito.';
-        qs('nextActionButton').textContent='Crea nuovo torneo';
-        qs('nextActionButton').disabled=false;
-        return
-      }
-      suggestedAction='syncEverything';
-      qs('nextActionTitle').textContent='Prossima azione: sincronizza';
-      qs('nextActionText').textContent='Aggiorna i dati.';
-      qs('nextActionButton').textContent='Sincronizza';
-      qs('nextActionButton').disabled=false
-    }
-    async function runSuggestedAction(){
-      if(suggestedAction==='openRegistrations')return openRegistrations();
-      if(suggestedAction==='closeRegistrations')return closeRegistrations();
-      if(suggestedAction==='startTournament')return startTournament();
-      if(suggestedAction==='nextMatch')return forceNextMatch();
-      if(suggestedAction==='finishTournament')return finishTournament();
-      if(suggestedAction==='goResults')return switchPage('risultati');
-      if(suggestedAction==='newTournament')return createNewTournamentDirect();
-      return syncEverything()
     }
     function renderControlLists(rows){
       const pendingRows=rows.filter(row=>normalizeTeamMatchStatus(row.stato)==='in_attesa'),missingRows=rows.filter(row=>{
