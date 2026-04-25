@@ -3317,9 +3317,9 @@
     }
     let _allReports=[];
     async function loadReports(){
-      const data=await api('/api/reports');
-      if(!data||!data.ok)return;
-      _allReports=data.reports||[];
+      const result=await api('/api/reports');
+      if(!result||!result.response.ok||!result.data.ok)return;
+      _allReports=result.data.reports||[];
       renderReports();
     }
     function renderReports(){
@@ -3369,13 +3369,13 @@
     async function reviewReport(id){
       if(!confirm('Segna questa segnalazione come esaminata?'))return;
       const res=await api(`/api/reports/${id}/review`,{method:'PATCH',body:JSON.stringify({reviewedBy:dashboard?.username||'admin'})});
-      if(res&&res.ok)await loadReports();
+      if(res&&res.response.ok)await loadReports();
       else alert('Errore durante la revisione.');
     }
     async function deleteReport(id){
       if(!confirm('Elimina definitivamente questa segnalazione?'))return;
       const res=await api(`/api/reports/${id}`,{method:'DELETE'});
-      if(res&&res.ok)await loadReports();
+      if(res&&res.response.ok)await loadReports();
       else alert('Errore durante l\'eliminazione.');
     }
     async function syncEverything(){
