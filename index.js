@@ -3394,18 +3394,39 @@ client.on('interactionCreate', async interaction => {
         playerName
       });
 
-      pendingReportProof.set(interaction.user.id, {
-        reportId: report.id,
-        channelId: interaction.channelId,
-        expiresAt: Date.now() + 5 * 60 * 1000
-      });
+      const proofBtn = new ButtonBuilder()
+        .setCustomId(`reportproof_${report.id}`)
+        .setLabel('📎 Allega foto/video come prova')
+        .setStyle(ButtonStyle.Secondary);
+
+      const proofRow = new ActionRowBuilder().addComponents(proofBtn);
 
       return interaction.reply({
         content:
           `✅ **Segnalazione ricevuta!** (ID: \`${report.id}\`)\n\n` +
           `Lo staff esaminerà quanto segnalato al più presto.\n\n` +
-          `📎 **Hai 5 minuti per inviare foto o video come prova:** trascina il file qui in questa stanza vocale (come faresti per un normale messaggio Discord) e il bot lo allegherà automaticamente alla tua segnalazione.`,
+          `Vuoi allegare uno screenshot o video come prova? Clicca il bottone qui sotto.`,
+        components: [proofRow],
         ephemeral: true
+      });
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith('reportproof_')) {
+      const reportId = interaction.customId.replace('reportproof_', '');
+
+      pendingReportProof.set(interaction.user.id, {
+        reportId,
+        channelId: interaction.channelId,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
+
+      return interaction.update({
+        content:
+          `✅ **Segnalazione salvata!**\n\n` +
+          `📎 **Ora invia il file qui nella chat di questa stanza** (trascina la foto o il video nel campo messaggi).\n` +
+          `Il bot lo rileverà automaticamente e lo allegherà alla tua segnalazione.\n\n` +
+          `⏰ Hai **5 minuti** per farlo.`,
+        components: []
       });
     }
 
