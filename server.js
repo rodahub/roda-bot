@@ -3624,7 +3624,7 @@ app.post('/api/bot/update-leaderboard', authRequired, requireAdmin, async (req, 
   }
 });
 
-app.get('/api/reports', requireAuth, (req, res) => {
+app.get('/api/reports', authRequired, (req, res) => {
   try {
     const reports = getReports();
     res.json({ ok: true, reports });
@@ -3633,7 +3633,7 @@ app.get('/api/reports', requireAuth, (req, res) => {
   }
 });
 
-app.patch('/api/reports/:id/review', requireAuth, express.json(), (req, res) => {
+app.patch('/api/reports/:id/review', authRequired, express.json(), (req, res) => {
   try {
     const { id } = req.params;
     const reviewedBy = (req.body && req.body.reviewedBy) || req.session?.username || 'admin';
@@ -3645,7 +3645,7 @@ app.patch('/api/reports/:id/review', requireAuth, express.json(), (req, res) => 
   }
 });
 
-app.delete('/api/reports/:id', requireAuth, (req, res) => {
+app.delete('/api/reports/:id', authRequired, (req, res) => {
   try {
     const { id } = req.params;
     const success = deleteReport(id);
