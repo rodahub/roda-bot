@@ -55,6 +55,7 @@ const FIXED_TOURNAMENT_NAME = 'RØDA CUP';
 const TOURNAMENT_CATEGORY_NAME = '🏆・RØDA CUP';
 const GENERAL_CHANNEL_NAME = '💬・generale';
 const RULES_CHANNEL_NAME = '📜・regolamento';
+const REGISTRATION_CHANNEL_NAME = '📝・iscrizioni';
 const MAX_TEAMS = 16;
 const PLAYERS_PER_TEAM = 3;
 
@@ -71,6 +72,7 @@ const readyPromise = new Promise(resolve => {
 });
 
 let registrationStatusUpdateQueue = Promise.resolve();
+let leaderboardUpdateQueue = Promise.resolve();
 
 function sanitizeText(value) {
   return String(value || '').trim();
@@ -151,6 +153,26 @@ function ensureDataStructures() {
 
   if (!data.botSettings || typeof data.botSettings !== 'object') {
     data.botSettings = defaults.botSettings;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'registerPanelMessageId')) {
+    data.botSettings.registerPanelMessageId = null;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'registerPanelChannelId')) {
+    data.botSettings.registerPanelChannelId = '';
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'resultsPanelMessageId')) {
+    data.botSettings.resultsPanelMessageId = null;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'resultsPanelChannelId')) {
+    data.botSettings.resultsPanelChannelId = '';
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'roomsCategoryId')) {
+    data.botSettings.roomsCategoryId = '';
   }
 
   if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'generalChannelId')) {
@@ -982,6 +1004,13 @@ async function ensureTournamentDiscordStructure(customCategoryId = '') {
     'Regolamento ufficiale RØDA CUP'
   );
 
+  const registrationResult = await findOrCreateTextChannelInCategory(
+    guild,
+    category,
+    REGISTRATION_CHANNEL_NAME,
+    'Canale iscrizioni ufficiale RØDA CUP'
+  );
+
   await ensureGeneralMessage(generalResult.channel).catch(error => {
     console.error('Errore messaggio generale RØDA CUP:', error);
   });
@@ -993,7 +1022,22 @@ async function ensureTournamentDiscordStructure(customCategoryId = '') {
   data.botSettings.roomsCategoryId = category.id;
   data.botSettings.generalChannelId = generalResult.channel.id;
   data.botSettings.rulesChannelId = rulesResult.channel.id;
+  data.botSettings.registerPanelChannelId = registrationResult.channel.id;
   saveState();
+
+  let registerPanel = null;
+
+  try {
+    registerPanel = await spawnRegisterPanel(registrationResult.channel.id);
+  } catch (error) {
+    registerPanel = {
+      ok: false,
+      error: true,
+      message: error.message || 'Errore creazione pannello iscrizioni'
+    };
+
+    console.error('Errore pannello iscrizioni RØDA CUP:', error);
+  }
 
   logAudit('bot', 'discord', 'struttura_discord_torneo_preparata', {
     categoryId: category.id,
@@ -1001,7 +1045,11 @@ async function ensureTournamentDiscordStructure(customCategoryId = '') {
     generalChannelId: generalResult.channel.id,
     generalCreated: Boolean(generalResult.created),
     rulesChannelId: rulesResult.channel.id,
-    rulesCreated: Boolean(rulesResult.created)
+    rulesCreated: Boolean(rulesResult.created),
+    registrationChannelId: registrationResult.channel.id,
+    registrationCreated: Boolean(registrationResult.created),
+    registerPanelCreated: Boolean(registerPanel?.created),
+    registerPanelUpdated: Boolean(registerPanel?.updated)
   });
 
   return {
@@ -1011,7 +1059,10 @@ async function ensureTournamentDiscordStructure(customCategoryId = '') {
     generalChannelId: generalResult.channel.id,
     generalCreated: Boolean(generalResult.created),
     rulesChannelId: rulesResult.channel.id,
-    rulesCreated: Boolean(rulesResult.created)
+    rulesCreated: Boolean(rulesResult.created),
+    registrationChannelId: registrationResult.channel.id,
+    registrationCreated: Boolean(registrationResult.created),
+    registerPanel
   };
 }
 
@@ -1808,42 +1859,67 @@ async function sendOrUpdateGraphicMessage({
 }
 
 async function deleteOldTextLeaderboardMessage(channel) {
-  if (!data.leaderboardMessageId) {
-    return {
-      deleted: false,
-      skipped: true,
-      reason: 'Nessun vecchio pannello testuale salvato'
-    };
-  }
+  let deleted = false;
+  let cleared = false;
+  const removedIds = [];
 
-  const oldId = data.leaderboardMessageId;
+  if (data.leaderboardMessageId) {
+    const oldId = data.leaderboardMessageId;
+
+    try {
+      const msg = await channel.messages.fetch(oldId);
+      await msg.delete().catch(() => {});
+      deleted = true;
+      removedIds.push(oldId);
+    } catch (error) {
+      cleared = true;
+    }
+
+    data.leaderboardMessageId = null;
+    saveState();
+  }
 
   try {
-    const msg = await channel.messages.fetch(oldId);
-    await msg.delete().catch(() => {});
-    data.leaderboardMessageId = null;
-    saveState();
+    const recentMessages = await channel.messages.fetch({ limit: 25 });
 
-    return {
-      deleted: true,
-      skipped: false,
-      messageId: oldId
-    };
+    for (const message of recentMessages.values()) {
+      if (message.author?.id !== client.user?.id) continue;
+
+      const hasFiles = message.attachments && message.attachments.size > 0;
+      const hasLeaderboardGraphicId = message.id === data.leaderboardGraphicMessageId;
+      const hasTopFraggerGraphicId = message.id === data.topFraggerGraphicMessageId;
+
+      if (hasFiles || hasLeaderboardGraphicId || hasTopFraggerGraphicId) continue;
+
+      const content = String(message.content || '').toLowerCase();
+      const title = String(message.embeds?.[0]?.title || '').toLowerCase();
+      const description = String(message.embeds?.[0]?.description || '').toLowerCase();
+
+      const looksLikeOldTextLeaderboard =
+        content.includes('classifica') ||
+        title.includes('classifica') ||
+        description.includes('classifica live') ||
+        description.includes('top fragger');
+
+      if (looksLikeOldTextLeaderboard) {
+        await message.delete().catch(() => {});
+        deleted = true;
+        removedIds.push(message.id);
+      }
+    }
   } catch (error) {
-    data.leaderboardMessageId = null;
-    saveState();
-
-    return {
-      deleted: false,
-      skipped: false,
-      cleared: true,
-      messageId: oldId,
-      error: error.message || 'Vecchio pannello testuale non trovato'
-    };
+    console.error('Errore ricerca vecchi pannelli testuali classifica:', error.message);
   }
+
+  return {
+    deleted,
+    cleared,
+    removedIds,
+    textLeaderboardDisabled: true
+  };
 }
 
-async function updateLeaderboardGraphics(options = {}) {
+async function updateLeaderboardGraphicsImmediate(options = {}) {
   await waitReady();
   ensureDataStructures();
 
@@ -1888,14 +1964,32 @@ async function updateLeaderboardGraphics(options = {}) {
     data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
   }
 
+  data.leaderboardMessageId = null;
   saveState();
 
   return {
     ok: true,
     allowCreate,
     leaderboardGraphicResult,
-    topFraggerGraphicResult
+    topFraggerGraphicResult,
+    textLeaderboardDisabled: true
   };
+}
+
+async function updateLeaderboardGraphics(options = {}) {
+  leaderboardUpdateQueue = leaderboardUpdateQueue
+    .then(() => updateLeaderboardGraphicsImmediate(options))
+    .catch(error => {
+      console.error('Errore queue classifiche grafiche:', error);
+
+      return {
+        ok: false,
+        error: true,
+        message: error.message || 'Errore aggiornamento classifiche grafiche'
+      };
+    });
+
+  return leaderboardUpdateQueue;
 }
 
 async function updateLeaderboard(options = {}) {
