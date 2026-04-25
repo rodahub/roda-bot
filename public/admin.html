@@ -856,7 +856,24 @@
     .action-btn{
       width:100%;
       justify-content:center;
-      text-align:center
+      text-align:center;
+      background:linear-gradient(135deg,rgba(123,44,255,.22),rgba(169,99,255,.12));
+      border:1px solid rgba(170,120,255,.34);
+      color:#f5edff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+      transition:.18s ease
+    }
+    .action-btn:hover{
+      background:linear-gradient(135deg,rgba(123,44,255,.36),rgba(169,99,255,.22));
+      border-color:rgba(190,145,255,.55);
+      box-shadow:0 8px 22px rgba(123,44,255,.28),inset 0 0 0 1px rgba(255,255,255,.06);
+      transform:translateY(-1px)
+    }
+    .action-btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)
     }
     .action-help{
       font-size:13px;
@@ -1624,11 +1641,11 @@
                     <div class="action-section-title">1️⃣ Stanze vocali team</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn btn-green action-btn" onclick="createRooms()">🎤 Genera stanze vocali team</button>
+                        <button class="btn action-btn" onclick="createRooms()">🎤 Genera stanze vocali team</button>
                         <div class="action-help">Crea un canale vocale Discord dedicato per ogni team registrato, dentro la categoria selezionata. Usalo all'inizio del torneo dopo che i team si sono iscritti.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn btn-red action-btn" onclick="deleteRooms()">🗑️ Elimina stanze team</button>
+                        <button class="btn action-btn" onclick="deleteRooms()">🗑️ Elimina stanze team</button>
                         <div class="action-help">Cancella tutte le stanze vocali team dalla categoria. Usalo a fine torneo per pulire il server, o se vuoi rigenerarle da zero.</div>
                       </div>
                     </div>
@@ -1638,11 +1655,11 @@
                     <div class="action-section-title">2️⃣ Pannelli interattivi Discord</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn btn-blue action-btn" onclick="spawnRegisterPanel()">📋 Pubblica pannello iscrizioni</button>
+                        <button class="btn action-btn" onclick="spawnRegisterPanel()">📋 Pubblica pannello iscrizioni</button>
                         <div class="action-help">Posta nel canale iscrizioni il messaggio con il pulsante "✋ Iscriviti" che i team usano per registrarsi al torneo. Da fare quando apri le iscrizioni.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn btn-blue action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
+                        <button class="btn action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
                         <div class="action-help">Aggiorna (o crea se mancano) i pannelli punteggio dentro ogni stanza vocale team. Servono ai capitani per caricare gli screenshot dei risultati.</div>
                       </div>
                     </div>
@@ -1652,15 +1669,15 @@
                     <div class="action-section-title">3️⃣ Comunicazioni in-tournament</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn btn-blue action-btn" onclick="sendReminder()">📢 Manda promemoria generale</button>
+                        <button class="btn action-btn" onclick="sendReminder()">📢 Manda promemoria generale</button>
                         <div class="action-help">Invia un avviso nel canale generale per ricordare ai team la prossima partita o azione richiesta in base allo stato del torneo.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn btn-blue action-btn" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
+                        <button class="btn action-btn" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
                         <div class="action-help">Ridisegna immediatamente le immagini della classifica generale e dei top fragger nel canale classifica configurato.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn btn-green action-btn" onclick="syncEverything()">♻️ Sincronizza tutto</button>
+                        <button class="btn action-btn" onclick="syncEverything()">♻️ Sincronizza tutto</button>
                         <div class="action-help">Esegue in sequenza tutte le operazioni Discord: pannello iscrizioni + pannelli risultati team + classifica. Usalo per riallineare Discord con i dati del sito in un colpo solo.</div>
                       </div>
                     </div>
@@ -1674,7 +1691,7 @@
                         <label>Codice partita Warzone</label>
                         <input id="lobbyCodeInput" type="text" placeholder="Es. ABC-123" />
                       </div>
-                      <button class="btn btn-blue action-btn" style="flex:0 0 auto;min-width:220px;" onclick="sendLobbyCode()">📨 Invia codice nelle stanze team</button>
+                      <button class="btn action-btn" style="flex:0 0 auto;min-width:220px;" onclick="sendLobbyCode()">📨 Invia codice nelle stanze team</button>
                     </div>
                   </div>
                 </div>
