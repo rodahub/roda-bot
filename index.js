@@ -486,7 +486,16 @@ function getLogoUrl() {
   const baseUrl = getPublicBaseUrl();
   if (!baseUrl) return null;
 
-  return `${baseUrl}/roda-logo.png`;
+  const url = `${baseUrl}/roda-logo.png`;
+
+  // Discord embed thumbnails require a valid absolute URL (https://)
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return url;
+  } catch {
+    return null;
+  }
 }
 
 function getTeamBySlot(slot) {
@@ -638,7 +647,9 @@ function createRegisterPanelPayload() {
     )
     .setFooter({ text: 'Pannello registrazione torneo' });
 
-  if (logoUrl) embed.setThumbnail(logoUrl);
+  if (logoUrl) {
+    try { embed.setThumbnail(logoUrl); } catch { /* invalid URL — skip */ }
+  }
 
   const btn = new ButtonBuilder()
     .setCustomId('register_btn')
@@ -686,7 +697,13 @@ function createTeamResultPanelPayload(teamName, teamData) {
     )
     .setFooter({ text: `Pannello locale team • Match ${matchNumber}` });
 
-  if (logoUrl) embed.setThumbnail(logoUrl);
+  if (logoUrl) {
+    try {
+      embed.setThumbnail(logoUrl);
+    } catch {
+      // thumbnail URL invalid for discord.js — skip silently
+    }
+  }
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -1462,10 +1479,10 @@ async function refreshTeamResultPanels(customCategoryId) {
       continue;
     }
 
-    const customId = buildResultButtonCustomId(slot);
-    const payload = createTeamResultPanelPayload(teamName, teamData);
-
     try {
+      const customId = buildResultButtonCustomId(slot);
+      const payload = createTeamResultPanelPayload(teamName, teamData);
+
       const existing = await findPanelMessageByButtonCustomId(channel, customId);
 
       if (existing) {
@@ -1817,7 +1834,9 @@ function buildRegistrationEmbeds() {
       .setTitle(index === 0 ? `🏆 ${project.tournamentName}` : `📑 Elenco team • Pagina ${index + 1}/${pages.length}`)
       .setDescription(pageText);
 
-    if (logoUrl) embed.setThumbnail(logoUrl);
+    if (logoUrl) {
+      try { embed.setThumbnail(logoUrl); } catch { /* invalid URL — skip */ }
+    }
 
     return embed;
   });
