@@ -53,6 +53,12 @@ const {
   getDefaultData,
   getDefaultProjectSettings,
   getDefaultTournamentMessages,
+  getDefaultAutomaticReminders,
+  REMINDER_TYPES,
+  REMINDER_INTERVAL_OPTIONS,
+  setReminderMasterEnabled,
+  updateAutomaticReminders,
+  resetReminderToDefault,
   getDefaultBotSettings,
 
   FIXED_TOURNAMENT_NAME,
@@ -2290,6 +2296,130 @@ app.post('/api/tournament/send-reminder', authRequired, requireAdmin, async (req
       ok: false,
       message: error.message || 'Errore invio promemoria'
     });
+  }
+});
+
+const REMINDER_LABELS = {
+  iscrizioni: 'Promemoria iscrizioni',
+  regolamento: 'Promemoria regolamento',
+  risultati: 'Promemoria risultati'
+};
+
+const REMINDER_STATE_HINTS = {
+  iscrizioni: 'Attivo solo durante le iscrizioni aperte.',
+  regolamento: 'Attivo durante iscrizioni aperte/chiuse e torneo in corso.',
+  risultati: 'Attivo solo durante il torneo in corso.'
+};
+
+function publicReminderState(data) {
+  const config = data.automaticReminders || getDefaultAutomaticReminders();
+  const generalChannelOk = Boolean(data.botSettings?.generalChannelId);
+
+  return {
+    masterEnabled: Boolean(config.masterEnabled),
+    generalChannelOk,
+    intervalOptions: REMINDER_INTERVAL_OPTIONS,
+    types: REMINDER_TYPES.map(type => {
+      const r = config.reminders[type] || {};
+      return {
+        type,
+        label: REMINDER_LABELS[type],
+        hint: REMINDER_STATE_HINTS[type],
+        enabled: Boolean(r.enabled),
+        intervalHours: Number(r.intervalHours || 12),
+        message: String(r.message || ''),
+        lastSentAt: r.lastSentAt || null
+      };
+    })
+  };
+}
+
+app.get('/api/reminders', authRequired, requireAdmin, (req, res) => {
+  try {
+    const data = loadData();
+    return res.json({ ok: true, reminders: publicReminderState(data) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore lettura promemoria' });
+  }
+});
+
+app.post('/api/reminders/master', authRequired, requireAdmin, (req, res) => {
+  try {
+    const enabled = sanitizeBoolean(req.body.enabled);
+    let data = loadData();
+    data = setReminderMasterEnabled(data, enabled);
+    syncBotState(data);
+
+    logAudit(req.staffUser, 'web', enabled ? 'promemoria_auto_attivati' : 'promemoria_auto_disattivati', {});
+
+    return res.json({ ok: true, reminders: publicReminderState(data) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore master promemoria' });
+  }
+});
+
+app.post('/api/reminders/save', authRequired, requireAdmin, (req, res) => {
+  try {
+    const updates = {};
+    for (const type of REMINDER_TYPES) {
+      const item = req.body && req.body[type];
+      if (!item || typeof item !== 'object') continue;
+      updates[type] = {
+        enabled: sanitizeBoolean(item.enabled),
+        intervalHours: Number(item.intervalHours),
+        message: sanitizeOptionalText(item.message, 1500)
+      };
+    }
+
+    let data = loadData();
+    data = updateAutomaticReminders(data, updates);
+    syncBotState(data);
+
+    logAudit(req.staffUser, 'web', 'promemoria_auto_salvati', { types: Object.keys(updates) });
+
+    return res.json({ ok: true, reminders: publicReminderState(data) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore salvataggio promemoria' });
+  }
+});
+
+app.post('/api/reminders/test/:type', authRequired, requireAdmin, async (req, res) => {
+  try {
+    const type = String(req.params.type || '');
+    if (!REMINDER_TYPES.includes(type)) {
+      return res.status(400).json({ ok: false, message: 'Tipo promemoria non valido' });
+    }
+
+    if (typeof bot.sendAutomaticReminder !== 'function') {
+      return res.status(500).json({ ok: false, message: 'Funzione bot non disponibile' });
+    }
+
+    const result = await bot.sendAutomaticReminder(type, { skipMark: true });
+
+    logAudit(req.staffUser, 'web', 'promemoria_auto_test', { type, channelId: result.channelId });
+
+    return res.json({ ok: true, result });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore invio promemoria di test' });
+  }
+});
+
+app.post('/api/reminders/reset/:type', authRequired, requireAdmin, (req, res) => {
+  try {
+    const type = String(req.params.type || '');
+    if (!REMINDER_TYPES.includes(type)) {
+      return res.status(400).json({ ok: false, message: 'Tipo promemoria non valido' });
+    }
+
+    let data = loadData();
+    data = resetReminderToDefault(data, type);
+    syncBotState(data);
+
+    logAudit(req.staffUser, 'web', 'promemoria_auto_reset', { type });
+
+    return res.json({ ok: true, reminders: publicReminderState(data) });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error.message || 'Errore reset promemoria' });
   }
 });
 

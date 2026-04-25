@@ -259,6 +259,47 @@ function getDefaultTournamentMessages() {
   };
 }
 
+const REMINDER_TYPES = ['iscrizioni', 'regolamento', 'risultati'];
+
+const REMINDER_INTERVAL_OPTIONS = [1, 2, 3, 4, 6, 8, 12, 24, 48];
+
+function getDefaultAutomaticReminders() {
+  return {
+    masterEnabled: true,
+    reminders: {
+      iscrizioni: {
+        enabled: true,
+        intervalHours: 12,
+        message:
+          '🎮 **RØDA CUP — ISCRIZIONI APERTE**\n\n' +
+          'Iscrivi il tuo team in {canale_iscrizioni} cliccando su **✋ Iscriviti**.\n' +
+          '📊 Slot disponibili: **{team_iscritti}**\n\n' +
+          'Leggi il regolamento ufficiale in {canale_regolamento} prima di registrarti.',
+        lastSentAt: null
+      },
+      regolamento: {
+        enabled: true,
+        intervalHours: 24,
+        message:
+          '📜 **PROMEMORIA REGOLAMENTO RØDA CUP**\n\n' +
+          'Prima di giocare, leggi il regolamento ufficiale in {canale_regolamento}.\n\n' +
+          'Le decisioni dello staff sono definitive.',
+        lastSentAt: null
+      },
+      risultati: {
+        enabled: true,
+        intervalHours: 2,
+        message:
+          '📸 **PROMEMORIA INVIO RISULTATI**\n\n' +
+          'Per inviare il risultato del match: vai in {canale_risultati} e premi **📤 Invia risultato**.\n' +
+          'Allega lo screenshot della partita seguendo le istruzioni del bot.\n\n' +
+          'Match in corso: **{match_corrente}/{match_totali}**',
+        lastSentAt: null
+      }
+    }
+  };
+}
+
 function getDefaultBotSettings() {
   return {
     registerPanelMessageId: null,
@@ -287,6 +328,7 @@ function getDefaultData() {
     tournamentLifecycle: getDefaultTournamentLifecycle(),
     tournamentSettings: getDefaultTournamentSettings(),
     tournamentMessages: getDefaultTournamentMessages(),
+    automaticReminders: getDefaultAutomaticReminders(),
 
     matches: {},
 
@@ -507,6 +549,40 @@ function normalizeTournamentMessages(value) {
     base.generalReminder;
 
   base.regulationText = getDefaultTournamentMessages().regulationText;
+
+  return base;
+}
+
+function normalizeAutomaticReminders(value) {
+  const base = getDefaultAutomaticReminders();
+  const safe = isObject(value) ? value : {};
+
+  if (typeof safe.masterEnabled === 'boolean') {
+    base.masterEnabled = safe.masterEnabled;
+  }
+
+  const incoming = isObject(safe.reminders) ? safe.reminders : {};
+
+  for (const type of REMINDER_TYPES) {
+    const def = base.reminders[type];
+    const cur = isObject(incoming[type]) ? incoming[type] : {};
+
+    if (typeof cur.enabled === 'boolean') def.enabled = cur.enabled;
+
+    const interval = Number(cur.intervalHours);
+    if (Number.isFinite(interval) && REMINDER_INTERVAL_OPTIONS.includes(interval)) {
+      def.intervalHours = interval;
+    }
+
+    const msg = sanitizeText(cur.message);
+    if (msg) def.message = msg;
+
+    if (typeof cur.lastSentAt === 'string' && cur.lastSentAt.length > 0) {
+      def.lastSentAt = cur.lastSentAt;
+    } else {
+      def.lastSentAt = null;
+    }
+  }
 
   return base;
 }
@@ -755,6 +831,7 @@ function normalizeData(data) {
   base.tournamentSettings = normalizeTournamentSettings(safe.tournamentSettings);
   base.tournamentLifecycle = normalizeTournamentLifecycle(safe.tournamentLifecycle || safe.lifecycle);
   base.tournamentMessages = normalizeTournamentMessages(safe.tournamentMessages);
+  base.automaticReminders = normalizeAutomaticReminders(safe.automaticReminders);
 
   base.matches = normalizeMatches(safe.matches);
 
@@ -1353,6 +1430,79 @@ function ensureMatchForTeams(data, teams, matchNumber) {
   return safeData;
 }
 
+function resetReminderCooldownsForState(data, newState) {
+  const reminders = data?.automaticReminders?.reminders;
+  if (!reminders) return data;
+
+  if (newState === TOURNAMENT_STATES.REGISTRATIONS_OPEN) {
+    if (reminders.iscrizioni) reminders.iscrizioni.lastSentAt = null;
+    if (reminders.regolamento) reminders.regolamento.lastSentAt = null;
+  } else if (newState === TOURNAMENT_STATES.REGISTRATIONS_CLOSED) {
+    if (reminders.regolamento) reminders.regolamento.lastSentAt = null;
+  } else if (newState === TOURNAMENT_STATES.RUNNING) {
+    if (reminders.risultati) reminders.risultati.lastSentAt = null;
+    if (reminders.regolamento) reminders.regolamento.lastSentAt = null;
+  }
+
+  return data;
+}
+
+function setReminderMasterEnabled(data, enabled) {
+  const safeData = normalizeData(data);
+  safeData.automaticReminders.masterEnabled = Boolean(enabled);
+  return saveData(safeData);
+}
+
+function updateAutomaticReminders(data, partial) {
+  const safeData = normalizeData(data);
+  const cur = safeData.automaticReminders;
+  const incoming = isObject(partial) ? partial : {};
+
+  if (typeof incoming.masterEnabled === 'boolean') {
+    cur.masterEnabled = incoming.masterEnabled;
+  }
+
+  const incReminders = isObject(incoming.reminders) ? incoming.reminders : {};
+
+  for (const type of REMINDER_TYPES) {
+    const target = cur.reminders[type];
+    const src = isObject(incReminders[type]) ? incReminders[type] : {};
+
+    if (typeof src.enabled === 'boolean') target.enabled = src.enabled;
+
+    const interval = Number(src.intervalHours);
+    if (Number.isFinite(interval) && REMINDER_INTERVAL_OPTIONS.includes(interval)) {
+      target.intervalHours = interval;
+    }
+
+    const msg = sanitizeText(src.message);
+    if (msg) target.message = msg;
+  }
+
+  return saveData(safeData);
+}
+
+function markReminderSent(data, type, ts = getNowIso()) {
+  const safeData = normalizeData(data);
+  const target = safeData.automaticReminders?.reminders?.[type];
+  if (target) {
+    target.lastSentAt = ts;
+  }
+  return saveData(safeData);
+}
+
+function resetReminderToDefault(data, type) {
+  const safeData = normalizeData(data);
+  const defaults = getDefaultAutomaticReminders().reminders[type];
+  const target = safeData.automaticReminders?.reminders?.[type];
+  if (target && defaults) {
+    target.enabled = defaults.enabled;
+    target.intervalHours = defaults.intervalHours;
+    target.message = defaults.message;
+  }
+  return saveData(safeData);
+}
+
 function openRegistrations(data, actor = 'system') {
   const safeData = normalizeData(data);
   const currentState = safeData.tournamentLifecycle?.state;
@@ -1381,6 +1531,8 @@ function openRegistrations(data, actor = 'system') {
 
   safeData.registrationClosedAnnounced = false;
 
+  resetReminderCooldownsForState(safeData, TOURNAMENT_STATES.REGISTRATIONS_OPEN);
+
   return saveData(safeData);
 }
 
@@ -1407,6 +1559,8 @@ function closeRegistrations(data, actor = 'system') {
   };
 
   safeData.registrationClosedAnnounced = true;
+
+  resetReminderCooldownsForState(safeData, TOURNAMENT_STATES.REGISTRATIONS_CLOSED);
 
   return saveData(safeData);
 }
@@ -1451,6 +1605,8 @@ function startTournament(data, teams, actor = 'system') {
   safeData = ensureMatchForTeams(safeData, safeTeams, 1);
   safeData.matches['1'].status = MATCH_STATES.RUNNING;
   safeData.matches['1'].startedAt = safeData.matches['1'].startedAt || now;
+
+  resetReminderCooldownsForState(safeData, TOURNAMENT_STATES.RUNNING);
 
   return saveData(safeData);
 }
@@ -1702,6 +1858,13 @@ module.exports = {
   getDefaultTournamentSettings,
   getDefaultTournamentLifecycle,
   getDefaultTournamentMessages,
+  getDefaultAutomaticReminders,
+  REMINDER_TYPES,
+  REMINDER_INTERVAL_OPTIONS,
+  setReminderMasterEnabled,
+  updateAutomaticReminders,
+  markReminderSent,
+  resetReminderToDefault,
   getDefaultBotSettings,
   getDefaultMatch,
   getDefaultTeamMatchState,
