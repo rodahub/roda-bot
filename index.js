@@ -278,6 +278,14 @@ function ensureDataStructures() {
     lockedPoints: true
   };
 
+  if (!data.tournamentLifecycle || typeof data.tournamentLifecycle !== 'object') {
+    data.tournamentLifecycle = defaults.tournamentLifecycle || {
+      state: 'draft',
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'system'
+    };
+  }
+
   if (!data.botSettings || typeof data.botSettings !== 'object') {
     data.botSettings = defaults.botSettings || {};
   }
@@ -417,6 +425,26 @@ function getTournamentTotalMatches() {
 
 function getSavedRoomsCategoryId() {
   return getBotSettings().roomsCategoryId || CATEGORY_ID;
+}
+
+function getTournamentLifecycleState() {
+  return sanitizeText(data?.tournamentLifecycle?.state || '').toLowerCase();
+}
+
+function areRegistrationsOpen() {
+  const state = getTournamentLifecycleState();
+
+  return [
+    'registrations_open',
+    'registration_open',
+    'open_registrations',
+    'iscrizioni_aperte',
+    'registrazioni_aperte'
+  ].includes(state);
+}
+
+function canRegisterTeamsNow() {
+  return areRegistrationsOpen() && !isTournamentFull();
 }
 
 function getSortedTeamEntries() {
@@ -618,7 +646,23 @@ function createRegisterPanelPayload() {
   const logoUrl = getLogoUrl();
   const registered = Object.keys(teams || {}).length;
   const maxTeams = getRegistrationLimit();
+
+  const registrationsOpen = areRegistrationsOpen();
   const isFull = registered >= maxTeams;
+  const canRegister = registrationsOpen && !isFull;
+
+  let statusText = 'Chiuse';
+  let helpText = 'Le iscrizioni non sono ancora aperte. Attendi l’apertura ufficiale dallo staff.';
+
+  if (registrationsOpen && !isFull) {
+    statusText = 'Aperte';
+    helpText = 'Premi il pulsante qui sotto per registrare il tuo team.';
+  }
+
+  if (isFull) {
+    statusText = 'Chiuse';
+    helpText = 'Le iscrizioni hanno raggiunto il limite massimo.';
+  }
 
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
@@ -626,11 +670,9 @@ function createRegisterPanelPayload() {
     .setDescription(
       `Benvenuto nel pannello iscrizioni ufficiale.\n\n` +
       `**Formato:** Team da 3 giocatori\n` +
-      `**Iscrizioni:** ${isFull ? 'Chiuse' : 'Aperte'}\n` +
+      `**Iscrizioni:** ${statusText}\n` +
       `**Team registrati:** ${registered}/${maxTeams}\n\n` +
-      `${isFull
-        ? 'Le iscrizioni hanno raggiunto il limite massimo.'
-        : 'Premi il pulsante qui sotto per registrare il tuo team.'}`
+      `${helpText}`
     )
     .setFooter({ text: 'Pannello registrazione torneo' });
 
@@ -638,9 +680,9 @@ function createRegisterPanelPayload() {
 
   const btn = new ButtonBuilder()
     .setCustomId('register_btn')
-    .setLabel(isFull ? 'Registrazioni chiuse' : 'Registra team')
-    .setStyle(isFull ? ButtonStyle.Secondary : ButtonStyle.Primary)
-    .setDisabled(isFull);
+    .setLabel(canRegister ? 'Registra team' : isFull ? 'Registrazioni chiuse' : 'Iscrizioni non aperte')
+    .setStyle(canRegister ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    .setDisabled(!canRegister);
 
   return {
     embeds: [embed],
@@ -1835,7 +1877,7 @@ async function submitWebResult(payload) {
 
 async function spawnRegisterPanel(channelId) {
   await waitReady();
-  ensureDataStructures();
+  refreshStateFromDisk();
 
   const botSettings = getBotSettings();
   const targetChannelId = sanitizeText(channelId) || botSettings.registerPanelChannelId;
@@ -1870,7 +1912,8 @@ async function spawnRegisterPanel(channelId) {
   logAudit('dashboard', 'web', 'pannello_registrazione_inviato', {
     channelId: targetChannelId,
     created,
-    updated
+    updated,
+    registrationsOpen: areRegistrationsOpen()
   });
 
   return {
@@ -1949,10 +1992,14 @@ async function maybeAnnounceTournamentFull() {
 async function handleRegistrationStateChange() {
   refreshStateFromDisk();
 
-  await updateSavedRegisterPanelIfExists().catch(() => {});
+  await updateSavedRegisterPanelIfExists().catch(error => {
+    console.error('Errore aggiornamento pannello registrazione:', error);
+  });
+
   await updateRegistrationStatusMessage().catch(error => {
     console.error('ERRORE GRAFICA TEAM REGISTRATI STATE CHANGE:', error);
   });
+
   await cleanupLegacyResultsPanelMessages().catch(() => {});
   await maybeAnnounceTournamentFull();
 }
@@ -2243,7 +2290,8 @@ function getBotConfig() {
     totalMatches: tournament.totalMatches,
     autoNextMatch: tournament.autoNextMatch,
     playersPerTeam: PLAYERS_PER_TEAM,
-    maxTeams: MAX_TEAMS
+    maxTeams: MAX_TEAMS,
+    registrationsOpen: areRegistrationsOpen()
   };
 }
 
@@ -2303,7 +2351,16 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
   try {
     if (interaction.isButton() && interaction.customId === 'register_btn') {
+      refreshStateFromDisk();
+
       const project = getProjectSettings();
+
+      if (!areRegistrationsOpen()) {
+        return interaction.reply({
+          content: `🚫 Le iscrizioni per **${project.tournamentName}** non sono ancora aperte. Attendi l’apertura ufficiale dallo staff.`,
+          ephemeral: true
+        });
+      }
 
       if (isTournamentFull()) {
         await maybeAnnounceTournamentFull();
@@ -2316,7 +2373,7 @@ client.on('interactionCreate', async interaction => {
 
       const modal = new ModalBuilder()
         .setCustomId('register_modal')
-        .setTitle(`Registrazione Team • ${project.brandName}`);
+        .setTitle(`Registrazione Team • ${project.brandName}`.slice(0, 45));
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
@@ -2372,7 +2429,7 @@ client.on('interactionCreate', async interaction => {
           new ActionRowBuilder().addComponents(
             new TextInputBuilder()
               .setCustomId(`k${i}`)
-              .setLabel(`Kill ${players[i] || `Giocatore ${i + 1}`}`)
+              .setLabel(`Kill ${players[i] || `Giocatore ${i + 1}`}`.slice(0, 45))
               .setStyle(TextInputStyle.Short)
               .setRequired(true)
           )
@@ -2396,6 +2453,12 @@ client.on('interactionCreate', async interaction => {
       await interaction.deferReply({ ephemeral: true });
 
       refreshStateFromDisk();
+
+      if (!areRegistrationsOpen()) {
+        return interaction.editReply({
+          content: `🚫 Le iscrizioni non sono aperte. Non puoi registrare il team in questo momento.`
+        });
+      }
 
       const team = sanitizeText(interaction.fields.getTextInputValue('team'));
       const p1 = sanitizeText(interaction.fields.getTextInputValue('p1'));
@@ -2571,7 +2634,7 @@ client.on('interactionCreate', async interaction => {
       }
     }
   } catch (error) {
-    console.error(error);
+    console.error('Errore interactionCreate:', error);
 
     try {
       if (interaction.isRepliable()) {
@@ -2583,7 +2646,9 @@ client.on('interactionCreate', async interaction => {
           await interaction.reply({ content: `❌ ${message}`, ephemeral: true });
         }
       }
-    } catch {}
+    } catch (replyError) {
+      console.error('Errore risposta interaction:', replyError);
+    }
   }
 });
 
@@ -2625,8 +2690,16 @@ client.on('messageCreate', async message => {
 
     await message.delete().catch(() => {});
   } catch (error) {
-    console.error(error);
+    console.error('Errore messageCreate:', error);
   }
+});
+
+process.on('unhandledRejection', error => {
+  console.error('Unhandled Rejection:', error);
+});
+
+process.on('uncaughtException', error => {
+  console.error('Uncaught Exception:', error);
 });
 
 client.login(TOKEN);
