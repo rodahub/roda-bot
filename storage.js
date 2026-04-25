@@ -272,6 +272,7 @@ function getDefaultBotSettings() {
     generalChannelId: '',
     rulesChannelId: '',
     lobbyChannelId: '',
+    leaderboardChannelId: '',
 
     leaderboardMessageId: null,
     leaderboardGraphicMessageId: null,
@@ -526,6 +527,7 @@ function normalizeBotSettings(value) {
   base.generalChannelId = sanitizeText(safe.generalChannelId || '');
   base.rulesChannelId = sanitizeText(safe.rulesChannelId || '');
   base.lobbyChannelId = sanitizeText(safe.lobbyChannelId || '');
+  base.leaderboardChannelId = sanitizeText(safe.leaderboardChannelId || '');
 
   base.leaderboardMessageId = safe.leaderboardMessageId || null;
   base.leaderboardGraphicMessageId = safe.leaderboardGraphicMessageId || null;
@@ -976,6 +978,7 @@ function loadData() {
   if (main) {
     const safe = normalizeData(main);
     writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
+    lastSavedDataFingerprint = computeDataFingerprint(safe);
     return safe;
   }
 
@@ -984,11 +987,14 @@ function loadData() {
   if (backup) {
     const safe = normalizeData(backup);
     writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
+    lastSavedDataFingerprint = computeDataFingerprint(safe);
+    console.warn('[loadData] data.json mancante o corrotto: ripristinato dal backup data.latest.json');
     return safe;
   }
 
   const safe = getDefaultData();
   writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
+  lastSavedDataFingerprint = computeDataFingerprint(safe);
   return safe;
 }
 
@@ -1036,10 +1042,56 @@ function loadAuditLog() {
   return safe;
 }
 
-function saveData(data) {
+let lastSavedDataFingerprint = null;
+
+function computeDataFingerprint(safe) {
+  try {
+    return {
+      state: safe.tournamentLifecycle?.state || TOURNAMENT_STATES.DRAFT,
+      currentMatch: Number(safe.currentMatch || 0),
+      matchesCount: Object.keys(safe.matches || {}).length,
+      scoresCount: Object.keys(safe.scores || {}).length,
+      fraggerCount: Object.keys(safe.fragger || {}).length
+    };
+  } catch {
+    return { state: TOURNAMENT_STATES.DRAFT, currentMatch: 0, matchesCount: 0, scoresCount: 0, fraggerCount: 0 };
+  }
+}
+
+function isCatastrophicWipe(prevFp, newFp) {
+  if (!prevFp) return false;
+  const wasActive =
+    prevFp.state === TOURNAMENT_STATES.RUNNING ||
+    prevFp.state === TOURNAMENT_STATES.REGISTRATIONS_OPEN ||
+    prevFp.state === TOURNAMENT_STATES.REGISTRATIONS_CLOSED ||
+    prevFp.state === TOURNAMENT_STATES.FINISHED;
+  const becameDraft = newFp.state === TOURNAMENT_STATES.DRAFT;
+  const lostMatches = prevFp.matchesCount > 0 && newFp.matchesCount === 0;
+  const lostScores = prevFp.scoresCount > 0 && newFp.scoresCount === 0;
+  if (wasActive && becameDraft && (lostMatches || lostScores)) return true;
+  if (prevFp.scoresCount >= 3 && newFp.scoresCount === 0) return true;
+  return false;
+}
+
+function saveData(data, options = {}) {
   const safe = normalizeData(data);
+  const newFp = computeDataFingerprint(safe);
+
+  if (!options.allowReset && isCatastrophicWipe(lastSavedDataFingerprint, newFp)) {
+    console.error('[saveData] BLOCCATO: tentato salvataggio che svuoterebbe i dati', {
+      previous: lastSavedDataFingerprint,
+      attempted: newFp
+    });
+    throw new Error('Salvataggio bloccato: i dati risulterebbero svuotati. Se vuoi davvero resettare il torneo usa il pulsante reset dedicato.');
+  }
+
   writeBackup(DATA_FILE, DATA_BACKUP_FILE, safe);
+  lastSavedDataFingerprint = newFp;
   return safe;
+}
+
+function resetSavedDataFingerprint(safe) {
+  lastSavedDataFingerprint = computeDataFingerprint(safe || getDefaultData());
 }
 
 function saveTeams(teams) {
@@ -1252,7 +1304,7 @@ function archiveAndCreateFreshTournament(meta = {}) {
 
   const freshTeams = {};
 
-  saveData(freshData);
+  saveData(freshData, { allowReset: true });
   saveTeams(freshTeams);
 
   appendAuditLog({
@@ -1303,6 +1355,16 @@ function ensureMatchForTeams(data, teams, matchNumber) {
 
 function openRegistrations(data, actor = 'system') {
   const safeData = normalizeData(data);
+  const currentState = safeData.tournamentLifecycle?.state;
+
+  if (currentState === TOURNAMENT_STATES.REGISTRATIONS_OPEN) {
+    throw new Error('Le iscrizioni sono già aperte.');
+  }
+
+  if (currentState === TOURNAMENT_STATES.RUNNING) {
+    throw new Error('Il torneo è in corso: non puoi riaprire le iscrizioni. Termina prima il torneo.');
+  }
+
   const now = getNowIso();
 
   safeData.tournamentLifecycle = {
@@ -1324,6 +1386,12 @@ function openRegistrations(data, actor = 'system') {
 
 function closeRegistrations(data, actor = 'system') {
   const safeData = normalizeData(data);
+  const currentState = safeData.tournamentLifecycle?.state;
+
+  if (currentState !== TOURNAMENT_STATES.REGISTRATIONS_OPEN) {
+    throw new Error('Le iscrizioni non sono aperte: non c\'è nulla da chiudere.');
+  }
+
   const now = getNowIso();
 
   safeData.tournamentLifecycle = {
@@ -1346,6 +1414,24 @@ function closeRegistrations(data, actor = 'system') {
 function startTournament(data, teams, actor = 'system') {
   let safeData = normalizeData(data);
   const safeTeams = normalizeTeams(teams);
+  const currentState = safeData.tournamentLifecycle?.state;
+
+  if (currentState === TOURNAMENT_STATES.RUNNING) {
+    throw new Error('Il torneo è già in corso.');
+  }
+
+  if (currentState === TOURNAMENT_STATES.FINISHED) {
+    throw new Error('Il torneo è già finito. Crea un nuovo torneo per ricominciare.');
+  }
+
+  if (currentState === TOURNAMENT_STATES.REGISTRATIONS_OPEN) {
+    throw new Error('Chiudi prima le iscrizioni: poi potrai avviare il torneo.');
+  }
+
+  if (Object.keys(safeTeams || {}).length < 2) {
+    throw new Error('Servono almeno 2 team registrati per avviare il torneo.');
+  }
+
   const now = getNowIso();
 
   safeData.currentMatch = 1;
@@ -1371,6 +1457,12 @@ function startTournament(data, teams, actor = 'system') {
 
 function finishTournament(data, actor = 'system') {
   const safeData = normalizeData(data);
+  const currentState = safeData.tournamentLifecycle?.state;
+
+  if (currentState !== TOURNAMENT_STATES.RUNNING) {
+    throw new Error('Il torneo non è in corso: non c\'è nulla da terminare.');
+  }
+
   const now = getNowIso();
 
   safeData.tournamentLifecycle = {
