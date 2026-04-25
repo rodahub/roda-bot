@@ -3417,7 +3417,8 @@ client.on('interactionCreate', async interaction => {
       pendingReportProof.set(interaction.user.id, {
         reportId,
         channelId: interaction.channelId,
-        expiresAt: Date.now() + 5 * 60 * 1000
+        expiresAt: Date.now() + 5 * 60 * 1000,
+        interaction
       });
 
       return interaction.update({
@@ -3502,6 +3503,7 @@ client.on('messageCreate', async message => {
 
       if (Date.now() > pendingProof.expiresAt) {
         await message.delete().catch(() => {});
+        if (pendingProof.interaction) pendingProof.interaction.deleteReply().catch(() => {});
         const expiredMsg = await message.channel.send({
           content: '⏰ Il tempo per allegare la prova è scaduto (5 min). La segnalazione è stata salvata senza allegato.'
         }).catch(() => null);
@@ -3523,6 +3525,11 @@ client.on('messageCreate', async message => {
 
       // Elimina il messaggio dell'utente (con la foto) per tenere la chat pulita
       await message.delete().catch(() => {});
+
+      // Elimina anche il messaggio efimero "solo tu puoi vederlo"
+      if (pendingProof.interaction) {
+        pendingProof.interaction.deleteReply().catch(() => {});
+      }
 
       // Messaggio temporaneo "Segnalazione inviata" visibile 3 secondi poi cancellato
       const confirmMsg = await message.channel.send({
