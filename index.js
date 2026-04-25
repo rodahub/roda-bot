@@ -204,6 +204,10 @@ function ensureDataStructures() {
     data.botSettings.lobbyChannelId = '';
   }
 
+  if (!Object.prototype.hasOwnProperty.call(data.botSettings, 'leaderboardChannelId')) {
+    data.botSettings.leaderboardChannelId = '';
+  }
+
   if (!data.tournamentMessages || typeof data.tournamentMessages !== 'object') {
     data.tournamentMessages = defaults.tournamentMessages;
   }
@@ -2060,7 +2064,12 @@ async function updateLeaderboardGraphicsImmediate(options = {}) {
   ensureDataStructures();
 
   const allowCreate = options.allowCreate !== false;
-  const channel = await client.channels.fetch(CLASSIFICA_CHANNEL);
+  const targetChannelId = sanitizeText(data?.botSettings?.leaderboardChannelId) || CLASSIFICA_CHANNEL;
+  if (!targetChannelId) {
+    console.warn('[classifica] Canale classifica non configurato. Imposta il canale nella sezione Discord del pannello admin.');
+    return { skipped: true, reason: 'no_channel' };
+  }
+  const channel = await client.channels.fetch(targetChannelId);
   const matchNumber = Number(data.currentMatch || 1);
   const stamp = Date.now();
 
@@ -2660,6 +2669,10 @@ function saveBotPanelSettings(settings = {}) {
     data.botSettings.lobbyChannelId = sanitizeText(settings.lobbyChannelId);
   }
 
+  if (Object.prototype.hasOwnProperty.call(settings, 'leaderboardChannelId')) {
+    data.botSettings.leaderboardChannelId = sanitizeText(settings.leaderboardChannelId);
+  }
+
   saveState();
 
   logAudit('dashboard', 'web', 'impostazioni_bot_salvate', {
@@ -2668,7 +2681,8 @@ function saveBotPanelSettings(settings = {}) {
     roomsCategoryId: data.botSettings.roomsCategoryId,
     generalChannelId: data.botSettings.generalChannelId || '',
     rulesChannelId: data.botSettings.rulesChannelId || '',
-    lobbyChannelId: data.botSettings.lobbyChannelId || ''
+    lobbyChannelId: data.botSettings.lobbyChannelId || '',
+    leaderboardChannelId: data.botSettings.leaderboardChannelId || ''
   });
 
   return {
@@ -2677,7 +2691,8 @@ function saveBotPanelSettings(settings = {}) {
     roomsCategoryId: data.botSettings.roomsCategoryId,
     generalChannelId: data.botSettings.generalChannelId || '',
     rulesChannelId: data.botSettings.rulesChannelId || '',
-    lobbyChannelId: data.botSettings.lobbyChannelId || ''
+    lobbyChannelId: data.botSettings.lobbyChannelId || '',
+    leaderboardChannelId: data.botSettings.leaderboardChannelId || ''
   };
 }
 
@@ -2700,6 +2715,7 @@ function getBotConfig() {
     generalChannelId: botSettings.generalChannelId,
     rulesChannelId: botSettings.rulesChannelId,
     lobbyChannelId: botSettings.lobbyChannelId,
+    leaderboardChannelId: botSettings.leaderboardChannelId || '',
     brandName: project.brandName,
     tournamentName: FIXED_TOURNAMENT_NAME,
     premiumMode: project.premiumMode,

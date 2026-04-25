@@ -1437,7 +1437,8 @@ async function handleBotSettingsSave(req, res) {
       roomsCategoryId: sanitizeText(req.body.roomsCategoryId),
       generalChannelId: sanitizeText(req.body.generalChannelId),
       rulesChannelId: sanitizeText(req.body.rulesChannelId),
-      lobbyChannelId: sanitizeText(req.body.lobbyChannelId)
+      lobbyChannelId: sanitizeText(req.body.lobbyChannelId),
+      leaderboardChannelId: sanitizeText(req.body.leaderboardChannelId)
     };
 
     data = saveData(data);

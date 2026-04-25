@@ -1492,128 +1492,147 @@
                 </div>
               </section>
               <section class="page" id="discord">
-                <div class="grid-2">
-                  <div class="card">
-                    <div class="card-head">
-                      <div>
-                        <h3 class="card-title">🤖 Struttura Discord</h3>
-                        <div class="note">Scegli categorie e canali direttamente dal server Discord.</div>
-                      </div>
-                      <button class="btn btn-blue" id="discordRefreshBtn" onclick="loadDiscordChannels(true)">Aggiorna lista Discord</button>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">🤖 Configurazione canali Discord</h3>
+                      <div class="note">Scegli un canale per ogni funzione. Premi "Aggiorna lista Discord" se non vedi i tuoi canali.</div>
                     </div>
-                    <div class="grid-3">
-                      <div class="stat">
-                        <span>Server Discord</span>
-                        <strong id="discordGuildState" style="font-size:22px;">-</strong>
-                      </div>
-                      <div class="stat">
-                        <span>Iscrizioni Discord</span>
-                        <strong id="discordRegistrationState" style="font-size:22px;">-</strong>
-                      </div>
-                      <div class="stat">
-                        <span>Canale iscrizioni</span>
-                        <strong id="discordRegisterChannelState" style="font-size:22px;">-</strong>
-                      </div>
+                    <button class="btn btn-blue" id="discordRefreshBtn" onclick="loadDiscordChannels(true)">🔄 Aggiorna lista Discord</button>
+                  </div>
+                  <div class="grid-3" style="margin-bottom:18px;">
+                    <div class="stat">
+                      <span>Server</span>
+                      <strong id="discordGuildState" style="font-size:18px;">-</strong>
                     </div>
+                    <div class="stat">
+                      <span>Iscrizioni Discord</span>
+                      <strong id="discordRegistrationState" style="font-size:18px;">-</strong>
+                    </div>
+                    <div class="stat">
+                      <span>Pannello iscrizioni</span>
+                      <strong id="discordRegisterChannelState" style="font-size:18px;">-</strong>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label>📁 Categoria stanze team <span class="pill" id="badge-category" style="margin-left:8px;">—</span></label>
+                    <select id="categorySelect" onchange="onDiscordCategoryChanged()">
+                      <option value="">Carica lista Discord...</option>
+                    </select>
+                    <div class="note">È la categoria dove verranno create le stanze vocali per i team.</div>
+                  </div>
+                  <div class="grid-2">
                     <div class="field">
-                      <label>Categoria RØDA CUP</label>
-                      <select id="categorySelect" onchange="onDiscordCategoryChanged()">
-                        <option value="">Carica lista Discord...</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label>Canale generale</label>
+                      <label># Canale generale <span class="pill" id="badge-general" style="margin-left:8px;">—</span></label>
                       <select id="generalSelect" onchange="syncDiscordSelectsToInputs()">
                         <option value="">Carica lista Discord...</option>
                       </select>
+                      <div class="note">Annunci pubblici (apertura iscrizioni, inizio torneo, ecc.).</div>
                     </div>
                     <div class="field">
-                      <label>Canale regolamento</label>
+                      <label># Canale regolamento <span class="pill" id="badge-rules" style="margin-left:8px;">—</span></label>
                       <select id="rulesSelect" onchange="syncDiscordSelectsToInputs()">
                         <option value="">Carica lista Discord...</option>
                       </select>
+                      <div class="note">Dove il bot pubblica il regolamento del torneo.</div>
                     </div>
+                  </div>
+                  <div class="grid-2">
                     <div class="field">
-                      <label>Canale iscrizioni / pannello iscrizioni</label>
+                      <label># Canale pannello iscrizioni <span class="pill" id="badge-register" style="margin-left:8px;">—</span></label>
                       <select id="registerChannelSelect" onchange="syncDiscordSelectsToInputs()">
                         <option value="">Carica lista Discord...</option>
                       </select>
+                      <div class="note">Dove appare il bottone "Iscriviti" per i team.</div>
                     </div>
-                    <div class="grid-2">
-                      <div class="field">
-                        <label>ID categoria selezionata</label>
-                        <input id="categoryInput" type="text" readonly />
-                      </div>
-                      <div class="field">
-                        <label>ID canale pannello iscrizioni</label>
-                        <input id="registerChannelInput" type="text" readonly />
-                      </div>
-                    </div>
-                    <div class="grid-2">
-                      <div class="field">
-                        <label>ID canale generale</label>
-                        <input id="generalInput" type="text" readonly />
-                      </div>
-                      <div class="field">
-                        <label>ID canale regolamento</label>
-                        <input id="rulesInput" type="text" readonly />
-                      </div>
-                    </div>
-                    <div class="row">
-                      <button class="btn btn-blue" onclick="saveDiscordSettings()">Salva impostazioni Discord</button>
-                      <button class="btn btn-purple" onclick="prepareDiscord()">Prepara categoria</button>
+                    <div class="field">
+                      <label>🏆 Canale classifica <span class="pill" id="badge-leaderboard" style="margin-left:8px;">—</span></label>
+                      <select id="leaderboardSelect" onchange="syncDiscordSelectsToInputs()">
+                        <option value="">Carica lista Discord...</option>
+                      </select>
+                      <div class="note">Dove il bot aggiorna la classifica live e i top fragger.</div>
                     </div>
                   </div>
-                  <div class="card">
-                    <div class="card-head">
-                      <div>
-                        <h3 class="card-title">🎙️ Azioni bot</h3>
-                        <div class="note">“Genera stanze” crea solo le vocali team.</div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <button class="btn btn-green" onclick="createRooms()">Genera stanze</button>
-                      <button class="btn btn-red" onclick="deleteRooms()">Elimina stanze</button>
-                    </div>
-                    <div class="row" style="margin-top:10px;">
-                      <button class="btn btn-purple" onclick="spawnRegisterPanel()">Pannello iscrizioni</button>
-                      <button class="btn btn-blue" onclick="refreshTeamPanels()">Aggiorna pannelli risultati</button>
-                    </div>
-                    <div class="row" style="margin-top:10px;">
-                      <button class="btn btn-yellow" onclick="sendReminder()">Manda promemoria</button>
-                      <button class="btn btn-blue" onclick="forceLeaderboard()">Aggiorna classifica</button>
-                    </div>
-                    <div class="row" style="margin-top:10px;">
-                      <button class="btn btn-green" onclick="syncEverything()">Sincronizza tutto</button>
-                    </div>
-                    <div class="field" style="margin-top:16px;">
-                      <label>Codice lobby</label>
-                      <input id="lobbyCodeInput" type="text" placeholder="Inserisci codice lobby" />
-                    </div>
-                    <button class="btn btn-green" onclick="sendLobbyCode()">Invia codice lobby</button>
-                    <div class="discord-browser">
-                      <div class="card-head" style="margin-bottom:0;">
-                        <div>
-                          <h3 class="card-title" style="font-size:18px;">📡 Canali nella categoria scelta</h3>
-                          <div class="note">Qui vedi testuali e vocali dentro la categoria selezionata.</div>
-                        </div>
-                        <span class="pill" id="discordChannelsCount">0 canali</span>
-                      </div>
-                      <div class="discord-list" id="discordCategoryChannels">
-                        <div class="empty">Carica la lista Discord o scegli una categoria.</div>
-                      </div>
+                  <div class="row" style="margin-top:18px;">
+                    <button class="btn btn-blue" onclick="saveDiscordSettings()">💾 Salva configurazione</button>
+                    <button class="btn btn-purple" onclick="prepareDiscord()">⚙️ Prepara categoria</button>
+                    <button class="btn btn-ghost" type="button" onclick="toggleDiscordTechIds()" id="discordTechIdsToggle">▸ Mostra ID tecnici</button>
+                  </div>
+                  <div id="discordTechIds" style="display:none; margin-top:14px; padding:14px; background:rgba(255,255,255,0.04); border-radius:10px;">
+                    <div class="note" style="margin-bottom:10px;">ID Discord salvati. Solo per debug — la selezione si fa dai menù sopra.</div>
+                    <div class="grid-3">
+                      <div class="field"><label>ID categoria</label><input id="categoryInput" type="text" readonly /></div>
+                      <div class="field"><label>ID generale</label><input id="generalInput" type="text" readonly /></div>
+                      <div class="field"><label>ID regolamento</label><input id="rulesInput" type="text" readonly /></div>
+                      <div class="field"><label>ID iscrizioni</label><input id="registerChannelInput" type="text" readonly /></div>
+                      <div class="field"><label>ID classifica</label><input id="leaderboardInput" type="text" readonly /></div>
                     </div>
                   </div>
                 </div>
+
                 <div class="card section">
                   <div class="card-head">
                     <div>
-                      <h3 class="card-title">🧭 Browser Discord</h3>
-                      <div class="note">Panoramica completa delle categorie e dei canali disponibili nel server.</div>
+                      <h3 class="card-title">🎙️ Azioni bot Discord</h3>
+                      <div class="note">Operazioni che il bot esegue su Discord. Premi una azione per volta.</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:8px;">
+                    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Stanze team</div>
+                    <div class="row">
+                      <button class="btn btn-green" onclick="createRooms()">🎤 Genera stanze vocali team</button>
+                      <button class="btn btn-red" onclick="deleteRooms()">🗑️ Elimina stanze team</button>
+                    </div>
+                  </div>
+                  <div style="margin-top:18px;">
+                    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Pannelli interattivi</div>
+                    <div class="row">
+                      <button class="btn btn-purple" onclick="spawnRegisterPanel()">📋 Pubblica pannello iscrizioni</button>
+                      <button class="btn btn-blue" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
+                    </div>
+                  </div>
+                  <div style="margin-top:18px;">
+                    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Comunicazioni</div>
+                    <div class="row">
+                      <button class="btn btn-yellow" onclick="sendReminder()">📢 Manda promemoria generale</button>
+                      <button class="btn btn-blue" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
+                      <button class="btn btn-green" onclick="syncEverything()">♻️ Sincronizza tutto</button>
+                    </div>
+                  </div>
+                  <div style="margin-top:18px;">
+                    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Codice lobby</div>
+                    <div class="row" style="align-items:flex-end;">
+                      <div class="field" style="flex:1;margin:0;">
+                        <label>Codice partita</label>
+                        <input id="lobbyCodeInput" type="text" placeholder="Es. ABC-123" />
+                      </div>
+                      <button class="btn btn-green" onclick="sendLobbyCode()">📨 Invia codice ai team</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card section">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">📡 Canali nella categoria selezionata</h3>
+                      <div class="note">Solo i canali (testuali e vocali) dentro la categoria scelta sopra.</div>
+                    </div>
+                    <span class="pill" id="discordChannelsCount">0 canali</span>
+                  </div>
+                  <div class="discord-list" id="discordCategoryChannels">
+                    <div class="empty">Carica la lista Discord o scegli una categoria.</div>
+                  </div>
+                </div>
+
+                <div class="card section">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">🧭 Tutti i canali del server</h3>
+                      <div class="note">Panoramica completa di tutte le categorie e canali del server Discord.</div>
                     </div>
                   </div>
                   <div class="discord-list" id="discordFullBrowser">
-                    <div class="empty">Premi “Aggiorna lista Discord” per vedere categorie e stanze.</div>
+                    <div class="empty">Premi "Aggiorna lista Discord" per vedere categorie e stanze.</div>
                   </div>
                 </div>
               </section>
@@ -2084,6 +2103,7 @@
       qs('generalInput').value=botConfig.generalChannelId||'';
       qs('rulesInput').value=botConfig.rulesChannelId||'';
       qs('registerChannelInput').value=botConfig.registerPanelChannelId||'';
+      if(qs('leaderboardInput'))qs('leaderboardInput').value=botConfig.leaderboardChannelId||'';
       qs('discordRegistrationState').textContent=discordOpen?'Attive':'Non attive';
       qs('discordRegisterChannelState').textContent=botConfig.registerPanelChannelId?'Configurato':'Mancante';
       qs('discordGuildState').textContent=discordChannels?.guild?.name||'-';
@@ -2341,26 +2361,43 @@
       }
       select.value=cleanValue
     }
+    function updateDiscordBadge(badgeId,channelId){
+      const badge=qs(badgeId);
+      if(!badge)return;
+      if(channelId){
+        badge.textContent='✓ Configurato';
+        badge.style.background='rgba(34,197,94,0.18)';
+        badge.style.color='#22c55e';
+      } else {
+        badge.textContent='⚠ Mancante';
+        badge.style.background='rgba(239,68,68,0.18)';
+        badge.style.color='#ef4444';
+      }
+    }
+    function updateAllDiscordBadges(){
+      updateDiscordBadge('badge-category',qs('categoryInput')?.value);
+      updateDiscordBadge('badge-general',qs('generalInput')?.value);
+      updateDiscordBadge('badge-rules',qs('rulesInput')?.value);
+      updateDiscordBadge('badge-register',qs('registerChannelInput')?.value);
+      updateDiscordBadge('badge-leaderboard',qs('leaderboardInput')?.value);
+    }
+    function toggleDiscordTechIds(){
+      const box=qs('discordTechIds'),toggle=qs('discordTechIdsToggle');
+      if(!box||!toggle)return;
+      const willShow=box.style.display==='none';
+      box.style.display=willShow?'block':'none';
+      toggle.textContent=willShow?'▾ Nascondi ID tecnici':'▸ Mostra ID tecnici';
+    }
     function renderDiscordSelectors(){
-      const botConfig=getCurrentBotConfig(),categoryId=qs('categoryInput')?.value||botConfig.roomsCategoryId||botConfig.categoryId||'',generalId=qs('generalInput')?.value||botConfig.generalChannelId||'',rulesId=qs('rulesInput')?.value||botConfig.rulesChannelId||'',registerId=qs('registerChannelInput')?.value||botConfig.registerPanelChannelId||'';
+      const botConfig=getCurrentBotConfig(),categoryId=qs('categoryInput')?.value||botConfig.roomsCategoryId||botConfig.categoryId||'',generalId=qs('generalInput')?.value||botConfig.generalChannelId||'',rulesId=qs('rulesInput')?.value||botConfig.rulesChannelId||'',registerId=qs('registerChannelInput')?.value||botConfig.registerPanelChannelId||'',leaderboardId=qs('leaderboardInput')?.value||botConfig.leaderboardChannelId||'';
       if(!qs('categorySelect'))return;
       if(!discordChannels){
-        qs('categorySelect').innerHTML=`<option value="${html(categoryId)}">${categoryId?`Categoria salvata • ${
-          html(categoryId)
-        }
-        `:'Carica lista Discord...'}</option>`;
-        qs('generalSelect').innerHTML=`<option value="${html(generalId)}">${generalId?`Canale salvato • ${
-          html(generalId)
-        }
-        `:'Carica lista Discord...'}</option>`;
-        qs('rulesSelect').innerHTML=`<option value="${html(rulesId)}">${rulesId?`Canale salvato • ${
-          html(rulesId)
-        }
-        `:'Carica lista Discord...'}</option>`;
-        qs('registerChannelSelect').innerHTML=`<option value="${html(registerId)}">${registerId?`Canale salvato • ${
-          html(registerId)
-        }
-        `:'Carica lista Discord...'}</option>`;
+        qs('categorySelect').innerHTML=`<option value="${html(categoryId)}">${categoryId?`Categoria salvata • ${html(categoryId)}`:'Carica lista Discord...'}</option>`;
+        qs('generalSelect').innerHTML=`<option value="${html(generalId)}">${generalId?`Canale salvato • ${html(generalId)}`:'Carica lista Discord...'}</option>`;
+        qs('rulesSelect').innerHTML=`<option value="${html(rulesId)}">${rulesId?`Canale salvato • ${html(rulesId)}`:'Carica lista Discord...'}</option>`;
+        qs('registerChannelSelect').innerHTML=`<option value="${html(registerId)}">${registerId?`Canale salvato • ${html(registerId)}`:'Carica lista Discord...'}</option>`;
+        if(qs('leaderboardSelect'))qs('leaderboardSelect').innerHTML=`<option value="${html(leaderboardId)}">${leaderboardId?`Canale salvato • ${html(leaderboardId)}`:'Carica lista Discord...'}</option>`;
+        updateAllDiscordBadges();
         renderDiscordCategoryChannels();
         renderDiscordFullBrowser();
         return
@@ -2372,10 +2409,13 @@
       qs('generalSelect').innerHTML=channelOptions(textChannels);
       qs('rulesSelect').innerHTML=channelOptions(textChannels);
       qs('registerChannelSelect').innerHTML=channelOptions(textChannels);
+      if(qs('leaderboardSelect'))qs('leaderboardSelect').innerHTML=channelOptions(textChannels);
       setSelectValueIfExists('categorySelect',categoryId);
       setSelectValueIfExists('generalSelect',generalId);
       setSelectValueIfExists('rulesSelect',rulesId);
       setSelectValueIfExists('registerChannelSelect',registerId);
+      if(qs('leaderboardSelect'))setSelectValueIfExists('leaderboardSelect',leaderboardId);
+      updateAllDiscordBadges();
       renderDiscordCategoryChannels();
       renderDiscordFullBrowser()
     }
@@ -2385,6 +2425,8 @@
       qs('generalInput').value=qs('generalSelect').value||'';
       qs('rulesInput').value=qs('rulesSelect').value||'';
       qs('registerChannelInput').value=qs('registerChannelSelect').value||'';
+      if(qs('leaderboardSelect')&&qs('leaderboardInput'))qs('leaderboardInput').value=qs('leaderboardSelect').value||'';
+      updateAllDiscordBadges();
       renderDiscordCategoryChannels()
     }
     function onDiscordCategoryChanged(){
@@ -2395,14 +2437,16 @@
         const normalizedNames=names.map(item=>String(item).toLowerCase());
         return textChannels.find(channel=>normalizedNames.some(name=>String(channel.name||'').toLowerCase().includes(name)))
       };
-      const general=findByName(['generale','general']),rules=findByName(['regolamento','rules','regole']),register=findByName(['iscrizioni','registrazioni','register','registration']);
+      const general=findByName(['generale','general']),rules=findByName(['regolamento','rules','regole']),register=findByName(['iscrizioni','registrazioni','register','registration']),leaderboard=findByName(['classifica','leaderboard','ranking']);
       if(general)qs('generalInput').value=general.id;
       if(rules)qs('rulesInput').value=rules.id;
       if(register)qs('registerChannelInput').value=register.id;
+      if(leaderboard&&qs('leaderboardInput'))qs('leaderboardInput').value=leaderboard.id;
       renderDiscordSelectors();
       if(general)setSelectValueIfExists('generalSelect',general.id);
       if(rules)setSelectValueIfExists('rulesSelect',rules.id);
       if(register)setSelectValueIfExists('registerChannelSelect',register.id);
+      if(leaderboard&&qs('leaderboardSelect'))setSelectValueIfExists('leaderboardSelect',leaderboard.id);
       syncDiscordSelectsToInputs()
     }
     function getDiscordChannelIcon(type){
@@ -2893,7 +2937,7 @@
       return runAction('saveDiscordSettings','Salvo impostazioni Discord...',async()=>{
         const result=await api('/api/bot/settings/save',{
           method:'POST',body:JSON.stringify({
-            roomsCategoryId:qs('categoryInput').value.trim(),generalChannelId:qs('generalInput').value.trim(),rulesChannelId:qs('rulesInput').value.trim(),registerPanelChannelId:qs('registerChannelInput').value.trim(),resultsPanelChannelId:''
+            roomsCategoryId:qs('categoryInput').value.trim(),generalChannelId:qs('generalInput').value.trim(),rulesChannelId:qs('rulesInput').value.trim(),registerPanelChannelId:qs('registerChannelInput').value.trim(),leaderboardChannelId:(qs('leaderboardInput')?.value||'').trim(),resultsPanelChannelId:''
           })
         });
         if(!result)return;
