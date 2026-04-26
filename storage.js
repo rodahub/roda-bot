@@ -88,7 +88,28 @@ function getDefaultProjectSettings() {
     tournamentName: FIXED_TOURNAMENT_NAME,
     supportContact: '',
     premiumMode: false,
-    setupCompleted: false
+    setupCompleted: false,
+    streamers: []
+  };
+}
+
+function normalizeStreamer(s) {
+  if (!isObject(s)) return null;
+  return {
+    id: sanitizeText(s.id || '') || '',
+    nome: sanitizeText(s.nome || ''),
+    handle: sanitizeText(s.handle || ''),
+    ruolo: sanitizeText(s.ruolo || ''),
+    bio: sanitizeText(s.bio || ''),
+    foto: sanitizeText(s.foto || ''),
+    socials: {
+      twitch: sanitizeText((s.socials || {}).twitch || ''),
+      youtube: sanitizeText((s.socials || {}).youtube || ''),
+      instagram: sanitizeText((s.socials || {}).instagram || ''),
+      tiktok: sanitizeText((s.socials || {}).tiktok || ''),
+      twitter: sanitizeText((s.socials || {}).twitter || '')
+    },
+    ordine: Number(s.ordine) || 0
   };
 }
 
@@ -442,6 +463,9 @@ function normalizeProjectSettings(value) {
   base.supportContact = sanitizeText(safe.supportContact || '');
   base.premiumMode = Boolean(safe.premiumMode);
   base.setupCompleted = Boolean(safe.setupCompleted);
+  base.streamers = Array.isArray(safe.streamers)
+    ? safe.streamers.map(normalizeStreamer).filter(Boolean)
+    : [];
 
   return base;
 }
@@ -2001,6 +2025,7 @@ module.exports = {
   normalizeData,
   normalizeTeams,
   normalizeProjectSettings,
+  normalizeStreamer,
   normalizeTournamentSettings,
   normalizeTournamentLifecycle,
   normalizeTournamentMessages,

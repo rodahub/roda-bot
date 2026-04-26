@@ -1238,6 +1238,10 @@
             <span>📢 Promemoria</span>
             <small>Auto</small>
           </button>
+          <button data-page="streamers">
+            <span>🎙️ Streamer</span>
+            <small>Creator</small>
+          </button>
           <button data-page="segnalazioni">
             <span>⚠️ Segnalazioni</span>
             <small>Report</small>
@@ -1870,6 +1874,84 @@
                   <button class="btn btn-green" onclick="saveAutomaticReminders()">Salva tutti i promemoria</button>
                 </div>
               </section>
+              <section class="page" id="streamers">
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">🎙️ Gestione Streamer</h3>
+                      <p class="card-desc">Aggiungi, modifica ed elimina i content creator ufficiali del torneo.</p>
+                    </div>
+                    <button class="btn btn-green" onclick="openStreamerModal(null)">+ Aggiungi streamer</button>
+                  </div>
+                  <div id="streamerAdminList" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+                    <p style="color:var(--text-muted);font-size:13px;">Caricamento...</p>
+                  </div>
+                </div>
+
+                <!-- Modal streamer -->
+                <div id="streamerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
+                  <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                      <h3 id="streamerModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi streamer</h3>
+                      <button onclick="closeStreamerModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+                    </div>
+                    <input type="hidden" id="smId">
+                    <div style="display:grid;gap:14px;">
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome *</label>
+                        <input id="smNome" class="input" type="text" placeholder="es. IrlandeseTV" maxlength="60">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Handle / Username</label>
+                        <input id="smHandle" class="input" type="text" placeholder="es. @irlandesetv" maxlength="60">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Ruolo</label>
+                        <input id="smRuolo" class="input" type="text" placeholder="es. Streamer ufficiale" maxlength="60">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Bio</label>
+                        <textarea id="smBio" class="input" placeholder="Breve descrizione dello streamer..." maxlength="400" rows="3" style="resize:vertical;min-height:80px;"></textarea>
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Foto</label>
+                        <input id="smFoto" class="input" type="url" placeholder="https://..." maxlength="500">
+                      </div>
+                      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;">
+                        <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;">Social</div>
+                        <div style="display:grid;gap:10px;">
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:18px;width:24px;text-align:center;">🟣</span>
+                            <input id="smTwitch" class="input" type="url" placeholder="Twitch URL" maxlength="200" style="flex:1;">
+                          </div>
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:18px;width:24px;text-align:center;">🔴</span>
+                            <input id="smYoutube" class="input" type="url" placeholder="YouTube URL" maxlength="200" style="flex:1;">
+                          </div>
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:18px;width:24px;text-align:center;">📸</span>
+                            <input id="smInstagram" class="input" type="url" placeholder="Instagram URL" maxlength="200" style="flex:1;">
+                          </div>
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:18px;width:24px;text-align:center;">🎵</span>
+                            <input id="smTiktok" class="input" type="url" placeholder="TikTok URL" maxlength="200" style="flex:1;">
+                          </div>
+                          <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:18px;width:24px;text-align:center;">✖️</span>
+                            <input id="smTwitter" class="input" type="url" placeholder="X / Twitter URL" maxlength="200" style="flex:1;">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+                      <button class="btn btn-blue" onclick="closeStreamerModal()">Annulla</button>
+                      <button class="btn btn-green" onclick="saveStreamer()" id="streamerSaveBtn">Salva</button>
+                    </div>
+                    <div id="streamerModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
+                  </div>
+                </div>
+              </section>
+
               <section class="page" id="segnalazioni">
                 <div class="card">
                   <div class="card-head">
@@ -2171,7 +2253,7 @@
     }
 
     const pageInfo={
-      regia:['Regia torneo','Vista live per gestire il torneo senza confusione.'],risultati:['Risultati','Gestione match, screen e inserimenti manuali.'],team:['Team','Modifica rapida con pennini su team e player.'],torneo:['Torneo','Regole, punteggio e messaggi ufficiali.'],discord:['Discord','Categoria, stanze, pannelli e codice lobby.'],promemoria:['Promemoria automatici','Promemoria periodici inviati dal bot nel canale generale.'],segnalazioni:['Segnalazioni','Irregolarità e problemi segnalati dai giocatori.'],archivio:['Storico','Snapshot e storico tornei.'],staff:['Staff','Account admin e staff.'],sistema:['Sistema','Reset e registro attività.']
+      regia:['Regia torneo','Vista live per gestire il torneo senza confusione.'],risultati:['Risultati','Gestione match, screen e inserimenti manuali.'],team:['Team','Modifica rapida con pennini su team e player.'],torneo:['Torneo','Regole, punteggio e messaggi ufficiali.'],discord:['Discord','Categoria, stanze, pannelli e codice lobby.'],promemoria:['Promemoria automatici','Promemoria periodici inviati dal bot nel canale generale.'],streamers:['Streamer','Gestione content creator ufficiali del torneo.'],segnalazioni:['Segnalazioni','Irregolarità e problemi segnalati dai giocatori.'],archivio:['Storico','Snapshot e storico tornei.'],staff:['Staff','Account admin e staff.'],sistema:['Sistema','Reset e registro attività.']
     };
 
     const stateLabels={
@@ -2244,6 +2326,7 @@
       if(pageId==='discord'&&!discordChannels)loadDiscordChannels(false);
       if(pageId==='promemoria')loadAutomaticReminders();
       if(pageId==='segnalazioni')loadReports();
+      if(pageId==='streamers')loadStreamers();
     }
     async function api(url,options={
 
@@ -3471,6 +3554,135 @@
         setStatus('Diagnostica stanze vocali completata');
       });
     }
+    // ===== STREAMER MANAGEMENT =====
+    let _streamers = [];
+    let _editingStreamerId = null;
+
+    async function loadStreamers() {
+      const result = await api('/api/streamers');
+      if (result.data.ok) {
+        _streamers = result.data.streamers || [];
+        renderStreamerAdminList();
+      }
+    }
+
+    function renderStreamerAdminList() {
+      const container = qs('streamerAdminList');
+      if (!container) return;
+      if (!_streamers.length) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Nessuno streamer aggiunto. Clicca "+ Aggiungi streamer" per iniziare.</p>';
+        return;
+      }
+      container.innerHTML = _streamers.map(s => {
+        const socials = Object.entries(s.socials || {}).filter(([, v]) => v).map(([k]) => k).join(', ');
+        return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;">
+          ${s.foto ? `<img src="${html(s.foto)}" alt="${html(s.nome)}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;object-position:top;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:12px;background:rgba(123,44,255,.12);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">🎙️</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:15px;color:#f0e8ff;">${html(s.nome)}</div>
+            ${s.handle ? `<div style="font-size:12px;color:var(--purple-3);margin-top:2px;">${html(s.handle)}</div>` : ''}
+            ${s.ruolo ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;">${html(s.ruolo)}</div>` : ''}
+            ${socials ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Social: ${socials}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button class="btn btn-blue" onclick="openStreamerModal('${html(s.id)}')" style="padding:8px 14px;font-size:12px;">✏️ Modifica</button>
+            <button class="btn btn-red" onclick="deleteStreamer('${html(s.id)}','${html(s.nome)}')" style="padding:8px 14px;font-size:12px;">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openStreamerModal(id) {
+      _editingStreamerId = id;
+      const modal = document.getElementById('streamerModal');
+      const title = document.getElementById('streamerModalTitle');
+      const err = document.getElementById('streamerModalError');
+      err.style.display = 'none';
+      if (id) {
+        const s = _streamers.find(x => x.id === id);
+        if (!s) return;
+        title.textContent = 'Modifica streamer';
+        document.getElementById('smId').value = s.id;
+        document.getElementById('smNome').value = s.nome || '';
+        document.getElementById('smHandle').value = s.handle || '';
+        document.getElementById('smRuolo').value = s.ruolo || '';
+        document.getElementById('smBio').value = s.bio || '';
+        document.getElementById('smFoto').value = s.foto || '';
+        document.getElementById('smTwitch').value = (s.socials || {}).twitch || '';
+        document.getElementById('smYoutube').value = (s.socials || {}).youtube || '';
+        document.getElementById('smInstagram').value = (s.socials || {}).instagram || '';
+        document.getElementById('smTiktok').value = (s.socials || {}).tiktok || '';
+        document.getElementById('smTwitter').value = (s.socials || {}).twitter || '';
+      } else {
+        title.textContent = 'Aggiungi streamer';
+        ['smId','smNome','smHandle','smRuolo','smBio','smFoto','smTwitch','smYoutube','smInstagram','smTiktok','smTwitter'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeStreamerModal() {
+      document.getElementById('streamerModal').style.display = 'none';
+    }
+
+    async function saveStreamer() {
+      const btn = document.getElementById('streamerSaveBtn');
+      const err = document.getElementById('streamerModalError');
+      err.style.display = 'none';
+      const payload = {
+        nome: document.getElementById('smNome').value.trim(),
+        handle: document.getElementById('smHandle').value.trim(),
+        ruolo: document.getElementById('smRuolo').value.trim(),
+        bio: document.getElementById('smBio').value.trim(),
+        foto: document.getElementById('smFoto').value.trim(),
+        socials: {
+          twitch: document.getElementById('smTwitch').value.trim(),
+          youtube: document.getElementById('smYoutube').value.trim(),
+          instagram: document.getElementById('smInstagram').value.trim(),
+          tiktok: document.getElementById('smTiktok').value.trim(),
+          twitter: document.getElementById('smTwitter').value.trim()
+        }
+      };
+      if (!payload.nome) {
+        err.textContent = 'Il campo Nome è obbligatorio.';
+        err.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
+      try {
+        const url = _editingStreamerId ? `/api/streamers/${_editingStreamerId}` : '/api/streamers';
+        const method = _editingStreamerId ? 'PUT' : 'POST';
+        const result = await api(url, { method, body: JSON.stringify(payload) });
+        if (result.data.ok) {
+          closeStreamerModal();
+          await loadStreamers();
+          setStatus(_editingStreamerId ? 'Streamer modificato.' : 'Streamer aggiunto.');
+        } else {
+          err.textContent = result.data.message || 'Errore salvataggio.';
+          err.style.display = 'block';
+        }
+      } catch(e) {
+        err.textContent = 'Errore di rete.';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salva';
+      }
+    }
+
+    async function deleteStreamer(id, nome) {
+      if (!confirm(`Elimina definitivamente lo streamer "${nome}"?`)) return;
+      const result = await api(`/api/streamers/${id}`, { method: 'DELETE' });
+      if (result.data.ok) {
+        await loadStreamers();
+        setStatus('Streamer eliminato.');
+      } else {
+        alert(result.data.message || 'Errore eliminazione.');
+      }
+    }
+
     let _allReports=[];
     async function loadReports(){
       const container=qs('reportsList');

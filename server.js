@@ -73,7 +73,8 @@ const {
 
   getReports,
   markReportReviewed,
-  deleteReport
+  deleteReport,
+  normalizeStreamer
 } = require('./storage');
 
 initializeFiles();
@@ -1414,6 +1415,9 @@ function buildPublicPayload(req) {
       postiDisponibili: Math.max(MAX_TEAMS - Object.keys(teams).length, 0),
       registrazioniAperte: registrationsOpen && Object.keys(teams).length < MAX_TEAMS
     },
+    streamers: (projectSettings.streamers || [])
+      .slice()
+      .sort((a, b) => (a.ordine || 0) - (b.ordine || 0)),
     classificaTeam: buildLeaderboard(data.scores),
     classificaFragger: buildFraggers(data.fragger),
     teamRegistrati: teamOrdinati,
@@ -1816,6 +1820,70 @@ app.post('/api/logout', (req, res) => {
   return res.json({
     ok: true
   });
+});
+
+app.get('/api/streamers', authRequired, (req, res) => {
+  const data = loadData();
+  const streamers = (data.projectSettings || {}).streamers || [];
+  return res.json({ ok: true, streamers: streamers.slice().sort((a, b) => (a.ordine || 0) - (b.ordine || 0)) });
+});
+
+app.post('/api/streamers', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const streamers = Array.isArray(ps.streamers) ? ps.streamers : [];
+  const raw = req.body || {};
+  const id = crypto.randomBytes(8).toString('hex');
+  const s = normalizeStreamer({ ...raw, id, ordine: streamers.length });
+  if (!s || !s.nome) return res.status(400).json({ ok: false, message: 'Il campo nome è obbligatorio.' });
+  streamers.push(s);
+  data.projectSettings = { ...ps, streamers };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'streamer_aggiunto', { id, nome: s.nome });
+  return res.json({ ok: true, streamer: s });
+});
+
+app.put('/api/streamers/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const streamers = Array.isArray(ps.streamers) ? ps.streamers : [];
+  const idx = streamers.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Streamer non trovato.' });
+  const raw = req.body || {};
+  const updated = normalizeStreamer({ ...streamers[idx], ...raw, id: req.params.id });
+  if (!updated || !updated.nome) return res.status(400).json({ ok: false, message: 'Il campo nome è obbligatorio.' });
+  streamers[idx] = updated;
+  data.projectSettings = { ...ps, streamers };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'streamer_modificato', { id: req.params.id, nome: updated.nome });
+  return res.json({ ok: true, streamer: updated });
+});
+
+app.delete('/api/streamers/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const streamers = Array.isArray(ps.streamers) ? ps.streamers : [];
+  const idx = streamers.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Streamer non trovato.' });
+  const removed = streamers.splice(idx, 1)[0];
+  data.projectSettings = { ...ps, streamers };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'streamer_eliminato', { id: req.params.id, nome: removed.nome });
+  return res.json({ ok: true });
+});
+
+app.post('/api/streamers/reorder', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const streamers = Array.isArray(ps.streamers) ? ps.streamers : [];
+  const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+  const reordered = ids
+    .map((id, i) => { const s = streamers.find(x => x.id === id); return s ? { ...s, ordine: i } : null; })
+    .filter(Boolean);
+  if (reordered.length !== streamers.length) return res.status(400).json({ ok: false, message: 'IDs non validi.' });
+  data.projectSettings = { ...ps, streamers: reordered };
+  saveData(data);
+  return res.json({ ok: true });
 });
 
 app.get('/api/admin-users', authRequired, requireOwner, (req, res) => {
