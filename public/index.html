@@ -1176,49 +1176,132 @@
       display:none;
     }
 
-    /* ── FUNKO CHARS ── */
-    .funko-char{
+    /* ── PARTICLES CANVAS ── */
+    #heroParticles{
       position:absolute;
-      bottom:0;
-      z-index:4;
-      height:84%;
-      max-height:310px;
-      object-fit:contain;
+      inset:0;
+      width:100%;
+      height:100%;
       pointer-events:none;
+      z-index:0;
+      border-radius:inherit;
+    }
+
+    /* ── FUNKO SHOWCASE ── */
+    .funko-section{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .funko-card{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(160deg, rgba(123,44,255,.10) 0%, rgba(9,9,17,.95) 60%);
+      border:1px solid rgba(160,110,255,.18);
+      border-radius:28px;
+      box-shadow:0 0 0 1px rgba(123,44,255,.08), 0 0 40px rgba(123,44,255,.10);
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      min-height:320px;
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .funko-card:hover{
+      border-color:rgba(180,130,255,.35);
+      box-shadow:0 0 0 1px rgba(123,44,255,.15), 0 0 60px rgba(123,44,255,.20);
+    }
+
+    .funko-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:radial-gradient(ellipse at 50% 0%, rgba(123,44,255,.18), transparent 65%);
+      pointer-events:none;
+    }
+
+    .funko-card-img{
+      position:relative;
+      z-index:2;
+      width:72%;
+      max-width:260px;
+      height:auto;
+      object-fit:contain;
+      display:block;
+      filter:drop-shadow(0 0 22px rgba(160,100,255,.50)) drop-shadow(0 8px 24px rgba(0,0,0,.55));
+      animation:floatFunko 4.2s ease-in-out infinite;
       user-select:none;
       -webkit-user-drag:none;
-      animation:floatChar 4.4s ease-in-out infinite;
-      filter:drop-shadow(0 0 18px rgba(123,44,255,.30));
+      transition:filter .2s ease, transform .15s ease;
     }
 
-    .funko-left{
-      left:12px;
-      animation-delay:.6s;
+    .funko-card:nth-child(2) .funko-card-img{
+      animation-delay:-2.1s;
     }
 
-    .funko-right{
-      right:12px;
-      animation-delay:-2.2s;
+    .funko-card-img:hover{
+      filter:drop-shadow(0 0 36px rgba(180,120,255,.80)) drop-shadow(0 8px 28px rgba(0,0,0,.65));
     }
 
-    @keyframes floatChar{
-      0%,100%{ transform:translateY(0px); }
-      50%{ transform:translateY(-10px); }
+    @keyframes floatFunko{
+      0%,100%{ transform:translateY(0px) rotate(0deg); }
+      50%{ transform:translateY(-12px) rotate(.8deg); }
     }
 
-    @media (min-width:1300px){
-      .hero{
-        padding-left:168px;
-        padding-right:168px;
+    .funko-card-glow{
+      position:absolute;
+      bottom:0;
+      left:50%;
+      transform:translateX(-50%);
+      width:60%;
+      height:18px;
+      background:radial-gradient(ellipse, rgba(123,44,255,.55), transparent 70%);
+      border-radius:50%;
+      filter:blur(8px);
+      animation:floatFunkoGlow 4.2s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    .funko-card:nth-child(2) .funko-card-glow{
+      animation-delay:-2.1s;
+    }
+
+    @keyframes floatFunkoGlow{
+      0%,100%{ opacity:.5; transform:translateX(-50%) scaleX(1); }
+      50%{ opacity:.9; transform:translateX(-50%) scaleX(1.3); }
+    }
+
+    .funko-card-accent{
+      position:absolute;
+      top:18px;
+      right:18px;
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      background:rgba(123,44,255,.12);
+      border:1px solid rgba(160,110,255,.22);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+    }
+
+    @media (max-width:760px){
+      .funko-section{
+        grid-template-columns:1fr 1fr;
+        gap:10px;
       }
-      .funko-char{
-        display:block;
+      .funko-card{
+        min-height:200px;
+        border-radius:20px;
       }
     }
 
-    @media (max-width:1299px){
-      .funko-char{
-        display:none;
+    @media (max-width:480px){
+      .funko-card{
+        min-height:160px;
       }
     }
 
@@ -1434,11 +1517,9 @@
 
   <div class="wrap">
     <section class="hero">
-      <!-- Funko pop decorativi (visibili solo su schermi ≥1300px) -->
-      <img src="/funko-girl.png" class="funko-char funko-left"  alt="" />
-      <img src="/funko-guy.png"  class="funko-char funko-right" alt="" />
+      <canvas id="heroParticles"></canvas>
 
-      <div class="hero-grid">
+      <div class="hero-grid" style="position:relative;z-index:2;">
         <div class="hero-left">
           <div class="eyebrow">🔥 Evento competitivo live</div>
 
@@ -1571,6 +1652,20 @@
           <h3>Leggi il regolamento</h3>
           <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
           <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
+        </div>
+      </div>
+
+      <!-- Funko showcase -->
+      <div class="funko-section">
+        <div class="funko-card">
+          <div class="funko-card-accent">⚡</div>
+          <div class="funko-card-glow"></div>
+          <img src="/funko-girl.png" class="funko-card-img" alt="" id="funkoGirl" />
+        </div>
+        <div class="funko-card">
+          <div class="funko-card-accent">🔥</div>
+          <div class="funko-card-glow"></div>
+          <img src="/funko-guy.png" class="funko-card-img" alt="" id="funkoGuy" />
         </div>
       </div>
 
@@ -2282,55 +2377,110 @@
     loadPublicData();
     setInterval(loadPublicData, 15000);
 
-    /* ── 3D TILT EFFETTO COPPA ── */
+    /* ── PARTICLES HERO ── */
     (function(){
-      function applyTilt(img, e){
-        const r = img.getBoundingClientRect();
+      const canvas = document.getElementById('heroParticles');
+      if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let W, H, particles;
+      const COUNT = 55;
+
+      function resize(){
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = canvas.width  = rect.width;
+        H = canvas.height = rect.height;
+      }
+
+      function rand(a, b){ return a + Math.random() * (b - a); }
+
+      function mkParticle(){
+        return {
+          x: rand(0, W || 800),
+          y: rand(0, H || 400),
+          r: rand(1, 3.2),
+          vx: rand(-.18, .18),
+          vy: rand(-.28, -.05),
+          alpha: rand(.12, .55),
+          da: rand(.003, .007) * (Math.random() < .5 ? 1 : -1),
+          minA: rand(.05, .18),
+          maxA: rand(.35, .65),
+        };
+      }
+
+      function init(){
+        resize();
+        particles = Array.from({length: COUNT}, mkParticle);
+      }
+
+      function step(){
+        ctx.clearRect(0, 0, W, H);
+        for(const p of particles){
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha += p.da;
+          if(p.alpha > p.maxA || p.alpha < p.minA) p.da *= -1;
+          if(p.y < -8) { p.y = H + 8; p.x = rand(0, W); }
+          if(p.x < -8) p.x = W + 8;
+          if(p.x > W + 8) p.x = -8;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(180,120,255,${p.alpha.toFixed(3)})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(step);
+      }
+
+      init();
+      step();
+      window.addEventListener('resize', () => { resize(); });
+    })();
+
+    /* ── 3D TILT EFFETTO COPPA & FUNKO ── */
+    (function(){
+      function applyTilt(el, e, maxRY, maxRX){
+        const r = el.getBoundingClientRect();
         if(!r.width) return;
         const cx = r.left + r.width / 2;
         const cy = r.top + r.height / 2;
         const dx = (e.clientX - cx) / (window.innerWidth * 0.5);
         const dy = (e.clientY - cy) / (window.innerHeight * 0.5);
-        const ry = Math.max(-22, Math.min(22, dx * 22));
-        const rx = Math.max(-14, Math.min(14, -dy * 14));
-        img.style.transform = `perspective(520px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.05)`;
+        const ry = Math.max(-maxRY, Math.min(maxRY, dx * maxRY));
+        const rx = Math.max(-maxRX, Math.min(maxRX, -dy * maxRX));
+        el.style.transform = `perspective(600px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.05)`;
       }
 
-      function resetTilt(img){
-        img.style.transform = '';
-      }
+      function resetTilt(el){ el.style.transform = ''; }
 
-      const desktop = document.getElementById('trophyDesktop');
-      const mobile  = document.getElementById('trophyMobile');
-      const passImg = document.getElementById('passCardImg');
+      const desktop   = document.getElementById('trophyDesktop');
+      const mobile    = document.getElementById('trophyMobile');
+      const passImg   = document.getElementById('passCardImg');
+      const funkoGirl = document.getElementById('funkoGirl');
+      const funkoGuy  = document.getElementById('funkoGuy');
 
       document.addEventListener('mousemove', e => {
-        if(desktop && desktop.offsetParent !== null) applyTilt(desktop, e);
-        if(mobile  && mobile.offsetParent  !== null) applyTilt(mobile,  e);
-        if(passImg) applyTilt(passImg, e);
+        if(desktop   && desktop.offsetParent !== null) applyTilt(desktop, e, 22, 14);
+        if(mobile    && mobile.offsetParent  !== null) applyTilt(mobile, e, 18, 12);
+        if(passImg)   applyTilt(passImg, e, 14, 10);
+        if(funkoGirl) applyTilt(funkoGirl, e, 18, 12);
+        if(funkoGuy)  applyTilt(funkoGuy,  e, 18, 12);
       });
 
       document.addEventListener('mouseleave', () => {
-        if(desktop) resetTilt(desktop);
-        if(mobile)  resetTilt(mobile);
-        if(passImg) resetTilt(passImg);
+        [desktop, mobile, passImg, funkoGirl, funkoGuy].forEach(el => { if(el) resetTilt(el); });
       });
 
-      /* tilt touch per mobile */
-      function handleTouch(img, t){
+      function handleTouch(el, t){
         if(!t.touches.length) return;
         const touch = t.touches[0];
-        applyTilt(img, { clientX: touch.clientX, clientY: touch.clientY });
+        applyTilt(el, { clientX: touch.clientX, clientY: touch.clientY }, 18, 12);
       }
 
-      if(mobile){
-        mobile.addEventListener('touchmove', e => handleTouch(mobile, e), { passive:true });
-        mobile.addEventListener('touchend', () => resetTilt(mobile), { passive:true });
-      }
-      if(passImg){
-        passImg.addEventListener('touchmove', e => handleTouch(passImg, e), { passive:true });
-        passImg.addEventListener('touchend', () => resetTilt(passImg), { passive:true });
-      }
+      [mobile, passImg, funkoGirl, funkoGuy].forEach(el => {
+        if(!el) return;
+        el.addEventListener('touchmove', e => handleTouch(el, e), { passive:true });
+        el.addEventListener('touchend', () => resetTilt(el), { passive:true });
+      });
     })();
   </script>
 </body>
