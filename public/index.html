@@ -1996,7 +1996,7 @@
       filter:blur(13px);
       opacity:0;
       pointer-events:none;
-      z-index:8;
+      z-index:1;
       animation:smokeOut 1.7s cubic-bezier(.12,.58,.2,1) calc(2.0s + var(--sd,0s)) both;
     }
 
@@ -2019,12 +2019,12 @@
         filter:blur(3px);
       }
       10%{
-        opacity:.9;
+        opacity:.55;
         transform:translate(calc(var(--sx)*0.1),calc(var(--sy)*0.1)) scale(.8);
         filter:blur(10px);
       }
       38%{
-        opacity:.62;
+        opacity:.38;
         transform:translate(calc(var(--sx)*0.38),calc(var(--sy)*0.38)) scale(1.75);
         filter:blur(19px);
       }
