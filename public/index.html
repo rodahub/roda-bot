@@ -1176,6 +1176,139 @@
       display:none;
     }
 
+    /* ── FUTURISTIC UPGRADES ── */
+
+    /* Tech grid nel hero */
+    .hero-grid-bg{
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(160,110,255,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(160,110,255,.055) 1px, transparent 1px);
+      background-size:48px 48px;
+      pointer-events:none;
+      z-index:0;
+      border-radius:inherit;
+      mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+      -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    }
+
+    /* Scan lines nel hero */
+    .hero-scanlines{
+      position:absolute;
+      inset:0;
+      background:repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,.045) 3px,
+        rgba(0,0,0,.045) 4px
+      );
+      pointer-events:none;
+      z-index:1;
+      border-radius:inherit;
+    }
+
+    /* Glitch sul titolo */
+    @keyframes glitchTitle{
+      0%,85%,100%{ text-shadow:none; transform:none; clip-path:none; }
+      86%{
+        text-shadow:3px 0 rgba(255,0,200,.65), -3px 0 rgba(0,255,210,.65);
+        transform:translate(-2px, 0) skewX(-1deg);
+        clip-path:polygon(0 0,100% 0,100% 40%,0 40%);
+      }
+      87%{
+        text-shadow:-3px 0 rgba(255,0,200,.55), 3px 0 rgba(0,255,210,.55);
+        transform:translate(2px, 0);
+        clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%);
+      }
+      88%{ text-shadow:none; clip-path:none; transform:translate(0,-1px); }
+      89%{
+        text-shadow:4px 0 rgba(255,0,200,.45);
+        transform:translate(-1px, 1px) skewX(.8deg);
+      }
+      90%{ text-shadow:none; transform:none; clip-path:none; }
+    }
+
+    .hero-title{
+      animation:glitchTitle 9s steps(1) infinite;
+    }
+
+    /* Cursor lampeggiante eyebrow */
+    .eyebrow-cursor{
+      display:inline-block;
+      width:2px;
+      height:1em;
+      background:rgba(200,170,255,.8);
+      margin-left:3px;
+      vertical-align:middle;
+      animation:blinkCursor .75s step-end infinite;
+    }
+
+    @keyframes blinkCursor{
+      0%,100%{ opacity:1; }
+      50%{ opacity:0; }
+    }
+
+    /* Angoli HUD sui pannelli */
+    .card{
+      position:relative;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      top:10px;
+      left:10px;
+      width:18px;
+      height:18px;
+      border-top:1.5px solid rgba(160,110,255,.35);
+      border-left:1.5px solid rgba(160,110,255,.35);
+      pointer-events:none;
+      z-index:1;
+    }
+
+    .card::after{
+      content:"";
+      position:absolute;
+      bottom:10px;
+      right:10px;
+      width:18px;
+      height:18px;
+      border-bottom:1.5px solid rgba(160,110,255,.28);
+      border-right:1.5px solid rgba(160,110,255,.28);
+      pointer-events:none;
+      z-index:1;
+    }
+
+    /* Angolo HUD su mini-stat */
+    .mini-stat::after{
+      content:"";
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:13px;
+      height:13px;
+      border-top:1.5px solid rgba(160,110,255,.40);
+      border-right:1.5px solid rgba(160,110,255,.40);
+      pointer-events:none;
+    }
+
+    /* Bordo hero pulsante */
+    @keyframes borderPulse{
+      0%,100%{ box-shadow:var(--shadow-strong), 0 0 0 1px rgba(160,110,255,.10); }
+      50%{ box-shadow:var(--shadow-strong), 0 0 0 1px rgba(160,110,255,.26), 0 0 28px rgba(123,44,255,.12); }
+    }
+
+    .hero{
+      animation:borderPulse 4s ease-in-out infinite;
+    }
+
+    /* Counter number style */
+    .mini-stat strong.counting{
+      color:var(--purple-3);
+    }
+
     /* ── PARTICLES CANVAS ── */
     #heroParticles{
       position:absolute;
@@ -1518,10 +1651,12 @@
   <div class="wrap">
     <section class="hero">
       <canvas id="heroParticles"></canvas>
+      <div class="hero-grid-bg"></div>
+      <div class="hero-scanlines"></div>
 
       <div class="hero-grid" style="position:relative;z-index:2;">
         <div class="hero-left">
-          <div class="eyebrow">🔥 Evento competitivo live</div>
+          <div class="eyebrow" id="heroEyebrow"></div>
 
           <!-- coppa visibile solo su mobile -->
           <div class="trophy-mobile">
@@ -2158,10 +2293,10 @@
           ? `Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale. Supporto: ${supportContact}.`
           : 'Segui il torneo live, controlla classifiche, team registrati, registrazioni aperte e guarda la diretta ufficiale dal portale pubblico.';
 
-      document.getElementById('heroMatch').textContent = torneo.matchCorrente || 1;
-      document.getElementById('heroTeams').textContent = registeredCount;
+      animCount(document.getElementById('heroMatch'), String(torneo.matchCorrente || 1));
+      animCount(document.getElementById('heroTeams'), String(registeredCount));
       document.getElementById('heroFragger').textContent = fraggers.length ? fraggers[0].nome : '-';
-      document.getElementById('heroFreeSlotsStat').textContent = availableCount;
+      animCount(document.getElementById('heroFreeSlotsStat'), String(availableCount));
 
       document.getElementById('heroTeamsCountLine').textContent = `${registeredCount} / ${maxTeams}`;
       document.getElementById('heroFreeSlotsLine').textContent = String(availableCount);
@@ -2362,6 +2497,43 @@
     switchPage('page-home');
     loadPublicData();
     setInterval(loadPublicData, 15000);
+
+    /* ── TYPING EYEBROW ── */
+    (function(){
+      const el = document.getElementById('heroEyebrow');
+      if(!el) return;
+      const full = '⚡ EVENTO COMPETITIVO LIVE';
+      const cursor = document.createElement('span');
+      cursor.className = 'eyebrow-cursor';
+      let i = 0;
+      el.textContent = '';
+      el.appendChild(cursor);
+      function typeChar(){
+        if(i < full.length){
+          el.insertBefore(document.createTextNode(full[i++]), cursor);
+          setTimeout(typeChar, i === 1 ? 350 : 52);
+        }
+      }
+      setTimeout(typeChar, 600);
+    })();
+
+    /* ── COUNTER ANIMATION ── */
+    function animCount(el, target, duration){
+      if(!el) return;
+      const n = parseInt(target, 10);
+      if(isNaN(n) || n <= 0){ el.textContent = target; return; }
+      el.classList.add('counting');
+      const start = performance.now();
+      const dur = duration || Math.min(1400, 300 + n * 18);
+      function tick(now){
+        const t = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(n * ease).toString();
+        if(t < 1) requestAnimationFrame(tick);
+        else{ el.textContent = target; el.classList.remove('counting'); }
+      }
+      requestAnimationFrame(tick);
+    }
 
     /* ── PARTICLES HERO ── */
     (function(){
