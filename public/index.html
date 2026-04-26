@@ -2098,7 +2098,7 @@
       100%{ opacity:0; transform:scale(22); }
     }
 
-    /* ── FLASH PLASMA ── */
+    /* ── FLASH IMPATTO — piccolo burst locale, non copre schermo ── */
     #intro-flash{
       position:absolute;
       left:50%;top:50%;
@@ -2107,22 +2107,19 @@
       border-radius:50%;
       background:radial-gradient(circle at center,
         rgba(255,255,255,1)    0%,
-        rgba(225,210,255,1)    8%,
-        rgba(180,100,255,.95)  22%,
-        rgba(110,40,220,.7)    42%,
-        rgba(60,15,160,.4)     62%,
-        transparent            76%);
+        rgba(220,180,255,.9)   20%,
+        rgba(150,70,255,.6)    50%,
+        transparent            75%);
       opacity:0;
       pointer-events:none;
       z-index:10;
-      animation:flashBurst .72s ease 2.0s both;
+      animation:flashBurst .45s ease 1.35s both;
     }
 
     @keyframes flashBurst{
       0%{ opacity:0; transform:scale(0); }
-      16%{ opacity:1; transform:scale(10); }
-      48%{ opacity:.85; transform:scale(24); }
-      100%{ opacity:0; transform:scale(40); }
+      25%{ opacity:.9; transform:scale(8); }
+      100%{ opacity:0; transform:scale(18); }
     }
 
     /* ── LOGO RØDA CUP ── */
@@ -2194,21 +2191,7 @@
   <!-- INTRO GRANATA -->
   <div id="intro-overlay" role="presentation" aria-hidden="true">
     <div id="intro-grenade-wrap">
-      <!-- bagliore centrale brevissimo -->
-      <div id="intro-fireball"></div>
-
-      <!-- 8 nuvole di fumo viola scuro che si espandono morbidamente -->
-      <div class="intro-smoke"    style="--sx:-88px; --sy:-72px; --sd:.00s"></div>
-      <div class="intro-smoke s2" style="--sx:82px;  --sy:-80px; --sd:.07s"></div>
-      <div class="intro-smoke"    style="--sx:112px; --sy:-10px; --sd:.03s"></div>
-      <div class="intro-smoke s2" style="--sx:78px;  --sy:82px;  --sd:.09s"></div>
-      <div class="intro-smoke"    style="--sx:-8px;  --sy:105px; --sd:.05s"></div>
-      <div class="intro-smoke s2" style="--sx:-84px; --sy:78px;  --sd:.02s"></div>
-      <div class="intro-smoke"    style="--sx:-116px;--sy:-5px;  --sd:.06s"></div>
-      <div class="intro-smoke s2" style="--sx:4px;   --sy:-100px;--sd:.04s"></div>
-
       <div id="intro-impact-ring"></div>
-      <div id="intro-shockwave"></div>
       <div id="intro-flash"></div>
       <picture>
         <source srcset="/granata.webp" type="image/webp">
