@@ -1950,135 +1950,88 @@
       }
     }
 
-    /* ══ PLASMA BALL v4 ══ */
+    /* ══ SMOKE BURST v5 ══ */
 
-    /* Sfera plasma stile Tesla ball — raggi che irradiano dal centro, corona viola */
+    /* Bagliore centrale brevissimo al momento dell'impatto */
     #intro-fireball{
       position:absolute;
       left:50%;top:50%;
-      width:60px;height:60px;
-      margin:-30px 0 0 -30px;
+      width:26px;height:26px;
+      margin:-13px 0 0 -13px;
       border-radius:50%;
-      overflow:hidden;
-      background:
-        /* Corona esterna vivida */
-        radial-gradient(circle,
-          transparent            46%,
-          rgba(210,80,255,1)     51%,
-          rgba(240,140,255,.55)  60%,
-          transparent            70%),
-        /* Raggi conic — spokes come plasma ball */
-        conic-gradient(
-          rgba(20,8,80,1)         0deg,
-          rgba(255,255,255,.95)   5deg,
-          rgba(190,100,255,.7)   11deg,
-          rgba(20,8,80,1)        18deg,
-          rgba(230,180,255,.9)   23deg,
-          rgba(150,70,255,.6)    29deg,
-          rgba(20,8,80,1)        36deg,
-          rgba(255,255,255,1)    41deg,
-          rgba(180,90,255,.75)   47deg,
-          rgba(20,8,80,1)        54deg,
-          rgba(210,160,255,.85)  59deg,
-          rgba(140,65,255,.6)    65deg,
-          rgba(20,8,80,1)        72deg,
-          rgba(255,255,255,.95)  77deg,
-          rgba(200,100,255,.7)   83deg,
-          rgba(20,8,80,1)        90deg,
-          rgba(230,180,255,.9)   95deg,
-          rgba(155,75,255,.6)   101deg,
-          rgba(20,8,80,1)       108deg,
-          rgba(255,255,255,1)   113deg,
-          rgba(185,90,255,.75)  119deg,
-          rgba(20,8,80,1)       126deg,
-          rgba(215,165,255,.85) 131deg,
-          rgba(140,65,255,.6)   137deg,
-          rgba(20,8,80,1)       144deg,
-          rgba(255,255,255,.95) 149deg,
-          rgba(195,100,255,.7)  155deg,
-          rgba(20,8,80,1)       162deg,
-          rgba(230,180,255,.9)  167deg,
-          rgba(150,70,255,.6)   173deg,
-          rgba(20,8,80,1)       180deg,
-          rgba(255,255,255,1)   185deg,
-          rgba(180,90,255,.75)  191deg,
-          rgba(20,8,80,1)       198deg,
-          rgba(210,160,255,.85) 203deg,
-          rgba(140,65,255,.6)   209deg,
-          rgba(20,8,80,1)       216deg,
-          rgba(255,255,255,.95) 221deg,
-          rgba(200,100,255,.7)  227deg,
-          rgba(20,8,80,1)       234deg,
-          rgba(230,180,255,.9)  239deg,
-          rgba(155,75,255,.6)   245deg,
-          rgba(20,8,80,1)       252deg,
-          rgba(255,255,255,1)   257deg,
-          rgba(185,90,255,.75)  263deg,
-          rgba(20,8,80,1)       270deg,
-          rgba(215,165,255,.85) 275deg,
-          rgba(140,65,255,.6)   281deg,
-          rgba(20,8,80,1)       288deg,
-          rgba(255,255,255,.95) 293deg,
-          rgba(195,100,255,.7)  299deg,
-          rgba(20,8,80,1)       306deg,
-          rgba(230,180,255,.9)  311deg,
-          rgba(150,70,255,.6)   317deg,
-          rgba(20,8,80,1)       324deg,
-          rgba(255,255,255,1)   329deg,
-          rgba(180,90,255,.75)  335deg,
-          rgba(20,8,80,1)       342deg,
-          rgba(210,160,255,.85) 347deg,
-          rgba(140,65,255,.6)   353deg,
-          rgba(20,8,80,1)       360deg
-        ),
-        /* Centro luminoso bianco-blu */
-        radial-gradient(circle at 44% 40%,
-          #ffffff              0%,
-          rgba(210,230,255,1)  7%,
-          rgba(160,110,255,.95) 20%,
-          rgba(90,40,210,.9)   40%,
-          rgba(30,8,100,1)     68%,
-          rgba(15,4,60,1)      100%);
+      background:radial-gradient(circle,
+        rgba(245,210,255,1)   0%,
+        rgba(190,90,255,.9)   30%,
+        rgba(110,35,210,.55)  62%,
+        transparent           85%);
       box-shadow:
-        0 0 18px 7px rgba(200,80,255,.95),
-        0 0 45px 18px rgba(160,55,255,.65),
-        0 0 90px 36px rgba(120,35,255,.35);
+        0 0 22px 10px rgba(190,90,255,.85),
+        0 0 55px 24px rgba(140,45,225,.5);
       opacity:0;
       pointer-events:none;
       z-index:11;
-      animation:plasmaSphere 1.05s cubic-bezier(.15,.75,.3,1) 2.0s both;
+      animation:coreBurst .42s ease 2.0s both;
     }
 
-    @keyframes plasmaSphere{
+    @keyframes coreBurst{
+      0%{  opacity:0; transform:scale(0); box-shadow:none; }
+      20%{ opacity:1; transform:scale(1);
+           box-shadow:0 0 28px 12px rgba(200,100,255,.9),
+                      0 0 65px 28px rgba(150,50,230,.55); }
+      100%{ opacity:0; transform:scale(9); box-shadow:none; }
+    }
+
+    /* Nuvole di fumo/vapore viola scuro — morbide, blurrate, atmosferiche */
+    .intro-smoke{
+      position:absolute;
+      left:50%;top:50%;
+      width:90px;height:90px;
+      margin:-45px 0 0 -45px;
+      border-radius:50%;
+      background:radial-gradient(circle at 42% 40%,
+        rgba(62,18,118,.94)  0%,
+        rgba(48,13,98,.60)   30%,
+        rgba(33,9,78,.24)    58%,
+        transparent          82%);
+      filter:blur(13px);
+      opacity:0;
+      pointer-events:none;
+      z-index:8;
+      animation:smokeOut 1.7s cubic-bezier(.12,.58,.2,1) calc(2.0s + var(--sd,0s)) both;
+    }
+
+    /* Variante più grande e più blu per le nuvole di secondo piano */
+    .intro-smoke.s2{
+      width:112px;height:112px;
+      margin:-56px 0 0 -56px;
+      background:radial-gradient(circle at 55% 48%,
+        rgba(40,10,128,.85)  0%,
+        rgba(30,8,108,.50)   30%,
+        rgba(20,5,88,.20)    58%,
+        transparent          82%);
+      filter:blur(18px);
+    }
+
+    @keyframes smokeOut{
       0%{
         opacity:0;
-        transform:scale(0) rotate(0deg);
-        box-shadow:none;
+        transform:translate(0,0) scale(.2);
+        filter:blur(3px);
       }
       10%{
-        opacity:1;
-        transform:scale(1.1) rotate(18deg);
-        box-shadow:
-          0 0 22px 9px rgba(220,100,255,.95),
-          0 0 55px 22px rgba(170,60,255,.7),
-          0 0 110px 44px rgba(130,40,255,.45);
+        opacity:.9;
+        transform:translate(calc(var(--sx)*0.1),calc(var(--sy)*0.1)) scale(.8);
+        filter:blur(10px);
       }
       38%{
-        opacity:1;
-        transform:scale(2.9) rotate(62deg);
-        box-shadow:
-          0 0 28px 11px rgba(200,80,255,.85),
-          0 0 65px 26px rgba(155,55,255,.55),
-          0 0 130px 52px rgba(110,32,255,.3);
-      }
-      68%{
-        opacity:.75;
-        transform:scale(3.5) rotate(92deg);
+        opacity:.62;
+        transform:translate(calc(var(--sx)*0.38),calc(var(--sy)*0.38)) scale(1.75);
+        filter:blur(19px);
       }
       100%{
         opacity:0;
-        transform:scale(4.4) rotate(135deg);
-        box-shadow:none;
+        transform:translate(var(--sx),var(--sy)) scale(3.4);
+        filter:blur(34px);
       }
     }
 
@@ -2096,110 +2049,22 @@
       opacity:0;
       pointer-events:none;
       z-index:8;
-      /* forwards: durante il delay usa lo stile base (opacity:0) — FIX bug anello visibile */
       animation:coronaRing 1.1s cubic-bezier(.1,.85,.25,1) calc(2.0s + var(--d,0s)) forwards;
     }
 
     @keyframes coronaRing{
-      0%{
-        opacity:0;                /* INIZIA INVISIBILE — fix bug fill-mode */
-        transform:scale(0.6);
-      }
-      8%{
-        opacity:1;
-        transform:scale(1);
-        border-color:rgba(240,150,255,1);
-        box-shadow:0 0 14px 5px rgba(210,90,255,.9);
-      }
-      45%{
-        opacity:.6;
-        border-color:rgba(180,60,255,.6);
-        box-shadow:0 0 18px 6px rgba(150,45,255,.4);
-      }
-      100%{
-        opacity:0;
-        transform:scale(27);
-        border-color:rgba(120,30,200,0);
-        box-shadow:none;
-      }
+      0%{  opacity:0; transform:scale(0.6); }
+      8%{  opacity:1; transform:scale(1);
+           border-color:rgba(240,150,255,1);
+           box-shadow:0 0 14px 5px rgba(210,90,255,.9); }
+      45%{ opacity:.6; border-color:rgba(180,60,255,.6); }
+      100%{ opacity:0; transform:scale(27); border-color:rgba(120,30,200,0); box-shadow:none; }
     }
 
-    /* Scariche di plasma — fulmini bianchi/viola che escono dalla sfera */
-    .intro-plasma-streak{
-      position:absolute;
-      left:50%;top:50%;
-      width:5px;
-      height:0px;
-      margin-left:-2.5px;
-      transform-origin:top center;
-      transform:rotate(var(--a,0deg)) translateY(0);
-      border-radius:0 0 3px 3px;
-      background:linear-gradient(to bottom,
-        rgba(255,255,255,1)    0%,
-        rgba(230,170,255,.97)  10%,
-        rgba(190,90,255,.85)   28%,
-        rgba(130,45,220,.55)   58%,
-        transparent            100%);
-      opacity:0;
-      pointer-events:none;
-      z-index:7;
-      filter:blur(.5px);
-      animation:plasmaStreak .78s cubic-bezier(.2,.85,.3,1) calc(2.0s + var(--d,0s)) both;
-    }
+    /* (classi plasma-streak e plasma-blob rimosse — non più usate in v5) */
+    /* placeholder per non-breaking: */
+    .intro-plasma-streak,.intro-plasma-blob{ display:none; }
 
-    @keyframes plasmaStreak{
-      0%{
-        opacity:0;
-        height:0px;
-        filter:blur(0);
-        transform:rotate(var(--a,0deg)) translateY(0);
-      }
-      14%{ opacity:1; filter:blur(.4px); }
-      58%{
-        opacity:.9;
-        height:140px;
-        filter:blur(.8px);
-        transform:rotate(var(--a,0deg)) translateY(-85px);
-      }
-      100%{
-        opacity:0;
-        height:50px;
-        filter:blur(1.5px);
-        transform:rotate(var(--a,0deg)) translateY(-172px);
-      }
-    }
-
-    /* Glob di energia plasma — particelle viola/rosa */
-    .intro-plasma-blob{
-      position:absolute;
-      left:50%;top:50%;
-      width:9px;height:9px;
-      margin:-4.5px 0 0 -4.5px;
-      border-radius:50%;
-      background:radial-gradient(circle at 38% 36%,
-        rgba(255,255,255,1)    0%,
-        rgba(230,170,255,.95)  28%,
-        rgba(175,80,255,.7)    55%,
-        transparent            85%);
-      box-shadow:
-        0 0 10px 4px rgba(195,80,255,.75),
-        0 0 22px 8px rgba(150,45,255,.4);
-      opacity:0;
-      pointer-events:none;
-      z-index:7;
-      animation:plasmaBlob .88s cubic-bezier(.2,.8,.25,1) calc(2.0s + var(--d,0s)) both;
-    }
-
-    @keyframes plasmaBlob{
-      0%{
-        opacity:0;
-        transform:translate(0,0) scale(0);
-      }
-      18%{ opacity:1; transform:translate(calc(var(--bx,40px)*.22), calc(var(--by,40px)*.22)) scale(1.5); }
-      60%{ opacity:.8; transform:translate(calc(var(--bx,40px)*.68), calc(var(--by,40px)*.68)) scale(1.0); }
-      100%{ opacity:0; transform:translate(var(--bx,40px), var(--by,40px)) scale(.3);
-            box-shadow:0 0 0 0 transparent; }
-    }
 
     /* ── SHOCKWAVE RING ── */
     #intro-shockwave{
@@ -2329,30 +2194,18 @@
   <!-- INTRO GRANATA -->
   <div id="intro-overlay" role="presentation" aria-hidden="true">
     <div id="intro-grenade-wrap">
-      <!-- fireball 3D -->
+      <!-- bagliore centrale brevissimo -->
       <div id="intro-fireball"></div>
 
-      <!-- onde d'urto termiche -->
-      <div class="intro-heat-ring" style="--d:0s"></div>
-      <div class="intro-heat-ring" style="--d:.18s"></div>
-
-      <!-- 8 raggi plasma in tutte le direzioni -->
-      <div class="intro-plasma-streak" style="--a:0deg;   --d:.00s"></div>
-      <div class="intro-plasma-streak" style="--a:45deg;  --d:.06s"></div>
-      <div class="intro-plasma-streak" style="--a:90deg;  --d:.03s"></div>
-      <div class="intro-plasma-streak" style="--a:135deg; --d:.08s"></div>
-      <div class="intro-plasma-streak" style="--a:180deg; --d:.04s"></div>
-      <div class="intro-plasma-streak" style="--a:225deg; --d:.09s"></div>
-      <div class="intro-plasma-streak" style="--a:270deg; --d:.02s"></div>
-      <div class="intro-plasma-streak" style="--a:315deg; --d:.07s"></div>
-
-      <!-- 6 blob particelle plasma -->
-      <div class="intro-plasma-blob" style="--bx:-80px;  --by:-55px; --d:.04s"></div>
-      <div class="intro-plasma-blob" style="--bx:75px;   --by:-65px; --d:.09s"></div>
-      <div class="intro-plasma-blob" style="--bx:-70px;  --by:60px;  --d:.06s"></div>
-      <div class="intro-plasma-blob" style="--bx:80px;   --by:50px;  --d:.11s"></div>
-      <div class="intro-plasma-blob" style="--bx:-100px; --by:10px;  --d:.03s"></div>
-      <div class="intro-plasma-blob" style="--bx:95px;   --by:-15px; --d:.07s"></div>
+      <!-- 8 nuvole di fumo viola scuro che si espandono morbidamente -->
+      <div class="intro-smoke"    style="--sx:-88px; --sy:-72px; --sd:.00s"></div>
+      <div class="intro-smoke s2" style="--sx:82px;  --sy:-80px; --sd:.07s"></div>
+      <div class="intro-smoke"    style="--sx:112px; --sy:-10px; --sd:.03s"></div>
+      <div class="intro-smoke s2" style="--sx:78px;  --sy:82px;  --sd:.09s"></div>
+      <div class="intro-smoke"    style="--sx:-8px;  --sy:105px; --sd:.05s"></div>
+      <div class="intro-smoke s2" style="--sx:-84px; --sy:78px;  --sd:.02s"></div>
+      <div class="intro-smoke"    style="--sx:-116px;--sy:-5px;  --sd:.06s"></div>
+      <div class="intro-smoke s2" style="--sx:4px;   --sy:-100px;--sd:.04s"></div>
 
       <div id="intro-impact-ring"></div>
       <div id="intro-shockwave"></div>
