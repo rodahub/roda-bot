@@ -2536,9 +2536,49 @@ async function sendTeamResultStatus(entry, approved) {
       )
       .setFooter({ text: project.tournamentName });
 
-    await channel.send({ embeds: [embed] });
+    const msg = await channel.send({ embeds: [embed] });
+    setTimeout(() => msg.delete().catch(() => {}), 30000);
   } catch (error) {
     console.error('Errore invio esito risultato al team:', error);
+  }
+}
+
+async function notifyTeamAbsent(teamName, matchNumber) {
+  try {
+    await waitReady();
+    const cleanTeam = sanitizeText(teamName);
+    const matchNum = Number(matchNumber || data.currentMatch || 1);
+    const project = getProjectSettings();
+
+    const { channels } = await getVoiceTeamChannels();
+    if (!channels || !channels.size) return;
+
+    const teamSlot = teams[cleanTeam]?.slot;
+    if (!teamSlot) return;
+
+    const slotPadded = String(teamSlot).padStart(2, '0');
+
+    const targetChannel = channels.find(ch => {
+      const norm = String(ch.name || '').normalize('NFKC');
+      return norm.includes(`#${slotPadded}`) || norm.includes(`#${Number(teamSlot)}`);
+    });
+
+    if (!targetChannel) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(0xff4d6d)
+      .setTitle('❌ TEAM SEGNATO COME ASSENTE')
+      .setDescription(
+        `**Team:** ${cleanTeam}\n` +
+        `**Match:** ${matchNum}\n\n` +
+        `Il vostro team è stato segnato come assente per questo match dallo staff.`
+      )
+      .setFooter({ text: project.tournamentName });
+
+    const msg = await targetChannel.send({ embeds: [embed] });
+    setTimeout(() => msg.delete().catch(() => {}), 30000);
+  } catch (error) {
+    console.error('Errore notifica assenza team:', error);
   }
 }
 
@@ -3662,5 +3702,6 @@ module.exports = {
   getTournamentSettings,
   getTournamentMessages,
   calcPoints,
-  listDiscordChannels
+  listDiscordChannels,
+  notifyTeamAbsent
 };

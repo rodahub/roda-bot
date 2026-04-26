@@ -1339,7 +1339,16 @@ function buildDashboardPayload(req = null) {
       approvati: match.approvati,
       rifiutati: match.rifiutati,
       nonInviati: match.nonInviati,
-      assenti: match.assenti
+      assenti: match.assenti,
+      righe: (match.righe || []).map(r => ({
+        team: r.team,
+        slot: r.slot,
+        stato: r.stato,
+        kills: r.kills || [],
+        total: r.total || 0,
+        pos: r.pos || 0,
+        punti: r.punti || 0
+      }))
     })),
 
     botConfig: {
@@ -1408,6 +1417,25 @@ function buildPublicPayload(req) {
     classificaTeam: buildLeaderboard(data.scores),
     classificaFragger: buildFraggers(data.fragger),
     teamRegistrati: teamOrdinati,
+    riepilogoMatch: buildAllMatchOverviews(data, teams).map(m => ({
+      matchNumber: m.matchNumber,
+      completato: m.completato,
+      totaleTeam: m.totaleTeam,
+      inviati: m.inviati,
+      chiusi: m.chiusi,
+      inAttesa: m.inAttesa,
+      nonInviati: m.nonInviati,
+      assenti: m.assenti,
+      righe: (m.righe || []).map(r => ({
+        team: r.team,
+        slot: r.slot,
+        stato: r.stato,
+        kills: r.kills || [],
+        total: r.total || 0,
+        pos: r.pos || 0,
+        punti: r.punti || 0
+      }))
+    })),
     messaggioRegistrazione: {
       titolo: data.registrationStatusTitle || '📋 Slot Team Registrati',
       testo: data.registrationStatusText || ''
@@ -2894,6 +2922,7 @@ app.post('/api/match/mark-absent', authRequired, requireAdmin, async (req, res) 
     syncBotState(saved, teams);
 
     await safeBotCall('refreshTeamResultPanels');
+    safeBotCall('notifyTeamAbsent', team, matchNumber).catch(() => {});
 
     logAudit(req.staffUser, 'web', 'team_segnato_assente', {
       team,

@@ -1385,6 +1385,7 @@
                 <div class="split-actions">
                   <select id="matchFilter" style="min-width:180px;" onchange="loadSelectedMatchStatus()">
                   </select>
+                  <button class="btn" onclick="exportResultsCsv()">📥 Esporta CSV</button>
                   <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
                 </div>
               </div>
@@ -1464,6 +1465,33 @@
                   <tbody id="teamsBody">
                     <tr>
                       <td colspan="6" class="empty">Nessun team registrato</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card section">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">📈 Statistiche team</h3>
+                  <div class="note">Riepilogo aggregato di tutti i match per ogni team.</div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Slot</th>
+                      <th>Team</th>
+                      <th>Match completati</th>
+                      <th>Kill totali</th>
+                      <th>Punti totali</th>
+                      <th>Miglior piazzamento</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teamStatsBody">
+                    <tr>
+                      <td colspan="6" class="empty">Nessun dato</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2421,6 +2449,44 @@
         }
         </span><button class="icon-btn" title="Modifica giocatore" onclick="openEditPlayer('${html(team.team)}', ${index})">✏️</button></span></td>`).join('')}<td><button class="btn btn-red" onclick="deleteTeam('${html(team.team)}')">Elimina</button></td></tr>`
       }).join(''):`<tr><td colspan="6" class="empty">Nessun team registrato</td></tr>`
+      renderTeamStats()
+    }
+    function renderTeamStats(){
+      const summary=dashboard?.riepilogoMatch||[];
+      const teamsMap={};
+      summary.forEach(m=>{
+        (m.righe||[]).forEach(r=>{
+          if(!r.team)return;
+          if(!teamsMap[r.team])teamsMap[r.team]={team:r.team,slot:r.slot,matchFatti:0,killTotali:0,puntiTotali:0,bestPos:999};
+          const d=teamsMap[r.team];
+          const isFinal=r.stato==='approved'||r.stato==='manual'||r.stato==='absent';
+          if(isFinal){d.matchFatti++;d.killTotali+=Number(r.total||0);d.puntiTotali+=Number(r.punti||0);if(Number(r.pos||0)>0&&Number(r.pos)<d.bestPos)d.bestPos=Number(r.pos)}
+        })
+      });
+      const rows=Object.values(teamsMap).sort((a,b)=>(a.slot||99)-(b.slot||99));
+      qs('teamStatsBody').innerHTML=rows.length?rows.map(r=>`<tr><td><span class="slot">#${r.slot||'-'}</span></td><td><strong>${html(r.team)}</strong></td><td>${r.matchFatti}</td><td>${r.killTotali}</td><td>${r.puntiTotali}</td><td>${r.bestPos===999?'-':r.bestPos+'°'}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Nessun dato</td></tr>`
+    }
+    function exportResultsCsv(){
+      const summary=dashboard?.riepilogoMatch||[];
+      const rows=[['Match','Slot','Team','Stato','Kill1','Kill2','Kill3','TotKill','Posizione','Punti']];
+      summary.forEach(m=>{
+        (m.righe||[]).forEach(r=>{
+          const kills=r.kills||[];
+          rows.push([m.matchNumber,r.slot||'',r.team||'',r.stato||'',kills[0]||0,kills[1]||0,kills[2]||0,r.total||0,r.pos||0,r.punti||0])
+        })
+      });
+      if(rows.length<=1&&selectedMatchRows&&selectedMatchRows.length){
+        selectedMatchRows.forEach(r=>{
+          const kills=r.kills||[];
+          rows.push([selectedMatchNumber,r.slot||'',r.team||'',r.stato||'',kills[0]||0,kills[1]||0,kills[2]||0,r.total||0,r.pos||0,r.punti||0])
+        })
+      }
+      const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='risultati_rodacup.csv';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000)
     }
     function renderMatchFilterOptions(summary){
       const current=String(selectedMatchNumber||dashboard?.matchCorrente||1);
