@@ -987,11 +987,9 @@
       .slot-card{
         flex-direction:column;
       }
-      .nav-right,
       .hero-actions{
         width:100%;
       }
-      .nav-right .btn,
       .hero-actions .btn{
         width:100%;
       }
@@ -1004,6 +1002,25 @@
       .topbar-inner{
         padding:12px 14px;
         gap:10px;
+        flex-wrap:nowrap;
+        align-items:center;
+      }
+      .nav-right{
+        flex-wrap:nowrap;
+        gap:6px;
+        flex-shrink:0;
+      }
+      .nav-right > a.btn{
+        display:none;
+      }
+      .brand{
+        min-width:0;
+        overflow:hidden;
+      }
+      .brand-title{
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
       }
       .brand img{
         width:42px;
@@ -2410,9 +2427,10 @@
       registrationBadge.textContent = registrationClosed ? 'CHIUSE' : 'APERTE';
       registrationBadge.className = `status-badge ${registrationClosed ? 'status-full' : 'status-open'}`;
 
+      const isMobileView = window.innerWidth <= 600;
       document.getElementById('publicStatusPill').textContent = registrationClosed
-        ? 'Registrazioni chiuse'
-        : 'Registrazioni aperte';
+        ? (isMobileView ? 'Chiuse' : 'Registrazioni chiuse')
+        : (isMobileView ? 'Aperte' : 'Registrazioni aperte');
 
       document.getElementById('homeBannerTitle').textContent = registrationClosed
         ? 'Registrazioni chiuse'
