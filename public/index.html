@@ -1659,7 +1659,13 @@
         width:150px;
       }
       .trophy-mobile .trophy-glow{
-        width:100px;
+        width:110px;
+        height:18px;
+        filter:none;
+        background:radial-gradient(ellipse 55px 9px at center,
+          rgba(123,44,255,.55) 0%,
+          rgba(123,44,255,.18) 45%,
+          transparent 72%);
       }
 
       .pass-card-wrap{
@@ -1810,9 +1816,105 @@
       }
     }
 
+    /* ── INTRO GRANATA ── */
+    #intro-overlay{
+      position:fixed;
+      inset:0;
+      z-index:99999;
+      background:#08090f;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    #intro-overlay.hiding{
+      animation:introOut .35s ease forwards;
+    }
+
+    @keyframes introOut{
+      0%{opacity:1;}
+      100%{opacity:0;pointer-events:none;}
+    }
+
+    #intro-grenade-wrap{
+      position:relative;
+      animation:grenadeFall .85s cubic-bezier(.215,.61,.355,1) .15s both;
+      filter:drop-shadow(0 0 36px rgba(123,44,255,.85)) drop-shadow(0 8px 24px rgba(0,0,0,.6));
+    }
+
+    #intro-grenade-img{
+      width:130px;
+      height:auto;
+      display:block;
+    }
+
+    @media(max-width:540px){
+      #intro-grenade-img{ width:110px; }
+    }
+
+    #intro-flash{
+      position:absolute;
+      inset:-60vw;
+      background:radial-gradient(circle at center,
+        rgba(240,220,255,1) 0%,
+        rgba(160,90,255,.95) 20%,
+        rgba(123,44,255,.7) 40%,
+        transparent 70%);
+      opacity:0;
+      pointer-events:none;
+      border-radius:50%;
+      animation:flashBurst .5s ease 1.0s both;
+    }
+
+    #intro-skip{
+      position:absolute;
+      bottom:28px;
+      font-size:12px;
+      font-weight:700;
+      color:rgba(200,180,255,.35);
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      animation:fadeInSlow .6s ease .8s both;
+    }
+
+    @keyframes grenadeFall{
+      0%{opacity:0;transform:translateY(-320px) rotate(-25deg) scale(.9);}
+      50%{opacity:1;}
+      72%{transform:translateY(22px) rotate(5deg) scale(1);}
+      86%{transform:translateY(-9px) rotate(-2deg);}
+      93%{transform:translateY(4px) rotate(1deg);}
+      100%{opacity:1;transform:translateY(0) rotate(0deg);}
+    }
+
+    @keyframes flashBurst{
+      0%{opacity:0;transform:scale(0);}
+      35%{opacity:1;transform:scale(.8);}
+      100%{opacity:0;transform:scale(2.5);}
+    }
+
+    @keyframes fadeInSlow{
+      from{opacity:0;}
+      to{opacity:1;}
+    }
   </style>
 </head>
 <body>
+
+  <!-- INTRO GRANATA -->
+  <div id="intro-overlay" role="presentation" aria-hidden="true">
+    <div id="intro-grenade-wrap">
+      <div id="intro-flash"></div>
+      <picture>
+        <source srcset="/granata.webp" type="image/webp">
+        <img id="intro-grenade-img" src="/granata.png" alt="" draggable="false">
+      </picture>
+    </div>
+    <span id="intro-skip">Tocca per saltare</span>
+  </div>
 
   <!-- MENU FLUTTUANTE SINISTRO -->
   <nav class="fl-menu" aria-label="Menu rapido">
@@ -2395,6 +2497,24 @@
   </nav>
 
   <script>
+    /* ── INTRO GRANATA ── */
+    (function(){
+      const ov = document.getElementById('intro-overlay');
+      if(!ov) return;
+
+      function dismiss(){
+        if(ov._dismissed) return;
+        ov._dismissed = true;
+        ov.classList.add('hiding');
+        setTimeout(()=>{ ov.remove(); }, 380);
+      }
+
+      ov.addEventListener('click', dismiss);
+      ov.addEventListener('touchstart', dismiss, {passive:true});
+      /* auto-dismiss dopo la fine delle animazioni (~1.8s) */
+      setTimeout(dismiss, 1800);
+    })();
+
     let publicData = null;
     let isRegistering = false;
 
