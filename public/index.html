@@ -877,7 +877,6 @@
       .rules-grid{
         grid-template-columns:1fr;
       }
-
       .home-quick{
         grid-template-columns:repeat(2,minmax(0,1fr));
       }
@@ -888,9 +887,20 @@
       .grid-4{
         grid-template-columns:1fr;
       }
-
       .hero-stats{
         grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 900px){
+      .tabbar{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:8px;
+      }
+      .tab-btn{
+        font-size:13px;
+        padding:11px 10px;
       }
     }
 
@@ -900,45 +910,171 @@
         padding-left:14px;
         padding-right:14px;
       }
-
       .hero{
-        padding:22px;
+        padding:20px;
+        border-radius:26px;
       }
-
       .hero-title{
         font-size:40px;
+        letter-spacing:-1px;
       }
-
       .brand-title{
         font-size:20px;
       }
-
-      .summary-stats,
-      .hero-stats,
-      .home-quick{
+      .summary-stats{
         grid-template-columns:1fr;
       }
-
       .slot-card{
         flex-direction:column;
       }
-
       .nav-right,
       .hero-actions{
         width:100%;
       }
-
       .nav-right .btn,
       .hero-actions .btn{
         width:100%;
       }
-
       .row > *{
         width:100%;
       }
+    }
 
+    @media (max-width: 600px){
+      .topbar-inner{
+        padding:12px 14px;
+        gap:10px;
+      }
+      .brand img{
+        width:42px;
+        height:42px;
+        border-radius:14px;
+      }
+      .brand-title{
+        font-size:18px;
+      }
+      .brand-subtitle{
+        display:none;
+      }
+      .pill{
+        font-size:11px;
+        padding:8px 10px;
+      }
+      .wrap{
+        padding:14px 12px 24px;
+      }
+      .hero{
+        padding:16px;
+        border-radius:22px;
+      }
+      .hero-title{
+        font-size:32px;
+        letter-spacing:-.7px;
+      }
+      .hero-text{
+        font-size:13px;
+        margin-bottom:16px;
+      }
+      .eyebrow{
+        font-size:11px;
+        padding:8px 12px;
+        margin-bottom:12px;
+      }
+      .hero-stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+      }
+      .mini-stat{
+        padding:12px;
+        border-radius:16px;
+      }
+      .mini-stat strong{
+        font-size:24px;
+      }
+      .tabbar{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:7px;
+        margin-bottom:14px;
+      }
       .tab-btn{
-        width:100%;
+        font-size:12px;
+        padding:10px 8px;
+        min-height:40px;
+        border-radius:12px;
+      }
+      .home-quick{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:10px;
+        margin-bottom:14px;
+      }
+      .quick-card{
+        padding:14px;
+        border-radius:20px;
+      }
+      .quick-icon{
+        width:36px;
+        height:36px;
+        font-size:18px;
+        margin-bottom:10px;
+        border-radius:12px;
+      }
+      .quick-card h3{
+        font-size:14px;
+        margin-bottom:6px;
+      }
+      .quick-card p{
+        font-size:12px;
+        margin-bottom:10px;
+        line-height:1.45;
+      }
+      .card{
+        padding:14px;
+        border-radius:20px;
+      }
+      .section-title{
+        font-size:20px;
+      }
+      .section-subtitle{
+        font-size:13px;
+      }
+      .home-banner{
+        padding:14px 16px;
+        border-radius:16px;
+        margin-bottom:14px;
+      }
+      .home-banner strong{
+        font-size:14px;
+      }
+      th, td{
+        padding:10px 8px;
+        font-size:13px;
+      }
+      .hero-actions .btn{
+        font-size:13px;
+        padding:10px 14px;
+        min-height:42px;
+      }
+      .btn{
+        font-size:13px;
+        min-height:42px;
+      }
+    }
+
+    @media (max-width: 400px){
+      .hero-title{
+        font-size:26px;
+      }
+      .home-quick{
+        grid-template-columns:1fr;
+      }
+      .tabbar{
+        grid-template-columns:1fr;
+        gap:6px;
+      }
+      .tab-btn{
+        font-size:13px;
+        padding:11px 12px;
       }
     }
   </style>
@@ -1081,6 +1217,40 @@
           <h3>Leggi il regolamento</h3>
           <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
           <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
+        </div>
+      </div>
+
+      <div id="matchLiveCard" style="display:none;">
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+            <div>
+              <h3 style="margin:0 0 4px 0;">📊 Match Live</h3>
+              <div class="card-note" id="matchLiveSubtitle">Stato del match corrente</div>
+            </div>
+            <span class="status-badge status-open" id="matchLiveBadge">IN CORSO</span>
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;">
+            <div style="text-align:center;">
+              <div style="font-size:1.6rem;font-weight:700;" id="matchLiveSent">-</div>
+              <div class="card-note">Inviati</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.6rem;font-weight:700;color:var(--accent);" id="matchLivePending">-</div>
+              <div class="card-note">In attesa</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.6rem;font-weight:700;color:#18c964;" id="matchLiveApproved">-</div>
+              <div class="card-note">Approvati</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.6rem;font-weight:700;" id="matchLiveMissing">-</div>
+              <div class="card-note">Mancanti</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.6rem;font-weight:700;" id="matchLiveTotal">-</div>
+              <div class="card-note">Team totali</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1627,6 +1797,30 @@
             </div>
           `).join('')
         : `<div class="empty">Nessun team registrato</div>`;
+
+      const riepilogo = publicData.riepilogoMatch || [];
+      const torneoStato = torneo.stato || '';
+      const matchCorrente = Number(torneo.matchCorrente || 1);
+      const inCorso = torneoStato === 'torneo_in_corso';
+      const matchLiveCard = document.getElementById('matchLiveCard');
+      if (inCorso && riepilogo.length) {
+        const currentMatchData = riepilogo.find(m => Number(m.matchNumber) === matchCorrente) || riepilogo[riepilogo.length - 1];
+        if (currentMatchData) {
+          document.getElementById('matchLiveSubtitle').textContent = `Match ${currentMatchData.matchNumber} — ${currentMatchData.completato ? 'Completato' : 'In corso'}`;
+          document.getElementById('matchLiveBadge').textContent = currentMatchData.completato ? 'COMPLETATO' : 'IN CORSO';
+          document.getElementById('matchLiveBadge').className = `status-badge ${currentMatchData.completato ? 'status-full' : 'status-open'}`;
+          document.getElementById('matchLiveSent').textContent = String(currentMatchData.inviati || 0);
+          document.getElementById('matchLivePending').textContent = String(currentMatchData.inAttesa || 0);
+          document.getElementById('matchLiveApproved').textContent = String(currentMatchData.chiusi || 0);
+          document.getElementById('matchLiveMissing').textContent = String(currentMatchData.nonInviati || 0);
+          document.getElementById('matchLiveTotal').textContent = String(currentMatchData.totaleTeam || 0);
+          matchLiveCard.style.display = '';
+        } else {
+          matchLiveCard.style.display = 'none';
+        }
+      } else {
+        matchLiveCard.style.display = 'none';
+      }
     }
 
     async function loadPublicData() {
