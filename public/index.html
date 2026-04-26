@@ -1659,9 +1659,91 @@
       }
     }
 
+
+    /* ── MENU FLUTTUANTE SINISTRO ── */
+    .fl-menu{
+      position:fixed;
+      left:16px;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:50;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .fl-item{
+      position:relative;
+      display:flex;
+      align-items:center;
+    }
+    .fl-btn{
+      width:48px;
+      height:48px;
+      border-radius:14px;
+      background:rgba(18,10,40,.82);
+      border:1px solid rgba(123,44,255,.35);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      cursor:pointer;
+      text-decoration:none;
+      color:#fff;
+      transition:background .2s, border-color .2s, transform .15s, box-shadow .2s;
+      box-shadow:0 4px 18px rgba(0,0,0,.45);
+      flex-shrink:0;
+    }
+    .fl-btn:hover{
+      background:rgba(123,44,255,.55);
+      border-color:rgba(160,110,255,.7);
+      transform:translateX(3px) scale(1.06);
+      box-shadow:0 6px 24px rgba(123,44,255,.45);
+    }
+    .fl-btn:active{
+      transform:translateX(1px) scale(.97);
+    }
+    .fl-label{
+      position:absolute;
+      left:58px;
+      white-space:nowrap;
+      background:rgba(18,10,40,.92);
+      border:1px solid rgba(123,44,255,.35);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      color:#e8e0ff;
+      font-size:13px;
+      font-weight:600;
+      padding:6px 12px;
+      border-radius:8px;
+      pointer-events:none;
+      opacity:0;
+      transform:translateX(-6px);
+      transition:opacity .18s, transform .18s;
+      box-shadow:0 4px 14px rgba(0,0,0,.4);
+    }
+    .fl-item:hover .fl-label{
+      opacity:1;
+      transform:translateX(0);
+    }
+    @media(max-width:600px){
+      .fl-menu{ display:none; }
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- MENU FLUTTUANTE SINISTRO -->
+  <nav class="fl-menu" aria-label="Menu rapido">
+    <div class="fl-item">
+      <a class="fl-btn" href="/streamer" aria-label="Streamer">🎙️</a>
+      <span class="fl-label">I nostri Streamer</span>
+    </div>
+    <!-- altre voci future qui -->
+  </nav>
+
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
