@@ -1077,6 +1077,136 @@
         padding:11px 12px;
       }
     }
+
+    /* ── MOBILE NAV BAR ── */
+    .mobile-nav{
+      display:none;
+    }
+
+    @media (max-width: 600px){
+      /* mostra bottom nav */
+      .mobile-nav{
+        display:flex;
+        position:fixed;
+        bottom:0;
+        left:0;
+        right:0;
+        z-index:60;
+        align-items:stretch;
+        background:rgba(7,7,14,.94);
+        backdrop-filter:blur(20px);
+        -webkit-backdrop-filter:blur(20px);
+        border-top:1px solid rgba(255,255,255,.07);
+        padding-bottom:env(safe-area-inset-bottom, 0px);
+      }
+
+      .mobile-nav-item{
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:3px;
+        border:none;
+        background:transparent;
+        color:rgba(170,166,197,.65);
+        padding:10px 2px 12px;
+        cursor:pointer;
+        transition:color .15s ease, background .15s ease;
+        min-height:0;
+        font-family:inherit;
+        border-radius:0;
+        -webkit-tap-highlight-color:transparent;
+      }
+
+      .mobile-nav-item.active{
+        color:var(--purple-3);
+        background:rgba(123,44,255,.10);
+      }
+
+      .mobile-nav-item:active{
+        background:rgba(123,44,255,.18);
+      }
+
+      .mobile-nav-icon{
+        font-size:19px;
+        line-height:1;
+        display:block;
+      }
+
+      .mobile-nav-label{
+        font-size:10px;
+        font-weight:800;
+        text-transform:uppercase;
+        letter-spacing:.4px;
+        display:block;
+        white-space:nowrap;
+      }
+
+      /* nascondi tabbar classica (sostituita da bottom nav) */
+      .tabbar{
+        display:none !important;
+      }
+
+      /* padding body per non nascondere contenuto sotto la nav */
+      body{
+        padding-bottom:calc(62px + env(safe-area-inset-bottom, 0px));
+      }
+
+      /* hero compatto: nascondi testo e azioni ridondanti */
+      .hero-text{
+        display:none;
+      }
+      .hero-actions{
+        display:none;
+      }
+      .hero-right{
+        display:none;
+      }
+      .hero{
+        margin-bottom:12px;
+      }
+      .eyebrow{
+        display:none;
+      }
+      .hero-title{
+        margin-bottom:14px;
+      }
+
+      /* home quick card: mostra solo icona + titolo + bottone su mobile */
+      .quick-card p{
+        display:none;
+      }
+      .quick-card{
+        display:flex;
+        flex-direction:column;
+        gap:0;
+        padding:14px;
+      }
+      .quick-icon{
+        margin-bottom:8px;
+      }
+      .quick-card h3{
+        flex:1;
+        margin-bottom:10px;
+      }
+
+      /* home-banner più compatto */
+      .home-banner{
+        padding:12px 14px;
+        margin-bottom:12px;
+      }
+
+      /* match live card compatta */
+      #matchLiveCard .card{
+        padding:14px;
+      }
+
+      /* info-card nella pagina registrazione: riduci su mobile */
+      .summary-stats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
   </style>
 </head>
 <body>
@@ -1603,6 +1733,30 @@
     </div>
   </div>
 
+  <!-- Bottom navigation bar (visible only on mobile ≤600px) -->
+  <nav class="mobile-nav" aria-label="Navigazione mobile">
+    <button class="mobile-nav-item active" data-page="page-home">
+      <span class="mobile-nav-icon">🏠</span>
+      <span class="mobile-nav-label">Home</span>
+    </button>
+    <button class="mobile-nav-item" data-page="page-rankings">
+      <span class="mobile-nav-icon">🏆</span>
+      <span class="mobile-nav-label">Classifica</span>
+    </button>
+    <button class="mobile-nav-item" data-page="page-register">
+      <span class="mobile-nav-icon">📝</span>
+      <span class="mobile-nav-label">Iscriviti</span>
+    </button>
+    <button class="mobile-nav-item" data-page="page-teams">
+      <span class="mobile-nav-icon">👥</span>
+      <span class="mobile-nav-label">Team</span>
+    </button>
+    <button class="mobile-nav-item" data-page="page-rules">
+      <span class="mobile-nav-icon">📜</span>
+      <span class="mobile-nav-label">Regole</span>
+    </button>
+  </nav>
+
   <script>
     let publicData = null;
     let isRegistering = false;
@@ -1621,7 +1775,7 @@
         page.classList.toggle('active', page.id === pageId);
       });
 
-      document.querySelectorAll('.tab-btn').forEach(btn => {
+      document.querySelectorAll('.tab-btn, .mobile-nav-item').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === pageId);
       });
 
@@ -1885,7 +2039,7 @@
       }
     }
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn, .mobile-nav-item').forEach(btn => {
       btn.addEventListener('click', () => switchPage(btn.dataset.page));
     });
 
