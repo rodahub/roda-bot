@@ -277,6 +277,8 @@
       min-width:0;
       display:flex;
       flex-direction:column;
+      justify-content:space-between;
+      gap:0;
     }
 
     .eyebrow{
@@ -328,7 +330,6 @@
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
       gap:12px;
-      margin-top:auto;
     }
 
     .mini-stat{
@@ -1138,7 +1139,7 @@
     }
 
     .trophy-img{
-      width:240px;
+      width:190px;
       height:auto;
       display:block;
       filter:
@@ -2200,7 +2201,6 @@
         btn.classList.toggle('active', btn.dataset.page === pageId);
       });
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function api(url, options = {}) {
