@@ -205,13 +205,22 @@
     }
 
     .btn:hover{
-      transform:translateY(-1px);
+      transform:translateY(-2px);
+    }
+
+    .btn:active:not(:disabled){
+      transform:translateY(1px);
+      opacity:.88;
     }
 
     .btn:disabled{
       opacity:.65;
       cursor:not-allowed;
       transform:none;
+    }
+
+    .btn{
+      touch-action:manipulation;
     }
 
     .btn-purple{ background:linear-gradient(135deg,var(--purple),var(--purple-2)); }
@@ -463,8 +472,13 @@
     }
 
     .tab-btn:hover{
-      transform:translateY(-1px);
+      transform:translateY(-2px);
       border-color:rgba(160,110,255,.22);
+    }
+
+    .tab-btn:active{
+      transform:translateY(1px);
+      opacity:.82;
     }
 
     .tab-btn.active{
@@ -665,7 +679,7 @@
 
     .quick-card{
       position:relative;
-      overflow:hidden;
+      isolation:isolate;
       background:linear-gradient(180deg, rgba(18,18,31,.96), rgba(10,10,18,.98));
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
@@ -676,11 +690,12 @@
     .quick-card::before{
       content:"";
       position:absolute;
-      inset:auto -30px -50px auto;
+      inset:auto 0 0 auto;
       width:140px;
       height:140px;
-      background:radial-gradient(circle, rgba(123,44,255,.10), transparent 70%);
+      background:radial-gradient(circle, rgba(123,44,255,.12), transparent 70%);
       pointer-events:none;
+      border-radius:inherit;
     }
 
     .quick-icon{
