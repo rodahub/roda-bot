@@ -89,7 +89,9 @@ function getDefaultProjectSettings() {
     supportContact: '',
     premiumMode: false,
     setupCompleted: false,
-    streamers: []
+    streamers: [],
+    clans: [],
+    clanRequests: []
   };
 }
 
@@ -110,6 +112,33 @@ function normalizeStreamer(s) {
       twitter: sanitizeText((s.socials || {}).twitter || '')
     },
     ordine: Number(s.ordine) || 0
+  };
+}
+
+function normalizeClan(c) {
+  if (!isObject(c)) return null;
+  return {
+    id: sanitizeText(c.id || '') || '',
+    nome: sanitizeText(c.nome || ''),
+    tag: sanitizeText(c.tag || ''),
+    logo: sanitizeText(c.logo || ''),
+    descrizione: sanitizeText(c.descrizione || ''),
+    partecipante: Boolean(c.partecipante),
+    active: c.active !== false,
+    ordine: Number(c.ordine) || 0
+  };
+}
+
+function normalizeClanRequest(r) {
+  if (!isObject(r)) return null;
+  return {
+    id: sanitizeText(r.id || '') || '',
+    nome: sanitizeText(r.nome || ''),
+    tag: sanitizeText(r.tag || ''),
+    logo: sanitizeText(r.logo || ''),
+    messaggio: sanitizeText(r.messaggio || ''),
+    stato: ['in_attesa', 'approvato', 'rifiutato'].includes(r.stato) ? r.stato : 'in_attesa',
+    createdAt: sanitizeText(r.createdAt || '') || new Date().toISOString()
   };
 }
 
@@ -465,6 +494,12 @@ function normalizeProjectSettings(value) {
   base.setupCompleted = Boolean(safe.setupCompleted);
   base.streamers = Array.isArray(safe.streamers)
     ? safe.streamers.map(normalizeStreamer).filter(Boolean)
+    : [];
+  base.clans = Array.isArray(safe.clans)
+    ? safe.clans.map(normalizeClan).filter(Boolean)
+    : [];
+  base.clanRequests = Array.isArray(safe.clanRequests)
+    ? safe.clanRequests.map(normalizeClanRequest).filter(Boolean)
     : [];
 
   return base;
@@ -2026,6 +2061,8 @@ module.exports = {
   normalizeTeams,
   normalizeProjectSettings,
   normalizeStreamer,
+  normalizeClan,
+  normalizeClanRequest,
   normalizeTournamentSettings,
   normalizeTournamentLifecycle,
   normalizeTournamentMessages,

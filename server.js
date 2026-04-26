@@ -74,7 +74,9 @@ const {
   getReports,
   markReportReviewed,
   deleteReport,
-  normalizeStreamer
+  normalizeStreamer,
+  normalizeClan,
+  normalizeClanRequest
 } = require('./storage');
 
 initializeFiles();
@@ -1443,6 +1445,9 @@ function buildPublicPayload(req) {
     streamers: (projectSettings.streamers || [])
       .slice()
       .sort((a, b) => (a.ordine || 0) - (b.ordine || 0)),
+    clans: (projectSettings.clans || [])
+      .filter(c => c.active !== false)
+      .sort((a, b) => (a.ordine || 0) - (b.ordine || 0)),
     classificaTeam: buildLeaderboard(data.scores),
     classificaFragger: buildFraggers(data.fragger),
     teamRegistrati: teamOrdinati,
@@ -1559,6 +1564,10 @@ app.get('/', (req, res) => {
 
 app.get('/streamer', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'streamer.html'));
+});
+
+app.get('/clan', (req, res) => {
+  return res.sendFile(path.join(PUBLIC_DIR, 'clan.html'));
 });
 
 app.get('/admin', authRequired, (req, res) => {
@@ -1913,6 +1922,158 @@ app.post('/api/streamers/reorder', authRequired, (req, res) => {
   data.projectSettings = { ...ps, streamers: reordered };
   saveData(data);
   return res.json({ ok: true });
+});
+
+// ─── CLAN ADMIN CRUD ────────────────────────────────────────────────────────
+
+app.get('/api/clans', authRequired, (req, res) => {
+  const data = loadData();
+  const clans = (data.projectSettings || {}).clans || [];
+  return res.json({ ok: true, clans: clans.slice().sort((a, b) => (a.ordine || 0) - (b.ordine || 0)) });
+});
+
+app.post('/api/clans', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clans = Array.isArray(ps.clans) ? ps.clans : [];
+  const raw = req.body || {};
+  const id = crypto.randomBytes(8).toString('hex');
+  const c = normalizeClan({ ...raw, id, ordine: clans.length });
+  if (!c || !c.nome) return res.status(400).json({ ok: false, message: 'Il campo nome è obbligatorio.' });
+  clans.push(c);
+  data.projectSettings = { ...ps, clans };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'clan_aggiunto', { id, nome: c.nome });
+  return res.json({ ok: true, clan: c });
+});
+
+app.put('/api/clans/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clans = Array.isArray(ps.clans) ? ps.clans : [];
+  const idx = clans.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Clan non trovato.' });
+  const raw = req.body || {};
+  const updated = normalizeClan({ ...clans[idx], ...raw, id: req.params.id });
+  if (!updated || !updated.nome) return res.status(400).json({ ok: false, message: 'Il campo nome è obbligatorio.' });
+  clans[idx] = updated;
+  data.projectSettings = { ...ps, clans };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'clan_modificato', { id: req.params.id, nome: updated.nome });
+  return res.json({ ok: true, clan: updated });
+});
+
+app.delete('/api/clans/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clans = Array.isArray(ps.clans) ? ps.clans : [];
+  const idx = clans.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Clan non trovato.' });
+  const removed = clans.splice(idx, 1)[0];
+  data.projectSettings = { ...ps, clans };
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'clan_eliminato', { id: req.params.id, nome: removed.nome });
+  return res.json({ ok: true });
+});
+
+// ─── CLAN REQUESTS ADMIN ────────────────────────────────────────────────────
+
+app.get('/api/clan-requests', authRequired, (req, res) => {
+  const data = loadData();
+  const clanRequests = (data.projectSettings || {}).clanRequests || [];
+  return res.json({ ok: true, clanRequests: clanRequests.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
+});
+
+app.patch('/api/clan-requests/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clanRequests = Array.isArray(ps.clanRequests) ? ps.clanRequests : [];
+  const idx = clanRequests.findIndex(r => r.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Richiesta non trovata.' });
+  const { stato } = req.body || {};
+  if (!['approvato', 'rifiutato'].includes(stato)) return res.status(400).json({ ok: false, message: 'Stato non valido.' });
+  clanRequests[idx] = { ...clanRequests[idx], stato };
+  data.projectSettings = { ...ps, clanRequests };
+
+  // Se approvata, aggiungi automaticamente il clan
+  if (stato === 'approvato') {
+    const clans = Array.isArray(ps.clans) ? ps.clans : [];
+    const req_data = clanRequests[idx];
+    const id = crypto.randomBytes(8).toString('hex');
+    const newClan = normalizeClan({ id, nome: req_data.nome, tag: req_data.tag, logo: req_data.logo, descrizione: req_data.messaggio, partecipante: false, active: true, ordine: clans.length });
+    if (newClan) {
+      clans.push(newClan);
+      data.projectSettings = { ...ps, clans, clanRequests };
+    }
+  }
+
+  saveData(data);
+  logAudit(req.staffUser, 'web', 'clan_request_aggiornata', { id: req.params.id, stato });
+  return res.json({ ok: true });
+});
+
+app.delete('/api/clan-requests/:id', authRequired, (req, res) => {
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clanRequests = Array.isArray(ps.clanRequests) ? ps.clanRequests : [];
+  const idx = clanRequests.findIndex(r => r.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Richiesta non trovata.' });
+  clanRequests.splice(idx, 1);
+  data.projectSettings = { ...ps, clanRequests };
+  saveData(data);
+  return res.json({ ok: true });
+});
+
+// ─── PUBLIC CLAN ENDPOINTS ──────────────────────────────────────────────────
+
+app.get('/api/public/clans', publicApiLimiter, (req, res) => {
+  const data = loadData();
+  const clans = ((data.projectSettings || {}).clans || [])
+    .filter(c => c.active !== false)
+    .sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+  return res.json({ ok: true, clans });
+});
+
+app.post('/api/public/clan-request', publicApiLimiter, (req, res) => {
+  const raw = req.body || {};
+  const nome = (raw.nome || '').toString().trim();
+  const tag = (raw.tag || '').toString().trim();
+  const messaggio = (raw.messaggio || '').toString().trim();
+  const logoBase64 = (raw.logoBase64 || '').toString().trim();
+
+  if (!nome) return res.status(400).json({ ok: false, message: 'Il nome clan è obbligatorio.' });
+  if (nome.length > 60) return res.status(400).json({ ok: false, message: 'Nome troppo lungo (max 60 caratteri).' });
+  if (tag.length > 10) return res.status(400).json({ ok: false, message: 'Tag troppo lungo (max 10 caratteri).' });
+  if (messaggio.length > 500) return res.status(400).json({ ok: false, message: 'Messaggio troppo lungo (max 500 caratteri).' });
+
+  let logoUrl = '';
+  if (logoBase64 && logoBase64.startsWith('data:image/')) {
+    try {
+      const matches = logoBase64.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,(.+)$/);
+      if (!matches) return res.status(400).json({ ok: false, message: 'Formato logo non valido. Usa PNG.' });
+      const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+      const buf = Buffer.from(matches[2], 'base64');
+      if (buf.length > 400 * 1024) return res.status(400).json({ ok: false, message: 'Logo troppo grande (max 400KB).' });
+      const clanLogosDir = path.join(UPLOADS_DIR, 'clan-logos');
+      if (!fs.existsSync(clanLogosDir)) fs.mkdirSync(clanLogosDir, { recursive: true });
+      const filename = `clan_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+      const filepath = path.join(clanLogosDir, filename);
+      fs.writeFileSync(filepath, buf);
+      logoUrl = `/uploads/clan-logos/${filename}`;
+    } catch (e) {
+      return res.status(400).json({ ok: false, message: 'Errore nel salvataggio del logo.' });
+    }
+  }
+
+  const data = loadData();
+  const ps = data.projectSettings || {};
+  const clanRequests = Array.isArray(ps.clanRequests) ? ps.clanRequests : [];
+  const id = crypto.randomBytes(8).toString('hex');
+  const request = normalizeClanRequest({ id, nome, tag, logo: logoUrl, messaggio, stato: 'in_attesa', createdAt: new Date().toISOString() });
+  clanRequests.push(request);
+  data.projectSettings = { ...ps, clanRequests };
+  saveData(data);
+  return res.json({ ok: true, message: 'Richiesta inviata! Verrà esaminata dallo staff.' });
 });
 
 app.get('/api/admin-users', authRequired, requireOwner, (req, res) => {

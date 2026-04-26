@@ -1242,6 +1242,10 @@
             <span>🎙️ Streamer</span>
             <small>Creator</small>
           </button>
+          <button data-page="clan">
+            <span>🛡️ Clan</span>
+            <small>Directory</small>
+          </button>
           <button data-page="segnalazioni">
             <span>⚠️ Segnalazioni</span>
             <small>Report</small>
@@ -1952,6 +1956,78 @@
                 </div>
               </section>
 
+              <!-- SEZIONE CLAN -->
+              <section class="page" id="clan">
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">🛡️ Gestione Clan</h3>
+                      <p class="card-desc">Aggiungi, modifica ed elimina i clan della directory pubblica di RØDA CUP.</p>
+                    </div>
+                    <button class="btn btn-green" onclick="openClanModal(null)">+ Aggiungi clan</button>
+                  </div>
+                  <div id="clanAdminList" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+                    <p style="color:var(--text-muted);font-size:13px;">Caricamento...</p>
+                  </div>
+                </div>
+
+                <!-- Modal clan -->
+                <div id="clanModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
+                  <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                      <h3 id="clanModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi clan</h3>
+                      <button onclick="closeClanModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+                    </div>
+                    <input type="hidden" id="cmId">
+                    <div style="display:grid;gap:14px;">
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome clan *</label>
+                        <input id="cmNome" class="input" type="text" placeholder="es. Shadow Raiders" maxlength="60">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Tag</label>
+                        <input id="cmTag" class="input" type="text" placeholder="es. [SHRD]" maxlength="10">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Logo PNG</label>
+                        <input id="cmLogo" class="input" type="url" placeholder="https://... (PNG sfondo trasparente)" maxlength="500">
+                      </div>
+                      <div>
+                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Descrizione breve</label>
+                        <textarea id="cmDescrizione" class="input" placeholder="Breve presentazione del clan..." maxlength="300" rows="3" style="resize:vertical;min-height:72px;"></textarea>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:10px;">
+                        <input type="checkbox" id="cmPartecipante" style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
+                        <label for="cmPartecipante" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Ha partecipato a RØDA CUP <span style="color:#f0b429;">⚔️</span></label>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:10px;">
+                        <input type="checkbox" id="cmActive" checked style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
+                        <label for="cmActive" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Visibile nella pagina pubblica</label>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+                      <button class="btn btn-blue" onclick="closeClanModal()">Annulla</button>
+                      <button class="btn btn-green" onclick="saveClan()" id="clanSaveBtn">Salva</button>
+                    </div>
+                    <div id="clanModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
+                  </div>
+                </div>
+
+                <!-- RICHIESTE CLAN -->
+                <div class="card" style="margin-top:24px;">
+                  <div class="card-head">
+                    <div>
+                      <h3 class="card-title">📬 Richieste di iscrizione clan</h3>
+                      <p class="card-desc">Clan che hanno inviato richiesta dal sito pubblico. Approva o rifiuta.</p>
+                    </div>
+                    <button class="btn btn-blue" onclick="loadClanRequests()">🔄 Aggiorna</button>
+                  </div>
+                  <div id="clanRequestsList" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+                    <p style="color:var(--text-muted);font-size:13px;">Caricamento richieste...</p>
+                  </div>
+                </div>
+              </section>
+
               <section class="page" id="segnalazioni">
                 <div class="card">
                   <div class="card-head">
@@ -2253,7 +2329,7 @@
     }
 
     const pageInfo={
-      regia:['Regia torneo','Vista live per gestire il torneo senza confusione.'],risultati:['Risultati','Gestione match, screen e inserimenti manuali.'],team:['Team','Modifica rapida con pennini su team e player.'],torneo:['Torneo','Regole, punteggio e messaggi ufficiali.'],discord:['Discord','Categoria, stanze, pannelli e codice lobby.'],promemoria:['Promemoria automatici','Promemoria periodici inviati dal bot nel canale generale.'],streamers:['Streamer','Gestione content creator ufficiali del torneo.'],segnalazioni:['Segnalazioni','Irregolarità e problemi segnalati dai giocatori.'],archivio:['Storico','Snapshot e storico tornei.'],staff:['Staff','Account admin e staff.'],sistema:['Sistema','Reset e registro attività.']
+      regia:['Regia torneo','Vista live per gestire il torneo senza confusione.'],risultati:['Risultati','Gestione match, screen e inserimenti manuali.'],team:['Team','Modifica rapida con pennini su team e player.'],torneo:['Torneo','Regole, punteggio e messaggi ufficiali.'],discord:['Discord','Categoria, stanze, pannelli e codice lobby.'],promemoria:['Promemoria automatici','Promemoria periodici inviati dal bot nel canale generale.'],streamers:['Streamer','Gestione content creator ufficiali del torneo.'],clan:['Clan','Directory pubblica clan Warzone e gestione richieste.'],segnalazioni:['Segnalazioni','Irregolarità e problemi segnalati dai giocatori.'],archivio:['Storico','Snapshot e storico tornei.'],staff:['Staff','Account admin e staff.'],sistema:['Sistema','Reset e registro attività.']
     };
 
     const stateLabels={
@@ -2327,6 +2403,7 @@
       if(pageId==='promemoria')loadAutomaticReminders();
       if(pageId==='segnalazioni')loadReports();
       if(pageId==='streamers')loadStreamers();
+      if(pageId==='clan'){loadClans();loadClanRequests();}
     }
     async function api(url,options={
 
@@ -3680,6 +3757,200 @@
         setStatus('Streamer eliminato.');
       } else {
         alert(result.data.message || 'Errore eliminazione.');
+      }
+    }
+
+    // ===== CLAN MANAGEMENT =====
+    let _clans = [];
+    let _editingClanId = null;
+
+    async function loadClans() {
+      const result = await api('/api/clans');
+      if (result && result.data && result.data.ok) {
+        _clans = result.data.clans || [];
+        renderClanAdminList();
+      }
+    }
+
+    function renderClanAdminList() {
+      const container = qs('clanAdminList');
+      if (!container) return;
+      if (!_clans.length) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Nessun clan aggiunto. Clicca "+ Aggiungi clan" per iniziare.</p>';
+        return;
+      }
+      container.innerHTML = _clans.map(c => {
+        const activeBadge = !c.active ? '<span style="font-size:10px;background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.2);color:#ff8099;border-radius:20px;padding:2px 8px;font-weight:800;">Nascosto</span>' : '';
+        const partBadge = c.partecipante ? '<span style="font-size:10px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.2);color:#f0b429;border-radius:20px;padding:2px 8px;font-weight:800;">⚔️ RØDA CUP</span>' : '';
+        return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;">
+          ${c.logo ? `<img src="${html(c.logo)}" alt="${html(c.nome)}" style="width:56px;height:56px;border-radius:12px;object-fit:contain;object-position:center;background:rgba(123,44,255,.08);flex-shrink:0;padding:4px;" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:12px;background:rgba(123,44,255,.12);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">🛡️</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-weight:800;font-size:15px;color:#f0e8ff;">${html(c.nome)}</span>
+              ${c.tag ? `<span style="font-size:11px;font-weight:900;color:var(--purple-3);background:rgba(123,44,255,.10);border:1px solid rgba(160,110,255,.14);border-radius:20px;padding:2px 8px;">${html(c.tag)}</span>` : ''}
+              ${partBadge}
+              ${activeBadge}
+            </div>
+            ${c.descrizione ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;">${html(c.descrizione)}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button class="btn btn-blue" onclick="openClanModal('${html(c.id)}')" style="padding:8px 14px;font-size:12px;">✏️ Modifica</button>
+            <button class="btn btn-red" onclick="deleteClan('${html(c.id)}','${html(c.nome)}')" style="padding:8px 14px;font-size:12px;">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openClanModal(id) {
+      _editingClanId = id;
+      const modal = document.getElementById('clanModal');
+      const title = document.getElementById('clanModalTitle');
+      const err = document.getElementById('clanModalError');
+      err.style.display = 'none';
+      if (id) {
+        const c = _clans.find(x => x.id === id);
+        if (!c) return;
+        title.textContent = 'Modifica clan';
+        document.getElementById('cmId').value = c.id;
+        document.getElementById('cmNome').value = c.nome || '';
+        document.getElementById('cmTag').value = c.tag || '';
+        document.getElementById('cmLogo').value = c.logo || '';
+        document.getElementById('cmDescrizione').value = c.descrizione || '';
+        document.getElementById('cmPartecipante').checked = Boolean(c.partecipante);
+        document.getElementById('cmActive').checked = c.active !== false;
+      } else {
+        title.textContent = 'Aggiungi clan';
+        ['cmId','cmNome','cmTag','cmLogo','cmDescrizione'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        document.getElementById('cmPartecipante').checked = false;
+        document.getElementById('cmActive').checked = true;
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeClanModal() {
+      document.getElementById('clanModal').style.display = 'none';
+    }
+
+    async function saveClan() {
+      const btn = document.getElementById('clanSaveBtn');
+      const err = document.getElementById('clanModalError');
+      err.style.display = 'none';
+      const payload = {
+        nome: document.getElementById('cmNome').value.trim(),
+        tag: document.getElementById('cmTag').value.trim(),
+        logo: document.getElementById('cmLogo').value.trim(),
+        descrizione: document.getElementById('cmDescrizione').value.trim(),
+        partecipante: document.getElementById('cmPartecipante').checked,
+        active: document.getElementById('cmActive').checked
+      };
+      if (!payload.nome) {
+        err.textContent = 'Il campo Nome è obbligatorio.';
+        err.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
+      try {
+        const url = _editingClanId ? `/api/clans/${_editingClanId}` : '/api/clans';
+        const method = _editingClanId ? 'PUT' : 'POST';
+        const result = await api(url, { method, body: JSON.stringify(payload) });
+        if (result.data.ok) {
+          closeClanModal();
+          await loadClans();
+          setStatus(_editingClanId ? 'Clan modificato.' : 'Clan aggiunto.');
+        } else {
+          err.textContent = result.data.message || 'Errore salvataggio.';
+          err.style.display = 'block';
+        }
+      } catch(e) {
+        err.textContent = 'Errore di rete.';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salva';
+      }
+    }
+
+    async function deleteClan(id, nome) {
+      if (!confirm(`Elimina definitivamente il clan "${nome}"?`)) return;
+      const result = await api(`/api/clans/${id}`, { method: 'DELETE' });
+      if (result && result.data && result.data.ok) {
+        await loadClans();
+        setStatus('Clan eliminato.');
+      } else {
+        alert((result && result.data && result.data.message) || 'Errore eliminazione.');
+      }
+    }
+
+    // ===== CLAN REQUESTS =====
+    let _clanRequests = [];
+
+    async function loadClanRequests() {
+      const container = qs('clanRequestsList');
+      const result = await api('/api/clan-requests');
+      if (!result || !result.data || !result.data.ok) {
+        if (container) container.innerHTML = '<p style="color:#ef4444;font-size:13px;">Errore caricamento richieste.</p>';
+        return;
+      }
+      _clanRequests = result.data.clanRequests || [];
+      renderClanRequests();
+    }
+
+    function renderClanRequests() {
+      const container = qs('clanRequestsList');
+      if (!container) return;
+      if (!_clanRequests.length) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Nessuna richiesta ricevuta.</p>';
+        return;
+      }
+      const statoColor = { in_attesa: '#f0b429', approvato: '#6bffaa', rifiutato: '#ff8099' };
+      const statoLabel = { in_attesa: '⏳ In attesa', approvato: '✅ Approvato', rifiutato: '❌ Rifiutato' };
+      container.innerHTML = _clanRequests.map(r => {
+        const isPending = r.stato === 'in_attesa';
+        const color = statoColor[r.stato] || '#aaa';
+        const label = statoLabel[r.stato] || r.stato;
+        const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('it-IT') : '';
+        return `<div style="display:flex;align-items:flex-start;gap:14px;padding:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;">
+          ${r.logo ? `<img src="${html(r.logo)}" alt="${html(r.nome)}" style="width:52px;height:52px;border-radius:10px;object-fit:contain;background:rgba(123,44,255,.08);flex-shrink:0;padding:4px;" onerror="this.style.display='none'">` : `<div style="width:52px;height:52px;border-radius:10px;background:rgba(123,44,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🛡️</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-weight:800;font-size:15px;color:#f0e8ff;">${html(r.nome)}</span>
+              ${r.tag ? `<span style="font-size:11px;font-weight:900;color:var(--purple-3);background:rgba(123,44,255,.10);border:1px solid rgba(160,110,255,.14);border-radius:20px;padding:2px 8px;">${html(r.tag)}</span>` : ''}
+              <span style="font-size:10px;font-weight:800;color:${color};background:${color}18;border:1px solid ${color}28;border-radius:20px;padding:2px 8px;">${label}</span>
+              ${date ? `<span style="font-size:11px;color:var(--text-muted);">${date}</span>` : ''}
+            </div>
+            ${r.messaggio ? `<p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin:0;">"${html(r.messaggio)}"</p>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            ${isPending ? `
+              <button class="btn btn-green" onclick="updateClanRequest('${html(r.id)}','approvato')" style="padding:7px 12px;font-size:12px;">✅ Approva</button>
+              <button class="btn btn-red" onclick="updateClanRequest('${html(r.id)}','rifiutato')" style="padding:7px 12px;font-size:12px;">❌ Rifiuta</button>
+            ` : `<button class="btn btn-red" onclick="deleteClanRequest('${html(r.id)}')" style="padding:7px 12px;font-size:12px;">🗑️ Elimina</button>`}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function updateClanRequest(id, stato) {
+      const result = await api(`/api/clan-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ stato }) });
+      if (result && result.data && result.data.ok) {
+        await loadClanRequests();
+        if (stato === 'approvato') { await loadClans(); setStatus('Clan approvato e aggiunto alla directory.'); }
+        else setStatus('Richiesta rifiutata.');
+      } else {
+        alert((result && result.data && result.data.message) || 'Errore aggiornamento.');
+      }
+    }
+
+    async function deleteClanRequest(id) {
+      if (!confirm('Eliminare definitivamente questa richiesta?')) return;
+      const result = await api(`/api/clan-requests/${id}`, { method: 'DELETE' });
+      if (result && result.data && result.data.ok) {
+        await loadClanRequests();
+        setStatus('Richiesta eliminata.');
       }
     }
 

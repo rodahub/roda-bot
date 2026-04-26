@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I Clan — RØDA CUP</title>
+  <meta name="description" content="Tutti i clan di Warzone che hanno partecipato o che vogliono essere presenti su RØDA CUP.">
+  <style>
+    *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+
+    :root{
+      --purple:#7b2cff;
+      --purple-2:#9c5cff;
+      --purple-3:#b98aff;
+      --bg:#080910;
+      --bg-2:#0e0b18;
+      --bg-card:#12101e;
+      --border:rgba(160,110,255,.14);
+      --text:#f0e8ff;
+      --text-muted:rgba(200,185,255,.55);
+      --shadow:0 8px 40px rgba(0,0,0,.5);
+      --gold:#f0b429;
+    }
+
+    html{ scroll-behavior:smooth; }
+
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100dvh;
+      overflow-x:hidden;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+
+    .bg-glow{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(123,44,255,.22) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(80,20,200,.10) 0%, transparent 60%);
+    }
+
+    /* ── TOPBAR ── */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:rgba(8,9,16,.88);
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .topbar-inner{
+      max-width:1180px;
+      margin:0 auto;
+      padding:14px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand-logo{ width:40px; height:40px; border-radius:12px; object-fit:cover; }
+    .brand-name{ font-size:17px; font-weight:900; letter-spacing:-.01em; color:var(--text); }
+    .brand-sub{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+
+    .back-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 16px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:800;
+      color:var(--text);
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+      transition:.15s ease;
+      touch-action:manipulation;
+      white-space:nowrap;
+    }
+    .back-btn:hover{ background:rgba(123,44,255,.12); border-color:var(--border); transform:translateY(-1px); }
+    .back-btn:active{ transform:translateY(1px); opacity:.82; }
+
+    /* ── CONTENT WRAP ── */
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1180px;
+      margin:0 auto;
+      padding:0 24px 80px;
+    }
+
+    /* ── HERO ── */
+    .page-hero{
+      padding:64px 0 52px;
+      text-align:center;
+    }
+
+    .page-hero-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 16px;
+      border-radius:40px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(160,110,255,.24);
+      font-size:12px;
+      font-weight:800;
+      color:var(--purple-3);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:24px;
+    }
+
+    .page-hero-title{
+      font-size:clamp(36px,7vw,72px);
+      font-weight:900;
+      letter-spacing:-.03em;
+      line-height:1.0;
+      background:linear-gradient(135deg,#ffffff 0%,#c8aaff 50%,#9060ff 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:18px;
+    }
+
+    .page-hero-sub{
+      font-size:16px;
+      color:var(--text-muted);
+      max-width:520px;
+      margin:0 auto;
+      line-height:1.6;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:32px;
+      margin-bottom:48px;
+      flex-wrap:wrap;
+    }
+
+    .stat-item{
+      text-align:center;
+    }
+
+    .stat-num{
+      font-size:28px;
+      font-weight:900;
+      color:var(--purple-3);
+      line-height:1;
+    }
+
+    .stat-label{
+      font-size:12px;
+      color:var(--text-muted);
+      margin-top:4px;
+      font-weight:600;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+
+    .stat-divider{
+      width:1px;
+      height:32px;
+      background:rgba(160,110,255,.15);
+    }
+
+    /* ── LOADING / ERRORE ── */
+    .state-msg{
+      text-align:center;
+      padding:60px 20px;
+      color:var(--text-muted);
+      font-size:15px;
+    }
+
+    .spinner{
+      display:inline-block;
+      width:32px;
+      height:32px;
+      border:3px solid rgba(160,110,255,.20);
+      border-top-color:var(--purple-2);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+      margin-bottom:16px;
+    }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    /* ── CLAN GRID ── */
+    .clan-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+      gap:20px;
+    }
+
+    .clan-card{
+      background:linear-gradient(160deg, rgba(20,14,38,.98), rgba(10,8,20,.99));
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:28px 20px 22px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:14px;
+      text-align:center;
+      transition:.22s ease;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .clan-card::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:radial-gradient(ellipse 60% 40% at 50% 0%, rgba(123,44,255,.07), transparent 70%);
+      pointer-events:none;
+    }
+
+    .clan-card:hover{
+      border-color:rgba(160,110,255,.30);
+      box-shadow:0 12px 50px rgba(123,44,255,.16);
+      transform:translateY(-4px);
+    }
+
+    .clan-logo-wrap{
+      width:88px;
+      height:88px;
+      border-radius:50%;
+      background:rgba(123,44,255,.10);
+      border:2px solid rgba(160,110,255,.20);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+
+    .clan-logo-wrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:8px;
+    }
+
+    .clan-logo-placeholder{
+      font-size:36px;
+      line-height:1;
+    }
+
+    .clan-badge-wrap{
+      position:absolute;
+      top:12px;
+      right:12px;
+    }
+
+    .clan-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:3px 9px;
+      border-radius:20px;
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    .clan-badge.partecipante{
+      background:rgba(240,180,41,.12);
+      border:1px solid rgba(240,180,41,.28);
+      color:var(--gold);
+    }
+
+    .clan-tag{
+      font-size:11px;
+      font-weight:900;
+      color:var(--purple-3);
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      background:rgba(123,44,255,.12);
+      border:1px solid rgba(160,110,255,.18);
+      border-radius:20px;
+      padding:3px 12px;
+    }
+
+    .clan-name{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+      letter-spacing:-.01em;
+      line-height:1.2;
+    }
+
+    .clan-desc{
+      font-size:13px;
+      color:var(--text-muted);
+      line-height:1.55;
+      max-width:200px;
+    }
+
+    /* ── SEZIONE REGISTRAZIONE ── */
+    .register-section{
+      margin-top:80px;
+      position:relative;
+      z-index:1;
+    }
+
+    .register-header{
+      text-align:center;
+      margin-bottom:36px;
+    }
+
+    .register-header h2{
+      font-size:clamp(24px,4vw,38px);
+      font-weight:900;
+      letter-spacing:-.02em;
+      background:linear-gradient(135deg,#ffffff 0%,#c8aaff 60%,#9060ff 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:12px;
+    }
+
+    .register-header p{
+      font-size:15px;
+      color:var(--text-muted);
+      max-width:480px;
+      margin:0 auto;
+      line-height:1.6;
+    }
+
+    .register-form{
+      max-width:600px;
+      margin:0 auto;
+      background:linear-gradient(160deg,rgba(20,14,38,.98),rgba(10,8,20,.99));
+      border:1px solid var(--border);
+      border-radius:24px;
+      padding:36px;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .form-group{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .form-group.full{
+      grid-column:1/-1;
+    }
+
+    .form-label{
+      font-size:13px;
+      font-weight:700;
+      color:rgba(200,185,255,.80);
+      letter-spacing:.02em;
+    }
+
+    .form-label span{
+      color:var(--purple-3);
+      margin-left:2px;
+    }
+
+    .form-input,
+    .form-textarea{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(160,110,255,.16);
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:14px;
+      color:var(--text);
+      font-family:inherit;
+      outline:none;
+      transition:.15s ease;
+      width:100%;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus{
+      border-color:rgba(160,110,255,.45);
+      background:rgba(123,44,255,.06);
+    }
+
+    .form-textarea{
+      resize:vertical;
+      min-height:90px;
+    }
+
+    .logo-upload-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .logo-upload-btn{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 16px;
+      background:rgba(255,255,255,.04);
+      border:1px dashed rgba(160,110,255,.28);
+      border-radius:12px;
+      cursor:pointer;
+      transition:.15s ease;
+      font-size:13px;
+      color:var(--text-muted);
+      font-weight:600;
+    }
+
+    .logo-upload-btn:hover{
+      border-color:rgba(160,110,255,.50);
+      background:rgba(123,44,255,.06);
+      color:var(--text);
+    }
+
+    #logoInput{ display:none; }
+
+    .logo-preview{
+      display:none;
+      align-items:center;
+      gap:12px;
+    }
+
+    .logo-preview-img{
+      width:56px;
+      height:56px;
+      border-radius:12px;
+      object-fit:contain;
+      background:rgba(123,44,255,.10);
+      border:1px solid rgba(160,110,255,.20);
+      padding:4px;
+    }
+
+    .logo-preview-name{
+      font-size:13px;
+      color:var(--text-muted);
+      flex:1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .logo-remove{
+      background:none;
+      border:none;
+      color:rgba(200,185,255,.40);
+      cursor:pointer;
+      font-size:18px;
+      padding:4px;
+      border-radius:6px;
+      transition:.12s;
+      line-height:1;
+    }
+
+    .logo-remove:hover{ color:#ff8099; }
+
+    .logo-hint{
+      font-size:11px;
+      color:var(--text-muted);
+      opacity:.70;
+    }
+
+    .form-submit{
+      margin-top:24px;
+      width:100%;
+      padding:14px;
+      background:linear-gradient(135deg,var(--purple),var(--purple-2));
+      border:none;
+      border-radius:14px;
+      font-size:15px;
+      font-weight:900;
+      color:#fff;
+      cursor:pointer;
+      transition:.18s ease;
+      font-family:inherit;
+      letter-spacing:.01em;
+    }
+
+    .form-submit:hover{ transform:translateY(-2px); box-shadow:0 8px 28px rgba(123,44,255,.35); }
+    .form-submit:active{ transform:translateY(1px); opacity:.88; }
+    .form-submit:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+    .form-feedback{
+      margin-top:14px;
+      padding:12px 16px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:700;
+      display:none;
+    }
+
+    .form-feedback.ok{
+      background:rgba(40,200,100,.10);
+      border:1px solid rgba(40,200,100,.24);
+      color:#6bffaa;
+      display:block;
+    }
+
+    .form-feedback.err{
+      background:rgba(201,43,75,.12);
+      border:1px solid rgba(201,43,75,.28);
+      color:#ff8099;
+      display:block;
+    }
+
+    /* ── FOOTER ── */
+    .page-footer{
+      position:relative;
+      z-index:1;
+      text-align:center;
+      padding:32px 24px 40px;
+      border-top:1px solid rgba(255,255,255,.05);
+      font-size:13px;
+      color:var(--text-muted);
+    }
+
+    .page-footer a{ color:var(--purple-3); font-weight:700; transition:.12s; }
+    .page-footer a:hover{ color:#fff; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:600px){
+      .topbar-inner{ padding:12px 16px; }
+      .wrap{ padding:0 16px 80px; }
+      .page-hero{ padding:44px 0 36px; }
+      .stats-bar{ gap:20px; }
+      .stat-divider{ display:none; }
+      .clan-grid{ grid-template-columns:repeat(2,1fr); gap:12px; }
+      .clan-card{ padding:22px 14px 18px; }
+      .clan-logo-wrap{ width:72px; height:72px; }
+      .clan-name{ font-size:16px; }
+      .register-form{ padding:24px 18px; }
+      .form-grid{ grid-template-columns:1fr; }
+    }
+
+    @media(max-width:360px){
+      .clan-grid{ grid-template-columns:1fr; }
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/roda-logo.png" alt="RØDA CUP" onerror="this.style.display='none'">
+      <div>
+        <div class="brand-name" id="siteName">RØDA CUP</div>
+        <div class="brand-sub">Directory clan Warzone</div>
+      </div>
+    </div>
+    <a class="back-btn" href="/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Torna al sito
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-hero">
+    <div class="page-hero-badge">🛡️ Comunità</div>
+    <h1 class="page-hero-title" id="heroTitle">I Clan di RØDA CUP</h1>
+    <p class="page-hero-sub">Tutti i clan di Warzone che fanno parte della community di RØDA CUP — che abbiano già gareggiato o che vogliano essere presenti.</p>
+  </div>
+
+  <div id="statsBar" class="stats-bar" style="display:none">
+    <div class="stat-item">
+      <div class="stat-num" id="statTotale">0</div>
+      <div class="stat-label">Clan presenti</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-num" id="statPartecipanti">0</div>
+      <div class="stat-label">Partecipanti RØDA CUP</div>
+    </div>
+  </div>
+
+  <div id="clanRoot">
+    <div class="state-msg">
+      <div class="spinner"></div><br>
+      Caricamento clan...
+    </div>
+  </div>
+
+  <!-- SEZIONE REGISTRAZIONE -->
+  <section class="register-section">
+    <div class="register-header">
+      <h2>Il tuo clan vuole apparire qui?</h2>
+      <p>Invia nome e logo del tuo clan. Lo staff di RØDA CUP esaminerà la richiesta e ti aggiungerà alla directory.</p>
+    </div>
+
+    <div class="register-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="inputNome">Nome clan <span>*</span></label>
+          <input class="form-input" id="inputNome" type="text" placeholder="es. Shadow Raiders" maxlength="60" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="inputTag">Tag clan</label>
+          <input class="form-input" id="inputTag" type="text" placeholder="es. [SHRD]" maxlength="10" autocomplete="off">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Logo PNG <span style="color:var(--text-muted);font-weight:500;">(consigliato, sfondo trasparente)</span></label>
+          <div class="logo-upload-wrap">
+            <label class="logo-upload-btn" for="logoInput">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Carica logo PNG (max 400KB)
+            </label>
+            <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp">
+            <div class="logo-preview" id="logoPreview">
+              <img class="logo-preview-img" id="logoPreviewImg" src="" alt="Anteprima logo">
+              <span class="logo-preview-name" id="logoPreviewName"></span>
+              <button class="logo-remove" onclick="removeLogo()" type="button" title="Rimuovi">✕</button>
+            </div>
+            <div class="logo-hint">PNG con sfondo trasparente preferito · JPG e WebP accettati</div>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="inputMessaggio">Presentazione clan</label>
+          <textarea class="form-textarea" id="inputMessaggio" placeholder="Descriviti brevemente: da quanto esistete, quanti siete, cosa cercate..." maxlength="500" rows="3"></textarea>
+        </div>
+      </div>
+
+      <button class="form-submit" id="submitBtn" onclick="submitRequest()">Invia richiesta →</button>
+      <div class="form-feedback" id="formFeedback"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="page-footer">
+  <span id="footerName">RØDA CUP</span> — Portale ufficiale &nbsp;•&nbsp;
+  <a href="/">Sito pubblico</a> &nbsp;•&nbsp;
+  <a href="/login">Accesso admin</a>
+</footer>
+
+<script>
+  function esc(text) {
+    return String(text ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  let _logoBase64 = '';
+
+  document.getElementById('logoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 400 * 1024) {
+      showFeedback('Il logo è troppo grande. Massimo 400KB.', true);
+      this.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      _logoBase64 = ev.target.result;
+      document.getElementById('logoPreviewImg').src = _logoBase64;
+      document.getElementById('logoPreviewName').textContent = file.name;
+      document.getElementById('logoPreview').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function removeLogo() {
+    _logoBase64 = '';
+    document.getElementById('logoInput').value = '';
+    document.getElementById('logoPreview').style.display = 'none';
+    document.getElementById('logoPreviewImg').src = '';
+    document.getElementById('logoPreviewName').textContent = '';
+  }
+
+  function buildClanCard(c) {
+    const logo = c.logo
+      ? `<img src="${esc(c.logo)}" alt="${esc(c.nome)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\\'clan-logo-placeholder\\'>🛡️</span>'">`
+      : `<span class="clan-logo-placeholder">🛡️</span>`;
+
+    const badge = c.partecipante
+      ? `<div class="clan-badge-wrap"><span class="clan-badge partecipante">⚔️ RØDA CUP</span></div>`
+      : '';
+
+    const tag = c.tag
+      ? `<span class="clan-tag">${esc(c.tag)}</span>`
+      : '';
+
+    const desc = c.descrizione
+      ? `<p class="clan-desc">${esc(c.descrizione)}</p>`
+      : '';
+
+    return `
+      <article class="clan-card">
+        ${badge}
+        <div class="clan-logo-wrap">${logo}</div>
+        ${tag}
+        <h2 class="clan-name">${esc(c.nome)}</h2>
+        ${desc}
+      </article>`;
+  }
+
+  function showFeedback(msg, isError) {
+    const el = document.getElementById('formFeedback');
+    el.className = 'form-feedback ' + (isError ? 'err' : 'ok');
+    el.textContent = msg;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function submitRequest() {
+    const nome = document.getElementById('inputNome').value.trim();
+    const tag = document.getElementById('inputTag').value.trim();
+    const messaggio = document.getElementById('inputMessaggio').value.trim();
+    const btn = document.getElementById('submitBtn');
+
+    if (!nome) {
+      showFeedback('Il nome del clan è obbligatorio.', true);
+      document.getElementById('inputNome').focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Invio in corso...';
+    document.getElementById('formFeedback').className = 'form-feedback';
+
+    try {
+      const res = await fetch('/api/public/clan-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, tag, messaggio, logoBase64: _logoBase64 })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showFeedback('✅ ' + data.message, false);
+        document.getElementById('inputNome').value = '';
+        document.getElementById('inputTag').value = '';
+        document.getElementById('inputMessaggio').value = '';
+        removeLogo();
+        btn.textContent = 'Inviato!';
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Invia richiesta →'; }, 5000);
+      } else {
+        showFeedback(data.message || 'Errore durante l\'invio. Riprova.', true);
+        btn.disabled = false;
+        btn.textContent = 'Invia richiesta →';
+      }
+    } catch(e) {
+      showFeedback('Errore di connessione. Verifica la connessione e riprova.', true);
+      btn.disabled = false;
+      btn.textContent = 'Invia richiesta →';
+    }
+  }
+
+  async function init() {
+    const root = document.getElementById('clanRoot');
+    try {
+      const res = await fetch('/api/public/clans', { credentials: 'same-origin' });
+      const data = await res.json();
+
+      if (!data.ok) {
+        root.innerHTML = '<div class="state-msg">Impossibile caricare i dati. Riprova più tardi.</div>';
+        return;
+      }
+
+      const clans = data.clans || [];
+      const partecipanti = clans.filter(c => c.partecipante).length;
+
+      if (clans.length > 0) {
+        document.getElementById('statTotale').textContent = clans.length;
+        document.getElementById('statPartecipanti').textContent = partecipanti;
+        document.getElementById('statsBar').style.display = 'flex';
+      }
+
+      if (!clans.length) {
+        root.innerHTML = '<div class="state-msg">Nessun clan presente al momento.<br>Sii il primo! Usa il modulo qui sotto per registrarti.</div>';
+        return;
+      }
+
+      root.innerHTML = `<div class="clan-grid">${clans.map(c => buildClanCard(c)).join('')}</div>`;
+    } catch(e) {
+      root.innerHTML = '<div class="state-msg">Errore di connessione. Verifica la connessione e riprova.<br><br><a href="/" style="color:#b98aff;font-weight:800;">← Torna al sito</a></div>';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
