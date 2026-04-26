@@ -1657,15 +1657,14 @@
       }
       .trophy-mobile .trophy-img{
         width:150px;
+        opacity:0;
+        transition:opacity .4s ease;
+      }
+      .trophy-mobile .trophy-img.loaded{
+        opacity:1;
       }
       .trophy-mobile .trophy-glow{
         width:110px;
-        height:18px;
-        filter:none;
-        background:radial-gradient(ellipse 55px 9px at center,
-          rgba(123,44,255,.55) 0%,
-          rgba(123,44,255,.18) 45%,
-          transparent 72%);
       }
 
       .pass-card-wrap{
@@ -2497,6 +2496,15 @@
   </nav>
 
   <script>
+    /* ── COPPA MOBILE: evita quadrato drop-shadow durante loading ── */
+    (function(){
+      const img = document.getElementById('trophyMobile');
+      if(!img) return;
+      function show(){ img.classList.add('loaded'); }
+      if(img.complete && img.naturalWidth > 0){ show(); }
+      else { img.addEventListener('load', show); img.addEventListener('error', show); }
+    })();
+
     /* ── INTRO GRANATA ── */
     (function(){
       const ov = document.getElementById('intro-overlay');
