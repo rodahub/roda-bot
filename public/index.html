@@ -1655,20 +1655,6 @@
         </div>
       </div>
 
-      <!-- Funko showcase -->
-      <div class="funko-section">
-        <div class="funko-card">
-          <div class="funko-card-accent">⚡</div>
-          <div class="funko-card-glow"></div>
-          <img src="/funko-girl.png" class="funko-card-img" alt="" id="funkoGirl" />
-        </div>
-        <div class="funko-card">
-          <div class="funko-card-accent">🔥</div>
-          <div class="funko-card-glow"></div>
-          <img src="/funko-guy.png" class="funko-card-img" alt="" id="funkoGuy" />
-        </div>
-      </div>
-
       <!-- Tournament Pass card decorativa -->
       <div class="pass-card-wrap" id="passCardWrap">
         <img src="/tournament-pass.png" class="pass-card-img" id="passCardImg" alt="RØDA CUP Tournament Pass" />
@@ -2452,22 +2438,18 @@
 
       function resetTilt(el){ el.style.transform = ''; }
 
-      const desktop   = document.getElementById('trophyDesktop');
-      const mobile    = document.getElementById('trophyMobile');
-      const passImg   = document.getElementById('passCardImg');
-      const funkoGirl = document.getElementById('funkoGirl');
-      const funkoGuy  = document.getElementById('funkoGuy');
+      const desktop = document.getElementById('trophyDesktop');
+      const mobile  = document.getElementById('trophyMobile');
+      const passImg = document.getElementById('passCardImg');
 
       document.addEventListener('mousemove', e => {
-        if(desktop   && desktop.offsetParent !== null) applyTilt(desktop, e, 22, 14);
-        if(mobile    && mobile.offsetParent  !== null) applyTilt(mobile, e, 18, 12);
-        if(passImg)   applyTilt(passImg, e, 14, 10);
-        if(funkoGirl) applyTilt(funkoGirl, e, 18, 12);
-        if(funkoGuy)  applyTilt(funkoGuy,  e, 18, 12);
+        if(desktop && desktop.offsetParent !== null) applyTilt(desktop, e, 22, 14);
+        if(mobile  && mobile.offsetParent  !== null) applyTilt(mobile,  e, 18, 12);
+        if(passImg) applyTilt(passImg, e, 14, 10);
       });
 
       document.addEventListener('mouseleave', () => {
-        [desktop, mobile, passImg, funkoGirl, funkoGuy].forEach(el => { if(el) resetTilt(el); });
+        [desktop, mobile, passImg].forEach(el => { if(el) resetTilt(el); });
       });
 
       function handleTouch(el, t){
@@ -2476,7 +2458,7 @@
         applyTilt(el, { clientX: touch.clientX, clientY: touch.clientY }, 18, 12);
       }
 
-      [mobile, passImg, funkoGirl, funkoGuy].forEach(el => {
+      [mobile, passImg].forEach(el => {
         if(!el) return;
         el.addEventListener('touchmove', e => handleTouch(el, e), { passive:true });
         el.addEventListener('touchend', () => resetTilt(el), { passive:true });
