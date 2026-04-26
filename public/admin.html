@@ -494,9 +494,9 @@
     }
     .btn{
       min-height:46px;
-      border:0;
+      border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
-      padding:12px 16px;
+      padding:12px 18px;
       cursor:pointer;
       color:white;
       font-weight:950;
@@ -506,39 +506,98 @@
       justify-content:center;
       gap:8px;
       text-decoration:none;
-      transition:.16s ease;
-      white-space:nowrap
+      transition:.18s cubic-bezier(.22,.68,0,1.2);
+      white-space:nowrap;
+      background:rgba(255,255,255,.06);
+      letter-spacing:.2px;
+      position:relative;
+      overflow:hidden
+    }
+    .btn::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg,rgba(255,255,255,.07) 0%,transparent 60%);
+      pointer-events:none;
+      border-radius:inherit;
+      opacity:0;
+      transition:opacity .18s
+    }
+    .btn:hover::after{
+      opacity:1
     }
     .btn:hover{
-      transform:translateY(-1px)
+      transform:translateY(-2px)
+    }
+    .btn:active{
+      transform:translateY(0) scale(.98)
     }
     .btn:disabled{
-      opacity:.6;
+      opacity:.5;
       cursor:not-allowed;
-      transform:none
+      transform:none;
+      box-shadow:none!important
     }
     .btn-purple{
-      background:linear-gradient(135deg,var(--purple),var(--purple2))
+      background:linear-gradient(135deg,var(--purple),var(--purple2));
+      border-color:rgba(190,145,255,.45)
+    }
+    .btn-purple:hover{
+      box-shadow:0 6px 24px rgba(123,44,255,.55);
+      border-color:rgba(190,145,255,.7)
     }
     .btn-green{
       background:linear-gradient(135deg,#12b75a,#1ed760);
-      color:#06120b
+      color:#06120b;
+      border-color:rgba(30,215,96,.35)
+    }
+    .btn-green:hover{
+      box-shadow:0 6px 24px rgba(24,201,100,.50)
     }
     .btn-red{
-      background:linear-gradient(135deg,#c92b4b,#ff4d6d)
+      background:linear-gradient(135deg,#c92b4b,#ff4d6d);
+      border-color:rgba(255,77,109,.40)
+    }
+    .btn-red:hover{
+      box-shadow:0 6px 24px rgba(255,77,109,.52)
     }
     .btn-yellow{
       background:linear-gradient(135deg,#e8b600,#ffd166);
-      color:#191100
+      color:#191100;
+      border-color:rgba(255,209,102,.40)
+    }
+    .btn-yellow:hover{
+      box-shadow:0 6px 24px rgba(255,209,102,.45)
     }
     .btn-blue{
       background:linear-gradient(135deg,#3b9fff,#6ec4ff);
-      color:#07121a
+      color:#07121a;
+      border-color:rgba(87,183,255,.38)
+    }
+    .btn-blue:hover{
+      box-shadow:0 6px 24px rgba(87,183,255,.50)
+    }
+    .btn-orange{
+      background:linear-gradient(135deg,#d96b0d,#f59332);
+      color:#1a0800;
+      border-color:rgba(245,147,50,.38)
+    }
+    .btn-orange:hover{
+      box-shadow:0 6px 24px rgba(245,147,50,.50)
+    }
+    .btn-teal{
+      background:linear-gradient(135deg,#0e9988,#14c4b0);
+      color:#021210;
+      border-color:rgba(20,196,176,.35)
     }
     .btn-ghost{
-      background:rgba(255,255,255,.045);
-      border:1px solid rgba(255,255,255,.09);
-      color:#fff
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.13);
+      color:#e8e0ff
+    }
+    .btn-ghost:hover{
+      background:rgba(255,255,255,.10);
+      border-color:rgba(255,255,255,.22)
     }
     .icon-btn{
       width:34px;
@@ -897,24 +956,13 @@
     .action-btn{
       width:100%;
       justify-content:center;
-      text-align:center;
-      background:linear-gradient(135deg,rgba(123,44,255,.22),rgba(169,99,255,.12));
-      border:1px solid rgba(170,120,255,.34);
-      color:#f5edff;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
-      transition:.18s ease
-    }
-    .action-btn:hover{
-      background:linear-gradient(135deg,rgba(123,44,255,.36),rgba(169,99,255,.22));
-      border-color:rgba(190,145,255,.55);
-      box-shadow:0 8px 22px rgba(123,44,255,.28),inset 0 0 0 1px rgba(255,255,255,.06);
-      transform:translateY(-1px)
+      text-align:center
     }
     .action-btn:disabled{
-      opacity:.55;
+      opacity:.5;
       cursor:not-allowed;
       transform:none;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)
+      box-shadow:none!important
     }
     .action-help{
       font-size:13px;
@@ -1385,7 +1433,7 @@
                 <div class="split-actions">
                   <select id="matchFilter" style="min-width:180px;" onchange="loadSelectedMatchStatus()">
                   </select>
-                  <button class="btn" onclick="exportResultsCsv()">📥 Esporta CSV</button>
+                  <button class="btn btn-ghost" onclick="exportResultsCsv()">📥 Esporta CSV</button>
                   <button class="btn btn-green" onclick="openQuickManualModal()">Inserisci risultato</button>
                 </div>
               </div>
@@ -1518,100 +1566,105 @@
             </div>
           </section>
           <section class="page" id="torneo">
-            <div class="grid-2">
+            <div class="grid-3" style="margin-bottom:18px;">
+              <div class="stat">
+                <span>Team iscritti</span>
+                <strong id="torneoStatTeams">—</strong>
+              </div>
+              <div class="stat">
+                <span>Match corrente</span>
+                <strong id="torneoStatMatch">—</strong>
+              </div>
+              <div class="stat">
+                <span>Auto-avanzamento match</span>
+                <strong id="torneoStatAutoNext">—</strong>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-bottom:18px;">
               <div class="card">
                 <div class="card-head">
                   <div>
-                    <h3 class="card-title">🏆 Torneo</h3>
-                    <div class="note">Nome, regolamento e punteggio restano bloccati.</div>
+                    <h3 class="card-title">⚙️ Impostazioni torneo</h3>
+                    <div class="note">Numero di match e passaggio automatico tra i match.</div>
                   </div>
-                  <span class="state state-ok">RØDA CUP fissa</span>
-                </div>
-                <div class="grid-4">
-                  <div class="stat">
-                    <span>Nome</span>
-                    <strong style="font-size:22px;">RØDA CUP</strong>
-                  </div>
-                  <div class="stat">
-                    <span>Team</span>
-                    <strong>16</strong>
-                  </div>
-                  <div class="stat">
-                    <span>Player</span>
-                    <strong>3</strong>
-                  </div>
-                  <div class="stat">
-                    <span>Regole</span>
-                    <strong style="font-size:22px;">Bloccate</strong>
-                  </div>
+                  <span class="state state-ok">RØDA CUP</span>
                 </div>
                 <div class="field">
-                  <label>Numero match</label>
+                  <label>Numero match totali</label>
                   <input type="number" id="totalMatchesInput" min="1" max="50" />
                 </div>
                 <div class="field">
-                  <label>
-                    <input type="checkbox" id="autoNextMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />Passaggio automatico match attivo</label>
-                  </div>
-                  <div class="field">
-                    <label>
-                      <input type="checkbox" id="resetMatchInput" style="width:auto;min-height:auto;margin-right:8px;" />Riporta al match 1</label>
-                    </div>
-                    <button class="btn btn-green" onclick="saveTournament()">Salva torneo</button>
-                  </div>
-                  <div class="card">
-                    <div class="card-head">
-                      <div>
-                        <h3 class="card-title">📊 Punteggio ufficiale</h3>
-                        <div class="note">1 kill = 1 punto + bonus posizionamento.</div>
-                      </div>
-                    </div>
-                    <div id="pointsBox" class="grid-4">
-                      <div class="empty">Caricamento...</div>
-                    </div>
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                    <input type="checkbox" id="autoNextMatchInput" style="width:auto;min-height:auto;" />
+                    <span>Passaggio automatico al match successivo</span>
+                  </label>
+                  <div class="note" style="margin-top:4px;">Quando tutti i risultati di un match sono chiusi, il bot avanza automaticamente.</div>
+                </div>
+                <div class="split-actions" style="margin-top:6px;">
+                  <button class="btn btn-green" onclick="saveTournament()">💾 Salva impostazioni</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h3 class="card-title">📊 Punteggio ufficiale</h3>
+                    <div class="note">1 kill = 1 punto + bonus posizionamento. Bloccato.</div>
                   </div>
                 </div>
-                <div class="grid-2">
-                  <div class="card">
-                    <div class="card-head">
-                      <div>
-                        <h3 class="card-title">💬 Messaggi bot</h3>
-                        <div class="note">Messaggi modificabili dal pannello. Il regolamento resta fisso.</div>
-                      </div>
-                    </div>
-                    <div class="field">
-                      <label>Messaggio apertura iscrizioni</label>
-                      <textarea id="openRegistrationsMessageInput">
-                      </textarea>
-                    </div>
-                    <div class="field">
-                      <label>Messaggio inizio torneo</label>
-                      <textarea id="startTournamentMessageInput">
-                      </textarea>
-                    </div>
-                    <div class="field">
-                      <label>Messaggio codice lobby</label>
-                      <textarea id="lobbyMessageInput">
-                      </textarea>
-                    </div>
-                    <div class="field">
-                      <label>Promemoria generale</label>
-                      <textarea id="generalReminderInput">
-                      </textarea>
-                    </div>
-                    <button class="btn btn-purple" onclick="saveTournamentMessages()">Salva messaggi</button>
-                  </div>
-                  <div class="card">
-                    <div class="card-head">
-                      <div>
-                        <h3 class="card-title">📜 Regolamento ufficiale</h3>
-                        <div class="note">Solo visibile. Non modificabile dagli admin normali.</div>
-                      </div>
-                    </div>
-                    <div class="rules" id="rulesBox">Caricamento...</div>
+                <div id="pointsBox" class="grid-4">
+                  <div class="empty">Caricamento...</div>
+                </div>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-bottom:18px;">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h3 class="card-title">💬 Messaggi bot</h3>
+                    <div class="note">Testi inviati dal bot su Discord. Il regolamento resta fisso.</div>
                   </div>
                 </div>
-              </section>
+                <div class="field">
+                  <label>Apertura iscrizioni</label>
+                  <textarea id="openRegistrationsMessageInput" style="min-height:80px;"></textarea>
+                </div>
+                <div class="field">
+                  <label>Inizio torneo</label>
+                  <textarea id="startTournamentMessageInput" style="min-height:80px;"></textarea>
+                </div>
+                <div class="field">
+                  <label>Codice lobby</label>
+                  <textarea id="lobbyMessageInput" style="min-height:80px;"></textarea>
+                </div>
+                <div class="field">
+                  <label>Promemoria generale</label>
+                  <textarea id="generalReminderInput" style="min-height:80px;"></textarea>
+                </div>
+                <button class="btn btn-purple" onclick="saveTournamentMessages()">💾 Salva messaggi</button>
+              </div>
+              <div class="card">
+                <div class="card-head" style="cursor:pointer;" onclick="this.parentElement.querySelector('.rules-content').style.display=this.parentElement.querySelector('.rules-content').style.display==='none'?'block':'none';this.querySelector('.rules-toggle').textContent=this.parentElement.querySelector('.rules-content').style.display==='none'?'▸ Mostra':'▾ Nascondi'">
+                  <div>
+                    <h3 class="card-title">📜 Regolamento ufficiale</h3>
+                    <div class="note">Solo lettura — non modificabile dagli admin.</div>
+                  </div>
+                  <button class="btn btn-ghost" style="pointer-events:none;"><span class="rules-toggle">▸ Mostra</span></button>
+                </div>
+                <div class="rules-content" style="display:none;">
+                  <div class="rules" id="rulesBox">Caricamento...</div>
+                </div>
+                <div class="card" style="background:rgba(255,77,109,.07);border-color:rgba(255,77,109,.25);margin-top:14px;">
+                  <div class="card-head" style="margin-bottom:10px;">
+                    <div>
+                      <h3 class="card-title" style="font-size:16px;color:#ffd0d9;">⚠️ Riporta al Match 1</h3>
+                      <div class="note">Resetta il numero di match corrente a 1 senza cancellare dati. Usalo solo se c'è stato un errore nella numerazione.</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-red" onclick="resetCurrentMatchAction()">↩ Riporta al match 1</button>
+                </div>
+              </div>
+            </div>
+          </section>
               <section class="page" id="discord">
                 <div class="card">
                   <div class="card-head">
@@ -1676,8 +1729,8 @@
                     </div>
                   </div>
                   <div class="row" style="margin-top:18px;">
-                    <button class="btn btn-blue" onclick="saveDiscordSettings()">💾 Salva configurazione</button>
-                    <button class="btn btn-purple" onclick="prepareDiscord()">⚙️ Prepara categoria</button>
+                    <button class="btn btn-green" onclick="saveDiscordSettings()">💾 Salva configurazione</button>
+                    <button class="btn btn-blue" onclick="prepareDiscord()">⚙️ Prepara categoria</button>
                     <button class="btn btn-ghost" type="button" onclick="toggleDiscordTechIds()" id="discordTechIdsToggle">▸ Mostra ID tecnici</button>
                   </div>
                   <div id="discordTechIds" style="display:none; margin-top:14px; padding:14px; background:rgba(255,255,255,0.04); border-radius:10px;">
@@ -1704,11 +1757,11 @@
                     <div class="action-section-title">1️⃣ Stanze vocali team</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="createRooms()">🎤 Genera stanze vocali team</button>
+                        <button class="btn btn-blue action-btn" onclick="createRooms()">🎤 Genera stanze vocali team</button>
                         <div class="action-help">Crea un canale vocale Discord dedicato per ogni team registrato, dentro la categoria selezionata. Usalo all'inizio del torneo dopo che i team si sono iscritti.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="deleteRooms()">🗑️ Elimina stanze team</button>
+                        <button class="btn btn-red action-btn" onclick="deleteRooms()">🗑️ Elimina stanze team</button>
                         <div class="action-help">Cancella tutte le stanze vocali team dalla categoria. Usalo a fine torneo per pulire il server, o se vuoi rigenerarle da zero.</div>
                       </div>
                     </div>
@@ -1718,11 +1771,11 @@
                     <div class="action-section-title">2️⃣ Pannelli interattivi Discord</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="spawnRegisterPanel()">📋 Pubblica pannello iscrizioni</button>
+                        <button class="btn btn-purple action-btn" onclick="spawnRegisterPanel()">📋 Pubblica pannello iscrizioni</button>
                         <div class="action-help">Posta nel canale iscrizioni il messaggio con il pulsante "✋ Iscriviti" che i team usano per registrarsi al torneo. Da fare quando apri le iscrizioni.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
+                        <button class="btn btn-green action-btn" onclick="refreshTeamPanels()">🔄 Aggiorna pannelli risultati team</button>
                         <div class="action-help">Aggiorna (o crea se mancano) i pannelli punteggio dentro ogni stanza vocale team. Servono ai capitani per caricare gli screenshot dei risultati.</div>
                       </div>
                     </div>
@@ -1732,11 +1785,11 @@
                     <div class="action-section-title">3️⃣ Aggiornamento Discord</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
+                        <button class="btn btn-yellow action-btn" onclick="forceLeaderboard()">🏆 Aggiorna classifica ora</button>
                         <div class="action-help">Ridisegna immediatamente le immagini della classifica generale e dei top fragger nel canale classifica configurato.</div>
                       </div>
                       <div class="action-tile">
-                        <button class="btn action-btn" onclick="syncEverything()">🔄 Aggiorna Discord</button>
+                        <button class="btn btn-teal action-btn" onclick="syncEverything()">🔄 Sincronizza tutto Discord</button>
                         <div class="action-help">Riallinea tutto Discord con i dati del sito: pannello iscrizioni + pannelli team + classifica. Usalo se qualcosa non è sincronizzato.</div>
                       </div>
                     </div>
@@ -1750,7 +1803,7 @@
                         <label>Codice partita Warzone</label>
                         <input id="lobbyCodeInput" type="text" placeholder="Es. ABC-123" />
                       </div>
-                      <button class="btn action-btn" style="flex:0 0 auto;min-width:220px;" onclick="sendLobbyCode()">📨 Invia codice nelle stanze team</button>
+                      <button class="btn btn-orange action-btn" style="flex:0 0 auto;min-width:220px;" onclick="sendLobbyCode()">📨 Invia codice nelle stanze team</button>
                     </div>
                   </div>
 
@@ -1758,7 +1811,7 @@
                     <div class="action-section-title" style="opacity:.55;font-size:11px;">🔧 Strumenti avanzati</div>
                     <div class="action-grid">
                       <div class="action-tile">
-                        <button class="btn action-btn" style="background:rgba(60,60,80,.8);" onclick="diagnosePanels()">🔍 Diagnostica stanze vocali</button>
+                        <button class="btn btn-ghost action-btn" onclick="diagnosePanels()">🔍 Diagnostica stanze vocali</button>
                         <div class="action-help">Mostra cosa vede il bot nella categoria Discord: stanze trovate, corrispondenze team↔stanza, e problemi. Usa solo se i pannelli non appaiono.</div>
                       </div>
                     </div>
@@ -1913,13 +1966,21 @@
                   <div class="card danger">
                     <div class="card-head">
                       <div>
-                        <h3 class="card-title">⚠️ Pulizia dati</h3>
-                        <div class="note">Azioni pericolose. Prima viene creato automaticamente uno storico.</div>
+                        <h3 class="card-title">⚠️ Azioni di pulizia</h3>
+                        <div class="note">Azioni irreversibili. Viene creato automaticamente uno storico prima di eseguirle.</div>
                       </div>
                     </div>
-                    <div class="row">
-                      <button class="btn btn-yellow" onclick="resetData()">Reset classifica</button>
-                      <button class="btn btn-red" onclick="resetTeams()">Svuota team</button>
+                    <div style="display:grid;gap:14px;margin-top:6px;">
+                      <div style="background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.22);border-radius:18px;padding:16px;">
+                        <div style="font-weight:950;margin-bottom:4px;">🟡 Reset classifica</div>
+                        <div class="note" style="margin-bottom:12px;">Azzera tutti i punti, le kill e le posizioni. I team restano iscritti. Usalo per ricominciare il conteggio senza cancellare i roster.</div>
+                        <button class="btn btn-orange" onclick="resetData()">Reset classifica e punteggi</button>
+                      </div>
+                      <div style="background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.22);border-radius:18px;padding:16px;">
+                        <div style="font-weight:950;margin-bottom:4px;">🔴 Svuota team</div>
+                        <div class="note" style="margin-bottom:12px;">Elimina tutti i team registrati. Attenzione: cancella anche gli slot e i giocatori associati. Non può essere annullato.</div>
+                        <button class="btn btn-red" onclick="resetTeams()">Svuota tutti i team</button>
+                      </div>
                     </div>
                   </div>
                   <div class="card">
@@ -2324,6 +2385,9 @@
       qs('statMissing').textContent=Number(match.nonInviati||0);
       qs('totalMatchesInput').value=total;
       qs('autoNextMatchInput').checked=autoNext;
+      if(qs('torneoStatTeams'))qs('torneoStatTeams').textContent=teams.length+' / 16';
+      if(qs('torneoStatMatch'))qs('torneoStatMatch').textContent=current+' / '+total;
+      if(qs('torneoStatAutoNext'))qs('torneoStatAutoNext').textContent=autoNext?'Attivo':'Disattivo';
       qs('openRegistrationsMessageInput').value=messages.openRegistrationsAnnouncement||'';
       qs('startTournamentMessageInput').value=messages.tournamentStartAnnouncement||'';
       qs('lobbyMessageInput').value=messages.lobbyInfoMessage||'';
@@ -3091,16 +3155,24 @@
     function imageBackdrop(event){
       if(event.target.id==='imageModal')closeImageModal()
     }
+    async function resetCurrentMatchAction(){
+      if(!confirm('Riportare il match corrente a 1? I dati dei risultati NON vengono eliminati. Confermi?'))return;
+      return runAction('resetCurrentMatch','Ripristino match 1...',async()=>{
+        const r=await api('/api/tournament/settings',{method:'POST',body:JSON.stringify({totalMatches:Number(qs('totalMatchesInput').value||3),resetCurrentMatch:true,autoNextMatch:qs('autoNextMatchInput').checked})});
+        if(!r.data?.ok)throw new Error(r.data?.message||'Errore');
+        setStatus('Match riportato a 1');
+        await loadDashboard()
+      })
+    }
     async function saveTournament(){
       return runAction('saveTournament','Salvo torneo...',async()=>{
         const result=await api('/api/tournament/configure',{
           method:'POST',body:JSON.stringify({
-            totalMatches:Number(qs('totalMatchesInput').value||3),resetCurrentMatch:qs('resetMatchInput').checked,autoNextMatch:qs('autoNextMatchInput').checked
+            totalMatches:Number(qs('totalMatchesInput').value||3),autoNextMatch:qs('autoNextMatchInput').checked
           })
         });
         if(!result)return;
         if(!result.response.ok||!result.data.ok)return alert(result.data.message||'Errore salvataggio torneo');
-        qs('resetMatchInput').checked=false;
         await refreshDashboard();
         setStatus('Torneo salvato')
       })
