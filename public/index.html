@@ -1119,6 +1119,92 @@
       }
     }
 
+    /* ── TROPHY 3D ── */
+    .trophy-wrap{
+      position:relative;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:10px;
+      animation:floatTrophy 3.6s ease-in-out infinite;
+    }
+
+    @keyframes floatTrophy{
+      0%,100%{ transform:translateY(0px); }
+      50%{ transform:translateY(-14px); }
+    }
+
+    .trophy-img{
+      width:240px;
+      height:auto;
+      display:block;
+      filter:
+        drop-shadow(0 0 28px rgba(160,100,255,.65))
+        drop-shadow(0 0 60px rgba(123,44,255,.35));
+      transition:transform .12s ease, filter .12s ease;
+      cursor:default;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .trophy-img:hover{
+      filter:
+        drop-shadow(0 0 38px rgba(180,120,255,.85))
+        drop-shadow(0 0 80px rgba(123,44,255,.55));
+    }
+
+    .trophy-glow{
+      position:absolute;
+      bottom:-10px;
+      left:50%;
+      transform:translateX(-50%);
+      width:150px;
+      height:22px;
+      background:radial-gradient(ellipse, rgba(123,44,255,.55), transparent 70%);
+      border-radius:50%;
+      filter:blur(7px);
+      animation:glowPulse 3.6s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    @keyframes glowPulse{
+      0%,100%{ opacity:.6; transform:translateX(-50%) scaleX(1); }
+      50%{ opacity:1; transform:translateX(-50%) scaleX(1.25); }
+    }
+
+    .trophy-mobile{
+      display:none;
+    }
+
+    /* ── PASS CARD ── */
+    .pass-card-wrap{
+      display:flex;
+      justify-content:center;
+      margin:22px 0 4px;
+      animation:floatPass 4.2s ease-in-out infinite;
+    }
+
+    @keyframes floatPass{
+      0%,100%{ transform:translateY(0px) rotate(-1.5deg); }
+      50%{ transform:translateY(-10px) rotate(1.5deg); }
+    }
+
+    .pass-card-img{
+      width:100%;
+      max-width:420px;
+      height:auto;
+      border-radius:22px;
+      filter:drop-shadow(0 0 30px rgba(123,44,255,.55)) drop-shadow(0 0 60px rgba(123,44,255,.25));
+      transition:transform .12s ease, filter .12s ease;
+      cursor:default;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .pass-card-img:hover{
+      filter:drop-shadow(0 0 44px rgba(180,120,255,.80)) drop-shadow(0 0 80px rgba(123,44,255,.45));
+    }
+
     /* ── MOBILE NAV BAR ── */
     .mobile-nav{
       display:none;
@@ -1214,6 +1300,27 @@
         margin-bottom:14px;
       }
 
+      /* coppa su mobile */
+      .trophy-mobile{
+        display:flex;
+        justify-content:center;
+        margin-bottom:16px;
+        animation:floatTrophy 3.6s ease-in-out infinite;
+      }
+      .trophy-mobile .trophy-img{
+        width:150px;
+      }
+      .trophy-mobile .trophy-glow{
+        width:100px;
+      }
+      .pass-card-wrap{
+        margin:14px 0 2px;
+      }
+      .pass-card-img{
+        max-width:100%;
+        border-radius:16px;
+      }
+
       /* home quick card: mostra solo icona + titolo + bottone su mobile */
       .quick-card p{
         display:none;
@@ -1284,6 +1391,15 @@
       <div class="hero-grid">
         <div class="hero-left">
           <div class="eyebrow">🔥 Evento competitivo live</div>
+
+          <!-- coppa visibile solo su mobile -->
+          <div class="trophy-mobile">
+            <div class="trophy-wrap" style="animation:none;">
+              <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyMobile" />
+              <div class="trophy-glow"></div>
+            </div>
+          </div>
+
           <h1 class="hero-title">
             <span id="heroTournamentTitle">RØDA CUP</span><br>
             <span class="accent">ESPORTS TOURNAMENT</span>
@@ -1320,6 +1436,12 @@
         </div>
 
         <div class="hero-right">
+          <!-- coppa 3D desktop -->
+          <div class="trophy-wrap">
+            <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyDesktop" />
+            <div class="trophy-glow"></div>
+          </div>
+
           <div class="side-card">
             <h3>📢 Stato torneo</h3>
             <p id="heroStateText">
@@ -1400,6 +1522,11 @@
           <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
           <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
         </div>
+      </div>
+
+      <!-- Tournament Pass card decorativa -->
+      <div class="pass-card-wrap" id="passCardWrap">
+        <img src="/tournament-pass.png" class="pass-card-img" id="passCardImg" alt="RØDA CUP Tournament Pass" />
       </div>
 
       <div id="matchLiveCard" style="display:none;">
@@ -2104,6 +2231,57 @@
     switchPage('page-home');
     loadPublicData();
     setInterval(loadPublicData, 15000);
+
+    /* ── 3D TILT EFFETTO COPPA ── */
+    (function(){
+      function applyTilt(img, e){
+        const r = img.getBoundingClientRect();
+        if(!r.width) return;
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = (e.clientX - cx) / (window.innerWidth * 0.5);
+        const dy = (e.clientY - cy) / (window.innerHeight * 0.5);
+        const ry = Math.max(-22, Math.min(22, dx * 22));
+        const rx = Math.max(-14, Math.min(14, -dy * 14));
+        img.style.transform = `perspective(520px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.05)`;
+      }
+
+      function resetTilt(img){
+        img.style.transform = '';
+      }
+
+      const desktop = document.getElementById('trophyDesktop');
+      const mobile  = document.getElementById('trophyMobile');
+      const passImg = document.getElementById('passCardImg');
+
+      document.addEventListener('mousemove', e => {
+        if(desktop && desktop.offsetParent !== null) applyTilt(desktop, e);
+        if(mobile  && mobile.offsetParent  !== null) applyTilt(mobile,  e);
+        if(passImg) applyTilt(passImg, e);
+      });
+
+      document.addEventListener('mouseleave', () => {
+        if(desktop) resetTilt(desktop);
+        if(mobile)  resetTilt(mobile);
+        if(passImg) resetTilt(passImg);
+      });
+
+      /* tilt touch per mobile */
+      function handleTouch(img, t){
+        if(!t.touches.length) return;
+        const touch = t.touches[0];
+        applyTilt(img, { clientX: touch.clientX, clientY: touch.clientY });
+      }
+
+      if(mobile){
+        mobile.addEventListener('touchmove', e => handleTouch(mobile, e), { passive:true });
+        mobile.addEventListener('touchend', () => resetTilt(mobile), { passive:true });
+      }
+      if(passImg){
+        passImg.addEventListener('touchmove', e => handleTouch(passImg, e), { passive:true });
+        passImg.addEventListener('touchend', () => resetTilt(passImg), { passive:true });
+      }
+    })();
   </script>
 </body>
 </html>
