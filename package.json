@@ -12,8 +12,7 @@
     "discord.js": "^14.14.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.5.0",
-    "grammy": "^1.42.0",
-    "helmet": "^8.0.0",
+"helmet": "^8.0.0",
     "jimp": "^1.6.0",
     "puppeteer": "^24.8.2",
     "sharp": "^0.33.5"
