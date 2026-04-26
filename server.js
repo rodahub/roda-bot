@@ -127,7 +127,21 @@ app.set('trust proxy', 1);
 
 if (helmet) {
   app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc:  ["'self'"],
+        scriptSrc:   ["'self'", "'unsafe-inline'"],
+        styleSrc:    ["'self'", "'unsafe-inline'"],
+        imgSrc:      ["'self'", "data:", "https:"],
+        connectSrc:  ["'self'"],
+        fontSrc:     ["'self'", "data:"],
+        frameSrc:    ["'none'"],
+        objectSrc:   ["'none'"],
+        baseUri:     ["'self'"],
+        formAction:  ["'self'"],
+        upgradeInsecureRequests: []
+      }
+    },
     crossOriginEmbedderPolicy: false
   }));
 }
@@ -181,10 +195,21 @@ const publicRegisterLimiter = createLimiter({
   }
 });
 
+const publicApiLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  limit: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    message: 'Troppe richieste pubbliche. Riprova tra poco.'
+  }
+});
+
 app.use(generalLimiter);
 
-app.use(express.json({ limit: '8mb' }));
-app.use(express.urlencoded({ extended: true, limit: '8mb' }));
+app.use(express.json({ limit: '512kb' }));
+app.use(express.urlencoded({ extended: true, limit: '512kb' }));
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -1635,7 +1660,7 @@ app.get('/api/proof-proxy', authRequired, async (req, res) => {
   }
 });
 
-app.get('/api/public/dashboard', (req, res) => {
+app.get('/api/public/dashboard', publicApiLimiter, (req, res) => {
   return res.json(buildPublicPayload(req));
 });
 
