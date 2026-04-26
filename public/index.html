@@ -1868,7 +1868,10 @@
           <!-- coppa visibile solo su mobile -->
           <div class="trophy-mobile">
             <div class="trophy-wrap" style="animation:none;">
-              <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyMobile" />
+              <picture>
+                <source srcset="/coppa.webp" type="image/webp">
+                <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyMobile" width="400" height="400" fetchpriority="high">
+              </picture>
               <div class="trophy-glow"></div>
             </div>
           </div>
@@ -1911,7 +1914,10 @@
         <div class="hero-right">
           <!-- coppa 3D desktop -->
           <div class="trophy-wrap">
-            <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyDesktop" />
+            <picture>
+              <source srcset="/coppa.webp" type="image/webp">
+              <img src="/coppa.png" class="trophy-img" alt="RØDA CUP Trophy" id="trophyDesktop" width="400" height="400" loading="lazy">
+            </picture>
             <div class="trophy-glow"></div>
           </div>
 
