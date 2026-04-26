@@ -1176,6 +1176,52 @@
       display:none;
     }
 
+    /* ── FUNKO CHARS ── */
+    .funko-char{
+      position:absolute;
+      bottom:0;
+      z-index:4;
+      height:84%;
+      max-height:310px;
+      object-fit:contain;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
+      animation:floatChar 4.4s ease-in-out infinite;
+      filter:drop-shadow(0 0 18px rgba(123,44,255,.30));
+    }
+
+    .funko-left{
+      left:12px;
+      animation-delay:.6s;
+    }
+
+    .funko-right{
+      right:12px;
+      animation-delay:-2.2s;
+    }
+
+    @keyframes floatChar{
+      0%,100%{ transform:translateY(0px); }
+      50%{ transform:translateY(-10px); }
+    }
+
+    @media (min-width:1300px){
+      .hero{
+        padding-left:168px;
+        padding-right:168px;
+      }
+      .funko-char{
+        display:block;
+      }
+    }
+
+    @media (max-width:1299px){
+      .funko-char{
+        display:none;
+      }
+    }
+
     /* ── PASS CARD ── */
     .pass-card-wrap{
       display:flex;
@@ -1388,6 +1434,10 @@
 
   <div class="wrap">
     <section class="hero">
+      <!-- Funko pop decorativi (visibili solo su schermi ≥1300px) -->
+      <img src="/funko-girl.png" class="funko-char funko-left"  alt="" />
+      <img src="/funko-guy.png"  class="funko-char funko-right" alt="" />
+
       <div class="hero-grid">
         <div class="hero-left">
           <div class="eyebrow">🔥 Evento competitivo live</div>
