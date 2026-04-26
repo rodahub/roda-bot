@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streamer — RØDA CUP</title>
+  <meta name="description" content="Scopri i content creator ufficiali di RØDA CUP: bio, foto e social.">
+  <style>
+    *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+
+    :root{
+      --purple:#7b2cff;
+      --purple-2:#9c5cff;
+      --purple-3:#b98aff;
+      --bg:#080910;
+      --bg-2:#0e0b18;
+      --bg-card:#12101e;
+      --border:rgba(160,110,255,.14);
+      --text:#f0e8ff;
+      --text-muted:rgba(200,185,255,.55);
+      --shadow:0 8px 40px rgba(0,0,0,.5);
+    }
+
+    html{ scroll-behavior:smooth; }
+
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100dvh;
+      overflow-x:hidden;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+
+    /* ── SFONDO GLOW FISSO ── */
+    .bg-glow{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(123,44,255,.22) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(80,20,200,.10) 0%, transparent 60%);
+    }
+
+    /* ── TOPBAR ── */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:rgba(8,9,16,.88);
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .topbar-inner{
+      max-width:1180px;
+      margin:0 auto;
+      padding:14px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brand-logo{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      object-fit:cover;
+    }
+
+    .brand-name{
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:-.01em;
+      color:var(--text);
+    }
+
+    .brand-sub{
+      font-size:11px;
+      color:var(--text-muted);
+      margin-top:1px;
+    }
+
+    .back-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 16px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:800;
+      color:var(--text);
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+      transition:.15s ease;
+      touch-action:manipulation;
+    }
+
+    .back-btn:hover{ background:rgba(123,44,255,.12); border-color:var(--border); transform:translateY(-1px); }
+    .back-btn:active{ transform:translateY(1px); opacity:.82; }
+
+    /* ── CONTENUTO ── */
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1180px;
+      margin:0 auto;
+      padding:0 24px 80px;
+    }
+
+    /* ── HERO ── */
+    .page-hero{
+      padding:64px 0 52px;
+      text-align:center;
+    }
+
+    .page-hero-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 16px;
+      border-radius:40px;
+      background:rgba(123,44,255,.14);
+      border:1px solid rgba(160,110,255,.24);
+      font-size:12px;
+      font-weight:800;
+      color:var(--purple-3);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:24px;
+    }
+
+    .page-hero-title{
+      font-size:clamp(36px,7vw,72px);
+      font-weight:900;
+      letter-spacing:-.03em;
+      line-height:1.0;
+      background:linear-gradient(135deg,#ffffff 0%,#c8aaff 50%,#9060ff 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:18px;
+    }
+
+    .page-hero-sub{
+      font-size:16px;
+      color:var(--text-muted);
+      max-width:480px;
+      margin:0 auto;
+      line-height:1.6;
+    }
+
+    /* ── LOADING / ERRORE ── */
+    .state-msg{
+      text-align:center;
+      padding:60px 20px;
+      color:var(--text-muted);
+      font-size:15px;
+    }
+
+    .spinner{
+      display:inline-block;
+      width:32px;
+      height:32px;
+      border:3px solid rgba(160,110,255,.20);
+      border-top-color:var(--purple-2);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+      margin-bottom:16px;
+    }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    /* ── STREAMER CARDS ── */
+    .cards-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+    }
+
+    .s-card{
+      display:grid;
+      grid-template-columns:340px 1fr;
+      border-radius:28px;
+      overflow:hidden;
+      background:linear-gradient(160deg, rgba(20,14,38,.98), rgba(10,8,20,.99));
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+      transition:.25s ease;
+      min-height:340px;
+    }
+
+    .s-card:hover{
+      border-color:rgba(160,110,255,.30);
+      box-shadow:0 20px 70px rgba(123,44,255,.18);
+      transform:translateY(-3px);
+    }
+
+    /* Inversione alternata sinistra/destra */
+    .s-card.reversed{ direction:rtl; }
+    .s-card.reversed > *{ direction:ltr; }
+
+    .s-photo{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg,rgba(60,20,120,.20),rgba(20,10,50,.25));
+    }
+
+    .s-photo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:top center;
+      display:block;
+      transition:transform .4s ease;
+    }
+
+    .s-card:hover .s-photo img{ transform:scale(1.05); }
+
+    .s-photo-placeholder{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:96px;
+      min-height:340px;
+    }
+
+    .s-photo-overlay{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(to right, transparent 60%, rgba(10,8,20,.85) 100%);
+      pointer-events:none;
+    }
+
+    .s-card.reversed .s-photo-overlay{
+      background:linear-gradient(to left, transparent 60%, rgba(10,8,20,.85) 100%);
+    }
+
+    .s-info{
+      padding:40px 44px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:12px;
+    }
+
+    .s-badge{
+      display:inline-block;
+      background:rgba(123,44,255,.16);
+      border:1px solid rgba(160,110,255,.24);
+      color:var(--purple-3);
+      font-size:10px;
+      font-weight:900;
+      padding:4px 12px;
+      border-radius:20px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      width:fit-content;
+    }
+
+    .s-name{
+      font-size:clamp(28px,4vw,42px);
+      font-weight:900;
+      color:#f0e8ff;
+      line-height:1.1;
+      letter-spacing:-.02em;
+    }
+
+    .s-handle{
+      font-size:14px;
+      color:var(--purple-3);
+      font-weight:700;
+      letter-spacing:.02em;
+      margin-top:-4px;
+    }
+
+    .s-divider{
+      width:40px;
+      height:2px;
+      background:linear-gradient(90deg,var(--purple),transparent);
+      border-radius:2px;
+      margin:2px 0;
+    }
+
+    .s-bio{
+      font-size:15px;
+      color:rgba(220,208,255,.70);
+      line-height:1.65;
+      max-width:500px;
+    }
+
+    .s-socials{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+
+    .s-social{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:9px 16px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:800;
+      text-decoration:none;
+      transition:.15s ease;
+      border:1px solid rgba(255,255,255,.08);
+      color:#e8e0ff;
+      background:rgba(255,255,255,.04);
+      touch-action:manipulation;
+      white-space:nowrap;
+    }
+
+    .s-social:hover{ transform:translateY(-2px); background:rgba(123,44,255,.14); border-color:rgba(160,110,255,.30); }
+    .s-social:active{ transform:translateY(1px); opacity:.82; }
+    .s-social.twitch{ color:#9146ff; border-color:rgba(145,70,255,.22); }
+    .s-social.twitch:hover{ background:rgba(145,70,255,.14); border-color:rgba(145,70,255,.42); }
+    .s-social.youtube{ color:#ff4040; border-color:rgba(255,64,64,.16); }
+    .s-social.youtube:hover{ background:rgba(255,64,64,.09); border-color:rgba(255,64,64,.36); }
+    .s-social.instagram{ color:#e1306c; border-color:rgba(225,48,108,.16); }
+    .s-social.instagram:hover{ background:rgba(225,48,108,.09); border-color:rgba(225,48,108,.36); }
+    .s-social.tiktok{ color:#ff2d55; border-color:rgba(255,45,85,.16); }
+    .s-social.tiktok:hover{ background:rgba(255,45,85,.09); border-color:rgba(255,45,85,.36); }
+    .s-social.twitter{ color:#1d9bf0; border-color:rgba(29,155,240,.16); }
+    .s-social.twitter:hover{ background:rgba(29,155,240,.09); border-color:rgba(29,155,240,.36); }
+
+    /* ── FOOTER ── */
+    .page-footer{
+      position:relative;
+      z-index:1;
+      text-align:center;
+      padding:32px 24px 40px;
+      border-top:1px solid rgba(255,255,255,.05);
+      font-size:13px;
+      color:var(--text-muted);
+    }
+
+    .page-footer a{
+      color:var(--purple-3);
+      font-weight:700;
+      transition:.12s;
+    }
+
+    .page-footer a:hover{ color:#fff; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:860px){
+      .s-card{
+        grid-template-columns:1fr;
+        min-height:unset;
+      }
+
+      .s-card.reversed{ direction:ltr; }
+
+      .s-photo{
+        aspect-ratio:16/9;
+        min-height:unset;
+      }
+
+      .s-photo-overlay{
+        background:linear-gradient(to top, rgba(10,8,20,.85) 0%, transparent 50%) !important;
+      }
+
+      .s-info{
+        padding:28px 28px 32px;
+      }
+
+      .s-name{ font-size:28px; }
+    }
+
+    @media(max-width:540px){
+      .topbar-inner{ padding:12px 16px; }
+      .wrap{ padding:0 16px 60px; }
+      .page-hero{ padding:44px 0 36px; }
+      .s-info{ padding:22px 20px 26px; }
+      .s-social{ font-size:12px; padding:8px 12px; }
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{
+        animation-duration:.01ms !important;
+        transition-duration:.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/roda-logo.png" alt="RØDA CUP" onerror="this.style.display='none'">
+      <div>
+        <div class="brand-name" id="siteName">RØDA CUP</div>
+        <div class="brand-sub">Content creator ufficiali</div>
+      </div>
+    </div>
+    <a class="back-btn" href="/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Torna al sito
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-hero">
+    <div class="page-hero-badge">🎙️ Content Creator</div>
+    <h1 class="page-hero-title" id="heroTitle">I nostri Streamer</h1>
+    <p class="page-hero-sub" id="heroSub">Segui i content creator ufficiali di RØDA CUP, commentano ogni match e tengono la community viva.</p>
+  </div>
+
+  <div id="root">
+    <div class="state-msg">
+      <div class="spinner"></div><br>
+      Caricamento streamer...
+    </div>
+  </div>
+</main>
+
+<footer class="page-footer">
+  <span id="footerName">RØDA CUP</span> — Portale ufficiale &nbsp;•&nbsp;
+  <a href="/">Sito pubblico</a> &nbsp;•&nbsp;
+  <a href="/login">Accesso admin</a>
+</footer>
+
+<script>
+  function esc(text) {
+    return String(text ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function socialSvg(type) {
+    const svgs = {
+      twitch: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>',
+      youtube: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>',
+      instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>',
+      tiktok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>',
+      twitter: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.843L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'
+    };
+    return svgs[type] || '';
+  }
+
+  function socialLabel(type) {
+    return { twitch:'Twitch', youtube:'YouTube', instagram:'Instagram', tiktok:'TikTok', twitter:'X / Twitter' }[type] || type;
+  }
+
+  function buildCard(s, idx) {
+    const isReversed = idx % 2 === 1;
+    const socials = s.socials || {};
+    const socialLinks = ['twitch','youtube','instagram','tiktok','twitter']
+      .filter(k => socials[k])
+      .map(k => `<a class="s-social ${k}" href="${esc(socials[k])}" target="_blank" rel="noopener noreferrer">${socialSvg(k)} ${socialLabel(k)}</a>`)
+      .join('');
+
+    const photoContent = s.foto
+      ? `<img src="${esc(s.foto)}" alt="${esc(s.nome)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="s-photo-placeholder" style="display:none;position:absolute;inset:0">🎙️</div>`
+      : `<div class="s-photo-placeholder">🎙️</div>`;
+
+    return `
+      <article class="s-card${isReversed ? ' reversed' : ''}">
+        <div class="s-photo">
+          ${photoContent}
+          <div class="s-photo-overlay"></div>
+        </div>
+        <div class="s-info">
+          ${s.ruolo ? `<span class="s-badge">${esc(s.ruolo)}</span>` : ''}
+          <h2 class="s-name">${esc(s.nome)}</h2>
+          ${s.handle ? `<div class="s-handle">${esc(s.handle)}</div>` : ''}
+          <div class="s-divider"></div>
+          ${s.bio ? `<p class="s-bio">${esc(s.bio)}</p>` : ''}
+          ${socialLinks ? `<div class="s-socials">${socialLinks}</div>` : ''}
+        </div>
+      </article>`;
+  }
+
+  async function init() {
+    const root = document.getElementById('root');
+    try {
+      const res = await fetch('/api/public/dashboard', { credentials: 'same-origin' });
+      const data = await res.json();
+
+      if (!data.ok) {
+        root.innerHTML = '<div class="state-msg">Impossibile caricare i dati. Riprova più tardi.</div>';
+        return;
+      }
+
+      const torneo = data.torneo || {};
+      const name = torneo.tournamentName || 'RØDA CUP';
+      document.title = `Streamer — ${name}`;
+      document.getElementById('siteName').textContent = name;
+      document.getElementById('heroTitle').textContent = 'I nostri Streamer';
+      document.getElementById('footerName').textContent = name;
+
+      const streamers = (data.streamers || []).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+
+      if (!streamers.length) {
+        root.innerHTML = '<div class="state-msg">Nessuno streamer disponibile al momento.<br><br><a href="/" style="color:#b98aff;font-weight:800;">← Torna al sito</a></div>';
+        return;
+      }
+
+      root.innerHTML = `<div class="cards-wrap">${streamers.map((s, i) => buildCard(s, i)).join('')}</div>`;
+    } catch(e) {
+      root.innerHTML = '<div class="state-msg">Errore di connessione. Verifica la tua connessione e riprova.<br><br><a href="/" style="color:#b98aff;font-weight:800;">← Torna al sito</a></div>';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

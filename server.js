@@ -1532,6 +1532,10 @@ app.get('/', (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
+app.get('/streamer', (req, res) => {
+  return res.sendFile(path.join(PUBLIC_DIR, 'streamer.html'));
+});
+
 app.get('/admin', authRequired, (req, res) => {
   return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
