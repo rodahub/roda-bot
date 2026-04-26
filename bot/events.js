@@ -211,7 +211,7 @@ function registerEvents() {
       console.error(err);
       try {
         if (interaction.isRepliable()) {
-          const message = err.message || 'Si è verificato un errore durante l'operazione.';
+          const message = err.message || "Si è verificato un errore durante l'operazione.";
           if (interaction.deferred || interaction.replied) {
             await interaction.editReply({ content: `❌ ${message}` });
           } else {

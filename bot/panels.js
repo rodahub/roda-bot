@@ -55,7 +55,7 @@ function createRegisterPanelPayload() {
       `**Formato:** Team da 3 giocatori\n` +
       `**Iscrizioni:** ${registrationsOpen && !isFull ? 'Aperte' : 'Chiuse'}\n` +
       `**Team registrati:** ${registered}/${maxTeams}\n\n` +
-      `${!registrationsOpen ? 'Le iscrizioni non sono ancora aperte. Attendi l'annuncio dello staff.' : isFull ? 'Le iscrizioni hanno raggiunto il limite massimo.' : 'Premi il pulsante qui sotto per registrare il tuo team.'}`
+      `${!registrationsOpen ? "Le iscrizioni non sono ancora aperte. Attendi l'annuncio dello staff." : isFull ? 'Le iscrizioni hanno raggiunto il limite massimo.' : 'Premi il pulsante qui sotto per registrare il tuo team.'}`
     )
     .setFooter({ text: 'Pannello registrazione torneo' });
   if (logoUrl) { try { embed.setThumbnail(logoUrl); } catch {} }
@@ -78,7 +78,7 @@ function createTeamResultPanelPayload(teamName, teamData) {
   const alreadySent = record.status === 'in_attesa' || record.status === 'approvato' || record.status === 'inserito_manualmente';
   const statusText = alreadySent
     ? (record.status === 'in_attesa' ? 'Risultato già inviato e in attesa dello staff.' : 'Risultato già registrato per questo match.')
-    : 'Compila le kill dei 3 giocatori e la posizione finale. Dopo l'invio, allega lo screenshot della partita nella chat di questa stanza.';
+    : "Compila le kill dei 3 giocatori e la posizione finale. Dopo l'invio, allega lo screenshot della partita nella chat di questa stanza.";
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
     .setTitle(`📸 Risultato Match ${matchNumber}`)
