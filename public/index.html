@@ -1565,6 +1565,22 @@
         background:rgba(123,44,255,.18);
       }
 
+      a.mobile-nav-item{
+        text-decoration:none;
+        font-size:inherit;
+      }
+
+      .mobile-nav-admin{
+        color:rgba(160,110,255,.70);
+        border-left:1px solid rgba(255,255,255,.06);
+      }
+
+      .mobile-nav-admin:hover,
+      .mobile-nav-admin:active{
+        color:var(--purple-3);
+        background:rgba(123,44,255,.18);
+      }
+
       .mobile-nav-icon{
         font-size:19px;
         line-height:1;
@@ -2320,6 +2336,10 @@
       <span class="mobile-nav-icon">📜</span>
       <span class="mobile-nav-label">Regole</span>
     </button>
+    <a class="mobile-nav-item mobile-nav-admin" href="/login" aria-label="Accesso admin">
+      <span class="mobile-nav-icon">🔐</span>
+      <span class="mobile-nav-label">Admin</span>
+    </a>
   </nav>
 
   <script>
