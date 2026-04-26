@@ -696,6 +696,8 @@
       border-radius:24px;
       padding:20px;
       box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
     }
 
     .quick-card::before{
@@ -733,6 +735,7 @@
       color:var(--muted);
       font-size:13px;
       line-height:1.6;
+      flex:1;
     }
 
     .quick-card .btn{
@@ -1965,35 +1968,35 @@
         <div class="quick-card">
           <div class="quick-icon">📝</div>
           <h3>Iscrivi il tuo team</h3>
-          <p>Registra il tuo team direttamente dal sito pubblico e occupa subito uno slot disponibile.</p>
+          <p>Registra il tuo team e prenota un posto nel torneo.</p>
           <button class="btn btn-green" data-go-page="page-register">Iscriviti</button>
         </div>
 
         <div class="quick-card">
           <div class="quick-icon">🏆</div>
           <h3>Segui la classifica live</h3>
-          <p>Controlla i punti dei team e il top fragger aggiornato del torneo.</p>
+          <p>Punti, classifica e top fragger sempre aggiornati.</p>
           <button class="btn btn-purple" data-go-page="page-rankings">Classifiche</button>
         </div>
 
         <div class="quick-card">
           <div class="quick-icon">📺</div>
           <h3>Guarda la diretta</h3>
-          <p>Segui la live ufficiale del torneo su Twitch e resta aggiornato in tempo reale.</p>
+          <p>Diretta ufficiale su Twitch, aggiornata in tempo reale.</p>
           <a class="btn btn-live" href="https://www.twitch.tv/irlandesetv" target="_blank" rel="noopener noreferrer">Live</a>
         </div>
 
         <div class="quick-card">
           <div class="quick-icon">📜</div>
           <h3>Leggi il regolamento</h3>
-          <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
+          <p>Regole, formato e sistema di punteggio del torneo.</p>
           <button class="btn btn-purple" data-go-page="page-rules">Regolamento</button>
         </div>
 
         <div class="quick-card">
           <div class="quick-icon">🎙️</div>
           <h3>I nostri streamer</h3>
-          <p>Scopri i content creator ufficiali di RØDA CUP: chi sono, dove seguirli e i loro social.</p>
+          <p>I creator ufficiali di RØDA CUP e i loro canali social.</p>
           <a class="btn btn-live" href="/streamer">Streamer</a>
         </div>
       </div>
