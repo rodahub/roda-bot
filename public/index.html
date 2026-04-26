@@ -223,7 +223,7 @@
     .wrap{
       max-width:var(--container);
       margin:0 auto;
-      padding:22px 20px 30px 20px;
+      padding:16px 20px 18px 20px;
     }
 
     .hero{
@@ -238,7 +238,7 @@
       border-radius:34px;
       padding:34px;
       box-shadow:var(--shadow-strong);
-      margin-bottom:18px;
+      margin-bottom:12px;
       isolation:isolate;
     }
 
@@ -636,7 +636,7 @@
     }
 
     .home-banner{
-      padding:18px 20px;
+      padding:14px 18px;
       border-radius:20px;
       border:1px solid rgba(255,255,255,.06);
       background:rgba(255,255,255,.03);
@@ -645,7 +645,7 @@
       justify-content:space-between;
       gap:14px;
       flex-wrap:wrap;
-      margin-bottom:18px;
+      margin-bottom:12px;
     }
 
     .home-banner strong{
@@ -655,8 +655,8 @@
     .home-quick{
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:18px;
-      margin-bottom:18px;
+      gap:14px;
+      margin-bottom:12px;
     }
 
     .quick-card{
@@ -900,8 +900,8 @@
     }
 
     .footer{
-      margin-top:28px;
-      padding:20px 0 8px 0;
+      margin-top:16px;
+      padding:14px 0 8px 0;
       color:var(--muted);
       font-size:13px;
       text-align:center;
@@ -1438,34 +1438,6 @@
       }
     }
 
-    /* ── PASS CARD ── */
-    .pass-card-wrap{
-      display:flex;
-      justify-content:center;
-      margin:22px 0 4px;
-      animation:floatPass 4.2s ease-in-out infinite;
-    }
-
-    @keyframes floatPass{
-      0%,100%{ transform:translateY(0px) rotate(-1.5deg); }
-      50%{ transform:translateY(-10px) rotate(1.5deg); }
-    }
-
-    .pass-card-img{
-      width:100%;
-      max-width:420px;
-      height:auto;
-      border-radius:22px;
-      filter:drop-shadow(0 0 30px rgba(123,44,255,.55)) drop-shadow(0 0 60px rgba(123,44,255,.25));
-      transition:transform .12s ease, filter .12s ease;
-      cursor:default;
-      user-select:none;
-      -webkit-user-drag:none;
-    }
-
-    .pass-card-img:hover{
-      filter:drop-shadow(0 0 44px rgba(180,120,255,.80)) drop-shadow(0 0 80px rgba(123,44,255,.45));
-    }
 
     /* ── MOBILE NAV BAR ── */
     .mobile-nav{
@@ -1574,13 +1546,6 @@
       }
       .trophy-mobile .trophy-glow{
         width:100px;
-      }
-      .pass-card-wrap{
-        margin:14px 0 2px;
-      }
-      .pass-card-img{
-        max-width:100%;
-        border-radius:16px;
       }
 
       /* home quick card: mostra solo icona + titolo + bottone su mobile */
@@ -1788,11 +1753,6 @@
           <p>Consulta formato, restrizioni, sistema punti e regole di validazione risultati.</p>
           <button class="btn btn-purple" data-go-page="page-rules">Apri regolamento</button>
         </div>
-      </div>
-
-      <!-- Tournament Pass card decorativa -->
-      <div class="pass-card-wrap" id="passCardWrap">
-        <img src="/tournament-pass.png" class="pass-card-img" id="passCardImg" alt="RØDA CUP Tournament Pass" />
       </div>
 
       <div id="matchLiveCard" style="display:none;">
@@ -2583,16 +2543,13 @@
 
       const desktop = document.getElementById('trophyDesktop');
       const mobile  = document.getElementById('trophyMobile');
-      const passImg = document.getElementById('passCardImg');
-
       document.addEventListener('mousemove', e => {
         if(desktop && desktop.offsetParent !== null) applyTilt(desktop, e, 22, 14);
         if(mobile  && mobile.offsetParent  !== null) applyTilt(mobile,  e, 18, 12);
-        if(passImg) applyTilt(passImg, e, 14, 10);
       });
 
       document.addEventListener('mouseleave', () => {
-        [desktop, mobile, passImg].forEach(el => { if(el) resetTilt(el); });
+        [desktop, mobile].forEach(el => { if(el) resetTilt(el); });
       });
 
       function handleTouch(el, t){
