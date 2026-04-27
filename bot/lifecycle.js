@@ -74,7 +74,7 @@ function ensureDataStructures() {
   if (!state.data.scores || typeof state.data.scores !== 'object') state.data.scores = {};
   if (!state.data.fragger || typeof state.data.fragger !== 'object') state.data.fragger = {};
 
-  for (const key of ['leaderboardMessageId', 'leaderboardGraphicMessageId', 'topFraggerGraphicMessageId', 'registrationStatusMessageId', 'registrationGraphicMessageId']) {
+  for (const key of ['leaderboardMessageId', 'leaderboardGraphicMessageId', 'topFraggerGraphicMessageId', 'registrationStatusMessageId', 'registrationGraphicMessageId', 'registrationStatusChannelId']) {
     if (!Object.prototype.hasOwnProperty.call(state.data, key)) state.data[key] = null;
   }
 

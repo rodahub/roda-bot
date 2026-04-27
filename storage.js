@@ -953,6 +953,7 @@ function normalizeData(data) {
   base.topFraggerGraphicMessageId = safe.topFraggerGraphicMessageId || null;
 
   base.registrationStatusMessageId = safe.registrationStatusMessageId || null;
+  base.registrationStatusChannelId = safe.registrationStatusChannelId || null;
   base.registrationClosedAnnounced = Boolean(safe.registrationClosedAnnounced);
 
   base.registrationMaxTeams = MAX_TEAMS;

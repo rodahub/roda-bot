@@ -230,6 +230,14 @@ function queueRegistrationStatusUpdate(options = {}) {
       if (!targetChannelId) return { skipped: true, reason: 'no_channel' };
       const channel = await client.channels.fetch(targetChannelId).catch(() => null);
       if (!channel) return { skipped: true, reason: 'channel_not_found' };
+      // Se il canale è cambiato dall'ultima volta, azzeriamo i riferimenti ai messaggi
+      // per evitare di cercarli nel canale sbagliato e creare duplicati.
+      if (state.data.registrationStatusChannelId && state.data.registrationStatusChannelId !== targetChannelId) {
+        state.data.registrationStatusMessageId = null;
+        state.data.registrationGraphicMessageId = null;
+        state.data.lastRegistrationGraphicSignature = null;
+      }
+      state.data.registrationStatusChannelId = targetChannelId;
       const displayTeams = getDisplayTeams();
       const signature = `${displayTeams.length}:${areRegistrationsOpen()}`;
       let existingMsg = null;
