@@ -1976,47 +1976,7 @@
                   </div>
                 </div>
 
-                <!-- Modal clan -->
-                <div id="clanModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
-                  <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-                      <h3 id="clanModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi clan</h3>
-                      <button onclick="closeClanModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
-                    </div>
-                    <input type="hidden" id="cmId">
-                    <div style="display:grid;gap:14px;">
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome clan *</label>
-                        <input id="cmNome" class="input" type="text" placeholder="es. Shadow Raiders" maxlength="60">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Tag</label>
-                        <input id="cmTag" class="input" type="text" placeholder="es. [SHRD]" maxlength="10">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Logo PNG</label>
-                        <input id="cmLogo" class="input" type="url" placeholder="https://... (PNG sfondo trasparente)" maxlength="500">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Descrizione breve</label>
-                        <textarea id="cmDescrizione" class="input" placeholder="Breve presentazione del clan..." maxlength="300" rows="3" style="resize:vertical;min-height:72px;"></textarea>
-                      </div>
-                      <div style="display:flex;align-items:center;gap:10px;">
-                        <input type="checkbox" id="cmPartecipante" style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
-                        <label for="cmPartecipante" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Ha partecipato a RØDA CUP <span style="color:#f0b429;">⚔️</span></label>
-                      </div>
-                      <div style="display:flex;align-items:center;gap:10px;">
-                        <input type="checkbox" id="cmActive" checked style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
-                        <label for="cmActive" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Visibile nella pagina pubblica</label>
-                      </div>
-                    </div>
-                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
-                      <button class="btn btn-blue" onclick="closeClanModal()">Annulla</button>
-                      <button class="btn btn-green" onclick="saveClan()" id="clanSaveBtn">Salva</button>
-                    </div>
-                    <div id="clanModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
-                  </div>
-                </div>
+
 
                 <!-- RICHIESTE CLAN -->
                 <div class="card" style="margin-top:24px;">
@@ -3862,6 +3822,7 @@
         const url = _editingClanId ? `/api/clans/${_editingClanId}` : '/api/clans';
         const method = _editingClanId ? 'PUT' : 'POST';
         const result = await api(url, { method, body: JSON.stringify(payload) });
+        if (!result) return;
         if (result.data.ok) {
           closeClanModal();
           await loadClans();
@@ -4203,7 +4164,8 @@
         closeTeamModal();
         closeManualModal();
         closeReviewModal();
-        closeImageModal()
+        closeImageModal();
+        closeClanModal();
       }
       if(event.key==='Enter'&&qs('editModal').classList.contains('show'))saveInlineEdit()
     });
@@ -4284,6 +4246,48 @@
     <div style="display:flex;gap:14px;align-items:center;margin-top:6px;">
       <a id="proofDownloadBtn" href="#" download="prova" style="background:rgba(255,255,255,.15);color:#fff;text-decoration:none;padding:6px 16px;border-radius:6px;font-size:12px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">⬇ Scarica file</a>
       <a id="proofExtLink" href="#" target="_blank" rel="noopener" class="proof-open-ext">↗ Apri in una nuova scheda</a>
+    </div>
+  </div>
+
+  <!-- Modal clan — a livello body per evitare stacking context dell'animazione -->
+  <div id="clanModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h3 id="clanModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi clan</h3>
+        <button onclick="closeClanModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+      </div>
+      <input type="hidden" id="cmId">
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome clan *</label>
+          <input id="cmNome" class="input" type="text" placeholder="es. Shadow Raiders" maxlength="60">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Tag</label>
+          <input id="cmTag" class="input" type="text" placeholder="es. [SHRD]" maxlength="10">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Logo PNG</label>
+          <input id="cmLogo" class="input" type="url" placeholder="https://... (PNG sfondo trasparente)" maxlength="500">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Descrizione breve</label>
+          <textarea id="cmDescrizione" class="input" placeholder="Breve presentazione del clan..." maxlength="300" rows="3" style="resize:vertical;min-height:72px;"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="cmPartecipante" style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
+          <label for="cmPartecipante" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Ha partecipato a RØDA CUP <span style="color:#f0b429;">⚔️</span></label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="cmActive" checked style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer;">
+          <label for="cmActive" style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">Visibile nella pagina pubblica</label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+        <button class="btn btn-blue" onclick="closeClanModal()">Annulla</button>
+        <button class="btn btn-green" onclick="saveClan()" id="clanSaveBtn">Salva</button>
+      </div>
+      <div id="clanModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
     </div>
   </div>
 
