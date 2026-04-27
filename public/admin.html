@@ -4154,6 +4154,10 @@
     }
     document.querySelectorAll('.nav button').forEach(button=>button.addEventListener('click',()=>switchPage(button.dataset.page)));
     document.getElementById('addClanBtn')?.addEventListener('click',()=>{try{openClanModal(null);}catch(e){alert('Errore apertura form clan: '+e.message);}});
+    document.getElementById('clanCloseBtn')?.addEventListener('click', closeClanModal);
+    document.getElementById('clanCancelBtn')?.addEventListener('click', closeClanModal);
+    document.getElementById('clanSaveBtn')?.addEventListener('click', saveClan);
+    document.getElementById('clanModal')?.addEventListener('click', e => { if(e.target === document.getElementById('clanModal')) closeClanModal(); });
 
     qs('refreshBtn').addEventListener('click',refreshDashboard);
     qs('logoutBtn').addEventListener('click',logout);
@@ -4252,10 +4256,10 @@
 
   <!-- Modal clan — a livello body per evitare stacking context dell'animazione -->
   <div id="clanModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+    <div id="clanModalInner" style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <h3 id="clanModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi clan</h3>
-        <button onclick="closeClanModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+        <button id="clanCloseBtn" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
       </div>
       <input type="hidden" id="cmId">
       <div style="display:grid;gap:14px;">
@@ -4285,8 +4289,8 @@
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
-        <button class="btn btn-blue" onclick="closeClanModal()">Annulla</button>
-        <button class="btn btn-green" onclick="saveClan()" id="clanSaveBtn">Salva</button>
+        <button class="btn btn-blue" id="clanCancelBtn">Annulla</button>
+        <button class="btn btn-green" id="clanSaveBtn">Salva</button>
       </div>
       <div id="clanModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
     </div>
