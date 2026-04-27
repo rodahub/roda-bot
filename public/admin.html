@@ -1969,7 +1969,7 @@
                       <h3 class="card-title">🛡️ Clan Spotlight</h3>
                       <p class="card-desc">Gestisci i clan nella vetrina pubblica. Approva le richieste e aggiungi manualmente chi vuole lasciare la propria firma su RØDA CUP.</p>
                     </div>
-                    <button class="btn btn-green" onclick="openClanModal(null)">+ Aggiungi clan</button>
+                    <button class="btn btn-green" id="addClanBtn">+ Aggiungi clan</button>
                   </div>
                   <div id="clanAdminList" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
                     <p style="color:var(--text-muted);font-size:13px;">Caricamento...</p>
@@ -4153,6 +4153,7 @@
       location.href='/login'
     }
     document.querySelectorAll('.nav button').forEach(button=>button.addEventListener('click',()=>switchPage(button.dataset.page)));
+    document.getElementById('addClanBtn')?.addEventListener('click',()=>{try{openClanModal(null);}catch(e){alert('Errore apertura form clan: '+e.message);}});
 
     qs('refreshBtn').addEventListener('click',refreshDashboard);
     qs('logoutBtn').addEventListener('click',logout);

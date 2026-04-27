@@ -427,5 +427,6 @@ module.exports = {
   resetAllState,
   saveBotPanelSettings,
   getBotConfig,
-  TOURNAMENT_CATEGORY_NAME
+  TOURNAMENT_CATEGORY_NAME,
+  PLAYERS_PER_TEAM
 };

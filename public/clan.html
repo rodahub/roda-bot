@@ -650,7 +650,7 @@
         </div>
       </div>
 
-      <button class="form-submit" id="submitBtn" onclick="submitRequest()">Invia richiesta →</button>
+      <button class="form-submit" id="submitBtn">Invia richiesta →</button>
       <div class="form-feedback" id="formFeedback"></div>
     </div>
   </section>
@@ -735,20 +735,18 @@
   }
 
   async function submitRequest() {
-    const nome = document.getElementById('inputNome').value.trim();
-    const tag = document.getElementById('inputTag').value.trim();
-    const messaggio = document.getElementById('inputMessaggio').value.trim();
+    const nome = (document.getElementById('inputNome')?.value || '').trim();
+    const tag = (document.getElementById('inputTag')?.value || '').trim();
+    const messaggio = (document.getElementById('inputMessaggio')?.value || '').trim();
     const btn = document.getElementById('submitBtn');
 
     if (!nome) {
       showFeedback('Il nome del clan è obbligatorio.', true);
-      document.getElementById('inputNome').focus();
+      document.getElementById('inputNome')?.focus();
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Invio in corso...';
-    document.getElementById('formFeedback').className = 'form-feedback';
+    if (btn) { btn.disabled = true; btn.textContent = 'Invio in corso...'; }
 
     try {
       const res = await fetch('/api/public/clan-request', {
@@ -756,24 +754,22 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome, tag, messaggio, logoBase64: _logoBase64 })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ ok: false, message: 'Risposta non valida dal server.' }));
       if (data.ok) {
         showFeedback('✅ ' + data.message, false);
-        document.getElementById('inputNome').value = '';
-        document.getElementById('inputTag').value = '';
-        document.getElementById('inputMessaggio').value = '';
+        if (document.getElementById('inputNome')) document.getElementById('inputNome').value = '';
+        if (document.getElementById('inputTag')) document.getElementById('inputTag').value = '';
+        if (document.getElementById('inputMessaggio')) document.getElementById('inputMessaggio').value = '';
         removeLogo();
-        btn.textContent = 'Inviato!';
-        setTimeout(() => { btn.disabled = false; btn.textContent = 'Invia richiesta →'; }, 5000);
+        if (btn) btn.textContent = 'Inviato!';
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Invia richiesta →'; } }, 5000);
       } else {
         showFeedback(data.message || 'Errore durante l\'invio. Riprova.', true);
-        btn.disabled = false;
-        btn.textContent = 'Invia richiesta →';
+        if (btn) { btn.disabled = false; btn.textContent = 'Invia richiesta →'; }
       }
     } catch(e) {
-      showFeedback('Errore di connessione. Verifica la connessione e riprova.', true);
-      btn.disabled = false;
-      btn.textContent = 'Invia richiesta →';
+      showFeedback('Errore: ' + (e.message || 'connessione fallita. Riprova.'), true);
+      if (btn) { btn.disabled = false; btn.textContent = 'Invia richiesta →'; }
     }
   }
 
@@ -808,6 +804,7 @@
     }
   }
 
+  document.getElementById('submitBtn')?.addEventListener('click', submitRequest);
   init();
 </script>
 </body>
