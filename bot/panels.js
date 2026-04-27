@@ -20,7 +20,7 @@ const {
   nextMatch
 } = require('./lifecycle');
 const { sanitizeText, buildResultButtonCustomId, getLogoUrl, chunkArray, FIXED_TOURNAMENT_NAME, PLAYERS_PER_TEAM } = require('./helpers');
-const { CLASSIFICA_CHANNEL, TOURNAMENT_FULL_CHANNEL } = require('./config');
+const { CLASSIFICA_CHANNEL, TOURNAMENT_FULL_CHANNEL, REGISTRATION_STATUS_CHANNEL } = require('./config');
 const {
   findOrCreateTournamentCategory,
   findOrCreateTextChannelInCategory,
@@ -226,7 +226,7 @@ function queueRegistrationStatusUpdate(options = {}) {
       await waitReady();
       ensureDataStructures();
       const botSettings = getBotSettings();
-      const targetChannelId = sanitizeText(botSettings.registerPanelChannelId);
+      const targetChannelId = sanitizeText(REGISTRATION_STATUS_CHANNEL) || sanitizeText(botSettings.registerPanelChannelId);
       if (!targetChannelId) return { skipped: true, reason: 'no_channel' };
       const channel = await client.channels.fetch(targetChannelId).catch(() => null);
       if (!channel) return { skipped: true, reason: 'channel_not_found' };
