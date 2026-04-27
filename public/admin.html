@@ -1892,75 +1892,13 @@
                       <h3 class="card-title">🎙️ Gestione Streamer</h3>
                       <p class="card-desc">Aggiungi, modifica ed elimina i content creator ufficiali del torneo.</p>
                     </div>
-                    <button class="btn btn-green" onclick="openStreamerModal(null)">+ Aggiungi streamer</button>
+                    <button class="btn btn-green" id="addStreamerBtn" onclick="try{openStreamerModal(null);}catch(e){alert('Errore: '+e.message);}">+ Aggiungi streamer</button>
                   </div>
                   <div id="streamerAdminList" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
                     <p style="color:var(--text-muted);font-size:13px;">Caricamento...</p>
                   </div>
                 </div>
 
-                <!-- Modal streamer -->
-                <div id="streamerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
-                  <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-                      <h3 id="streamerModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi streamer</h3>
-                      <button onclick="closeStreamerModal()" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
-                    </div>
-                    <input type="hidden" id="smId">
-                    <div style="display:grid;gap:14px;">
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome *</label>
-                        <input id="smNome" class="input" type="text" placeholder="es. IrlandeseTV" maxlength="60">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Handle / Username</label>
-                        <input id="smHandle" class="input" type="text" placeholder="es. @irlandesetv" maxlength="60">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Ruolo</label>
-                        <input id="smRuolo" class="input" type="text" placeholder="es. Streamer ufficiale" maxlength="60">
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Bio</label>
-                        <textarea id="smBio" class="input" placeholder="Breve descrizione dello streamer..." maxlength="400" rows="3" style="resize:vertical;min-height:80px;"></textarea>
-                      </div>
-                      <div>
-                        <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Foto</label>
-                        <input id="smFoto" class="input" type="url" placeholder="https://..." maxlength="500">
-                      </div>
-                      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;">
-                        <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;">Social</div>
-                        <div style="display:grid;gap:10px;">
-                          <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:18px;width:24px;text-align:center;">🟣</span>
-                            <input id="smTwitch" class="input" type="url" placeholder="Twitch URL" maxlength="200" style="flex:1;">
-                          </div>
-                          <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:18px;width:24px;text-align:center;">🔴</span>
-                            <input id="smYoutube" class="input" type="url" placeholder="YouTube URL" maxlength="200" style="flex:1;">
-                          </div>
-                          <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:18px;width:24px;text-align:center;">📸</span>
-                            <input id="smInstagram" class="input" type="url" placeholder="Instagram URL" maxlength="200" style="flex:1;">
-                          </div>
-                          <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:18px;width:24px;text-align:center;">🎵</span>
-                            <input id="smTiktok" class="input" type="url" placeholder="TikTok URL" maxlength="200" style="flex:1;">
-                          </div>
-                          <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:18px;width:24px;text-align:center;">✖️</span>
-                            <input id="smTwitter" class="input" type="url" placeholder="X / Twitter URL" maxlength="200" style="flex:1;">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
-                      <button class="btn btn-blue" onclick="closeStreamerModal()">Annulla</button>
-                      <button class="btn btn-green" onclick="saveStreamer()" id="streamerSaveBtn">Salva</button>
-                    </div>
-                    <div id="streamerModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
-                  </div>
-                </div>
               </section>
 
               <!-- SEZIONE CLAN -->
@@ -2312,6 +2250,24 @@
     }
     function html(value){
       return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")
+    }
+    // Custom confirm dialog — evita blocco popup del browser
+    let _rodaConfirmResolve=null;
+    function rodaConfirm(msg,okText,cancelText){
+      okText=okText||'Conferma';cancelText=cancelText||'Annulla';
+      return new Promise(function(resolve){
+        _rodaConfirmResolve=resolve;
+        var m=document.getElementById('rodaConfirmModal');
+        document.getElementById('rodaConfirmMsg').textContent=msg;
+        document.getElementById('rodaConfirmOkBtn').textContent=okText;
+        document.getElementById('rodaConfirmCancelBtn').textContent=cancelText;
+        m.style.display='flex';
+      });
+    }
+    function _rodaConfirmClose(val){
+      var m=document.getElementById('rodaConfirmModal');
+      if(m)m.style.display='none';
+      if(_rodaConfirmResolve){_rodaConfirmResolve(val);_rodaConfirmResolve=null;}
     }
     function setStatus(text){
       qs('statusBar').textContent=text
@@ -2990,7 +2946,7 @@
       }
     }
     async function createNewTournamentDirect(){
-      if(!confirm('Confermi creazione nuovo torneo? Il torneo attuale resterà salvato nello storico.'))return;
+      if(!(await rodaConfirm('Confermi creazione nuovo torneo? Il torneo attuale resterà salvato nello storico.')))return;
       return runAction('createNewTournamentDirect','Creo nuovo torneo...',async()=>{
         const totalMatches=Number(dashboard?.impostazioniTorneo?.totalMatches||3),autoNextMatch=dashboard?.impostazioniTorneo?.autoNextMatch!==false;
         const result=await api('/api/tournament/new',{
@@ -3175,13 +3131,15 @@
       })
     }
     function openCreateTeamModal(){
-      qs('createTeamName').value='';
-      qs('createTeamP1').value='';
-      qs('createTeamP2').value='';
-      qs('createTeamP3').value='';
-      qs('teamModal').classList.add('show');
-      document.body.style.overflow='hidden';
-      setTimeout(()=>qs('createTeamName').focus(),80)
+      try{
+        qs('createTeamName').value='';
+        qs('createTeamP1').value='';
+        qs('createTeamP2').value='';
+        qs('createTeamP3').value='';
+        qs('teamModal').classList.add('show');
+        document.body.style.overflow='hidden';
+        setTimeout(()=>qs('createTeamName').focus(),80);
+      }catch(e){alert('Errore apertura form team: '+e.message);}
     }
     function closeTeamModal(){
       qs('teamModal').classList.remove('show');
@@ -3206,7 +3164,7 @@
     }
     async function deleteTeam(teamName){
       if(!teamName)return;
-      if(!confirm(`Confermi eliminazione del team ${teamName}?`))return;
+      if(!(await rodaConfirm(`Confermi eliminazione del team "${teamName}"?`,'Elimina','Annulla')))return;
       return runAction('deleteTeam:'+teamName,'Elimino team...',async()=>{
         const result=await api('/api/teams/delete',{
           method:'POST',body:JSON.stringify({teamName})
@@ -3283,7 +3241,7 @@
       if(event.target.id==='imageModal')closeImageModal()
     }
     async function resetCurrentMatchAction(){
-      if(!confirm('Riportare il match corrente a 1? I dati dei risultati NON vengono eliminati. Confermi?'))return;
+      if(!(await rodaConfirm('Riportare il match corrente a 1? I dati dei risultati NON vengono eliminati. Confermi?')))return;
       return runAction('resetCurrentMatch','Ripristino match 1...',async()=>{
         const r=await api('/api/tournament/settings',{method:'POST',body:JSON.stringify({totalMatches:Number(qs('totalMatchesInput').value||3),resetCurrentMatch:true,autoNextMatch:qs('autoNextMatchInput').checked})});
         if(!r.data?.ok)throw new Error(r.data?.message||'Errore');
@@ -3406,7 +3364,7 @@
       })
     }
     async function resetReminder(type){
-      if(!confirm('Ripristinare il promemoria "'+type+'" ai valori di default?'))return;
+      if(!(await rodaConfirm('Ripristinare il promemoria "'+type+'" ai valori di default?')))return;
       return runAction('resetReminder:'+type,'Ripristino...',async()=>{
         const result=await api('/api/reminders/reset/'+encodeURIComponent(type),{method:'POST'});
         if(!result)return;
@@ -3628,8 +3586,8 @@
             ${socials ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Social: ${socials}</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;">
-            <button class="btn btn-blue" onclick="openStreamerModal('${html(s.id)}')" style="padding:8px 14px;font-size:12px;">✏️ Modifica</button>
-            <button class="btn btn-red" onclick="deleteStreamer('${html(s.id)}','${html(s.nome)}')" style="padding:8px 14px;font-size:12px;">🗑️</button>
+            <button class="btn btn-blue" data-action="editStreamer" data-id="${html(s.id)}" style="padding:8px 14px;font-size:12px;">✏️ Modifica</button>
+            <button class="btn btn-red" data-action="deleteStreamer" data-id="${html(s.id)}" data-nome="${html(s.nome)}" style="padding:8px 14px;font-size:12px;">🗑️</button>
           </div>
         </div>`;
       }).join('');
@@ -3717,7 +3675,7 @@
     }
 
     async function deleteStreamer(id, nome) {
-      if (!confirm(`Elimina definitivamente lo streamer "${nome}"?`)) return;
+      if (!(await rodaConfirm(`Elimina definitivamente lo streamer "${nome}"?`,'Elimina','Annulla'))) return;
       const result = await api(`/api/streamers/${id}`, { method: 'DELETE' });
       if (result.data.ok) {
         await loadStreamers();
@@ -3843,7 +3801,7 @@
     }
 
     async function deleteClan(id, nome) {
-      if (!confirm(`Elimina definitivamente il clan "${nome}"?`)) return;
+      if (!(await rodaConfirm(`Elimina definitivamente il clan "${nome}"?`,'Elimina','Annulla'))) return;
       const result = await api(`/api/clans/${id}`, { method: 'DELETE' });
       if (result && result.data && result.data.ok) {
         await loadClans();
@@ -3914,7 +3872,7 @@
     }
 
     async function deleteClanRequest(id) {
-      if (!confirm('Eliminare definitivamente questa richiesta?')) return;
+      if (!(await rodaConfirm('Eliminare definitivamente questa richiesta?','Elimina','Annulla'))) return;
       const result = await api(`/api/clan-requests/${id}`, { method: 'DELETE' });
       if (result && result.data && result.data.ok) {
         await loadClanRequests();
@@ -3985,13 +3943,13 @@
       return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
     async function reviewReport(id){
-      if(!confirm('Segna questa segnalazione come esaminata?'))return;
+      if(!(await rodaConfirm('Segna questa segnalazione come esaminata?')))return;
       const res=await api(`/api/reports/${id}/review`,{method:'PATCH',body:JSON.stringify({reviewedBy:dashboard?.username||'admin'})});
       if(res&&res.response.ok)await loadReports();
       else alert('Errore durante la revisione.');
     }
     async function deleteReport(id){
-      if(!confirm('Elimina definitivamente questa segnalazione?'))return;
+      if(!(await rodaConfirm('Elimina definitivamente questa segnalazione?','Elimina','Annulla')))return;
       const res=await api(`/api/reports/${id}`,{method:'DELETE'});
       if(res&&res.response.ok)await loadReports();
       else alert('Errore durante l\'eliminazione.');
@@ -4053,7 +4011,7 @@
     }
     async function restoreArchive(id){
       if(!id)return alert('Storico non valido');
-      if(!confirm('Confermi ripristino storico?'))return;
+      if(!(await rodaConfirm('Confermi ripristino storico?')))return;
       return runAction('restoreArchive:'+id,'Ripristino storico...',async()=>{
         const result=await api('/api/archivi/ripristina',{
           method:'POST',body:JSON.stringify({archiveId:decodeURIComponent(id)})
@@ -4117,7 +4075,7 @@
       })
     }
     async function deleteStaffUser(username){
-      if(!confirm(`Confermi eliminazione account ${username}?`))return;
+      if(!(await rodaConfirm(`Confermi eliminazione account ${username}?`,'Elimina','Annulla')))return;
       return runAction('deleteStaffUser:'+username,'Elimino account...',async()=>{
         const result=await api('/api/admin-users/delete',{
           method:'POST',body:JSON.stringify({username})
@@ -4129,7 +4087,7 @@
       })
     }
     async function resetData(){
-      if(!confirm('Confermi reset classifica, fragger e match?'))return;
+      if(!(await rodaConfirm('Confermi reset classifica, fragger e match?')))return;
       return runAction('resetData','Reset classifica e match...',async()=>{
         const result=await api('/api/reset-data',{method:'POST'});
         if(!result)return;
@@ -4139,7 +4097,7 @@
       })
     }
     async function resetTeams(){
-      if(!confirm('Confermi svuotamento team?'))return;
+      if(!(await rodaConfirm('Confermi svuotamento team?')))return;
       return runAction('resetTeams','Svuoto team...',async()=>{
         const result=await api('/api/reset-teams',{method:'POST'});
         if(!result)return;
@@ -4155,6 +4113,16 @@
       location.href='/login'
     }
     document.querySelectorAll('.nav button').forEach(button=>button.addEventListener('click',()=>switchPage(button.dataset.page)));
+    document.getElementById('addStreamerBtn')?.addEventListener('click', () => openStreamerModal(null));
+    document.getElementById('streamerAdminList')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      if (action === 'editStreamer') openStreamerModal(id);
+      else if (action === 'deleteStreamer') deleteStreamer(id, btn.dataset.nome);
+    });
+
     document.getElementById('addClanBtn')?.addEventListener('click',()=>{try{openClanModal(null);}catch(e){alert('Errore apertura form clan: '+e.message);}});
     document.getElementById('refreshClanRequestsBtn')?.addEventListener('click', loadClanRequests);
 
@@ -4189,6 +4157,8 @@
         closeReviewModal();
         closeImageModal();
         closeClanModal();
+        closeStreamerModal();
+        _rodaConfirmClose(false);
       }
       if(event.key==='Enter'&&qs('editModal').classList.contains('show'))saveInlineEdit()
     });
@@ -4272,6 +4242,78 @@
     </div>
   </div>
 
+  <!-- Modal streamer — a livello body per evitare stacking context delle animazioni di pagina -->
+  <div id="streamerModal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h3 id="streamerModalTitle" style="font-size:18px;font-weight:800;color:#f0e8ff;margin:0;">Aggiungi streamer</h3>
+        <button id="streamerCloseBtn" style="background:none;border:none;color:rgba(220,200,255,.5);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;">✕</button>
+      </div>
+      <input type="hidden" id="smId">
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Nome *</label>
+          <input id="smNome" class="input" type="text" placeholder="es. IrlandeseTV" maxlength="60">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Handle / Username</label>
+          <input id="smHandle" class="input" type="text" placeholder="es. @irlandesetv" maxlength="60">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Ruolo</label>
+          <input id="smRuolo" class="input" type="text" placeholder="es. Streamer ufficiale" maxlength="60">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">Bio</label>
+          <textarea id="smBio" class="input" placeholder="Breve descrizione dello streamer..." maxlength="400" rows="3" style="resize:vertical;min-height:80px;"></textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px;">URL Foto</label>
+          <input id="smFoto" class="input" type="url" placeholder="https://..." maxlength="500">
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;">Social</div>
+          <div style="display:grid;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;width:24px;text-align:center;color:#9146ff;">T</span>
+              <input id="smTwitch" class="input" type="url" placeholder="Twitch URL" maxlength="200" style="flex:1;">
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;width:24px;text-align:center;color:#ff2d55;">♪</span>
+              <input id="smTiktok" class="input" type="url" placeholder="TikTok URL" maxlength="200" style="flex:1;">
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;width:24px;text-align:center;color:#e1306c;">◎</span>
+              <input id="smInstagram" class="input" type="url" placeholder="Instagram URL" maxlength="200" style="flex:1;">
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;width:24px;text-align:center;color:#ff4040;">▶</span>
+              <input id="smYoutube" class="input" type="url" placeholder="YouTube URL" maxlength="200" style="flex:1;">
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;width:24px;text-align:center;color:#1d9bf0;">𝕏</span>
+              <input id="smTwitter" class="input" type="url" placeholder="X / Twitter URL" maxlength="200" style="flex:1;">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+        <button class="btn btn-blue" id="streamerCancelBtn">Annulla</button>
+        <button class="btn btn-green" id="streamerSaveBtn">Salva</button>
+      </div>
+      <div id="streamerModalError" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,43,75,.12);border:1px solid rgba(201,43,75,.28);border-radius:10px;font-size:13px;color:#ff8099;"></div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var modal = document.getElementById('streamerModal');
+      document.getElementById('streamerCloseBtn').addEventListener('click', closeStreamerModal);
+      document.getElementById('streamerCancelBtn').addEventListener('click', closeStreamerModal);
+      document.getElementById('streamerSaveBtn').addEventListener('click', saveStreamer);
+      modal.addEventListener('click', function(e) { if (e.target === modal) closeStreamerModal(); });
+    })();
+  </script>
+
   <!-- Modal clan — a livello body per evitare stacking context delle animazioni di pagina -->
   <div id="clanModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
     <div id="clanModalInner" style="background:#13101e;border:1px solid rgba(160,110,255,.22);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 80px rgba(0,0,0,.6);">
@@ -4328,6 +4370,17 @@
     })();
     document.addEventListener('mousedown',function(e){var r=document.createElement('div');r.className='cursor-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);setTimeout(function(){r.remove();},450);});
   </script>
+
+  <!-- Dialog di conferma personalizzato (evita blocco popup browser) -->
+  <div id="rodaConfirmModal" style="display:none;position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#13101e;border:1px solid rgba(255,100,100,.28);border-radius:20px;padding:28px 28px 24px;max-width:400px;width:100%;box-shadow:0 20px 80px rgba(0,0,0,.6);">
+      <p id="rodaConfirmMsg" style="color:#e0d8f6;font-size:15px;margin:0 0 24px;line-height:1.6;"></p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="rodaConfirmCancelBtn" class="btn btn-blue" onclick="_rodaConfirmClose(false)">Annulla</button>
+        <button id="rodaConfirmOkBtn" class="btn btn-red" onclick="_rodaConfirmClose(true)">Conferma</button>
+      </div>
+    </div>
+  </div>
 
       </body>
     </html>
