@@ -210,8 +210,8 @@ const publicApiLimiter = createLimiter({
 
 app.use(generalLimiter);
 
-app.use(express.json({ limit: '512kb' }));
-app.use(express.urlencoded({ extended: true, limit: '512kb' }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -2053,7 +2053,7 @@ app.post('/api/public/clan-request', publicApiLimiter, (req, res) => {
       if (!matches) return res.status(400).json({ ok: false, message: 'Formato logo non valido. Usa PNG.' });
       const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
       const buf = Buffer.from(matches[2], 'base64');
-      if (buf.length > 400 * 1024) return res.status(400).json({ ok: false, message: 'Logo troppo grande (max 400KB).' });
+      if (buf.length > 2 * 1024 * 1024) return res.status(400).json({ ok: false, message: 'Logo troppo grande (max 2MB).' });
       const clanLogosDir = path.join(UPLOADS_DIR, 'clan-logos');
       if (!fs.existsSync(clanLogosDir)) fs.mkdirSync(clanLogosDir, { recursive: true });
       const filename = `clan_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;

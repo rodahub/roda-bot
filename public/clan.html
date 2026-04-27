@@ -633,7 +633,7 @@
           <div class="logo-upload-wrap">
             <label class="logo-upload-btn" for="logoInput">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Carica logo PNG (max 400KB)
+              Carica logo PNG (max 2MB)
             </label>
             <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp">
             <div class="logo-preview" id="logoPreview">
@@ -677,8 +677,8 @@
   document.getElementById('logoInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 400 * 1024) {
-      showFeedback('Il logo è troppo grande. Massimo 400KB.', true);
+    if (file.size > 2 * 1024 * 1024) {
+      showFeedback('Il logo è troppo grande. Massimo 2MB.', true);
       this.value = '';
       return;
     }
