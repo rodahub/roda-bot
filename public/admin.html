@@ -4387,5 +4387,369 @@
     </div>
   </div>
 
-      </body>
+      </body> <script id="roda-admin-buttons-fix">
+(function () {
+  function safeStatus(message) {
+    try {
+      if (typeof setStatus === "function") {
+        setStatus(message);
+        return;
+      }
+
+      var bar = document.getElementById("statusBar");
+      if (bar) bar.textContent = message;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function decodeHtml(value) {
+    var textarea = document.createElement("textarea");
+    textarea.innerHTML = String(value || "");
+    return textarea.value;
+  }
+
+  function splitArgs(source) {
+    source = String(source || "").trim();
+
+    if (!source) return [];
+
+    var args = [];
+    var current = "";
+    var quote = null;
+    var escaped = false;
+
+    for (var i = 0; i < source.length; i++) {
+      var ch = source[i];
+
+      if (quote) {
+        current += ch;
+
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+
+        if (ch === "\\") {
+          escaped = true;
+          continue;
+        }
+
+        if (ch === quote) {
+          var rest = source.slice(i + 1);
+          var nextMatch = rest.match(/\S/);
+          var next = nextMatch ? nextMatch[0] : "";
+
+          if (!next || next === ",") {
+            quote = null;
+          }
+        }
+
+        continue;
+      }
+
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        current += ch;
+        continue;
+      }
+
+      if (ch === ",") {
+        args.push(current.trim());
+        current = "";
+        continue;
+      }
+
+      current += ch;
+    }
+
+    if (current.trim() !== "") {
+      args.push(current.trim());
+    }
+
+    return args;
+  }
+
+  function parseArg(raw, event) {
+    raw = decodeHtml(String(raw || "").trim());
+
+    if (raw === "") return "";
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    if (raw === "null") return null;
+    if (raw === "undefined") return undefined;
+    if (raw === "event") return event;
+
+    if (/^-?\d+(\.\d+)?$/.test(raw)) {
+      return Number(raw);
+    }
+
+    if (
+      (raw.startsWith("'") && raw.endsWith("'")) ||
+      (raw.startsWith('"') && raw.endsWith('"'))
+    ) {
+      return raw
+        .slice(1, -1)
+        .replace(/\\'/g, "'")
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, "\\");
+    }
+
+    return raw;
+  }
+
+  function handleSpecialInline(code, trigger) {
+    if (!code) return false;
+
+    if (code.includes("rules-content")) {
+      var card = trigger.parentElement;
+      if (!card) return true;
+
+      var content = card.querySelector(".rules-content");
+      var toggle = trigger.querySelector(".rules-toggle");
+
+      if (content) {
+        var hidden = content.style.display === "none" || !content.style.display;
+        content.style.display = hidden ? "block" : "none";
+
+        if (toggle) {
+          toggle.textContent = hidden ? "▾ Nascondi" : "▸ Mostra";
+        }
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  function getFixedDashboardState() {
+    try {
+      if (typeof normalizeTournamentState === "function") {
+        return normalizeTournamentState(
+          dashboard?.statoTorneo?.state ||
+          dashboard?.stato ||
+          "bozza"
+        );
+      }
+
+      return (
+        dashboard?.statoTorneo?.state ||
+        dashboard?.stato ||
+        "bozza"
+      );
+    } catch (error) {
+      console.error(error);
+      return "bozza";
+    }
+  }
+
+  function getFixedTotalMatches() {
+    try {
+      return Number(
+        dashboard?.impostazioniTorneo?.totalMatches ||
+        dashboard?.tournament?.totalMatches ||
+        3
+      );
+    } catch (error) {
+      console.error(error);
+      return 3;
+    }
+  }
+
+  async function fixedRunMasterMatchAction() {
+    var normalized = getFixedDashboardState();
+    var current = Number(dashboard?.matchCorrente || 1);
+    var total = getFixedTotalMatches();
+
+    if (normalized === "iscrizioni_chiuse") {
+      return startTournament();
+    }
+
+    if (normalized === "torneo_in_corso" && current < total) {
+      return forceNextMatch();
+    }
+
+    if (normalized === "torneo_in_corso" && current >= total) {
+      return finishTournament();
+    }
+
+    safeStatus("Azione non disponibile nello stato attuale: " + normalized);
+  }
+
+  try {
+    window.getDashboardState = getFixedDashboardState;
+    window.getDashboardTotalMatches = getFixedTotalMatches;
+    window.runMasterMatchAction = fixedRunMasterMatchAction;
+
+    try {
+      runMasterMatchAction = fixedRunMasterMatchAction;
+    } catch (error) {}
+
+    if (typeof window.loadDashboard !== "function" && typeof refreshDashboard === "function") {
+      window.loadDashboard = refreshDashboard;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  async function fixedQuickRefreshMatch() {
+    try {
+      var result = await api("/api/dashboard");
+
+      if (!result || !result.response.ok || !result.data.ok) {
+        return refreshDashboard();
+      }
+
+      dashboard = result.data;
+
+      var data = dashboard;
+      var match = data.statoMatchCorrente || {};
+      var current = Number(data.matchCorrente || 1);
+      var total = Number((data.impostazioniTorneo || {}).totalMatches || 3);
+      var rawState = data.statoTorneo?.state || data.stato || "bozza";
+      var state = typeof normalizeTournamentState === "function"
+        ? normalizeTournamentState(rawState)
+        : rawState;
+      var teams = data.teamOrdinati || [];
+
+      renderMasterMatchButton(state, current, total, teams.length);
+      renderControlLists(match.righe || []);
+      updateFlowButtons(state);
+
+      if (document.getElementById("statReceived")) {
+        document.getElementById("statReceived").textContent = Number(match.inviati || 0);
+      }
+
+      if (document.getElementById("statPending")) {
+        document.getElementById("statPending").textContent = Number(match.inAttesa || 0);
+      }
+
+      if (document.getElementById("statMissing")) {
+        document.getElementById("statMissing").textContent = Number(match.nonInviati || 0);
+      }
+
+      if (document.getElementById("statTeams")) {
+        document.getElementById("statTeams").textContent = teams.length;
+      }
+
+      if (document.getElementById("topPill")) {
+        document.getElementById("topPill").textContent =
+          "RØDA CUP • " +
+          ((typeof stateLabels !== "undefined" && stateLabels[state]) || state) +
+          " • Match " +
+          current +
+          "/" +
+          total;
+      }
+
+      if (document.getElementById("completeBanner")) {
+        document.getElementById("completeBanner").classList.toggle(
+          "show",
+          Boolean(
+            match.completato &&
+            current < total &&
+            state === "torneo_in_corso"
+          )
+        );
+      }
+
+      selectedMatchRows = null;
+
+      await loadSelectedMatchStatus(false);
+
+      if (document.querySelector(".page#segnalazioni.active")) {
+        await loadReports();
+      }
+
+      safeStatus("Aggiornato: " + new Date().toLocaleTimeString("it-IT"));
+    } catch (error) {
+      console.error(error);
+      return refreshDashboard();
+    }
+  }
+
+  try {
+    window.quickRefreshMatch = fixedQuickRefreshMatch;
+
+    try {
+      quickRefreshMatch = fixedQuickRefreshMatch;
+    } catch (error) {}
+  } catch (error) {
+    console.error(error);
+  }
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var trigger = event.target.closest(
+        "button[onclick], a[onclick], [role='button'][onclick], [tabindex][onclick], .card-head[onclick]"
+      );
+
+      if (!trigger) return;
+      if (trigger.disabled) return;
+      if (trigger.getAttribute("aria-disabled") === "true") return;
+
+      var code = trigger.getAttribute("onclick");
+      if (!code) return;
+
+      if (handleSpecialInline(code, trigger)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      var match = code.trim().match(/^([A-Za-z_$][\w$]*)\s*\(([\s\S]*)\)\s*;?$/);
+
+      if (!match) {
+        return;
+      }
+
+      var functionName = match[1];
+      var argsSource = match[2];
+      var fn = window[functionName];
+
+      if (typeof fn !== "function") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        console.warn("Funzione bottone non trovata:", functionName, code);
+        safeStatus("Funzione non trovata: " + functionName);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      try {
+        var args = splitArgs(argsSource).map(function (arg) {
+          return parseArg(arg, event);
+        });
+
+        var result = fn.apply(trigger, args);
+
+        if (result && typeof result.catch === "function") {
+          result.catch(function (error) {
+            console.error(error);
+            safeStatus("Errore bottone: " + (error.message || "imprevisto"));
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        safeStatus("Errore bottone: " + (error.message || "imprevisto"));
+      }
+    },
+    true
+  );
+
+  document.addEventListener("click", function (event) {
+    var proofOverlay = document.getElementById("proofOverlay");
+
+    if (proofOverlay && event.target === proofOverlay && typeof closeProofViewer === "function") {
+      closeProofViewer();
+    }
+  });
+
+  safeStatus("Fix bottoni admin caricato");
+})();
+</script>
     </html>
