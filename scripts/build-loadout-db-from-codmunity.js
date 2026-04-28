@@ -42,95 +42,162 @@ const ATT_FILE     = path.join(DATA_DIR, 'loadout-attachments.json');
 const COMPAT_FILE  = path.join(DATA_DIR, 'loadout-compatibility.json');
 const REPORT_FILE  = path.join(DATA_DIR, 'loadout-import-report.json');
 
-// ─── Mappature ────────────────────────────────────────────────────────────────
+// ─── Categorie valide (canonical) ─────────────────────────────────────────────
+const VALID_CATEGORIES = new Set([
+  "Fucile d'assalto",
+  'Mitraglietta',
+  'Mitragliatrice leggera',
+  'Fucile tattico',
+  'Fucile da battaglia',
+  'Cecchino',
+  'Shotgun',
+  'Pistola',
+  'Corpo a corpo',
+  'Lanciarazzi',
+]);
+
+// ─── Mappa normalizzazione categorie ──────────────────────────────────────────
+// Chiavi: lowercase, apostrofo dritto.  Valori: categoria IT canonica.
 const CATEGORY_MAP = {
   // ── Inglese ────────────────────────────────────────────────────────────────
-  'assault rifle'        : "Fucile d'assalto",
-  'ar'                   : "Fucile d'assalto",
-  'smg'                  : 'Mitraglietta',
-  'submachine gun'       : 'Mitraglietta',
-  'lmg'                  : 'Mitragliatrice leggera',
-  'light machine gun'    : 'Mitragliatrice leggera',
-  'marksman rifle'       : 'Fucile tattico',
-  'battle rifle'         : 'Fucile da battaglia',
-  'sniper rifle'         : 'Cecchino',
-  'sniper'               : 'Cecchino',
-  'shotgun'              : 'Shotgun',
-  'pistol'               : 'Pistola',
-  'handgun'              : 'Pistola',
-  'melee'                : 'Corpo a corpo',
-  'launcher'             : 'Lanciarazzi',
-  'rocket launcher'      : 'Lanciarazzi',
+  'assault rifle'          : "Fucile d'assalto",
+  'assault rifles'         : "Fucile d'assalto",
+  'ar'                     : "Fucile d'assalto",
+  'smg'                    : 'Mitraglietta',
+  'submachine gun'         : 'Mitraglietta',
+  'submachine guns'        : 'Mitraglietta',
+  'lmg'                    : 'Mitragliatrice leggera',
+  'light machine gun'      : 'Mitragliatrice leggera',
+  'light machine guns'     : 'Mitragliatrice leggera',
+  'marksman rifle'         : 'Fucile tattico',
+  'marksman rifles'        : 'Fucile tattico',
+  'tactical rifle'         : 'Fucile tattico',
+  'tactical rifles'        : 'Fucile tattico',
+  'battle rifle'           : 'Fucile da battaglia',
+  'battle rifles'          : 'Fucile da battaglia',
+  'sniper rifle'           : 'Cecchino',
+  'sniper rifles'          : 'Cecchino',
+  'sniper'                 : 'Cecchino',
+  'shotgun'                : 'Shotgun',
+  'shotguns'               : 'Shotgun',
+  'pistol'                 : 'Pistola',
+  'pistols'                : 'Pistola',
+  'handgun'                : 'Pistola',
+  'melee'                  : 'Corpo a corpo',
+  'launcher'               : 'Lanciarazzi',
+  'launchers'              : 'Lanciarazzi',
+  'rocket launcher'        : 'Lanciarazzi',
   // ── Italiano passthrough + normalizzazione ─────────────────────────────────
-  "fucile d'assalto"     : "Fucile d'assalto",
-  'mitraglietta'         : 'Mitraglietta',
-  'mitragliatrice leggera': 'Mitragliatrice leggera',
-  'fucile tattico'       : 'Fucile tattico',
-  'fucile da battaglia'  : 'Fucile da battaglia',
-  'cecchino'             : 'Cecchino',
-  'fucile di precisione' : 'Cecchino',
-  'fucile a pompa'       : 'Shotgun',
-  'pistola'              : 'Pistola',
-  'corpo a corpo'        : 'Corpo a corpo',
-  'lanciarazzi'          : 'Lanciarazzi',
+  "fucile d'assalto"       : "Fucile d'assalto",
+  "fucili d'assalto"       : "Fucile d'assalto",
+  'mitraglietta'           : 'Mitraglietta',
+  'mitragliatrice leggera' : 'Mitragliatrice leggera',
+  'fucile tattico'         : 'Fucile tattico',
+  'fucile da battaglia'    : 'Fucile da battaglia',
+  'cecchino'               : 'Cecchino',
+  'fucile di precisione'   : 'Cecchino',
+  'fucile a pompa'         : 'Shotgun',
+  'pistola'                : 'Pistola',
+  'corpo a corpo'          : 'Corpo a corpo',
+  'lanciarazzi'            : 'Lanciarazzi',
 };
 
-// ─── Fallback manuale per armi note (usato solo se CODMunity non fornisce categoria) ──
+// ─── Fallback manuale per armi note (usato se CODMunity non fornisce categoria) ──
+// Copre tutte le armi BO6 + BO7 note
 const WEAPON_CATEGORY_FALLBACK = {
-  // BO6 — Fucili d'assalto
-  'xm4'         : "Fucile d'assalto",
-  'ak-74'       : "Fucile d'assalto",
-  'ames-85'     : "Fucile d'assalto",
-  'gpr-91'      : "Fucile d'assalto",
-  'model-l'     : "Fucile d'assalto",
-  'goblin-mk2'  : "Fucile d'assalto",
-  'as-val'      : "Fucile d'assalto",
-  'krig-c'      : "Fucile d'assalto",
-  'cypher-091'  : "Fucile d'assalto",
-  'ffar-1'      : "Fucile d'assalto",
-  'kilo-141'    : "Fucile d'assalto",
-  'cr-56-amax'  : "Fucile d'assalto",
-  // BO6 — Mitragliette
-  'c9'          : 'Mitraglietta',
-  'ksv'         : 'Mitraglietta',
-  'tanto-22'    : 'Mitraglietta',
-  'pp-919'      : 'Mitraglietta',
-  'jackal-pdw'  : 'Mitraglietta',
-  'kompakt-92'  : 'Mitraglietta',
-  'saug'        : 'Mitraglietta',
-  'ppsh-41'     : 'Mitraglietta',
-  'lc10'        : 'Mitraglietta',
-  'ladra'       : 'Mitraglietta',
-  // BO6 — Mitragliatrici leggere
-  'pu-21'       : 'Mitragliatrice leggera',
-  'xmg'         : 'Mitragliatrice leggera',
-  'gpmg-7'      : 'Mitragliatrice leggera',
-  'feng-82'     : 'Mitragliatrice leggera',
-  // BO6 — Fucili tattici (Marksman)
-  'swat-556'    : 'Fucile tattico',
-  'swat-5-56'   : 'Fucile tattico',
-  'tsarkov-762' : 'Fucile tattico',
-  'tsarkov-7-62': 'Fucile tattico',
-  'aek-973'     : 'Fucile tattico',
-  'dm-10'       : 'Fucile tattico',
-  'tr2'         : 'Fucile tattico',
-  // BO6 — Cecchini
-  'lw3a1-frostline': 'Cecchino',
-  'svd'         : 'Cecchino',
-  'lr-762'      : 'Cecchino',
-  'lr-7-62'     : 'Cecchino',
-  'amr-mod-4'   : 'Cecchino',
-  'hdr'         : 'Cecchino',
-  // BO6 — Shotgun
-  'marine-sp'   : 'Shotgun',
-  'asg-89'      : 'Shotgun',
-  'maelstrom'   : 'Shotgun',
-  // BO6 — Pistole
-  '9mm-pm'      : 'Pistola',
-  'grekhova'    : 'Pistola',
-  'gs45'        : 'Pistola',
-  'stryder-22'  : 'Pistola',
-  '1911'        : 'Pistola',
+  // ── BO6 — Fucili d'assalto ──────────────────────────────────────────────────
+  'xm4'              : "Fucile d'assalto",
+  'ak-74'            : "Fucile d'assalto",
+  'ames-85'          : "Fucile d'assalto",
+  'gpr-91'           : "Fucile d'assalto",
+  'model-l'          : "Fucile d'assalto",
+  'goblin-mk2'       : "Fucile d'assalto",
+  'as-val'           : "Fucile d'assalto",
+  'krig-c'           : "Fucile d'assalto",
+  'cypher-091'       : "Fucile d'assalto",
+  'ffar-1'           : "Fucile d'assalto",
+  'kilo-141'         : "Fucile d'assalto",
+  'cr-56-amax'       : "Fucile d'assalto",
+  // ── BO6 — Mitragliette ──────────────────────────────────────────────────────
+  'c9'               : 'Mitraglietta',
+  'ksv'              : 'Mitraglietta',
+  'tanto-22'         : 'Mitraglietta',
+  'pp-919'           : 'Mitraglietta',
+  'jackal-pdw'       : 'Mitraglietta',
+  'kompakt-92'       : 'Mitraglietta',
+  'saug'             : 'Mitraglietta',
+  'ppsh-41'          : 'Mitraglietta',
+  'lc10'             : 'Mitraglietta',
+  'ladra'            : 'Mitraglietta',
+  // ── BO6 — Mitragliatrici leggere ────────────────────────────────────────────
+  'pu-21'            : 'Mitragliatrice leggera',
+  'xmg'              : 'Mitragliatrice leggera',
+  'gpmg-7'           : 'Mitragliatrice leggera',
+  'feng-82'          : 'Mitragliatrice leggera',
+  // ── BO6 — Fucili tattici (Marksman) ─────────────────────────────────────────
+  'swat-556'         : 'Fucile tattico',
+  'swat-5-56'        : 'Fucile tattico',
+  'tsarkov-762'      : 'Fucile tattico',
+  'tsarkov-7-62'     : 'Fucile tattico',
+  'aek-973'          : 'Fucile tattico',
+  'dm-10'            : 'Fucile tattico',
+  'tr2'              : 'Fucile tattico',
+  // ── BO6 — Cecchini ──────────────────────────────────────────────────────────
+  'lw3a1-frostline'  : 'Cecchino',
+  'svd'              : 'Cecchino',
+  'lr-762'           : 'Cecchino',
+  'lr-7-62'          : 'Cecchino',
+  'amr-mod-4'        : 'Cecchino',
+  'hdr'              : 'Cecchino',
+  // ── BO6 — Shotgun ───────────────────────────────────────────────────────────
+  'marine-sp'        : 'Shotgun',
+  'asg-89'           : 'Shotgun',
+  'maelstrom'        : 'Shotgun',
+  // ── BO6 — Pistole ───────────────────────────────────────────────────────────
+  '9mm-pm'           : 'Pistola',
+  'grekhova'         : 'Pistola',
+  'gs45'             : 'Pistola',
+  'stryder-22'       : 'Pistola',
+  '1911'             : 'Pistola',
+  // ── BO7 — Fucili d'assalto ──────────────────────────────────────────────────
+  'voyak-kt-3'       : "Fucile d'assalto",
+  'swordfish-a1'     : "Fucile d'assalto",
+  'egrt-17'          : "Fucile d'assalto",
+  'hawker-hx'        : "Fucile d'assalto",
+  'm8a1'             : "Fucile d'assalto",
+  'ds20-mirage'      : "Fucile d'assalto",
+  'sokol-545'        : "Fucile d'assalto",
+  'm15-mod-0'        : "Fucile d'assalto",
+  'x9-maverick'      : "Fucile d'assalto",
+  'maddox-rfb'       : "Fucile d'assalto",
+  'mxr-17'           : "Fucile d'assalto",
+  'ak-27'            : "Fucile d'assalto",
+  'xm325'            : "Fucile d'assalto",
+  // ── BO7 — Mitragliette ──────────────────────────────────────────────────────
+  'ryden-45k'        : 'Mitraglietta',
+  'sturmwolf-45'     : 'Mitraglietta',
+  'peacekeeper-mk1'  : 'Mitraglietta',
+  'rk-9'             : 'Mitraglietta',
+  'shadow-sk'        : 'Mitraglietta',
+  'akita'            : 'Mitraglietta',
+  'mpc-25'           : 'Mitraglietta',
+  // ── BO7 — Mitragliatrici leggere ────────────────────────────────────────────
+  'mk-78'            : 'Mitragliatrice leggera',
+  'mk78'             : 'Mitragliatrice leggera',
+  'kogot-7'          : 'Mitragliatrice leggera',
+  // ── BO7 — Fucili tattici ────────────────────────────────────────────────────
+  'carbon-57'        : 'Fucile tattico',
+  'm34-novaline'     : 'Fucile tattico',
+  // ── BO7 — Cecchini ──────────────────────────────────────────────────────────
+  'vs-recon'         : 'Cecchino',
+  'warden-308'       : 'Cecchino',
+  'strider-300'      : 'Cecchino',
+  'mk35-isr'         : 'Cecchino',
+  'vst'              : 'Cecchino',
+  // ── BO7 — Pistole ───────────────────────────────────────────────────────────
+  'razor-9mm'        : 'Pistola',
+  'dravec-45'        : 'Pistola',
+  'rev-46'           : 'Pistola',
 };
 
 // Slot: chiavi inglesi → valori italiani
@@ -192,17 +259,27 @@ function normalizeSlot(raw) {
   return SLOT_MAP[k] || null;
 }
 
-function normalizeCategory(raw) {
+/**
+ * Normalizza una stringa categoria → categoria IT canonica.
+ * Gestisce: apostrofi tipografici, maiuscole, spazi multipli, inglese/italiano.
+ */
+function normalizeWeaponCategory(raw) {
   if (!raw) return 'Da verificare';
-  const k = String(raw).trim().toLowerCase();
+  const k = String(raw)
+    .trim()
+    .replace(/[''‚‛′‘’‚‛]/g, "'") // apostrofi tipografici → dritti
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
   // 1. Match esatto
   if (CATEGORY_MAP[k]) return CATEGORY_MAP[k];
-  // 2. Match parziale: il testo contiene una chiave nota (es. "assault rifle weapons")
+  // 2. Match parziale (es. "assault rifle weapons" → "Fucile d'assalto")
   for (const [key, val] of Object.entries(CATEGORY_MAP)) {
-    if (key.length >= 3 && k.includes(key)) return val;
+    if (key.length >= 4 && k.includes(key)) return val;
   }
   return 'Da verificare';
 }
+// Alias per compatibilità backward con il codice esistente
+const normalizeCategory = normalizeWeaponCategory;
 
 /**
  * Cerca ricorsivamente un campo categoria in qualunque oggetto (es. __NEXT_DATA__).
@@ -818,8 +895,26 @@ async function main() {
   const hasPuppeteer = await initPuppeteer();
   console.log('');
 
-  // Carica DB esistenti
-  const weaponsMap     = new Map(readJSON(WEAPONS_FILE).map(w => [w.id, w]));
+  // ── Carica DB esistenti e normalizza categorie residue ────────────────────
+  const existingWeapons = readJSON(WEAPONS_FILE);
+  let normalizedCount = 0;
+  existingWeapons.forEach(w => {
+    const fixed = normalizeWeaponCategory(w.categoria);
+    const fallback = (fixed === 'Da verificare') ? (WEAPON_CATEGORY_FALLBACK[w.id] || 'Da verificare') : fixed;
+    if (fallback !== w.categoria) {
+      w.categoria = fallback;
+      if (AUTO_VERIFY_CODMUNITY_IMPORTS && VALID_CATEGORIES.has(fallback)) w.verificata = true;
+      normalizedCount++;
+    } else if (AUTO_VERIFY_CODMUNITY_IMPORTS && VALID_CATEGORIES.has(w.categoria) && !w.verificata) {
+      w.verificata = true;
+      normalizedCount++;
+    }
+  });
+  if (normalizedCount > 0) {
+    console.log(`  ℹ️  Normalizzate ${normalizedCount} categorie/verifica nel DB esistente.`);
+  }
+
+  const weaponsMap     = new Map(existingWeapons.map(w => [w.id, w]));
   const attachmentsMap = new Map(readJSON(ATT_FILE).map(a => [a.id, a]));
   const compatList     = readJSON(COMPAT_FILE);
   const compatSet      = new Set(compatList.map(c => `${c.armaId}::${c.accessorioId}`));

@@ -96,6 +96,34 @@ function toSlug(str) {
 
 function nowISO() { return new Date().toISOString(); }
 
+// ─── Normalizzazione categoria arma ───────────────────────────────────────────
+const WEAPON_CATEGORY_MAP = {
+  'assault rifle':'Fucile d\'assalto','assault rifles':'Fucile d\'assalto','ar':'Fucile d\'assalto',
+  'smg':'Mitraglietta','submachine gun':'Mitraglietta','submachine guns':'Mitraglietta',
+  'lmg':'Mitragliatrice leggera','light machine gun':'Mitragliatrice leggera',
+  'marksman rifle':'Fucile tattico','marksman rifles':'Fucile tattico','tactical rifle':'Fucile tattico',
+  'battle rifle':'Fucile da battaglia','battle rifles':'Fucile da battaglia',
+  'sniper rifle':'Cecchino','sniper rifles':'Cecchino','sniper':'Cecchino',
+  'shotgun':'Shotgun','shotguns':'Shotgun',
+  'pistol':'Pistola','pistols':'Pistola','handgun':'Pistola',
+  'melee':'Corpo a corpo','launcher':'Lanciarazzi','launchers':'Lanciarazzi',
+  // IT passthrough
+  "fucile d'assalto":'Fucile d\'assalto',"fucili d'assalto":'Fucile d\'assalto',
+  'mitraglietta':'Mitraglietta','mitragliatrice leggera':'Mitragliatrice leggera',
+  'fucile tattico':'Fucile tattico','fucile da battaglia':'Fucile da battaglia',
+  'cecchino':'Cecchino','fucile di precisione':'Cecchino','fucile a pompa':'Shotgun',
+  'pistola':'Pistola','corpo a corpo':'Corpo a corpo','lanciarazzi':'Lanciarazzi',
+};
+function normalizeWeaponCategoryServer(raw) {
+  if (!raw) return raw;
+  const k = String(raw).trim().replace(/[''‚‛′''‚‛]/g,"'").replace(/\s+/g,' ').toLowerCase();
+  if (WEAPON_CATEGORY_MAP[k]) return WEAPON_CATEGORY_MAP[k];
+  for (const [key, val] of Object.entries(WEAPON_CATEGORY_MAP)) {
+    if (key.length >= 4 && k.includes(key)) return val;
+  }
+  return raw; // restituisce originale se non riconosciuta (non 'Da verificare')
+}
+
 function sanitize(v) {
   return String(v || '').trim().slice(0, 200);
 }
@@ -122,9 +150,18 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
 
   // ── API PUBBLICHE ──────────────────────────────────────────────────────────
 
-  // GET /api/loadout/weapons  →  armi attive E verificate (solo pubblico)
+  // GET /api/loadout/weapons  →  armi attive E verificate (solo pubblico), categorie normalizzate
   app.get('/api/loadout/weapons', (req, res) => {
-    const weapons = readWeapons().filter(w => w.attiva && w.verificata);
+    const weapons = readWeapons()
+      .filter(w => w.attiva && w.verificata)
+      .map(w => ({
+        id        : w.id,
+        nome      : w.nome,
+        categoria : normalizeWeaponCategoryServer(w.categoria),
+        gioco     : w.gioco,
+        attiva    : w.attiva,
+        verificata: w.verificata,
+      }));
     res.json({ ok: true, weapons });
   });
 

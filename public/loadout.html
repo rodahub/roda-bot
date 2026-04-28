@@ -194,6 +194,15 @@
     });
   });
 
+  // ── Normalizzazione categoria (apostrofi, case, spazi) ────────────────────
+  function normalizeCategoryForCompare(s) {
+    return String(s || '')
+      .trim()
+      .replace(/[''‚‛′''‚‛‘’‚‛′]/g, "'") // apostrofi → dritti
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
   // ── Dati locali ────────────────────────────────────────────────────────────
   let allWeapons = [];
   let allAttachments = [];
@@ -288,11 +297,18 @@
       return;
     }
 
-    const filtered = allWeapons.filter(w => w.categoria === cat);
+    const catNorm = normalizeCategoryForCompare(cat);
+    const filtered = allWeapons.filter(w => normalizeCategoryForCompare(w.categoria) === catNorm);
 
     // Categoria valida ma senza armi verificate
     if (filtered.length === 0) {
-      console.warn(`[Loadout] Categoria "${cat}" selezionata ma nessuna arma verificata disponibile.`);
+      const availableCategories = [...new Set(allWeapons.map(w => w.categoria))];
+      console.warn('[Loadout] Nessuna arma per categoria', {
+        selectedCategory   : cat,
+        selectedNormalized : catNorm,
+        totalWeapons       : allWeapons.length,
+        availableCategories,
+      });
       armaSelect.disabled = true;
       armaSelect.innerHTML = `<option value="">Nessuna arma disponibile per questa categoria.</option>`;
       return;
