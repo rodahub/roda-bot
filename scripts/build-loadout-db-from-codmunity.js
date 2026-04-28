@@ -39,18 +39,93 @@ const REPORT_FILE  = path.join(DATA_DIR, 'loadout-import-report.json');
 
 // ─── Mappature ────────────────────────────────────────────────────────────────
 const CATEGORY_MAP = {
-  'assault rifle'    : "Fucile d'assalto",
-  'smg'              : 'Mitraglietta',
-  'submachine gun'   : 'Mitraglietta',
-  'lmg'              : 'Mitragliatrice leggera',
-  'light machine gun': 'Mitragliatrice leggera',
-  'marksman rifle'   : 'Fucile tattico',
-  'battle rifle'     : 'Fucile da battaglia',
-  'sniper rifle'     : 'Cecchino',
-  'sniper'           : 'Cecchino',
-  'shotgun'          : 'Shotgun',
-  'pistol'           : 'Pistola',
-  'handgun'          : 'Pistola',
+  // ── Inglese ────────────────────────────────────────────────────────────────
+  'assault rifle'        : "Fucile d'assalto",
+  'ar'                   : "Fucile d'assalto",
+  'smg'                  : 'Mitraglietta',
+  'submachine gun'       : 'Mitraglietta',
+  'lmg'                  : 'Mitragliatrice leggera',
+  'light machine gun'    : 'Mitragliatrice leggera',
+  'marksman rifle'       : 'Fucile tattico',
+  'battle rifle'         : 'Fucile da battaglia',
+  'sniper rifle'         : 'Cecchino',
+  'sniper'               : 'Cecchino',
+  'shotgun'              : 'Shotgun',
+  'pistol'               : 'Pistola',
+  'handgun'              : 'Pistola',
+  'melee'                : 'Corpo a corpo',
+  'launcher'             : 'Lanciarazzi',
+  'rocket launcher'      : 'Lanciarazzi',
+  // ── Italiano passthrough + normalizzazione ─────────────────────────────────
+  "fucile d'assalto"     : "Fucile d'assalto",
+  'mitraglietta'         : 'Mitraglietta',
+  'mitragliatrice leggera': 'Mitragliatrice leggera',
+  'fucile tattico'       : 'Fucile tattico',
+  'fucile da battaglia'  : 'Fucile da battaglia',
+  'cecchino'             : 'Cecchino',
+  'fucile di precisione' : 'Cecchino',
+  'fucile a pompa'       : 'Shotgun',
+  'pistola'              : 'Pistola',
+  'corpo a corpo'        : 'Corpo a corpo',
+  'lanciarazzi'          : 'Lanciarazzi',
+};
+
+// ─── Fallback manuale per armi note (usato solo se CODMunity non fornisce categoria) ──
+const WEAPON_CATEGORY_FALLBACK = {
+  // BO6 — Fucili d'assalto
+  'xm4'         : "Fucile d'assalto",
+  'ak-74'       : "Fucile d'assalto",
+  'ames-85'     : "Fucile d'assalto",
+  'gpr-91'      : "Fucile d'assalto",
+  'model-l'     : "Fucile d'assalto",
+  'goblin-mk2'  : "Fucile d'assalto",
+  'as-val'      : "Fucile d'assalto",
+  'krig-c'      : "Fucile d'assalto",
+  'cypher-091'  : "Fucile d'assalto",
+  'ffar-1'      : "Fucile d'assalto",
+  'kilo-141'    : "Fucile d'assalto",
+  'cr-56-amax'  : "Fucile d'assalto",
+  // BO6 — Mitragliette
+  'c9'          : 'Mitraglietta',
+  'ksv'         : 'Mitraglietta',
+  'tanto-22'    : 'Mitraglietta',
+  'pp-919'      : 'Mitraglietta',
+  'jackal-pdw'  : 'Mitraglietta',
+  'kompakt-92'  : 'Mitraglietta',
+  'saug'        : 'Mitraglietta',
+  'ppsh-41'     : 'Mitraglietta',
+  'lc10'        : 'Mitraglietta',
+  'ladra'       : 'Mitraglietta',
+  // BO6 — Mitragliatrici leggere
+  'pu-21'       : 'Mitragliatrice leggera',
+  'xmg'         : 'Mitragliatrice leggera',
+  'gpmg-7'      : 'Mitragliatrice leggera',
+  'feng-82'     : 'Mitragliatrice leggera',
+  // BO6 — Fucili tattici (Marksman)
+  'swat-556'    : 'Fucile tattico',
+  'swat-5-56'   : 'Fucile tattico',
+  'tsarkov-762' : 'Fucile tattico',
+  'tsarkov-7-62': 'Fucile tattico',
+  'aek-973'     : 'Fucile tattico',
+  'dm-10'       : 'Fucile tattico',
+  'tr2'         : 'Fucile tattico',
+  // BO6 — Cecchini
+  'lw3a1-frostline': 'Cecchino',
+  'svd'         : 'Cecchino',
+  'lr-762'      : 'Cecchino',
+  'lr-7-62'     : 'Cecchino',
+  'amr-mod-4'   : 'Cecchino',
+  'hdr'         : 'Cecchino',
+  // BO6 — Shotgun
+  'marine-sp'   : 'Shotgun',
+  'asg-89'      : 'Shotgun',
+  'maelstrom'   : 'Shotgun',
+  // BO6 — Pistole
+  '9mm-pm'      : 'Pistola',
+  'grekhova'    : 'Pistola',
+  'gs45'        : 'Pistola',
+  'stryder-22'  : 'Pistola',
+  '1911'        : 'Pistola',
 };
 
 // Slot: chiavi inglesi → valori italiani
@@ -115,7 +190,55 @@ function normalizeSlot(raw) {
 function normalizeCategory(raw) {
   if (!raw) return 'Da verificare';
   const k = String(raw).trim().toLowerCase();
-  return CATEGORY_MAP[k] || 'Da verificare';
+  // 1. Match esatto
+  if (CATEGORY_MAP[k]) return CATEGORY_MAP[k];
+  // 2. Match parziale: il testo contiene una chiave nota (es. "assault rifle weapons")
+  for (const [key, val] of Object.entries(CATEGORY_MAP)) {
+    if (key.length >= 3 && k.includes(key)) return val;
+  }
+  return 'Da verificare';
+}
+
+/**
+ * Cerca ricorsivamente un campo categoria in qualunque oggetto (es. __NEXT_DATA__).
+ * Restituisce { category: string (IT), source: string } o null.
+ */
+function findCategoryInObject(obj, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 12) return null;
+  if (Array.isArray(obj)) {
+    for (const v of obj) {
+      const r = findCategoryInObject(v, depth + 1);
+      if (r) return r;
+    }
+    return null;
+  }
+  // Campi che possono contenere la categoria direttamente
+  const CAT_FIELDS = [
+    'category', 'weaponCategory', 'weapon_category',
+    'type', 'class', 'weaponClass', 'weaponType', 'weapon_type',
+    'family', 'gun_type', 'gameWeaponType', 'weaponFamily', 'classType',
+  ];
+  for (const f of CAT_FIELDS) {
+    if (obj[f] && typeof obj[f] === 'string') {
+      const cat = normalizeCategory(obj[f]);
+      if (cat !== 'Da verificare') return { category: cat, source: `__NEXT_DATA__.${f}` };
+    }
+  }
+  // Ricerca ricorsiva nei sotto-oggetti (priorità: weapon, gameWeapon, data, props, pageProps)
+  const PRIORITY_KEYS = ['weapon', 'gameWeapon', 'weaponData', 'data', 'props', 'pageProps'];
+  for (const k of PRIORITY_KEYS) {
+    if (obj[k] && typeof obj[k] === 'object') {
+      const r = findCategoryInObject(obj[k], depth + 1);
+      if (r) return r;
+    }
+  }
+  for (const [, v] of Object.entries(obj)) {
+    if (v && typeof v === 'object') {
+      const r = findCategoryInObject(v, depth + 1);
+      if (r) return r;
+    }
+  }
+  return null;
 }
 
 function nowISO()   { return new Date().toISOString(); }
@@ -283,9 +406,28 @@ function findWeaponInNextData(obj, depth = 0) {
 
 function parseWeaponObject(raw) {
   if (!raw) return null;
-  const name    = String(raw.name || raw.weapon_name || raw.weaponName || raw.title || '').trim();
-  const catRaw  = raw.category || raw.weapon_type || raw.type || raw.class || raw.weaponClass || '';
-  const category = normalizeCategory(catRaw);
+  const name = String(raw.name || raw.weapon_name || raw.weaponName || raw.title || '').trim();
+
+  // Cerca categoria: prima i campi diretti, poi ricerca ricorsiva nell'intero oggetto
+  let category       = 'Da verificare';
+  let _categorySource = null;
+  const directCatRaw = raw.category || raw.weapon_type || raw.type || raw.class
+                     || raw.weaponClass || raw.weaponType || raw.family || '';
+  if (directCatRaw) {
+    const cat = normalizeCategory(directCatRaw);
+    if (cat !== 'Da verificare') {
+      category        = cat;
+      _categorySource = 'direct-field';
+    }
+  }
+  if (category === 'Da verificare') {
+    const found = findCategoryInObject(raw);
+    if (found) {
+      category        = found.category;
+      _categorySource = found.source;
+    }
+  }
+
   const attachments = [];
 
   const flatArr = raw.attachments || raw.attachment_list || raw.attachmentList;
@@ -320,7 +462,7 @@ function parseWeaponObject(raw) {
       }
     }
   }
-  return { name, category, attachments };
+  return { name, category, _categorySource, attachments };
 }
 
 // ─── Estrazione Puppeteer: DOM renderizzato + window.__NEXT_DATA__ ────────────
@@ -358,13 +500,22 @@ async function extractWithPuppeteer(url) {
     const nextDataRaw = await page.evaluate(() => {
       try { return window.__NEXT_DATA__ || null; } catch { return null; }
     });
+    // Salva categoria + source trovati in __NEXT_DATA__ anche se poi usiamo il DOM per gli accessori
+    let nextDataCategory       = 'Da verificare';
+    let nextDataCategorySource = null;
     if (nextDataRaw) {
       const wObj   = findWeaponInNextData(nextDataRaw);
       const result = parseWeaponObject(wObj);
-      if (result && result.attachments.length > 0) {
-        result.name     = cleanWeaponName(result.name);
-        result._method  = 'Puppeteer+__NEXT_DATA__';
-        return result;
+      if (result) {
+        if (result.category !== 'Da verificare') {
+          nextDataCategory       = result.category;
+          nextDataCategorySource = result._categorySource || '__NEXT_DATA__';
+        }
+        if (result.attachments.length > 0) {
+          result.name    = cleanWeaponName(result.name);
+          result._method = 'Puppeteer+__NEXT_DATA__';
+          return result; // _categorySource già impostato
+        }
       }
     }
 
@@ -392,13 +543,70 @@ async function extractWithPuppeteer(url) {
         const h1 = document.querySelector('h1');
         const name = h1 ? h1.textContent.trim() : document.title || '';
 
-        // Categoria
-        let category = '';
-        for (const sel of ['[class*="weapon-type"]','[class*="weaponType"]',
-                            '[class*="category"]','[class*="type-badge"]',
-                            '[data-weapon-type]','[class*="weapon_type"]']) {
+        // ── Categoria: più strategie in ordine di affidabilità ─────────────
+        let category       = 'Da verificare';
+        let categorySource = null;
+
+        // Strategia A: badge / pill / tag categoria espliciti
+        const catSelectors = [
+          '[class*="weapon-type"]','[class*="weaponType"]','[class*="weaponClass"]',
+          '[class*="weapon_type"]','[class*="weapon_class"]',
+          '[class*="type-badge"]','[class*="typeBadge"]',
+          '[class*="category-badge"]','[class*="categoryBadge"]',
+          '[class*="gun-type"]','[class*="gunType"]',
+          '[data-weapon-type]','[data-category]',
+        ];
+        for (const sel of catSelectors) {
           const el = document.querySelector(sel);
-          if (el) { category = mapCategory(el.textContent.trim()); break; }
+          if (el) {
+            const mapped = mapCategory(el.textContent.trim());
+            if (mapped !== 'Da verificare') { category = mapped; categorySource = 'DOM-badge'; break; }
+          }
+        }
+
+        // Strategia B: breadcrumb (spesso: Home > Weapons > Assault Rifle > XM4)
+        if (category === 'Da verificare') {
+          const breadItems = document.querySelectorAll(
+            '[class*="breadcrumb"] li, [class*="breadcrumb"] a, [class*="breadcrumb"] span,' +
+            'nav[aria-label*="breadcrumb"] *'
+          );
+          for (const el of breadItems) {
+            const mapped = mapCategory(el.textContent.trim());
+            if (mapped !== 'Da verificare') { category = mapped; categorySource = 'DOM-breadcrumb'; break; }
+          }
+        }
+
+        // Strategia C: meta tag og:description o og:title
+        if (category === 'Da verificare') {
+          const metas = [
+            document.querySelector('meta[property="og:description"]'),
+            document.querySelector('meta[name="description"]'),
+            document.querySelector('meta[property="og:title"]'),
+          ];
+          for (const m of metas) {
+            if (!m) continue;
+            const content = m.getAttribute('content') || '';
+            const mapped  = mapCategory(content);
+            if (mapped !== 'Da verificare') { category = mapped; categorySource = 'DOM-meta'; break; }
+          }
+        }
+
+        // Strategia D: scan testo pagina per keyword categoria
+        if (category === 'Da verificare') {
+          const bodyText = (document.body.textContent || '').toLowerCase().slice(0, 8000);
+          const catKeys  = Object.keys(Object.fromEntries(catMapEntries));
+          for (const k of catKeys) {
+            if (k.length < 3) continue;
+            // Cerca il pattern come parola intera o frase
+            const re = new RegExp('(^|[\\s\\(\\["/])' + k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([\\s\\)\\]",:/]|$)');
+            if (re.test(bodyText)) {
+              const catMap2 = Object.fromEntries(catMapEntries);
+              const mapped  = catMap2[k];
+              if (mapped && mapped !== 'Da verificare') {
+                category = mapped; categorySource = 'DOM-text-scan'; break;
+              }
+            }
+          }
         }
 
         const attachments = [];
@@ -478,7 +686,7 @@ async function extractWithPuppeteer(url) {
           }
         }
 
-        return { name, category, attachments };
+        return { name, category, categorySource, attachments };
       },
       {
         slotEntries   : SLOT_MAP_ENTRIES,
@@ -488,9 +696,17 @@ async function extractWithPuppeteer(url) {
       }
     );
 
-    domResult.name     = cleanWeaponName(domResult.name || '');
-    domResult.category = normalizeCategory(domResult.category || '');
-    domResult._method  = 'Puppeteer+DOM';
+    domResult.name   = cleanWeaponName(domResult.name || '');
+    domResult._method = 'Puppeteer+DOM';
+
+    // Se il DOM non ha trovato categoria ma __NEXT_DATA__ sì, usa quella
+    if ((!domResult.categorySource || domResult.category === 'Da verificare') && nextDataCategory !== 'Da verificare') {
+      domResult.category        = nextDataCategory;
+      domResult._categorySource = nextDataCategorySource;
+    } else {
+      domResult._categorySource = domResult.categorySource || null;
+    }
+    delete domResult.categorySource;
     return domResult;
 
   } finally {
@@ -627,6 +843,10 @@ async function main() {
     ignoredSlots                 : [],
     warnings                     : [],
     errors                       : [],
+    // ── Tracking categoria ──────────────────────────────────────────────────
+    categoryDetected             : [],   // categoria trovata automaticamente
+    categoryFallback             : [],   // categoria da mappa manuale
+    categoryFailed               : [],   // categoria non trovata → Da verificare
   };
 
   const seenWeaponNames = new Map();
@@ -666,16 +886,78 @@ async function main() {
       if (!weaponId) throw new Error('Impossibile ricavare un ID arma valido');
       if (nameSlug) seenWeaponNames.set(nameSlug, { url, id: weaponId });
 
-      // Upsert arma (preserva verificata se già vera)
-      const isNewWeapon    = !weaponsMap.has(weaponId);
+      // ── Risoluzione categoria finale ───────────────────────────────────────
+      let finalCategory       = data.category       || 'Da verificare';
+      let finalCategorySource = data._categorySource || null;
+
+      // Se ancora "Da verificare", prova la mappa manuale con l'ID arma
+      if (finalCategory === 'Da verificare' && WEAPON_CATEGORY_FALLBACK[weaponId]) {
+        finalCategory       = WEAPON_CATEGORY_FALLBACK[weaponId];
+        finalCategorySource = 'manual-map';
+      }
+      // Altrimenti prova con lo slug dell'URL (es. "xm4" anche quando nome non deducibile)
+      if (finalCategory === 'Da verificare') {
+        const urlSlug = url.split('/').pop();
+        if (WEAPON_CATEGORY_FALLBACK[urlSlug]) {
+          finalCategory       = WEAPON_CATEGORY_FALLBACK[urlSlug];
+          finalCategorySource = 'manual-map';
+        }
+      }
+
+      // Traccia nel report
       const existingWeapon = weaponsMap.get(weaponId) || {};
+      if (finalCategory !== 'Da verificare') {
+        if (finalCategorySource === 'manual-map') {
+          // Categoria da mappa manuale
+          report.categoryFallback.push({
+            armaId   : weaponId,
+            nome     : data.name,
+            categoria: finalCategory,
+            source   : 'manual-map',
+          });
+        } else {
+          // Categoria trovata automaticamente (CODMunity o DB esistente)
+          report.categoryDetected.push({
+            armaId   : weaponId,
+            nome     : data.name,
+            categoria: finalCategory,
+            source   : finalCategorySource || 'unknown',
+          });
+        }
+      } else {
+        // Controlla se esisteva già una categoria valida nel DB
+        if (existingWeapon.categoria && existingWeapon.categoria !== 'Da verificare') {
+          finalCategory       = existingWeapon.categoria;
+          finalCategorySource = 'existing-db';
+          report.categoryDetected.push({
+            armaId   : weaponId,
+            nome     : data.name,
+            categoria: finalCategory,
+            source   : 'existing-db',
+          });
+        } else {
+          report.categoryFailed.push({
+            armaId: weaponId,
+            url,
+            reason: `Categoria non trovata (metodo: ${data._method || 'n/a'})`,
+          });
+        }
+      }
+
+      // Upsert arma
+      // Regola categoria: non sovrascrivere una categoria valida esistente con "Da verificare"
+      const resolvedCategory =
+        (finalCategory !== 'Da verificare')               ? finalCategory :
+        (existingWeapon.categoria !== 'Da verificare' && existingWeapon.categoria)
+                                                           ? existingWeapon.categoria :
+        'Da verificare';
+
+      const isNewWeapon = !weaponsMap.has(weaponId);
       weaponsMap.set(weaponId, {
         ...existingWeapon,
         id        : weaponId,
         nome      : data.name || existingWeapon.nome || weaponId,
-        categoria : (data.category && data.category !== 'Da verificare')
-                    ? data.category
-                    : (existingWeapon.categoria || 'Da verificare'),
+        categoria : resolvedCategory,
         gioco     : game,
         attiva    : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
         verificata: existingWeapon.verificata || false,
@@ -749,20 +1031,24 @@ async function main() {
         });
       }
 
-      const ignored = [...new Set(ignoredHere)];
-      const attLog  = validAtts > 0 ? ` — ${validAtts} acc` : ' ⚠ 0 acc';
+      const ignored  = [...new Set(ignoredHere)];
+      const attLog   = validAtts > 0 ? ` — ${validAtts} acc` : ' ⚠ 0 acc';
+      const catLabel = resolvedCategory !== 'Da verificare'
+        ? `${resolvedCategory}${finalCategorySource ? ' ('+finalCategorySource+')' : ''}`
+        : '⚠ Da verificare';
       console.log(
-        `      ✓ "${data.name}" [${data.category}]${attLog}` +
+        `      ✓ "${data.name}" [${catLabel}]${attLog}` +
         ` (${data._method})` +
         (ignored.length ? ` | ignorati: ${ignored.join(', ')}` : '')
       );
 
       report.processedUrls.push({
         url, game, status: 'ok',
-        name           : data.name,
-        category       : data.category,
+        name            : data.name,
+        category        : resolvedCategory,
+        categorySource  : finalCategorySource,
         attachmentsFound: validAtts,
-        method         : data._method,
+        method          : data._method,
       });
       report[gameKey].ok++;
 
@@ -828,6 +1114,10 @@ async function main() {
   console.log(`  Accessori nuovi / agg.    : ${report.attachmentsImported} / ${report.attachmentsUpdated}`);
   console.log(`  Compatibilità nuove / agg.: ${report.compatibilityImported} / ${report.compatibilityUpdated}`);
   console.log(`  Slot ignorati             : ${report.ignoredSlots.length}`);
+  console.log(`  ─────────────────────────────────────────────`);
+  console.log(`  Categoria rilevata (auto) : ${report.categoryDetected.length}`);
+  console.log(`  Categoria da mappa manuale: ${report.categoryFallback.length}`);
+  console.log(`  Categoria non trovata     : ${report.categoryFailed.length}`);
   console.log('══════════════════════════════════════════════════');
 
   if (fail > 0) {

@@ -137,6 +137,8 @@
           <option>Cecchino</option>
           <option>Shotgun</option>
           <option>Pistola</option>
+          <option>Corpo a corpo</option>
+          <option>Lanciarazzi</option>
         </select>
       </div>
       <div class="field">
@@ -198,9 +200,24 @@
 
   // ── Carica armi dal server ──────────────────────────────────────────────────
   async function loadWeapons() {
-    const r = await fetch('/api/loadout/weapons');
-    const d = await r.json();
-    allWeapons = d.weapons || [];
+    try {
+      const r = await fetch('/api/loadout/weapons');
+      if (!r.ok) {
+        console.warn('[Loadout] API /api/loadout/weapons risposta non-OK:', r.status);
+        return;
+      }
+      const d = await r.json();
+      if (!d || !Array.isArray(d.weapons)) {
+        console.warn('[Loadout] API /api/loadout/weapons: formato risposta inatteso', d);
+        return;
+      }
+      allWeapons = d.weapons;
+      if (allWeapons.length === 0) {
+        console.warn('[Loadout] Nessuna arma verificata nel database. Usa /admin-loadout per verificarle.');
+      }
+    } catch (e) {
+      console.warn('[Loadout] Errore caricamento armi:', e.message);
+    }
   }
 
   // ── Carica accessori per arma ──────────────────────────────────────────────
@@ -243,7 +260,46 @@
   document.getElementById('f-categoria').addEventListener('change', function() {
     const cat = this.value;
     const armaSelect = document.getElementById('f-arma');
+
+    if (!armaSelect) {
+      console.warn('[Loadout] Elemento #f-arma non trovato nel DOM.');
+      return;
+    }
+
+    // Reset accessori sempre
+    document.querySelectorAll('.att-select').forEach(s => {
+      s.disabled = true;
+      s.innerHTML = `<option value="">— Prima scegli l'arma —</option>`;
+    });
+    allAttachments = [];
+
+    // Nessuna categoria selezionata → torna allo stato iniziale
+    if (!cat) {
+      armaSelect.disabled = true;
+      armaSelect.innerHTML = `<option value="">— Prima scegli la categoria —</option>`;
+      return;
+    }
+
+    // Nessuna arma verificata in tutto il DB
+    if (allWeapons.length === 0) {
+      console.warn('[Loadout] Nessuna arma verificata disponibile nel database.');
+      armaSelect.disabled = true;
+      armaSelect.innerHTML = `<option value="">Nessuna arma disponibile. Verifica prima le armi dall'admin.</option>`;
+      return;
+    }
+
     const filtered = allWeapons.filter(w => w.categoria === cat);
+
+    // Categoria valida ma senza armi verificate
+    if (filtered.length === 0) {
+      console.warn(`[Loadout] Categoria "${cat}" selezionata ma nessuna arma verificata disponibile.`);
+      armaSelect.disabled = true;
+      armaSelect.innerHTML = `<option value="">Nessuna arma disponibile per questa categoria.</option>`;
+      return;
+    }
+
+    // Armi trovate → abilita la select
+    armaSelect.disabled = false;
     armaSelect.innerHTML = `<option value="">— Seleziona arma —</option>`;
     filtered.forEach(w => {
       const o = document.createElement('option');
@@ -251,13 +307,6 @@
       o.textContent = w.nome;
       armaSelect.appendChild(o);
     });
-    armaSelect.disabled = filtered.length === 0;
-    // Reset accessori
-    document.querySelectorAll('.att-select').forEach(s => {
-      s.disabled = true;
-      s.innerHTML = `<option value="">— Prima scegli l'arma —</option>`;
-    });
-    allAttachments = [];
   });
 
   // ── Cambio arma → carica accessori ────────────────────────────────────────
