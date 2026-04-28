@@ -1,30 +1,32 @@
 /**
  * RØDA Loadabot — build-loadout-db-from-codmunity.js
  *
- * Legge data/codmunity-weapon-urls.json, visita ogni URL CODMunity,
- * estrae arma + accessori + compatibilità e li scrive nei 3 file DB:
- *   data/loadout-weapons.json
- *   data/loadout-attachments.json
- *   data/loadout-compatibility.json
+ * Legge data/codmunity-weapon-urls.json, visita ogni URL CODMunity
+ * con Puppeteer (CSR React), estrae arma + accessori + compatibilità
+ * e li scrive nei 3 file DB.
  *
- * Report: data/loadout-import-report.json
+ * Uso:
+ *   node scripts/build-loadout-db-from-codmunity.js
+ *   node scripts/build-loadout-db-from-codmunity.js --limit=3
+ *   npm run build:loadout-db
+ *   npm run build:loadout-db -- --limit=3
  *
- * Strategia fetch (in ordine):
- *  1. fetch() nativo (Node 18+) — legge HTML e cerca __NEXT_DATA__
- *  2. Puppeteer (se installato) — per siti SPA/CSR
- *
- * Uso: node scripts/build-loadout-db-from-codmunity.js
- *      npm run build:loadout-db
- *
- * NON richiede puppeteer se il sito serve SSR (Next.js con __NEXT_DATA__).
+ * Tutti i dati importati restano verificata/verificato:false.
  */
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const fs    = require('fs');
+const path  = require('path');
 const http  = require('http');
 const https = require('https');
+
+// ─── Argomenti CLI ────────────────────────────────────────────────────────────
+const args  = process.argv.slice(2);
+const LIMIT = (() => {
+  const a = args.find(a => /^--limit=\d+$/.test(a));
+  return a ? parseInt(a.split('=')[1], 10) : null;
+})();
 
 // ─── Percorsi ─────────────────────────────────────────────────────────────────
 const ROOT         = path.join(__dirname, '..');
@@ -51,6 +53,8 @@ const CATEGORY_MAP = {
   'handgun'          : 'Pistola',
 };
 
+// Slot: chiavi inglesi → valori italiani
+// IMPORTANTE: nessun valore inglese deve mai finire nel database.
 const SLOT_MAP = {
   'optic'        : 'Ottica',
   'optics'       : 'Ottica',
@@ -66,7 +70,7 @@ const SLOT_MAP = {
   'laser'        : 'Laser',
   'fire mods'    : 'Mod fuoco',
   'fire mod'     : 'Mod fuoco',
-  // passthrough IT
+  // passthrough IT (nel caso la pagina usi già italiano)
   'ottica'       : 'Ottica',
   'volata'       : 'Volata',
   'canna'        : 'Canna',
@@ -77,9 +81,18 @@ const SLOT_MAP = {
   'mod fuoco'    : 'Mod fuoco',
 };
 
-const VALID_SLOTS = new Set([
+// Versioni pre-serializzate per passarle a page.evaluate()
+const SLOT_MAP_ENTRIES  = Object.entries(SLOT_MAP);
+const VALID_SLOTS_ARRAY = [
   'Ottica','Volata','Canna','Sottocanna','Caricatore',
-  'Impugnatura','Calcio','Laser','Mod fuoco'
+  'Impugnatura','Calcio','Laser','Mod fuoco',
+];
+const VALID_SLOTS = new Set(VALID_SLOTS_ARRAY);
+
+// Slot da scartare (non devono mai finire nel DB)
+const BANNED_SLOT_NAMES = new Set([
+  'munizioni','poggiaguancia','ammunition','perk',
+  'conversion kit','rear grip wrap',
 ]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,21 +104,23 @@ function toSlug(str) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
+
 function normalizeSlot(raw) {
   if (!raw) return null;
-  return SLOT_MAP[String(raw).trim().toLowerCase()] || null;
+  const k = String(raw).trim().toLowerCase();
+  if (BANNED_SLOT_NAMES.has(k)) return null;
+  return SLOT_MAP[k] || null;
 }
+
 function normalizeCategory(raw) {
   if (!raw) return 'Da verificare';
   const k = String(raw).trim().toLowerCase();
   return CATEGORY_MAP[k] || 'Da verificare';
 }
-function nowISO() { return new Date().toISOString(); }
-function todayDate() {
-  // Formato YYYY-MM-DD per updatedAt
-  return new Date().toISOString().slice(0, 10);
-}
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function nowISO()   { return new Date().toISOString(); }
+function todayDate(){ return new Date().toISOString().slice(0, 10); }
+function sleep(ms)  { return new Promise(r => setTimeout(r, ms)); }
 
 function readJSON(filePath) {
   try {
@@ -114,140 +129,13 @@ function readJSON(filePath) {
     return c ? JSON.parse(c) : [];
   } catch { return []; }
 }
+
 function writeJSON(filePath, data) {
   const tmp = filePath + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
   fs.renameSync(tmp, filePath);
 }
 
-// ─── HTTP fetch con redirect ──────────────────────────────────────────────────
-function httpGet(url, redirects = 5) {
-  return new Promise((resolve, reject) => {
-    if (redirects < 0) return reject(new Error('Troppi redirect'));
-    const lib = url.startsWith('https') ? https : http;
-    const req = lib.get(url, {
-      headers: {
-        'User-Agent'     : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
-        'Accept'         : 'text/html,application/xhtml+xml,*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control'  : 'no-cache',
-      },
-      timeout: 20000,
-    }, res => {
-      if ([301,302,303,307,308].includes(res.statusCode) && res.headers.location) {
-        req.destroy();
-        const loc = res.headers.location.startsWith('http')
-          ? res.headers.location
-          : new URL(res.headers.location, url).href;
-        return resolve(httpGet(loc, redirects - 1));
-      }
-      if (res.statusCode === 404) {
-        const e = new Error(`HTTP 404`);
-        e.isNotFound = true;
-        req.destroy();
-        return reject(e);
-      }
-      if (res.statusCode >= 400) {
-        req.destroy();
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      const chunks = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve({ status: res.statusCode, html: Buffer.concat(chunks).toString('utf8') }));
-      res.on('error', reject);
-    });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
-  });
-}
-
-// ─── Parser __NEXT_DATA__ ─────────────────────────────────────────────────────
-function extractFromNextData(html) {
-  const match = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
-  if (!match) return null;
-  try { return JSON.parse(match[1]); }
-  catch { return null; }
-}
-
-/** Cerca ricorsivamente un oggetto che sembra un'arma */
-function findWeaponObject(obj, depth = 0) {
-  if (!obj || typeof obj !== 'object' || depth > 8) return null;
-  if (Array.isArray(obj)) {
-    for (const item of obj) {
-      const r = findWeaponObject(item, depth + 1);
-      if (r) return r;
-    }
-    return null;
-  }
-  const hasName = obj.name || obj.weapon_name || obj.title || obj.weaponName;
-  const hasAtts = obj.attachments || obj.slots || obj.attachment_list || obj.categories || obj.attachmentCategories;
-  if (hasName && hasAtts) return obj;
-  for (const key of Object.keys(obj)) {
-    const r = findWeaponObject(obj[key], depth + 1);
-    if (r) return r;
-  }
-  return null;
-}
-
-/** Normalizza i vari formati di dati arma in { name, category, attachments[] } */
-function normalizeWeaponData(raw) {
-  if (!raw) return null;
-  const name = String(raw.name || raw.weapon_name || raw.weaponName || raw.title || '').trim();
-  const catRaw = raw.category || raw.weapon_type || raw.type || raw.class || raw.weaponClass || '';
-  const category = normalizeCategory(catRaw);
-
-  const attachments = [];
-
-  // Formato 1: array piatto [{slot, name}]
-  const flatArr = raw.attachments || raw.attachment_list || raw.attachmentList || null;
-  if (Array.isArray(flatArr)) {
-    for (const a of flatArr) {
-      if (!a || typeof a !== 'object') continue;
-      const slot = normalizeSlot(a.slot || a.type || a.category || a.attachmentType || a.slotName || '');
-      const attName = String(a.name || a.attachment_name || a.attachmentName || a.title || '').trim();
-      if (slot && attName) attachments.push({ slot, name: attName });
-    }
-  }
-
-  // Formato 2: oggetto slot->{items[]}
-  const slotsObj = raw.slots || raw.attachmentSlots || null;
-  if (!attachments.length && slotsObj && typeof slotsObj === 'object' && !Array.isArray(slotsObj)) {
-    for (const [slotKey, items] of Object.entries(slotsObj)) {
-      const slot = normalizeSlot(slotKey);
-      if (!slot) continue;
-      const arr = Array.isArray(items) ? items : (items ? [items] : []);
-      for (const a of arr) {
-        const attName = typeof a === 'string' ? a : String(a.name || a.title || '').trim();
-        if (attName) attachments.push({ slot, name: attName });
-      }
-    }
-  }
-
-  // Formato 3: array di categorie [{name/slot, items/attachments}]
-  const catsArr = raw.categories || raw.attachmentCategories || null;
-  if (!attachments.length && Array.isArray(catsArr)) {
-    for (const cat of catsArr) {
-      const slot = normalizeSlot(cat.name || cat.slot || cat.type || cat.category || '');
-      if (!slot) continue;
-      const items = cat.items || cat.attachments || cat.list || cat.options || [];
-      for (const a of (Array.isArray(items) ? items : [])) {
-        const attName = typeof a === 'string' ? a : String(a.name || a.title || '').trim();
-        if (attName) attachments.push({ slot, name: attName });
-      }
-    }
-  }
-
-  return { name, category, attachments };
-}
-
-// ─── Parser HTML fallback (regex sul testo grezzo) ────────────────────────────
-/**
- * Quando __NEXT_DATA__ non contiene i dati strutturati,
- * cerca nel testo HTML le sezioni degli slot con regex.
- * CODMunity usa pattern tipo:
- *   <div class="...slot-name...">Muzzle</div>
- *   <div class="...attachment-name...">Monolithic Suppressor</div>
- */
 function decodeHtmlEntities(str) {
   return String(str || '')
     .replace(/&amp;/gi, '&')
@@ -261,236 +149,424 @@ function decodeHtmlEntities(str) {
 
 function cleanWeaponName(raw) {
   let name = decodeHtmlEntities(raw || '').trim();
-  // Rimuove "Best " iniziale (es. "Best XM4 Loadouts for...")
   name = name.replace(/^best\s+/i, '');
-  // Rimuove tutto da "Loadouts" in poi
   name = name.replace(/\s+loadouts?\s+for.*/i, '');
-  // Rimuove " Attachments" finale
   name = name.replace(/\s+attachments?\s*$/i, '');
-  // Rimuove tutto da " - CODMunity" in poi
   name = name.replace(/\s*[-–|]\s*CODMunity.*/i, '').trim();
-  // Rimuove " Best" residuo
   name = name.replace(/\s*best\s*$/i, '').trim();
-  // Ripristina maiuscole se il nome è tutto minuscolo (es. "xm4" → "XM4")
-  // ma preserva nomi misti tipo "Kilo 141"
   if (name === name.toLowerCase() && name.length <= 6) name = name.toUpperCase();
   return name || raw;
 }
 
-function extractFromHTML(html) {
-  // Prova a trovare il nome dell'arma dal titolo o heading
-  let name = '';
-  const titleMatch = html.match(/<title[^>]*>([^<]+)/i);
-  if (titleMatch) {
-    name = cleanWeaponName(titleMatch[1]);
-  }
-  if (!name || name.toLowerCase() === 'codmunity') {
-    // Prova con og:title (più pulito)
-    const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)/i)
-                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
-    if (ogTitle) name = cleanWeaponName(ogTitle[1]);
-  }
-  if (!name || name.toLowerCase() === 'codmunity') {
-    const h1 = html.match(/<h1[^>]*>([^<]+)/i);
-    if (h1) name = cleanWeaponName(h1[1]);
-  }
-
-  // Cerca tipo arma (assault rifle, smg, etc.)
-  let category = 'Da verificare';
-  for (const k of Object.keys(CATEGORY_MAP)) {
-    if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'i').test(html)) {
-      category = CATEGORY_MAP[k];
-      break;
-    }
-  }
-
-  const attachments = [];
-  // Cerca ogni slot noto nel testo e raccoglie i nomi vicini
-  for (const [slotKey, slotIT] of Object.entries(SLOT_MAP)) {
-    if (!VALID_SLOTS.has(slotIT)) continue;
-    const escaped = slotKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // pattern: cerca "Muzzle" (case-insensitive) poi i prossimi ~500 char
-    const re = new RegExp(escaped + '[\\s\\S]{0,600}', 'gi');
-    const section = html.match(re);
-    if (!section) continue;
-    // Cerca nomi di accessori (parole con maiuscola, non tag HTML)
-    const names = section[0]
-      .replace(/<[^>]+>/g, ' ')          // strip HTML
-      .replace(/&[a-z]+;/g, ' ')         // strip entities
-      .split(/[\n\r]+/)                  // per riga
-      .map(l => l.trim())
-      .filter(l => l.length > 2 && l.length < 80)
-      .filter(l => /[A-Z]/.test(l))      // ha almeno una maiuscola (nome accessorio)
-      .filter(l => !/<|>|{|}/.test(l));  // non è HTML/JS
-    for (const n of names.slice(0, 20)) {
-      if (n.toLowerCase().includes(slotKey)) continue; // salta l'header stesso
-      attachments.push({ slot: slotIT, name: n });
-    }
-  }
-
-  return { name, category, attachments };
+function getGame(url) {
+  const m = url.match(/\/weapon\/(bo\d+)\//i);
+  return m ? m[1].toUpperCase() : 'UNKNOWN';
 }
 
-// ─── Pupeteer fallback (opzionale) ───────────────────────────────────────────
+// ─── HTTP get leggero (solo per 404/redirect check, non per accessori) ────────
+function httpGet(url, redirects = 4) {
+  return new Promise((resolve, reject) => {
+    if (redirects < 0) return reject(new Error('Troppi redirect'));
+    const lib = url.startsWith('https') ? https : http;
+    const req = lib.get(url, {
+      headers: {
+        'User-Agent'     : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+        'Accept'         : 'text/html,*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      timeout: 15000,
+    }, res => {
+      if ([301,302,303,307,308].includes(res.statusCode) && res.headers.location) {
+        req.destroy();
+        const loc = res.headers.location.startsWith('http')
+          ? res.headers.location
+          : new URL(res.headers.location, url).href;
+        return resolve(httpGet(loc, redirects - 1));
+      }
+      if (res.statusCode === 404) {
+        req.destroy();
+        return reject(Object.assign(new Error('HTTP 404'), { isNotFound: true }));
+      }
+      if (res.statusCode >= 400) {
+        req.destroy();
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      // Legge solo i primi 6KB per l'og:url check (evita di scaricare tutto)
+      const chunks = [];
+      let size = 0;
+      res.on('data', c => {
+        chunks.push(c);
+        size += c.length;
+        if (size > 8192) { req.destroy(); resolve({ partial: true, html: Buffer.concat(chunks).toString('utf8') }); }
+      });
+      res.on('end', () => resolve({ partial: false, html: Buffer.concat(chunks).toString('utf8') }));
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout HTTP')); });
+  });
+}
+
+// ─── Puppeteer ────────────────────────────────────────────────────────────────
 let puppeteer = null;
 let pBrowser  = null;
+
 async function initPuppeteer() {
   if (puppeteer !== null) return puppeteer !== false;
   try {
     puppeteer = require('puppeteer');
+    console.log('  ✓ Puppeteer disponibile');
     return true;
   } catch {
     puppeteer = false;
-    console.log('  ℹ Puppeteer non disponibile — uso solo fetch+HTML (OK per SSR)');
+    console.log('  ⚠ Puppeteer NON trovato — accessori non estraibili.');
+    console.log('    Esegui: npm install  quindi riprova.');
     return false;
   }
 }
-async function getPuppeteerPage() {
+
+async function getBrowser() {
   if (!pBrowser) {
     pBrowser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-gpu']
+      headless : 'new',   // headless moderno
+      args     : [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-extensions',
+        '--disable-background-networking',
+      ],
     });
   }
-  const page = await pBrowser.newPage();
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36');
+  return pBrowser;
+}
+
+async function newPage() {
+  const browser = await getBrowser();
+  const page    = await browser.newPage();
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  );
+  // Blocca risorse pesanti — accelera il caricamento
   await page.setRequestInterception(true);
   page.on('request', req => {
-    if (['image','media','font'].includes(req.resourceType())) req.abort();
+    const t = req.resourceType();
+    if (['image', 'media', 'font', 'stylesheet'].includes(t)) req.abort();
     else req.continue();
   });
   return page;
 }
 
-// ─── Processa singola URL ─────────────────────────────────────────────────────
-async function processUrl(url) {
-  // Tentativo 1: fetch nativo + __NEXT_DATA__
-  let html = null;
+// ─── Estrazione __NEXT_DATA__ (Node.js context, sul HTML grezzo) ──────────────
+function parseNextData(html) {
+  const m = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch { return null; }
+}
+
+function findWeaponInNextData(obj, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 10) return null;
+  if (Array.isArray(obj)) {
+    for (const v of obj) { const r = findWeaponInNextData(v, depth+1); if (r) return r; }
+    return null;
+  }
+  const hasName = obj.name || obj.weapon_name || obj.weaponName || obj.title;
+  const hasAtts = obj.attachments || obj.slots || obj.attachment_list
+               || obj.categories || obj.attachmentCategories;
+  if (hasName && hasAtts) return obj;
+  for (const v of Object.values(obj)) { const r = findWeaponInNextData(v, depth+1); if (r) return r; }
+  return null;
+}
+
+function parseWeaponObject(raw) {
+  if (!raw) return null;
+  const name    = String(raw.name || raw.weapon_name || raw.weaponName || raw.title || '').trim();
+  const catRaw  = raw.category || raw.weapon_type || raw.type || raw.class || raw.weaponClass || '';
+  const category = normalizeCategory(catRaw);
+  const attachments = [];
+
+  const flatArr = raw.attachments || raw.attachment_list || raw.attachmentList;
+  if (Array.isArray(flatArr)) {
+    for (const a of flatArr) {
+      if (!a || typeof a !== 'object') continue;
+      const slot = normalizeSlot(a.slot || a.type || a.category || a.attachmentType || a.slotName || '');
+      const attName = String(a.name || a.attachment_name || a.attachmentName || a.title || '').trim();
+      if (slot && attName) attachments.push({ slot, name: attName });
+    }
+  }
+  const slotsObj = raw.slots || raw.attachmentSlots;
+  if (!attachments.length && slotsObj && typeof slotsObj === 'object' && !Array.isArray(slotsObj)) {
+    for (const [k, items] of Object.entries(slotsObj)) {
+      const slot = normalizeSlot(k);
+      if (!slot) continue;
+      for (const a of (Array.isArray(items) ? items : [items])) {
+        const n = typeof a === 'string' ? a : String(a.name || a.title || '').trim();
+        if (n) attachments.push({ slot, name: n });
+      }
+    }
+  }
+  const catsArr = raw.categories || raw.attachmentCategories;
+  if (!attachments.length && Array.isArray(catsArr)) {
+    for (const cat of catsArr) {
+      const slot = normalizeSlot(cat.name || cat.slot || cat.type || cat.category || '');
+      if (!slot) continue;
+      const items = cat.items || cat.attachments || cat.list || cat.options || [];
+      for (const a of (Array.isArray(items) ? items : [])) {
+        const n = typeof a === 'string' ? a : String(a.name || a.title || '').trim();
+        if (n) attachments.push({ slot, name: n });
+      }
+    }
+  }
+  return { name, category, attachments };
+}
+
+// ─── Estrazione Puppeteer: DOM renderizzato + window.__NEXT_DATA__ ────────────
+async function extractWithPuppeteer(url) {
+  const page = await newPage();
+  try {
+    // Naviga — aspetta networkidle0 (React completamente idratato)
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
+
+    // Verifica homepage redirect tramite URL effettivo (affidabile al 100%)
+    const finalUrl = page.url();
+    const isHomepage = finalUrl === 'https://codmunity.gg'
+                    || finalUrl === 'https://codmunity.gg/'
+                    || (!finalUrl.includes('/weapon/'));
+    if (isHomepage) {
+      throw Object.assign(
+        new Error(`Redirect homepage (URL finale: ${finalUrl})`),
+        { isNotFound: true }
+      );
+    }
+
+    // Aspetta contenuto arma (h1 + minimo DOM)
+    await Promise.race([
+      page.waitForSelector('h1', { timeout: 12000 }),
+      page.waitForFunction(
+        () => document.querySelectorAll('li, [class*="attachment"]').length > 2,
+        { timeout: 12000 }
+      ),
+    ]).catch(() => {});
+
+    // Pausa breve per JS asincrono post-render
+    await sleep(800);
+
+    // ── Strategia 1: window.__NEXT_DATA__ nel contesto browser ────────────
+    const nextDataRaw = await page.evaluate(() => {
+      try { return window.__NEXT_DATA__ || null; } catch { return null; }
+    });
+    if (nextDataRaw) {
+      const wObj   = findWeaponInNextData(nextDataRaw);
+      const result = parseWeaponObject(wObj);
+      if (result && result.attachments.length > 0) {
+        result.name     = cleanWeaponName(result.name);
+        result._method  = 'Puppeteer+__NEXT_DATA__';
+        return result;
+      }
+    }
+
+    // ── Strategia 2: DOM traversal nel browser ─────────────────────────────
+    const domResult = await page.evaluate(
+      ({ slotEntries, validSlotsArr, bannedArr, catMapEntries }) => {
+
+        const slotMap    = Object.fromEntries(slotEntries);
+        const validSlots = new Set(validSlotsArr);
+        const banned     = new Set(bannedArr);
+        const catMap     = Object.fromEntries(catMapEntries);
+
+        function mapSlot(raw) {
+          if (!raw) return null;
+          const k = raw.trim().toLowerCase();
+          if (banned.has(k)) return null;
+          return slotMap[k] || null;
+        }
+        function mapCategory(raw) {
+          if (!raw) return 'Da verificare';
+          return catMap[raw.trim().toLowerCase()] || 'Da verificare';
+        }
+
+        // Nome arma
+        const h1 = document.querySelector('h1');
+        const name = h1 ? h1.textContent.trim() : document.title || '';
+
+        // Categoria
+        let category = '';
+        for (const sel of ['[class*="weapon-type"]','[class*="weaponType"]',
+                            '[class*="category"]','[class*="type-badge"]',
+                            '[data-weapon-type]','[class*="weapon_type"]']) {
+          const el = document.querySelector(sel);
+          if (el) { category = mapCategory(el.textContent.trim()); break; }
+        }
+
+        const attachments = [];
+        const seen        = new Set();
+        const slotKeys    = Object.keys(slotMap);
+
+        // ── Approccio A: heading slot → items nel container ──────────────
+        const headings = document.querySelectorAll(
+          'h2,h3,h4,h5,strong,[class*="slot-header"],[class*="slotHeader"],' +
+          '[class*="slot-title"],[class*="attachment-category"],[class*="category-name"]'
+        );
+        for (const hEl of headings) {
+          const txt  = hEl.textContent.trim().toLowerCase();
+          const slot = slotKeys.find(k => txt === k || (txt.includes(k) && txt.length <= k.length + 3));
+          if (!slot) continue;
+          const slotIT = mapSlot(slot);
+          if (!slotIT) continue;
+
+          // Cerca container padre che racchiude heading + lista
+          const container = hEl.closest(
+            'section,[class*="slot-section"],[class*="slotSection"],' +
+            '[class*="attachment-group"],[class*="attachments"],[class*="slot-container"]'
+          ) || hEl.parentElement?.parentElement || hEl.parentElement;
+          if (!container) continue;
+
+          const items = container.querySelectorAll(
+            'li,[class*="attachment-item"],[class*="attachmentItem"],' +
+            '[class*="attachment-name"],[class*="item-name"],[class*="option-label"]'
+          );
+          for (const item of items) {
+            const attName = item.textContent.trim();
+            if (attName.length < 2 || attName.length > 100) continue;
+            if (slotKeys.some(k => attName.toLowerCase() === k)) continue;
+            const key = slotIT + '::' + attName.toLowerCase();
+            if (!seen.has(key)) { seen.add(key); attachments.push({ slot: slotIT, name: attName }); }
+          }
+        }
+
+        // ── Approccio B: TreeWalker su tutti i nodi testo ────────────────
+        if (attachments.length === 0) {
+          const walker    = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          const textNodes = [];
+          let node;
+          while ((node = walker.nextNode())) {
+            const t = node.textContent.trim();
+            if (t.length > 1 && t.length < 120) textNodes.push(t);
+          }
+          for (let i = 0; i < textNodes.length; i++) {
+            const txt  = textNodes[i].toLowerCase();
+            const slot = slotKeys.find(k => txt === k);
+            if (!slot) continue;
+            const slotIT = mapSlot(slot);
+            if (!slotIT) continue;
+            for (let j = i + 1; j < Math.min(i + 25, textNodes.length); j++) {
+              const att = textNodes[j];
+              if (att.length < 2 || att.length > 100) continue;
+              if (slotKeys.some(k => att.toLowerCase() === k)) break; // nuovo slot → stop
+              const key = slotIT + '::' + att.toLowerCase();
+              if (!seen.has(key)) { seen.add(key); attachments.push({ slot: slotIT, name: att }); }
+            }
+          }
+        }
+
+        // ── Approccio C: cerca sezioni con "attachment" nel class e raccoglie testo ──
+        if (attachments.length === 0) {
+          const sections = document.querySelectorAll('[class*="attachment"],[class*="Attachment"]');
+          let currentSlot = null;
+          for (const sec of sections) {
+            const txt = sec.textContent.trim();
+            const slotMatch = slotKeys.find(k => txt.toLowerCase().startsWith(k));
+            if (slotMatch) {
+              currentSlot = mapSlot(slotMatch);
+            } else if (currentSlot && txt.length > 1 && txt.length < 80) {
+              const key = currentSlot + '::' + txt.toLowerCase();
+              if (!seen.has(key)) { seen.add(key); attachments.push({ slot: currentSlot, name: txt }); }
+            }
+          }
+        }
+
+        return { name, category, attachments };
+      },
+      {
+        slotEntries   : SLOT_MAP_ENTRIES,
+        validSlotsArr : VALID_SLOTS_ARRAY,
+        bannedArr     : [...BANNED_SLOT_NAMES],
+        catMapEntries : Object.entries(CATEGORY_MAP),
+      }
+    );
+
+    domResult.name     = cleanWeaponName(domResult.name || '');
+    domResult.category = normalizeCategory(domResult.category || '');
+    domResult._method  = 'Puppeteer+DOM';
+    return domResult;
+
+  } finally {
+    try { await page.close(); } catch {}
+  }
+}
+
+// ─── Processa un singolo URL ──────────────────────────────────────────────────
+async function processUrl(url, hasPuppeteer) {
+
+  // Se Puppeteer è disponibile: usalo direttamente (CODMunity è CSR)
+  if (hasPuppeteer) {
+    return await extractWithPuppeteer(url);
+  }
+
+  // Fallback senza Puppeteer: fetch HTTP + HTML parser
+  let html;
   try {
     const resp = await httpGet(url);
     html = resp.html;
   } catch (e) {
     if (e.isNotFound || e.message.includes('404')) {
-      const err = new Error(`HTTP 404 — slug probabilmente errato`);
-      err.isNotFound = true;
-      throw err;
+      throw Object.assign(new Error('HTTP 404 — slug non trovato'), { isNotFound: true });
     }
-    // Altri errori HTTP: tenta con Puppeteer se disponibile
-    const hasPuppeteer = await initPuppeteer();
-    if (!hasPuppeteer) throw e;
-    console.log('  ↪ fetch fallito, provo con Puppeteer...');
-    const page = await getPuppeteerPage();
-    try {
-      const resp = await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      if (resp && resp.status() === 404) {
-        await page.close();
-        const err = new Error('HTTP 404');
-        err.isNotFound = true;
-        throw err;
-      }
-      await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
-      html = await page.content();
-      await page.close();
-    } catch (pe) {
-      try { await page.close(); } catch {}
-      throw pe;
-    }
-  }
-
-  if (!html) throw new Error('Nessun contenuto ricevuto');
-
-  // ── Rilevamento pagina homepage (slug inesistente → redirect a home) ─────
-  // CODMunity reindirizza le armi non trovate alla homepage invece di 404.
-  // Usiamo segnali SPECIFICI: og:url esattamente uguale alla root, oppure
-  // <title> che è solo "CODMunity" senza alcun nome arma, oppure
-  // il titolo è esattamente il tagline della homepage.
-  const titleTag = (html.match(/<title[^>]*>([^<]*)/i) || [])[1] || '';
-  const ogUrlTag = (html.match(/property=["']og:url["'][^>]+content=["']([^"']+)/i)
-                || html.match(/content=["']([^"']+)["'][^>]+property=["']og:url["']/i)
-                || [])[1] || '';
-
-  const isExactHomepageTitle = /^CODMunity\s*[–\-]\s*Best Warzone Meta/i.test(titleTag.trim())
-                             || titleTag.trim() === 'CODMunity';
-  const isHomepageOgUrl      = ogUrlTag === 'https://codmunity.gg'
-                             || ogUrlTag === 'https://codmunity.gg/';
-
-  if (isExactHomepageTitle || isHomepageOgUrl) {
-    const e = new Error('Slug non trovato — la pagina ha rediretto alla homepage CODMunity');
-    e.isNotFound = true;
     throw e;
   }
 
-  // ── Tentativo 1: __NEXT_DATA__ ──────────────────────────────────────────
-  let result = null;
-  const nextDataRaw = extractFromNextData(html);
+  // Homepage detection (solo per fallback senza Puppeteer)
+  const titleTag = (html.match(/<title[^>]*>([^<]*)/i) || [])[1] || '';
+  const ogUrl    = (html.match(/property=["']og:url["'][^>]+content=["']([^"']+)/i)
+                || html.match(/content=["']([^"']+)["'][^>]+property=["']og:url["']/i)
+                || [])[1] || '';
+  const isHomepage = /^CODMunity\s*[–\-]\s*Best Warzone Meta/i.test(titleTag.trim())
+                  || titleTag.trim() === 'CODMunity'
+                  || ogUrl === 'https://codmunity.gg'
+                  || ogUrl === 'https://codmunity.gg/';
+  if (isHomepage) {
+    throw Object.assign(
+      new Error('Redirect homepage — slug non trovato'),
+      { isNotFound: true }
+    );
+  }
+
+  // __NEXT_DATA__ (SSR parziale)
+  const nextDataRaw = parseNextData(html);
   if (nextDataRaw) {
-    const weaponObj = findWeaponObject(nextDataRaw);
-    result = normalizeWeaponData(weaponObj);
-  }
-
-  // ── Tentativo 2: HTML-regex ──────────────────────────────────────────────
-  if (!result || !result.name) {
-    result = extractFromHTML(html);
-    result._method = 'HTML-regex';
-  } else {
-    result._method = '__NEXT_DATA__';
-    // Anche se abbiamo il nome da __NEXT_DATA__, puliscilo
-    if (result.name) result.name = cleanWeaponName(result.name);
-  }
-
-  // ── Tentativo 3: Puppeteer CSR (solo se accessori ancora 0) ─────────────
-  if (result.attachments.length === 0) {
-    const hasPuppeteer = await initPuppeteer();
-    if (hasPuppeteer) {
-      try {
-        const page = await getPuppeteerPage();
-        const resp = await page.goto(url, { waitUntil: 'networkidle0', timeout: 40000 });
-        if (resp && resp.status() < 400) {
-          // Aspetta un selector che indica che gli accessori sono caricati
-          await page.waitForSelector(
-            '[class*="attachment"],[class*="Attachment"],[class*="slot"],[class*="Slot"]',
-            { timeout: 10000 }
-          ).catch(() => {});
-          const pHtml = await page.content();
-          // Riprova estrazione sull'HTML idratato
-          const pNextData = extractFromNextData(pHtml);
-          let pResult = null;
-          if (pNextData) {
-            const wo = findWeaponObject(pNextData);
-            pResult = normalizeWeaponData(wo);
-          }
-          if (!pResult || pResult.attachments.length === 0) {
-            pResult = extractFromHTML(pHtml);
-          }
-          if (pResult && pResult.attachments.length > 0) {
-            result.attachments = pResult.attachments;
-            result._method = 'Puppeteer';
-          }
-          // Aggiorna anche il nome se più pulito
-          if (pResult && pResult.name && pResult.name.length > 1 &&
-              pResult.name.toLowerCase() !== 'codmunity') {
-            result.name = cleanWeaponName(pResult.name);
-          }
-        }
-        await page.close();
-      } catch { /* ignora errori Puppeteer, usiamo quello che abbiamo */ }
+    const wObj   = findWeaponInNextData(nextDataRaw);
+    const result = parseWeaponObject(wObj);
+    if (result && result.name) {
+      result.name    = cleanWeaponName(result.name);
+      result._method = '__NEXT_DATA__';
+      return result;
     }
   }
 
-  // ── Fallback nome dall'URL slug ──────────────────────────────────────────
-  if (!result.name || result.name.toLowerCase() === 'codmunity') {
-    const slug = url.split('/').pop();
-    result.name = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    result._method += '+slug-fallback';
+  // HTML regex come ultimo tentativo (molto limitato su CODMunity CSR)
+  let name = '';
+  const titleM = html.match(/<title[^>]*>([^<]+)/i);
+  if (titleM) name = cleanWeaponName(titleM[1]);
+  if (!name || name.toLowerCase() === 'codmunity') {
+    const ogT = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)/i);
+    if (ogT) name = cleanWeaponName(ogT[1]);
+  }
+  if (!name || name.toLowerCase() === 'codmunity') {
+    name = url.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  return result;
-}
+  let category = 'Da verificare';
+  for (const k of Object.keys(CATEGORY_MAP)) {
+    if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(html)) {
+      category = CATEGORY_MAP[k];
+      break;
+    }
+  }
 
-// ─── Rileva gioco dall'URL ────────────────────────────────────────────────────
-function getGame(url) {
-  const m = url.match(/\/weapon\/(bo\d+)\//i);
-  return m ? m[1].toUpperCase() : 'UNKNOWN';
+  return { name, category, attachments: [], _method: 'HTML-fallback' };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -498,18 +574,28 @@ async function main() {
   console.log('\n══════════════════════════════════════════════════');
   console.log('  RØDA Loadabot — Build DB from CODMunity');
   console.log('══════════════════════════════════════════════════');
-  console.log(`  Node.js: ${process.version}`);
-  console.log(`  Data: ${nowISO()}\n`);
+  console.log(`  Node.js : ${process.version}`);
+  console.log(`  Data    : ${nowISO()}`);
+  if (LIMIT) console.log(`  Limite  : ${LIMIT} URL (modalità test)`);
+  console.log('');
 
   if (!fs.existsSync(URLS_FILE)) {
     console.error(`File non trovato: ${URLS_FILE}`);
     process.exit(1);
   }
 
-  const allUrls = JSON.parse(fs.readFileSync(URLS_FILE, 'utf8'))
+  let allUrls = JSON.parse(fs.readFileSync(URLS_FILE, 'utf8'))
     .map(u => String(u).trim())
     .filter(Boolean);
-  console.log(`URL da processare: ${allUrls.length}\n`);
+  if (LIMIT) allUrls = allUrls.slice(0, LIMIT);
+
+  const bo6Count = allUrls.filter(u => /\/weapon\/bo6\//i.test(u)).length;
+  const bo7Count = allUrls.filter(u => /\/weapon\/bo7\//i.test(u)).length;
+  console.log(`  URL da processare: ${allUrls.length}  (BO6: ${bo6Count}, BO7: ${bo7Count})\n`);
+
+  // Inizializza Puppeteer (una volta sola)
+  const hasPuppeteer = await initPuppeteer();
+  console.log('');
 
   // Carica DB esistenti
   const weaponsMap     = new Map(readJSON(WEAPONS_FILE).map(w => [w.id, w]));
@@ -517,16 +603,15 @@ async function main() {
   const compatList     = readJSON(COMPAT_FILE);
   const compatSet      = new Set(compatList.map(c => `${c.armaId}::${c.accessorioId}`));
 
-  // Conta URL per gioco
-  const bo6Count = allUrls.filter(u => /\/weapon\/bo6\//i.test(u)).length;
-  const bo7Count = allUrls.filter(u => /\/weapon\/bo7\//i.test(u)).length;
-  console.log(`  BO6: ${bo6Count} URL | BO7: ${bo7Count} URL\n`);
-
   // Report
   const report = {
     startedAt                    : nowISO(),
     finishedAt                   : null,
     totalUrls                    : allUrls.length,
+    limit                        : LIMIT || null,
+    usedPuppeteer                : hasPuppeteer,
+    puppeteerPagesSucceeded      : 0,
+    puppeteerPagesFailed         : 0,
     bo6Urls                      : { total: bo6Count, ok: 0, failed: 0, duplicated: 0 },
     bo7Urls                      : { total: bo7Count, ok: 0, failed: 0, duplicated: 0 },
     processedUrls                : [],
@@ -544,39 +629,45 @@ async function main() {
     errors                       : [],
   };
 
-  // Traccia nomi arma visti per deduplicazione slug
-  const seenWeaponNames = new Map(); // slug-nome → { url, id }
+  const seenWeaponNames = new Map();
 
   for (let i = 0; i < allUrls.length; i++) {
-    const url  = allUrls[i];
-    const game = getGame(url);  // 'BO6' | 'BO7' | 'UNKNOWN'
+    const url     = allUrls[i];
+    const game    = getGame(url);
     const gameKey = game === 'BO7' ? 'bo7Urls' : 'bo6Urls';
     process.stdout.write(`[${String(i+1).padStart(2)}/${allUrls.length}] [${game}] ${url}\n`);
 
     try {
-      const data = await processUrl(url);
+      const data = await processUrl(url, hasPuppeteer);
+
+      // Aggiorna stat Puppeteer
+      if (hasPuppeteer) {
+        if (data._method && data._method.startsWith('Puppeteer')) {
+          report.puppeteerPagesSucceeded++;
+        } else {
+          report.puppeteerPagesFailed++;
+        }
+      }
 
       const nameSlug = toSlug(data.name);
 
-      // Gestione duplicati slug (es. swat-556 vs swat-5-56, mk-78 vs mk78)
+      // Deduplicazione arma (swat-556 vs swat-5-56, mk-78 vs mk78, ecc.)
       if (nameSlug && seenWeaponNames.has(nameSlug)) {
         const prev = seenWeaponNames.get(nameSlug);
-        console.log(`      ⚠ Duplicato: "${data.name}" già visto da ${prev.url} → skip`);
+        console.log(`      ⚠ Duplicato: "${data.name}" già da ${prev.url} → skip`);
         report.duplicatedWeaponsSkipped.push({ url, game, duplicateOf: prev.url, name: data.name });
         report.processedUrls.push({ url, game, status: 'duplicate', name: data.name });
         report[gameKey].duplicated++;
-        const delay = 1200 + Math.floor(Math.random() * 400);
-        await sleep(delay);
+        await sleep(1500 + Math.floor(Math.random() * 500));
         continue;
       }
 
       const weaponId = nameSlug || toSlug(url.split('/').pop());
       if (!weaponId) throw new Error('Impossibile ricavare un ID arma valido');
-
       if (nameSlug) seenWeaponNames.set(nameSlug, { url, id: weaponId });
 
-      // Upsert arma
-      const isNewWeapon = !weaponsMap.has(weaponId);
+      // Upsert arma (preserva verificata se già vera)
+      const isNewWeapon    = !weaponsMap.has(weaponId);
       const existingWeapon = weaponsMap.get(weaponId) || {};
       weaponsMap.set(weaponId, {
         ...existingWeapon,
@@ -587,30 +678,32 @@ async function main() {
                     : (existingWeapon.categoria || 'Da verificare'),
         gioco     : game,
         attiva    : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
-        verificata: existingWeapon.verificata || false,   // NON sovrascrivere se già verificata
+        verificata: existingWeapon.verificata || false,
         fonte     : 'CODMunity',
         fonteUrl  : url,
         note      : 'Importato automaticamente da CODMunity. Da verificare.',
         updatedAt : todayDate(),
       });
       if (isNewWeapon) report.weaponsImported++;
-      else report.weaponsUpdated++;
+      else             report.weaponsUpdated++;
 
       // Accessori + Compatibilità
       const ignoredHere = [];
       let validAtts = 0;
+
       for (const att of (data.attachments || [])) {
         const slotIT = VALID_SLOTS.has(att.slot) ? att.slot : normalizeSlot(att.slot);
         if (!slotIT) {
           const entry = `[${data.name}] slot ignorato: "${att.slot}" → "${att.name}"`;
-          if (!report.ignoredSlots.find(s => s === entry)) report.ignoredSlots.push(entry);
+          if (!report.ignoredSlots.includes(entry)) report.ignoredSlots.push(entry);
           ignoredHere.push(att.slot);
           continue;
         }
         const attId = toSlug(att.name);
-        if (!attId) continue;
+        if (!attId || attId.length < 2) continue;
 
-        const isNewAtt = !attachmentsMap.has(attId);
+        // Accessorio: preserva verificato se già true, non duplicare
+        const isNewAtt    = !attachmentsMap.has(attId);
         const existingAtt = attachmentsMap.get(attId) || {};
         attachmentsMap.set(attId, {
           ...existingAtt,
@@ -618,7 +711,7 @@ async function main() {
           nome      : att.name || existingAtt.nome || attId,
           tipo      : slotIT,
           attivo    : existingAtt.attivo !== undefined ? existingAtt.attivo : true,
-          verificato: existingAtt.verificato || false,  // NON sovrascrivere se già verificato
+          verificato: existingAtt.verificato || false,
           fonte     : 'CODMunity',
           fonteUrl  : url,
           note      : 'Importato automaticamente da CODMunity. Da verificare.',
@@ -627,12 +720,11 @@ async function main() {
         if (isNewAtt) report.attachmentsImported++;
         else          report.attachmentsUpdated++;
 
-        // Compatibilità — ID univoco: armaId__accessorioId
-        const compatId = `${weaponId}__${attId}`;
-        const ck       = `${weaponId}::${attId}`;
+        // Compatibilità — ID: armaId__accessorioId, unica per coppia
+        const ck = `${weaponId}::${attId}`;
         if (!compatSet.has(ck)) {
           compatList.push({
-            id           : compatId,
+            id           : `${weaponId}__${attId}`,
             armaId       : weaponId,
             accessorioId : attId,
             compatibile  : true,
@@ -650,49 +742,58 @@ async function main() {
         validAtts++;
       }
 
-      // Warning se nessun accessorio trovato
       if (validAtts === 0) {
-        report.warnings.push({ url, message: `Accessori non trovati per "${data.name}" (metodo: ${data._method})` });
+        report.warnings.push({
+          url,
+          message: `Accessori non trovati per "${data.name}" (metodo: ${data._method})`
+        });
       }
 
       const ignored = [...new Set(ignoredHere)];
-      const attSuffix = validAtts === 0 ? ' ⚠ nessun accessorio' : ` — ${validAtts} acc`;
-      console.log(`      ✓ "${data.name}" [${data.category}]${attSuffix} (${data._method})${ignored.length ? ` | slot ignorati: ${ignored.join(', ')}` : ''}`);
+      const attLog  = validAtts > 0 ? ` — ${validAtts} acc` : ' ⚠ 0 acc';
+      console.log(
+        `      ✓ "${data.name}" [${data.category}]${attLog}` +
+        ` (${data._method})` +
+        (ignored.length ? ` | ignorati: ${ignored.join(', ')}` : '')
+      );
+
       report.processedUrls.push({
-        url, game, status : 'ok',
-        name              : data.name,
-        category          : data.category,
-        attachmentsFound  : validAtts,
-        method            : data._method,
+        url, game, status: 'ok',
+        name           : data.name,
+        category       : data.category,
+        attachmentsFound: validAtts,
+        method         : data._method,
       });
       report[gameKey].ok++;
 
     } catch (err) {
       const msg = err.message || String(err);
       console.log(`      ✗ ${msg}`);
+      if (hasPuppeteer) report.puppeteerPagesFailed++;
       report.failedUrls.push({ url, game, error: msg });
       report.errors.push({ url, game, error: msg });
       report[gameKey].failed++;
     }
 
-    // Delay anti-rate-limit
+    // Delay anti-rate-limit (minimo 1500ms come da spec)
     if (i < allUrls.length - 1) {
-      await sleep(1200 + Math.floor(Math.random() * 600));
+      await sleep(1500 + Math.floor(Math.random() * 700));
     }
   }
 
-  // ─── Chiudi Puppeteer se aperto ───────────────────────────────────────────
-  if (pBrowser) { try { await pBrowser.close(); } catch {} }
+  // ─── Chiudi browser ───────────────────────────────────────────────────────
+  if (pBrowser) { try { await pBrowser.close(); pBrowser = null; } catch {} }
 
   // ─── Salvataggio ──────────────────────────────────────────────────────────
   report.finishedAt = nowISO();
-  console.log('\n══ Salvataggio file DB... ══');
-  const weaponsArr = Array.from(weaponsMap.values());
-  const attsArr    = Array.from(attachmentsMap.values());
+  const weaponsArr  = Array.from(weaponsMap.values());
+  const attsArr     = Array.from(attachmentsMap.values());
   writeJSON(WEAPONS_FILE,  weaponsArr);
   writeJSON(ATT_FILE,      attsArr);
   writeJSON(COMPAT_FILE,   compatList);
   writeJSON(REPORT_FILE,   report);
+
+  console.log('\n══ File salvati ══');
   console.log(`  ✓ loadout-weapons.json        (${weaponsArr.length} armi)`);
   console.log(`  ✓ loadout-attachments.json    (${attsArr.length} accessori)`);
   console.log(`  ✓ loadout-compatibility.json  (${compatList.length} compatibilità)`);
@@ -700,56 +801,62 @@ async function main() {
 
   // ─── Riepilogo ────────────────────────────────────────────────────────────
   const ok   = report.processedUrls.filter(u => u.status === 'ok').length;
-  const dup  = report.duplicatedWeaponsSkipped.length;
   const fail = report.failedUrls.length;
+  const dup  = report.duplicatedWeaponsSkipped.length;
   const warn = report.warnings.length;
+
   console.log('\n══════════════════════════════════════════════════');
-  console.log('  RIEPILOGO IMPORTAZIONE');
+  console.log('  RIEPILOGO');
   console.log('══════════════════════════════════════════════════');
-  console.log(`  URL totali                : ${allUrls.length}`);
+  console.log(`  URL processati            : ${allUrls.length}${LIMIT ? ` (limite: ${LIMIT})` : ''}`);
   console.log(`  ─────────────────────────────────────────────`);
-  console.log(`  BO6  ✓ ok: ${report.bo6Urls.ok}  ✗ fail: ${report.bo6Urls.failed}  ⚠ dup: ${report.bo6Urls.duplicated}  (tot: ${report.bo6Urls.total})`);
-  console.log(`  BO7  ✓ ok: ${report.bo7Urls.ok}  ✗ fail: ${report.bo7Urls.failed}  ⚠ dup: ${report.bo7Urls.duplicated}  (tot: ${report.bo7Urls.total})`);
+  console.log(`  BO6  ✓${report.bo6Urls.ok} ✗${report.bo6Urls.failed} ⚠dup:${report.bo6Urls.duplicated}  (tot: ${report.bo6Urls.total})`);
+  console.log(`  BO7  ✓${report.bo7Urls.ok} ✗${report.bo7Urls.failed} ⚠dup:${report.bo7Urls.duplicated}  (tot: ${report.bo7Urls.total})`);
   console.log(`  ─────────────────────────────────────────────`);
-  console.log(`  ✓ URL processati          : ${ok}`);
+  console.log(`  Puppeteer usato           : ${hasPuppeteer ? 'Sì' : 'No'}`);
+  if (hasPuppeteer) {
+    console.log(`  Puppeteer pagine OK       : ${report.puppeteerPagesSucceeded}`);
+    console.log(`  Puppeteer pagine fallite  : ${report.puppeteerPagesFailed}`);
+  }
+  console.log(`  ─────────────────────────────────────────────`);
+  console.log(`  ✓ Successi                : ${ok}`);
+  console.log(`  ✗ Falliti                 : ${fail}`);
   console.log(`  ⚠ Duplicati saltati       : ${dup}`);
-  console.log(`  ✗ URL falliti             : ${fail}`);
-  console.log(`  ⚠ Warning (0 accessori)  : ${warn}`);
+  console.log(`  ⚠ Warning (0 acc)        : ${warn}`);
   console.log(`  ─────────────────────────────────────────────`);
-  console.log(`  Armi importate (nuove)    : ${report.weaponsImported}`);
-  console.log(`  Armi aggiornate           : ${report.weaponsUpdated}`);
-  console.log(`  Accessori importati (nuovi): ${report.attachmentsImported}`);
-  console.log(`  Accessori aggiornati      : ${report.attachmentsUpdated}`);
-  console.log(`  Compatibilità importate   : ${report.compatibilityImported}`);
-  console.log(`  Compatibilità aggiornate  : ${report.compatibilityUpdated}`);
+  console.log(`  Armi nuove / aggiornate   : ${report.weaponsImported} / ${report.weaponsUpdated}`);
+  console.log(`  Accessori nuovi / agg.    : ${report.attachmentsImported} / ${report.attachmentsUpdated}`);
+  console.log(`  Compatibilità nuove / agg.: ${report.compatibilityImported} / ${report.compatibilityUpdated}`);
   console.log(`  Slot ignorati             : ${report.ignoredSlots.length}`);
   console.log('══════════════════════════════════════════════════');
 
   if (fail > 0) {
     console.log('\n⚠  URL falliti:');
-    report.failedUrls.forEach(f => console.log(`   ✗ ${f.url}\n     → ${f.error || f.reason}`));
+    report.failedUrls.forEach(f => console.log(`   ✗ [${f.game}] ${f.url}\n     → ${f.error}`));
   }
-  if (warn > 0) {
-    console.log('\n⚠  Warning (accessori non trovati):');
+  if (warn > 0 && warn <= 10) {
+    console.log('\n⚠  Armi senza accessori:');
     report.warnings.forEach(w => console.log(`   ⚠ ${w.url}\n     → ${w.message}`));
+  } else if (warn > 10) {
+    console.log(`\n⚠  ${warn} armi senza accessori — vedi report JSON per dettagli.`);
   }
   if (report.ignoredSlots.length > 0) {
-    console.log('\nℹ  Slot non riconosciuti (saltati):');
-    report.ignoredSlots.slice(0, 20).forEach(s => console.log(`   ${s}`));
-    if (report.ignoredSlots.length > 20)
-      console.log(`   ... e altri ${report.ignoredSlots.length - 20} (vedi report JSON)`);
+    console.log('\nℹ  Slot ignorati (non validi):');
+    report.ignoredSlots.slice(0, 15).forEach(s => console.log(`   ${s}`));
+    if (report.ignoredSlots.length > 15) console.log(`   ...e altri ${report.ignoredSlots.length - 15}`);
   }
 
   console.log('\n✅ Build completato.');
-  console.log('   Tutti i dati sono NON verificati (verificata/verificato: false).');
-  console.log('   Vai su /admin-loadout → Database → Da verificare per approvarli.\n');
+  console.log('   Dati NON verificati (verificata/verificato: false).');
+  console.log('   Approva su /admin-loadout → Database → Da verificare.\n');
 }
 
 main().catch(e => {
   console.error('\n[ERRORE FATALE]', e.message);
+  if (process.env.DEBUG) console.error(e.stack);
   try {
     const r = readJSON(REPORT_FILE);
-    writeJSON(REPORT_FILE, { ...r, fatalError: e.message, fatalStack: e.stack });
+    writeJSON(REPORT_FILE, { ...r, fatalError: e.message, fatalStack: e.stack, finishedAt: nowISO() });
   } catch {}
   if (pBrowser) { try { pBrowser.close(); } catch {} }
   process.exit(1);
