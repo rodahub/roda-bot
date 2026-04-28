@@ -144,8 +144,8 @@
     <div class="topbar-sub">Gestione Loadout</div>
   </div>
   <div class="topbar-right">
-    <button class="btn btn-muted btn-sm" onclick="location.href='/admin'">← Admin</button>
-    <button class="btn btn-purple btn-sm" onclick="loadAll()">🔄 Aggiorna</button>
+    <a class="btn btn-muted btn-sm" href="/admin">← Admin</a>
+    <button class="btn btn-purple btn-sm" id="refreshBtn">🔄 Aggiorna</button>
     <button class="btn btn-muted btn-sm" id="logoutBtn">Esci</button>
   </div>
 </div>
@@ -281,18 +281,24 @@
 </div>
 
 <script>
-/* ── helpers ──────────────────────────────────────────────────────────────── */
-let _weaponsCache = [];
+'use strict';
 
+/* ── Escape XSS ──────────────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
 function setStatus(msg, ok) {
   const bar = document.getElementById('statusBar');
   bar.textContent = msg;
   bar.style.display = 'block';
   bar.style.color = ok === false ? 'var(--red)' : ok === true ? 'var(--green)' : 'var(--soft)';
   clearTimeout(bar._t);
-  bar._t = setTimeout(() => { bar.style.display = 'none'; }, 4000);
+  bar._t = setTimeout(() => { bar.style.display = 'none'; }, 4500);
 }
 
+/* ── API fetch helper ────────────────────────────────────────────────────── */
 async function api(url, opts = {}) {
   try {
     const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
@@ -305,13 +311,19 @@ async function api(url, opts = {}) {
   }
 }
 
-/* ── confirm modal ──────────────────────────────────────────────────────── */
+/* ── Cache dati per edit (evita JSON inline negli onclick) ───────────────── */
+const _weaponById = new Map();
+const _attById    = new Map();
+let   _weaponsCache = [];
+let   _attachmentsCache = [];
+
+/* ── Confirm modal ───────────────────────────────────────────────────────── */
 let _confirmResolve = null;
 function rodaConfirm(msg, okText, cancelText) {
   return new Promise(resolve => {
     _confirmResolve = resolve;
     document.getElementById('confirmMsg').textContent = msg;
-    document.getElementById('confirmOk').textContent = okText || 'Conferma';
+    document.getElementById('confirmOk').textContent  = okText    || 'Conferma';
     document.getElementById('confirmCancel').textContent = cancelText || 'Annulla';
     document.getElementById('confirmModal').classList.add('open');
   });
@@ -320,205 +332,271 @@ function confirmClose(val) {
   document.getElementById('confirmModal').classList.remove('open');
   if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
 }
-document.getElementById('confirmOk').addEventListener('click', () => confirmClose(true));
+document.getElementById('confirmOk').addEventListener('click',     () => confirmClose(true));
 document.getElementById('confirmCancel').addEventListener('click', () => confirmClose(false));
-document.getElementById('confirmModal').addEventListener('click', e => {
+document.getElementById('confirmModal').addEventListener('click',  e => {
   if (e.target === document.getElementById('confirmModal')) confirmClose(false);
 });
 
-/* ── build card renderer ─────────────────────────────────────────────────── */
-function buildCard(b, actions) {
+/* ── Event delegation (bottoni generati dinamicamente) ───────────────────── */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id     = btn.dataset.id;
+
+  if (action === 'edit-weapon') {
+    const w = _weaponById.get(id);
+    if (!w) { console.warn('[Loadout] Arma non trovata in cache:', id); return; }
+    document.getElementById('wId').value    = w.id;
+    document.getElementById('wNome').value  = w.nome;
+    document.getElementById('wCat').value   = w.categoria;
+    document.getElementById('wId').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => document.getElementById('wId').focus(), 200);
+    setStatus('Arma caricata nel form — modifica e premi Salva.', true);
+
+  } else if (action === 'edit-attachment') {
+    const a = _attById.get(id);
+    if (!a) { console.warn('[Loadout] Accessorio non trovato in cache:', id); return; }
+    document.getElementById('aId').value   = a.id;
+    document.getElementById('aNome').value = a.nome;
+    document.getElementById('aTipo').value = a.tipo;
+    document.querySelectorAll('.compat-cb').forEach(cb => {
+      cb.checked = Array.isArray(a.armiCompatibili) && a.armiCompatibili.includes(cb.value);
+    });
+    document.getElementById('aId').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => document.getElementById('aId').focus(), 200);
+    setStatus('Accessorio caricato nel form — modifica e premi Salva.', true);
+
+  } else if (action === 'approve-build') {
+    approve(id);
+  } else if (action === 'reject-build') {
+    reject(id);
+  } else if (action === 'delete-build') {
+    deleteBuild(id);
+  } else {
+    console.warn('[Loadout] data-action non gestito:', action);
+  }
+});
+
+/* toggle change delegation */
+document.addEventListener('change', function(e) {
+  const inp = e.target.closest('input[data-action]');
+  if (!inp) return;
+  const action = inp.dataset.action;
+  const id     = inp.dataset.id;
+  if (action === 'toggle-weapon')     toggleWeapon(id, inp);
+  else if (action === 'toggle-att')   toggleAttachment(id, inp);
+  else console.warn('[Loadout] data-action change non gestito:', action);
+});
+
+/* ── Build card renderer ─────────────────────────────────────────────────── */
+function buildCard(b) {
   const atts = (b.accessori || []).map(a =>
-    `<span class="att-pill"><b>${a.tipo}:</b> ${a.nome}</span>`
+    `<span class="att-pill"><b>${esc(a.tipo)}:</b> ${esc(a.nome)}</span>`
   ).join('');
-  const nota = b.nota ? `<div class="build-card-nota">💬 ${b.nota}</div>` : '';
+  const nota = b.nota
+    ? `<div class="build-card-nota">💬 ${esc(b.nota)}</div>` : '';
   const metaDate = b.approvedAt
     ? `<span>✅ Approvato: ${new Date(b.approvedAt).toLocaleDateString('it-IT')}</span>` : '';
   return `<div class="build-card">
     <div class="build-card-header">
-      <div class="build-card-weapon">${b.armaNome}</div>
-      <span class="build-card-tipo">${b.tipoEquipaggiamento}</span>
+      <div class="build-card-weapon">${esc(b.armaNome)}</div>
+      <span class="build-card-tipo">${esc(b.tipoEquipaggiamento)}</span>
     </div>
     <div class="build-card-meta">
-      <span>👤 ${b.creator}${b.firma ? ' — <em>' + b.firma + '</em>' : ''}</span>
-      <span>📁 ${b.categoriaArma}</span>
+      <span>👤 ${esc(b.creator)}${b.firma ? ' — <em>' + esc(b.firma) + '</em>' : ''}</span>
+      <span>📁 ${esc(b.categoriaArma)}</span>
       ${metaDate}
-      <span style="font-size:11px;color:rgba(170,120,255,.5);">ID: ${b.id}</span>
+      <span style="font-size:11px;color:rgba(170,120,255,.5)">ID: ${esc(b.id)}</span>
     </div>
     <div class="build-card-atts">${atts || '<span class="att-pill">—</span>'}</div>
     ${nota}
-    <div class="build-card-actions">${actions(b)}</div>
+    <div class="build-card-actions" data-bid="${esc(b.id)}"></div>
   </div>`;
 }
 
-/* ── load all data ─────────────────────────────────────────────────────── */
-async function loadAll() {
-  await Promise.all([loadBuilds(), loadWeapons(), loadAttachments()]);
+function buildActions(stato, id) {
+  const sid = esc(id);
+  if (stato === 'in_attesa') return `
+    <button class="btn btn-green btn-sm" data-action="approve-build" data-id="${sid}">✅ Approva</button>
+    <button class="btn btn-red   btn-sm" data-action="reject-build"  data-id="${sid}">❌ Rifiuta</button>`;
+  return `<button class="btn btn-red btn-sm" data-action="delete-build" data-id="${sid}">🗑️ Elimina</button>`;
 }
 
+/* ── Carica tutto ────────────────────────────────────────────────────────── */
+async function loadAll() {
+  setStatus('Aggiornamento in corso…');
+  await Promise.all([loadBuilds(), fetchWeaponsAdmin()]);
+  await fetchAttachmentsAdmin();
+  setStatus('Dati aggiornati.', true);
+}
+
+/* ── Build ───────────────────────────────────────────────────────────────── */
 async function loadBuilds() {
   const data = await api('/api/admin/loadout/builds');
   if (!data || !data.ok) return;
 
-  const attesa   = data.in_attesa   || [];
+  const attesa    = data.in_attesa  || [];
   const approvati = data.approvati  || [];
   const rifiutati = data.rifiutati  || [];
 
-  document.getElementById('bdgAttesa').textContent   = attesa.length;
+  document.getElementById('bdgAttesa').textContent    = attesa.length;
   document.getElementById('bdgApprovati').textContent = approvati.length;
   document.getElementById('bdgRifiutati').textContent = rifiutati.length;
 
-  const renderList = (list, containerEl, actions) => {
+  const renderList = (list, containerId, stato) => {
+    const el = document.getElementById(containerId);
     if (!list.length) {
-      containerEl.innerHTML = '<div class="empty-msg">Nessun equipaggiamento.</div>';
-    } else {
-      containerEl.innerHTML = list.map(b => buildCard(b, actions)).join('');
+      el.innerHTML = '<div class="empty-msg">Nessuna build inviata.</div>';
+      return;
     }
+    el.innerHTML = list.map(b => buildCard(b)).join('');
+    list.forEach(b => {
+      const actEl = el.querySelector(`[data-bid="${esc(b.id)}"]`);
+      if (actEl) actEl.innerHTML = buildActions(stato, b.id);
+    });
   };
 
-  renderList(attesa,   document.getElementById('listAttesa'), b => `
-    <button class="btn btn-green btn-sm" onclick="approve('${b.id}')">✅ Approva</button>
-    <button class="btn btn-red btn-sm" onclick="reject('${b.id}')">❌ Rifiuta</button>
-  `);
-  renderList(approvati, document.getElementById('listApprovati'), b => `
-    <button class="btn btn-red btn-sm" onclick="deleteBuild('${b.id}')">🗑️ Elimina</button>
-  `);
-  renderList(rifiutati, document.getElementById('listRifiutati'), b => `
-    <button class="btn btn-red btn-sm" onclick="deleteBuild('${b.id}')">🗑️ Elimina</button>
-  `);
+  renderList(attesa,    'listAttesa',    'in_attesa');
+  renderList(approvati, 'listApprovati', 'approvato');
+  renderList(rifiutati, 'listRifiutati', 'rifiutato');
 }
 
-/* ── build actions ──────────────────────────────────────────────────────── */
 async function approve(id) {
   if (!await rodaConfirm('Approvare questo equipaggiamento?', 'Approva', 'Annulla')) return;
   const d = await api(`/api/admin/loadout/approve/${id}`, { method: 'POST' });
-  if (d && d.ok) { setStatus('✅ Approvato!', true); await loadBuilds(); }
-  else setStatus(d?.message || 'Errore', false);
+  if (d && d.ok) { setStatus('✅ Approvato!', true); loadBuilds(); }
+  else setStatus(d?.message || 'Errore approvazione.', false);
 }
 
 async function reject(id) {
   if (!await rodaConfirm('Rifiutare questo equipaggiamento?', 'Rifiuta', 'Annulla')) return;
   const d = await api(`/api/admin/loadout/reject/${id}`, { method: 'POST' });
-  if (d && d.ok) { setStatus('Rifiutato.', true); await loadBuilds(); }
-  else setStatus(d?.message || 'Errore', false);
+  if (d && d.ok) { setStatus('Rifiutato.', true); loadBuilds(); }
+  else setStatus(d?.message || 'Errore rifiuto.', false);
 }
 
 async function deleteBuild(id) {
   if (!await rodaConfirm('Eliminare definitivamente questo equipaggiamento?', 'Elimina', 'Annulla')) return;
   const d = await api(`/api/admin/loadout/${id}`, { method: 'DELETE' });
-  if (d && d.ok) { setStatus('Eliminato.', true); await loadBuilds(); }
-  else setStatus(d?.message || 'Errore', false);
+  if (d && d.ok) { setStatus('Eliminato.', true); loadBuilds(); }
+  else setStatus(d?.message || 'Errore eliminazione.', false);
 }
 
-/* ── weapons ────────────────────────────────────────────────────────────── */
-async function loadWeapons() {
-  await fetchWeaponsAdmin();
+/* ── Weapons ─────────────────────────────────────────────────────────────── */
+async function fetchWeaponsAdmin() {
+  const data = await api('/api/admin/loadout/weapons-all');
+  if (!data || !data.ok) return;
+  _weaponsCache = data.weapons || [];
+  _weaponById.clear();
+  _weaponsCache.forEach(w => _weaponById.set(w.id, w));
+  updateWeaponsTable(_weaponsCache);
+  renderCompatList();
 }
 
 function updateWeaponsTable(weapons) {
   const el = document.getElementById('weaponsTable');
-  if (!weapons.length) { el.innerHTML = '<div class="empty-msg">Nessuna arma.</div>'; return; }
+  if (!weapons.length) {
+    el.innerHTML = '<div class="empty-msg">Nessuna arma presente. Aggiungi la prima arma dal form sopra.</div>';
+    return;
+  }
   el.innerHTML = `<table>
-    <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Attiva</th><th></th></tr></thead>
+    <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Attiva</th><th>Azioni</th></tr></thead>
     <tbody>${weapons.map(w => `<tr>
-      <td><code style="font-size:11px;color:var(--muted)">${w.id}</code></td>
-      <td>${w.nome}</td>
-      <td><span class="att-pill">${w.categoria}</span></td>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(w.id)}</code></td>
+      <td>${esc(w.nome)}</td>
+      <td><span class="att-pill">${esc(w.categoria)}</span></td>
       <td>
-        <label class="toggle"><input type="checkbox" ${w.attiva ? 'checked' : ''} onchange="toggleWeapon('${w.id}',this)"/>
-        <span class="toggle-slider"></span></label>
+        <label class="toggle">
+          <input type="checkbox" ${w.attiva ? 'checked' : ''}
+            data-action="toggle-weapon" data-id="${esc(w.id)}"/>
+          <span class="toggle-slider"></span>
+        </label>
       </td>
       <td>
-        <button class="btn btn-muted btn-xs" onclick="editWeapon(${JSON.stringify(JSON.stringify(w))})">✏️</button>
+        <button class="btn btn-muted btn-xs"
+          data-action="edit-weapon" data-id="${esc(w.id)}" title="Modifica arma">✏️</button>
       </td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
 
 async function saveWeapon() {
-  const id       = document.getElementById('wId').value.trim();
-  const nome     = document.getElementById('wNome').value.trim();
-  const categoria= document.getElementById('wCat').value;
-  if (!id || !nome) { setStatus('Compila ID e Nome.', false); return; }
+  const id        = document.getElementById('wId').value.trim();
+  const nome      = document.getElementById('wNome').value.trim();
+  const categoria = document.getElementById('wCat').value;
+  if (!id || !nome) { setStatus('Compila ID e Nome prima di salvare.', false); return; }
   const d = await api('/api/admin/loadout/weapons', {
     method: 'POST',
     body: JSON.stringify({ id, nome, categoria, attiva: true })
   });
   if (d && d.ok) {
-    setStatus('Arma salvata!', true);
-    document.getElementById('wId').value = '';
+    setStatus('✅ Arma salvata!', true);
+    document.getElementById('wId').value   = '';
     document.getElementById('wNome').value = '';
     await fetchWeaponsAdmin();
-  } else setStatus(d?.message || 'Errore', false);
-}
-
-function editWeapon(jsonStr) {
-  const w = JSON.parse(jsonStr);
-  document.getElementById('wId').value = w.id;
-  document.getElementById('wNome').value = w.nome;
-  document.getElementById('wCat').value = w.categoria;
-  document.getElementById('wId').focus();
+  } else {
+    setStatus(d?.message || 'Errore salvataggio arma.', false);
+  }
 }
 
 async function toggleWeapon(id, chk) {
   const d = await api(`/api/admin/loadout/weapons/toggle/${id}`, { method: 'POST' });
-  if (!d || !d.ok) { chk.checked = !chk.checked; setStatus('Errore toggle arma', false); }
-  else {
+  if (!d || !d.ok) {
+    chk.checked = !chk.checked;
+    setStatus('Errore toggle arma.', false);
+  } else {
     setStatus(d.attiva ? '✅ Arma attivata' : '⛔ Arma disattivata', true);
     await fetchWeaponsAdmin();
   }
 }
 
-/* ── attachments ─────────────────────────────────────────────────────────── */
-let _attachmentsCache = [];
-
-async function loadAttachments() {
-  await fetchWeaponsAdmin(); // ensures _weaponsCache populated first
-  await fetchAttachmentsAdmin();
-}
-
-async function fetchWeaponsAdmin() {
-  const data = await api('/api/admin/loadout/weapons-all');
-  if (data && data.ok) {
-    _weaponsCache = data.weapons;
-    updateWeaponsTable(_weaponsCache);
-    renderCompatList();
-  }
-}
-
+/* ── Attachments ─────────────────────────────────────────────────────────── */
 async function fetchAttachmentsAdmin() {
   const data = await api('/api/admin/loadout/attachments-all');
-  if (data && data.ok) {
-    _attachmentsCache = data.attachments;
-    updateAttachmentsTable(_attachmentsCache);
-  }
+  if (!data || !data.ok) return;
+  _attachmentsCache = data.attachments || [];
+  _attById.clear();
+  _attachmentsCache.forEach(a => _attById.set(a.id, a));
+  updateAttachmentsTable(_attachmentsCache);
 }
 
 function renderCompatList() {
   const el = document.getElementById('compatList');
-  if (!_weaponsCache.length) { el.textContent = 'Nessuna arma caricata.'; return; }
+  if (!_weaponsCache.length) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:12px;">Prima aggiungi almeno un\'arma.</span>';
+    return;
+  }
   el.innerHTML = _weaponsCache.map(w =>
     `<label class="compat-check">
-      <input type="checkbox" value="${w.id}" class="compat-cb"/> ${w.nome}
+      <input type="checkbox" value="${esc(w.id)}" class="compat-cb"> ${esc(w.nome)}
     </label>`
   ).join('');
 }
 
 function updateAttachmentsTable(atts) {
   const el = document.getElementById('attachmentsTable');
-  if (!atts.length) { el.innerHTML = '<div class="empty-msg">Nessun accessorio.</div>'; return; }
+  if (!atts.length) {
+    el.innerHTML = '<div class="empty-msg">Nessun accessorio presente. Aggiungi il primo accessorio dal form sopra.</div>';
+    return;
+  }
   el.innerHTML = `<table>
-    <thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Attivo</th><th></th></tr></thead>
+    <thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Attivo</th><th>Azioni</th></tr></thead>
     <tbody>${atts.map(a => `<tr>
-      <td><code style="font-size:11px;color:var(--muted)">${a.id}</code></td>
-      <td>${a.nome}</td>
-      <td><span class="att-pill">${a.tipo}</span></td>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(a.id)}</code></td>
+      <td>${esc(a.nome)}</td>
+      <td><span class="att-pill">${esc(a.tipo)}</span></td>
       <td>
-        <label class="toggle"><input type="checkbox" ${a.attivo ? 'checked' : ''} onchange="toggleAttachment('${a.id}',this)"/>
-        <span class="toggle-slider"></span></label>
+        <label class="toggle">
+          <input type="checkbox" ${a.attivo ? 'checked' : ''}
+            data-action="toggle-att" data-id="${esc(a.id)}"/>
+          <span class="toggle-slider"></span>
+        </label>
       </td>
       <td>
-        <button class="btn btn-muted btn-xs" onclick="editAttachment(${JSON.stringify(JSON.stringify(a))})">✏️</button>
+        <button class="btn btn-muted btn-xs"
+          data-action="edit-attachment" data-id="${esc(a.id)}" title="Modifica accessorio">✏️</button>
       </td>
     </tr>`).join('')}</tbody>
   </table>`;
@@ -529,48 +607,42 @@ async function saveAttachment() {
   const nome = document.getElementById('aNome').value.trim();
   const tipo = document.getElementById('aTipo').value;
   const armiCompatibili = [...document.querySelectorAll('.compat-cb:checked')].map(c => c.value);
-  if (!id || !nome) { setStatus('Compila ID e Nome.', false); return; }
+  if (!id || !nome) { setStatus('Compila ID e Nome prima di salvare.', false); return; }
   const d = await api('/api/admin/loadout/attachments', {
     method: 'POST',
     body: JSON.stringify({ id, nome, tipo, armiCompatibili, attivo: true })
   });
   if (d && d.ok) {
-    setStatus('Accessorio salvato!', true);
-    document.getElementById('aId').value = '';
+    setStatus('✅ Accessorio salvato!', true);
+    document.getElementById('aId').value   = '';
     document.getElementById('aNome').value = '';
     document.querySelectorAll('.compat-cb').forEach(c => c.checked = false);
     await fetchAttachmentsAdmin();
-  } else setStatus(d?.message || 'Errore', false);
-}
-
-function editAttachment(jsonStr) {
-  const a = JSON.parse(jsonStr);
-  document.getElementById('aId').value = a.id;
-  document.getElementById('aNome').value = a.nome;
-  document.getElementById('aTipo').value = a.tipo;
-  // tick compatible weapons
-  document.querySelectorAll('.compat-cb').forEach(c => {
-    c.checked = Array.isArray(a.armiCompatibili) && a.armiCompatibili.includes(c.value);
-  });
-  document.getElementById('aId').focus();
+  } else {
+    setStatus(d?.message || 'Errore salvataggio accessorio.', false);
+  }
 }
 
 async function toggleAttachment(id, chk) {
   const d = await api(`/api/admin/loadout/attachments/toggle/${id}`, { method: 'POST' });
-  if (!d || !d.ok) { chk.checked = !chk.checked; setStatus('Errore toggle accessorio', false); }
-  else {
+  if (!d || !d.ok) {
+    chk.checked = !chk.checked;
+    setStatus('Errore toggle accessorio.', false);
+  } else {
     setStatus(d.attivo ? '✅ Accessorio attivato' : '⛔ Accessorio disattivato', true);
     await fetchAttachmentsAdmin();
   }
 }
 
-/* ── logout ─────────────────────────────────────────────────────────────── */
+/* ── Topbar buttons ──────────────────────────────────────────────────────── */
+document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
   location.href = '/login';
 });
 
-/* ── init ────────────────────────────────────────────────────────────────── */
+/* ── Init ────────────────────────────────────────────────────────────────── */
 loadAll();
 </script>
 </body>
