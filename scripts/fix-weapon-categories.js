@@ -136,46 +136,44 @@ const WEAPON_FALLBACK = {
   'stryder-22'       : 'Pistola',
   '1911'             : 'Pistola',
   // ── BO7 — Fucili d'assalto ──────────────────────────────────────────────────
-  'voyak-kt-3'       : "Fucile d'assalto",   // Voyak = AR
-  'swordfish-a1'     : "Fucile d'assalto",   // Swordfish era AR in BO4
-  'egrt-17'          : "Fucile d'assalto",   // EGRT-17 = AR
-  'hawker-hx'        : "Fucile d'assalto",   // Hawker = AR
-  'm8a1'             : "Fucile d'assalto",   // M8A1 era AR in BO2
-  'ds20-mirage'      : "Fucile d'assalto",   // DS20 = AR
-  'sokol-545'        : "Fucile d'assalto",   // Sokol 5.45 = AK-style AR
-  'm15-mod-0'        : "Fucile d'assalto",   // M15 = AR (M16-style)
-  'x9-maverick'      : "Fucile d'assalto",   // X9 Maverick = AR
-  'maddox-rfb'       : "Fucile d'assalto",   // Maddox RFB era AR in BO4
-  'mxr-17'           : "Fucile d'assalto",   // MXR-17 = AR
-  'ak-27'            : "Fucile d'assalto",   // AK variant = AR
-  'xm325'            : "Fucile d'assalto",   // XM-series = AR
+  'voyak-kt-3'       : "Fucile d'assalto",
+  'egrt-17'          : "Fucile d'assalto",
+  'm15-mod-0'        : "Fucile d'assalto",
+  'x9-maverick'      : "Fucile d'assalto",
+  'maddox-rfb'       : "Fucile d'assalto",
+  'mxr-17'           : "Fucile d'assalto",
+  'ak-27'            : "Fucile d'assalto",
+  'sokol-545'        : "Fucile d'assalto",
+  'peacekeeper-mk1'  : "Fucile d'assalto",
+  'kogot-7'          : "Fucile d'assalto",
+  'mk35-isr'         : "Fucile d'assalto",
   // ── BO7 — Mitragliette ──────────────────────────────────────────────────────
-  'ryden-45k'        : 'Mitraglietta',       // Ryden 45K = SMG
-  'sturmwolf-45'     : 'Mitraglietta',       // Sturmwolf = SMG compact
-  'peacekeeper-mk1'  : 'Mitraglietta',       // Peacekeeper era SMG in BO2/3
-  'rk-9'             : 'Mitraglietta',       // RK-9 = SMG (come MW2019)
-  'shadow-sk'        : 'Mitraglietta',       // Shadow SK = SMG
-  'akita'            : 'Mitraglietta',       // Akita = SMG
-  'mpc-25'           : 'Mitraglietta',       // MPC = Machine Pistol Compact
+  'ryden-45k'        : 'Mitraglietta',
+  'sturmwolf-45'     : 'Mitraglietta',
+  'rk-9'             : 'Mitraglietta',
+  'vst'              : 'Mitraglietta',
+  'carbon-57'        : 'Mitraglietta',
+  'razor-9mm'        : 'Mitraglietta',
+  'rev-46'           : 'Mitraglietta',
+  'mpc-25'           : 'Mitraglietta',
+  'dravec-45'        : 'Mitraglietta',
   // ── BO7 — Mitragliatrici leggere ────────────────────────────────────────────
-  'mk-78'            : 'Mitragliatrice leggera',  // MK-78 LMG
-  'mk78'             : 'Mitragliatrice leggera',  // slug alternativo
-  'kogot-7'          : 'Mitragliatrice leggera',  // Kogot 7 = LMG
+  'mk-78'            : 'Mitragliatrice leggera',
+  'mk78'             : 'Mitragliatrice leggera',
+  'xm325'            : 'Mitragliatrice leggera',
   // ── BO7 — Fucili tattici ────────────────────────────────────────────────────
-  'carbon-57'        : 'Fucile tattico',     // Carbon 57 = Marksman
-  'm34-novaline'     : 'Fucile tattico',     // M34 = Marksman
+  'm8a1'             : 'Fucile tattico',
+  'swordfish-a1'     : 'Fucile tattico',
+  'warden-308'       : 'Fucile tattico',
+  'ds20-mirage'      : 'Fucile tattico',
   // ── BO7 — Cecchini ──────────────────────────────────────────────────────────
-  'vs-recon'         : 'Cecchino',           // VS Recon = sniper
-  'warden-308'       : 'Cecchino',           // .308 = calibro cecchino
-  'strider-300'      : 'Cecchino',           // .300 = calibro cecchino
-  'mk35-isr'         : 'Cecchino',           // ISR = Integrated Sniper Rifle
-  'vst'              : 'Cecchino',           // VST = sniper tattico
-  // ── BO7 — Fucili da battaglia ───────────────────────────────────────────────
-  'sturmwolf-45'     : 'Mitraglietta',       // già sopra (SMG wins)
-  // ── BO7 — Pistole ───────────────────────────────────────────────────────────
-  'razor-9mm'        : 'Pistola',            // 9mm = pistola
-  'dravec-45'        : 'Pistola',            // .45 = pistola
-  'rev-46'           : 'Pistola',            // REV = revolver
+  'vs-recon'         : 'Cecchino',
+  'strider-300'      : 'Cecchino',
+  'shadow-sk'        : 'Cecchino',
+  'hawker-hx'        : 'Cecchino',
+  'm34-novaline'     : 'Cecchino',
+  // ── BO7 — Shotgun ───────────────────────────────────────────────────────────
+  'akita'            : 'Shotgun',
 };
 
 // ─── Funzione di normalizzazione ──────────────────────────────────────────────

@@ -98,7 +98,7 @@ function nowISO() { return new Date().toISOString(); }
 
 // ─── Normalizzazione categoria arma ───────────────────────────────────────────
 const WEAPON_CATEGORY_MAP = {
-  'assault rifle':'Fucile d\'assalto','assault rifles':'Fucile d\'assalto','ar':'Fucile d\'assalto',
+  'assault rifle':"Fucile d'assalto",'assault rifles':"Fucile d'assalto",'ar':"Fucile d'assalto",
   'smg':'Mitraglietta','submachine gun':'Mitraglietta','submachine guns':'Mitraglietta',
   'lmg':'Mitragliatrice leggera','light machine gun':'Mitragliatrice leggera',
   'marksman rifle':'Fucile tattico','marksman rifles':'Fucile tattico','tactical rifle':'Fucile tattico',
@@ -108,20 +108,103 @@ const WEAPON_CATEGORY_MAP = {
   'pistol':'Pistola','pistols':'Pistola','handgun':'Pistola',
   'melee':'Corpo a corpo','launcher':'Lanciarazzi','launchers':'Lanciarazzi',
   // IT passthrough
-  "fucile d'assalto":'Fucile d\'assalto',"fucili d'assalto":'Fucile d\'assalto',
+  "fucile d'assalto":"Fucile d'assalto","fucili d'assalto":"Fucile d'assalto",
   'mitraglietta':'Mitraglietta','mitragliatrice leggera':'Mitragliatrice leggera',
   'fucile tattico':'Fucile tattico','fucile da battaglia':'Fucile da battaglia',
   'cecchino':'Cecchino','fucile di precisione':'Cecchino','fucile a pompa':'Shotgun',
   'pistola':'Pistola','corpo a corpo':'Corpo a corpo','lanciarazzi':'Lanciarazzi',
 };
-function normalizeWeaponCategoryServer(raw) {
+
+// Fallback per ID arma — copre tutti i 80 weapon ID noti (BO6 + BO7)
+// Categorie BO7 corrette secondo spec ufficiale RØDA
+const WEAPON_ID_CATEGORY = {
+  // BO6 — Fucili d'assalto
+  'xm4':"Fucile d'assalto",'ak-74':"Fucile d'assalto",'ames-85':"Fucile d'assalto",
+  'gpr-91':"Fucile d'assalto",'model-l':"Fucile d'assalto",'goblin-mk2':"Fucile d'assalto",
+  'as-val':"Fucile d'assalto",'krig-c':"Fucile d'assalto",'cypher-091':"Fucile d'assalto",
+  'ffar-1':"Fucile d'assalto",'kilo-141':"Fucile d'assalto",'cr-56-amax':"Fucile d'assalto",
+  // BO6 — Mitragliette
+  'c9':'Mitraglietta','ksv':'Mitraglietta','tanto-22':'Mitraglietta','pp-919':'Mitraglietta',
+  'jackal-pdw':'Mitraglietta','kompakt-92':'Mitraglietta','saug':'Mitraglietta',
+  'ppsh-41':'Mitraglietta','lc10':'Mitraglietta','ladra':'Mitraglietta',
+  // BO6 — Mitragliatrici leggere
+  'pu-21':'Mitragliatrice leggera','xmg':'Mitragliatrice leggera',
+  'gpmg-7':'Mitragliatrice leggera','feng-82':'Mitragliatrice leggera',
+  // BO6 — Fucili tattici
+  'swat-556':'Fucile tattico','swat-5-56':'Fucile tattico','tsarkov-762':'Fucile tattico',
+  'tsarkov-7-62':'Fucile tattico','aek-973':'Fucile tattico','dm-10':'Fucile tattico','tr2':'Fucile tattico',
+  // BO6 — Cecchini
+  'lw3a1-frostline':'Cecchino','svd':'Cecchino','lr-762':'Cecchino',
+  'lr-7-62':'Cecchino','amr-mod-4':'Cecchino','hdr':'Cecchino',
+  // BO6 — Shotgun
+  'marine-sp':'Shotgun','asg-89':'Shotgun','maelstrom':'Shotgun',
+  // BO6 — Pistole
+  '9mm-pm':'Pistola','grekhova':'Pistola','gs45':'Pistola','stryder-22':'Pistola','1911':'Pistola',
+  // BO7 — Fucili d'assalto
+  'voyak-kt-3':"Fucile d'assalto",'egrt-17':"Fucile d'assalto",'m15-mod-0':"Fucile d'assalto",
+  'x9-maverick':"Fucile d'assalto",'maddox-rfb':"Fucile d'assalto",'mxr-17':"Fucile d'assalto",
+  'ak-27':"Fucile d'assalto",'sokol-545':"Fucile d'assalto",
+  'peacekeeper-mk1':"Fucile d'assalto",'kogot-7':"Fucile d'assalto",'mk35-isr':"Fucile d'assalto",
+  // BO7 — Mitragliette
+  'ryden-45k':'Mitraglietta','sturmwolf-45':'Mitraglietta','rk-9':'Mitraglietta',
+  'vst':'Mitraglietta','carbon-57':'Mitraglietta','razor-9mm':'Mitraglietta',
+  'rev-46':'Mitraglietta','mpc-25':'Mitraglietta','dravec-45':'Mitraglietta',
+  // BO7 — Mitragliatrici leggere
+  'mk-78':'Mitragliatrice leggera','mk78':'Mitragliatrice leggera','xm325':'Mitragliatrice leggera',
+  // BO7 — Fucili tattici
+  'm8a1':'Fucile tattico','swordfish-a1':'Fucile tattico','warden-308':'Fucile tattico','ds20-mirage':'Fucile tattico',
+  // BO7 — Cecchini
+  'vs-recon':'Cecchino','strider-300':'Cecchino','shadow-sk':'Cecchino',
+  'hawker-hx':'Cecchino','m34-novaline':'Cecchino',
+  // BO7 — Shotgun
+  'akita':'Shotgun',
+};
+
+const VALID_WEAPON_CATEGORIES = new Set([
+  "Fucile d'assalto",'Mitraglietta','Mitragliatrice leggera','Fucile tattico',
+  'Fucile da battaglia','Cecchino','Shotgun','Pistola','Corpo a corpo','Lanciarazzi',
+]);
+
+function normalizeWeaponCategoryServer(raw, weaponId) {
+  // 1. ID-based lookup (massima priorità — sempre corretto)
+  if (weaponId && WEAPON_ID_CATEGORY[weaponId]) return WEAPON_ID_CATEGORY[weaponId];
   if (!raw) return raw;
+  // 2. String normalization
   const k = String(raw).trim().replace(/[''‚‛′''‚‛]/g,"'").replace(/\s+/g,' ').toLowerCase();
   if (WEAPON_CATEGORY_MAP[k]) return WEAPON_CATEGORY_MAP[k];
   for (const [key, val] of Object.entries(WEAPON_CATEGORY_MAP)) {
     if (key.length >= 4 && k.includes(key)) return val;
   }
-  return raw; // restituisce originale se non riconosciuta (non 'Da verificare')
+  return raw;
+}
+
+// ─── Startup: normalizza categorie + auto-verifica nel file dati ───────────────
+// Viene eseguita una volta all'avvio per garantire che il DB locale sia sempre
+// aggiornato con le categorie corrette e verificata:true dove dovuto.
+function runStartupDataFix() {
+  try {
+    const weapons = readWeapons();
+    let changed = 0;
+    const fixed = weapons.map(w => {
+      const correctCat = normalizeWeaponCategoryServer(w.categoria, w.id);
+      const shouldVerify = VALID_WEAPON_CATEGORIES.has(correctCat);
+      if (correctCat === w.categoria && (!shouldVerify || w.verificata)) return w;
+      changed++;
+      return {
+        ...w,
+        categoria : correctCat,
+        verificata: shouldVerify ? true : w.verificata,
+        note      : 'Importato automaticamente da CODMunity.',
+        updatedAt : new Date().toISOString().slice(0, 10),
+      };
+    });
+    if (changed > 0) {
+      saveWeapons(fixed);
+      console.log(`[Loadout] Startup fix: ${changed} armi normalizzate/verificate.`);
+    }
+  } catch (e) {
+    console.warn('[Loadout] Startup fix weapons fallito (non bloccante):', e.message);
+  }
 }
 
 function sanitize(v) {
@@ -138,6 +221,9 @@ async function publishApprovedLoadout(loadout) {
 
 module.exports = function registerLoadoutRoutes(app, authRequired) {
 
+  // Normalizza categorie e auto-verifica armi all'avvio (idempotente)
+  runStartupDataFix();
+
   // ── ROTTA PAGINA PUBBLICA LOADOUT ──────────────────────────────────────────
   app.get('/loadout', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'loadout.html'));
@@ -150,15 +236,15 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
 
   // ── API PUBBLICHE ──────────────────────────────────────────────────────────
 
-  // GET /api/loadout/weapons  →  armi attive E verificate (solo pubblico), categorie normalizzate
+  // GET /api/loadout/weapons  →  armi attive E verificate (solo pubblico)
   app.get('/api/loadout/weapons', (req, res) => {
     const weapons = readWeapons()
       .filter(w => w.attiva && w.verificata)
       .map(w => ({
         id        : w.id,
         nome      : w.nome,
-        categoria : normalizeWeaponCategoryServer(w.categoria),
-        gioco     : w.gioco,
+        categoria : normalizeWeaponCategoryServer(w.categoria, w.id),
+        gioco     : w.gioco || 'BO6',
         attiva    : w.attiva,
         verificata: w.verificata,
       }));

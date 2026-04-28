@@ -578,7 +578,7 @@
   {
     "id": "swordfish-a1",
     "nome": "Swordfish A1",
-    "categoria": "Fucile d'assalto",
+    "categoria": "Fucile tattico",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -662,7 +662,7 @@
   {
     "id": "hawker-hx",
     "nome": "Hawker HX",
-    "categoria": "Fucile d'assalto",
+    "categoria": "Cecchino",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -674,7 +674,7 @@
   {
     "id": "peacekeeper-mk1",
     "nome": "Peacekeeper MK1",
-    "categoria": "Mitraglietta",
+    "categoria": "Fucile d'assalto",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -698,7 +698,7 @@
   {
     "id": "m8a1",
     "nome": "M8a1",
-    "categoria": "Fucile d'assalto",
+    "categoria": "Fucile tattico",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -710,7 +710,7 @@
   {
     "id": "ds20-mirage",
     "nome": "Ds20 Mirage",
-    "categoria": "Fucile d'assalto",
+    "categoria": "Fucile tattico",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -722,7 +722,7 @@
   {
     "id": "carbon-57",
     "nome": "Carbon 57",
-    "categoria": "Fucile tattico",
+    "categoria": "Mitraglietta",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -734,7 +734,7 @@
   {
     "id": "shadow-sk",
     "nome": "Shadow SK",
-    "categoria": "Mitraglietta",
+    "categoria": "Cecchino",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -758,7 +758,7 @@
   {
     "id": "razor-9mm",
     "nome": "Razor 9mm",
-    "categoria": "Pistola",
+    "categoria": "Mitraglietta",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -782,7 +782,7 @@
   {
     "id": "warden-308",
     "nome": "Warden 308",
-    "categoria": "Cecchino",
+    "categoria": "Fucile tattico",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -806,7 +806,7 @@
   {
     "id": "dravec-45",
     "nome": "Dravec 45",
-    "categoria": "Pistola",
+    "categoria": "Mitraglietta",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -818,7 +818,7 @@
   {
     "id": "akita",
     "nome": "Akita",
-    "categoria": "Mitraglietta",
+    "categoria": "Shotgun",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -854,7 +854,7 @@
   {
     "id": "kogot-7",
     "nome": "Kogot 7",
-    "categoria": "Mitragliatrice leggera",
+    "categoria": "Fucile d'assalto",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -878,7 +878,7 @@
   {
     "id": "m34-novaline",
     "nome": "M34 Novaline",
-    "categoria": "Fucile tattico",
+    "categoria": "Cecchino",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -890,7 +890,7 @@
   {
     "id": "mk35-isr",
     "nome": "Mk35 ISR",
-    "categoria": "Cecchino",
+    "categoria": "Fucile d'assalto",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -902,7 +902,7 @@
   {
     "id": "rev-46",
     "nome": "REV 46",
-    "categoria": "Pistola",
+    "categoria": "Mitraglietta",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -926,7 +926,7 @@
   {
     "id": "vst",
     "nome": "VST",
-    "categoria": "Cecchino",
+    "categoria": "Mitraglietta",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,
@@ -950,7 +950,7 @@
   {
     "id": "xm325",
     "nome": "Xm325",
-    "categoria": "Fucile d'assalto",
+    "categoria": "Mitragliatrice leggera",
     "gioco": "BO7",
     "attiva": true,
     "verificata": true,

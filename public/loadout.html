@@ -221,6 +221,15 @@
         return;
       }
       allWeapons = d.weapons;
+      const bo6Count = allWeapons.filter(w => w.gioco === 'BO6').length;
+      const bo7Count = allWeapons.filter(w => w.gioco === 'BO7').length;
+      const cats = [...new Set(allWeapons.map(w => w.categoria))].sort();
+      console.log('[Loadout] Armi caricate dall\'API:', {
+        totale: allWeapons.length,
+        bo6: bo6Count,
+        bo7: bo7Count,
+        categorie: cats,
+      });
       if (allWeapons.length === 0) {
         console.warn('[Loadout] Nessuna arma verificata nel database. Usa /admin-loadout per verificarle.');
       }
