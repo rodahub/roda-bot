@@ -4014,6 +4014,9 @@ app.delete('/api/reports/:id', authRequired, (req, res) => {
   }
 });
 
+// ── RØDA Loadout routes ───────────────────────────────────────────────────────
+require('./loadout')(app, authRequired);
+
 app.use((req, res) => {
   if (req.originalUrl.startsWith('/api/')) {
     return res.status(404).json({

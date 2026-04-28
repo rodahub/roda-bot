@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/rodasitologo.png"/>
+  <title>RØDA • Gestione Loadout</title>
+  <style>
+  :root{
+    --bg:#050508;--bg2:#090914;--panel:#111120;--panel2:#17172b;--panel3:#20203a;
+    --text:#faf7ff;--muted:#aaa6c5;--soft:#d8ccff;--line:rgba(170,120,255,.18);
+    --line2:rgba(190,145,255,.38);--purple:#7b2cff;--purple2:#a963ff;
+    --green:#18c964;--red:#ff4d6d;--yellow:#ffd166;--blue:#57b7ff;
+    --shadow:0 0 0 1px rgba(170,120,255,.10),0 24px 70px rgba(0,0,0,.42),0 0 38px rgba(123,44,255,.14);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:rgba(170,120,255,.46) transparent;}
+  *::-webkit-scrollbar{width:7px;height:7px}
+  *::-webkit-scrollbar-thumb{background:rgba(170,120,255,.46);border-radius:999px}
+  html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif;color:var(--text);
+    background:radial-gradient(circle at 8% 8%,rgba(123,44,255,.24),transparent 28%),
+    radial-gradient(circle at 88% 8%,rgba(87,183,255,.12),transparent 26%),
+    radial-gradient(circle at 55% 100%,rgba(123,44,255,.12),transparent 36%),
+    linear-gradient(180deg,#050507 0%,#090910 100%);}
+  button,input,textarea,select{font-family:inherit;}
+
+  /* ─── topbar ─── */
+  .topbar{position:sticky;top:0;z-index:200;background:rgba(5,5,8,.88);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 28px;height:62px;}
+  .topbar-logo{font-size:18px;font-weight:800;letter-spacing:.04em;background:linear-gradient(90deg,#fff,var(--purple2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;}
+  .topbar-sub{font-size:13px;color:var(--muted);margin-left:2px;}
+  .topbar-right{margin-left:auto;display:flex;gap:10px;align-items:center;}
+
+  /* ─── status bar ─── */
+  #statusBar{padding:10px 28px;font-size:13px;font-weight:600;display:none;
+    border-bottom:1px solid var(--line);background:rgba(123,44,255,.10);color:var(--soft);}
+
+  /* ─── layout ─── */
+  .main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+
+  /* ─── section cards ─── */
+  .section-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    margin-bottom:28px;overflow:hidden;box-shadow:var(--shadow);}
+  .section-hd{display:flex;align-items:center;gap:12px;padding:20px 24px;
+    border-bottom:1px solid var(--line);background:rgba(123,44,255,.07);}
+  .section-hd h2{margin:0;font-size:16px;font-weight:700;color:var(--soft);}
+  .badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
+    padding:0 7px;border-radius:99px;font-size:11px;font-weight:800;background:var(--purple);color:#fff;}
+  .badge.yellow{background:var(--yellow);color:#000;}
+  .badge.green{background:var(--green);color:#000;}
+  .badge.red{background:var(--red);color:#fff;}
+  .badge.muted{background:var(--panel3);color:var(--muted);}
+  .section-body{padding:20px 24px;}
+
+  /* ─── build cards ─── */
+  .builds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+  .build-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;
+    padding:18px;display:flex;flex-direction:column;gap:10px;}
+  .build-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .build-card-weapon{font-size:15px;font-weight:700;color:var(--soft);}
+  .build-card-tipo{font-size:11px;font-weight:600;background:rgba(123,44,255,.22);
+    color:var(--purple2);border-radius:99px;padding:2px 10px;white-space:nowrap;}
+  .build-card-meta{font-size:12px;color:var(--muted);line-height:1.6;}
+  .build-card-meta span{display:block;}
+  .build-card-atts{display:flex;flex-wrap:wrap;gap:6px;}
+  .att-pill{font-size:11px;background:var(--panel3);border:1px solid var(--line);
+    border-radius:99px;padding:2px 9px;color:var(--muted);}
+  .att-pill b{color:var(--soft);font-weight:600;}
+  .build-card-nota{font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--line);
+    padding-top:8px;margin-top:2px;}
+  .build-card-actions{display:flex;gap:8px;margin-top:4px;}
+  .empty-msg{color:var(--muted);font-size:14px;text-align:center;padding:20px 0;}
+
+  /* ─── buttons ─── */
+  .btn{border:none;border-radius:99px;padding:7px 18px;font-size:13px;font-weight:700;
+    cursor:pointer;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:6px;}
+  .btn:hover{opacity:.82;transform:translateY(-1px);}
+  .btn:active{transform:scale(.97);}
+  .btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;}
+  .btn-green{background:var(--green);color:#000;}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn-blue{background:var(--blue);color:#000;}
+  .btn-muted{background:var(--panel3);color:var(--muted);border:1px solid var(--line);}
+  .btn-sm{padding:5px 13px;font-size:12px;}
+  .btn-xs{padding:3px 10px;font-size:11px;}
+
+  /* ─── table ─── */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 12px;
+    border-bottom:1px solid var(--line);white-space:nowrap;}
+  td{padding:10px 12px;border-bottom:1px solid rgba(170,120,255,.08);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(123,44,255,.04);}
+
+  /* ─── toggle switch ─── */
+  .toggle{position:relative;display:inline-block;width:38px;height:22px;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;inset:0;border-radius:99px;background:var(--panel3);
+    transition:.25s;cursor:pointer;}
+  .toggle-slider:before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+    left:3px;top:3px;background:var(--muted);transition:.25s;}
+  input:checked+.toggle-slider{background:var(--green);}
+  input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff;}
+
+  /* ─── form panel ─── */
+  .form-panel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:20px 22px;}
+  .form-panel h3{margin:0 0 16px;font-size:14px;font-weight:700;color:var(--soft);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .form-row.tri{grid-template-columns:1fr 1fr 1fr;}
+  .form-row.full{grid-template-columns:1fr;}
+  label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;}
+  input[type=text],select{width:100%;background:var(--panel3);border:1px solid var(--line2);
+    border-radius:10px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;
+    transition:border-color .2s;}
+  input[type=text]:focus,select:focus{border-color:var(--purple2);}
+  .compat-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .compat-check{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);
+    background:var(--panel3);border:1px solid var(--line);border-radius:8px;padding:4px 9px;cursor:pointer;}
+  .compat-check input{margin:0;}
+  .compat-check:has(input:checked){border-color:var(--purple2);color:var(--soft);}
+
+  /* ─── db sections side by side on wide ─── */
+  .db-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:860px){.db-cols{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.form-row.tri{grid-template-columns:1fr 1fr;}}
+  @media(max-width:560px){.form-row.tri{grid-template-columns:1fr;}}
+
+  /* ─── confirm modal ─── */
+  #confirmModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);
+    align-items:center;justify-content:center;padding:20px;}
+  #confirmModal.open{display:flex;}
+  .confirm-box{background:#13101e;border:1px solid rgba(255,100,100,.28);border-radius:20px;
+    padding:28px 28px 24px;max-width:380px;width:100%;box-shadow:0 20px 80px rgba(0,0,0,.6);}
+  .confirm-box p{color:var(--soft);font-size:15px;margin:0 0 24px;line-height:1.6;}
+  .confirm-box .btns{display:flex;gap:10px;justify-content:flex-end;}
+  </style>
+</head>
+<body>
+
+<!-- topbar -->
+<div class="topbar">
+  <div>
+    <div class="topbar-logo">RØDA</div>
+    <div class="topbar-sub">Gestione Loadout</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-muted btn-sm" onclick="location.href='/admin'">← Admin</button>
+    <button class="btn btn-purple btn-sm" onclick="loadAll()">🔄 Aggiorna</button>
+    <button class="btn btn-muted btn-sm" id="logoutBtn">Esci</button>
+  </div>
+</div>
+
+<!-- status bar -->
+<div id="statusBar"></div>
+
+<div class="main">
+
+  <!-- ── IN ATTESA ───────────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-hd">
+      <span class="badge yellow" id="bdgAttesa">0</span>
+      <h2>Equipaggiamenti in attesa</h2>
+    </div>
+    <div class="section-body">
+      <div class="builds-grid" id="listAttesa">
+        <div class="empty-msg">Caricamento…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPROVATI ───────────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-hd">
+      <span class="badge green" id="bdgApprovati">0</span>
+      <h2>Equipaggiamenti approvati</h2>
+    </div>
+    <div class="section-body">
+      <div class="builds-grid" id="listApprovati">
+        <div class="empty-msg">Caricamento…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIFIUTATI ───────────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-hd">
+      <span class="badge red" id="bdgRifiutati">0</span>
+      <h2>Equipaggiamenti rifiutati</h2>
+    </div>
+    <div class="section-body">
+      <div class="builds-grid" id="listRifiutati">
+        <div class="empty-msg">Caricamento…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DATABASE ────────────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-hd">
+      <h2>🗄️ Database armi &amp; accessori</h2>
+    </div>
+    <div class="section-body">
+      <div class="db-cols">
+
+        <!-- ARMI -->
+        <div>
+          <div class="form-panel" style="margin-bottom:18px;">
+            <h3>➕ Aggiungi / modifica arma</h3>
+            <div class="form-row">
+              <div><label>ID univoco</label><input type="text" id="wId" placeholder="es. ram7"/></div>
+              <div><label>Nome visualizzato</label><input type="text" id="wNome" placeholder="es. RAM-7"/></div>
+            </div>
+            <div class="form-row full">
+              <div><label>Categoria</label>
+                <select id="wCat">
+                  <option value="Fucile d'assalto">Fucile d'assalto</option>
+                  <option value="Fucile da battaglia">Fucile da battaglia</option>
+                  <option value="Mitraglietta">Mitraglietta</option>
+                  <option value="Shotgun">Shotgun</option>
+                  <option value="Cecchino">Cecchino</option>
+                  <option value="Mitragliatrice leggera">Mitragliatrice leggera</option>
+                  <option value="Fucile tattico">Fucile tattico</option>
+                  <option value="Pistola">Pistola</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-purple btn-sm" onclick="saveWeapon()">💾 Salva arma</button>
+          </div>
+          <div id="weaponsTable">Caricamento…</div>
+        </div>
+
+        <!-- ACCESSORI -->
+        <div>
+          <div class="form-panel" style="margin-bottom:18px;">
+            <h3>➕ Aggiungi / modifica accessorio</h3>
+            <div class="form-row">
+              <div><label>ID univoco</label><input type="text" id="aId" placeholder="es. att_mymuz"/></div>
+              <div><label>Nome visualizzato</label><input type="text" id="aNome" placeholder="es. Muzzle X"/></div>
+            </div>
+            <div class="form-row full">
+              <div><label>Tipo slot</label>
+                <select id="aTipo">
+                  <option value="Volata">Volata</option>
+                  <option value="Canna">Canna</option>
+                  <option value="Ottica">Ottica</option>
+                  <option value="Calcio">Calcio</option>
+                  <option value="Caricatore">Caricatore</option>
+                  <option value="Impugnatura">Impugnatura</option>
+                  <option value="Laser">Laser</option>
+                  <option value="Sottocanna">Sottocanna</option>
+                  <option value="Munizioni">Munizioni</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row full">
+              <div>
+                <label>Armi compatibili</label>
+                <div class="compat-list" id="compatList">Caricamento…</div>
+              </div>
+            </div>
+            <button class="btn btn-purple btn-sm" onclick="saveAttachment()" style="margin-top:10px;">💾 Salva accessorio</button>
+          </div>
+          <div id="attachmentsTable">Caricamento…</div>
+        </div>
+
+      </div><!-- /db-cols -->
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── CONFIRM MODAL ─────────────────────────────────────────────────────── -->
+<div id="confirmModal">
+  <div class="confirm-box">
+    <p id="confirmMsg"></p>
+    <div class="btns">
+      <button class="btn btn-muted" id="confirmCancel">Annulla</button>
+      <button class="btn btn-red" id="confirmOk">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── helpers ──────────────────────────────────────────────────────────────── */
+let _token = localStorage.getItem('adminToken') || '';
+let _weaponsCache = [];
+
+function setStatus(msg, ok) {
+  const bar = document.getElementById('statusBar');
+  bar.textContent = msg;
+  bar.style.display = 'block';
+  bar.style.color = ok === false ? 'var(--red)' : ok === true ? 'var(--green)' : 'var(--soft)';
+  clearTimeout(bar._t);
+  bar._t = setTimeout(() => { bar.style.display = 'none'; }, 4000);
+}
+
+async function api(url, opts = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
+      ...opts
+    });
+    if (res.status === 401 || res.status === 403) { location.href = '/login'; return null; }
+    return await res.json();
+  } catch (e) {
+    setStatus('Errore di rete: ' + e.message, false);
+    return null;
+  }
+}
+
+/* ── confirm modal ──────────────────────────────────────────────────────── */
+let _confirmResolve = null;
+function rodaConfirm(msg, okText, cancelText) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmOk').textContent = okText || 'Conferma';
+    document.getElementById('confirmCancel').textContent = cancelText || 'Annulla';
+    document.getElementById('confirmModal').classList.add('open');
+  });
+}
+function confirmClose(val) {
+  document.getElementById('confirmModal').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+document.getElementById('confirmOk').addEventListener('click', () => confirmClose(true));
+document.getElementById('confirmCancel').addEventListener('click', () => confirmClose(false));
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmModal')) confirmClose(false);
+});
+
+/* ── build card renderer ─────────────────────────────────────────────────── */
+function buildCard(b, actions) {
+  const atts = (b.accessori || []).map(a =>
+    `<span class="att-pill"><b>${a.tipo}:</b> ${a.nome}</span>`
+  ).join('');
+  const nota = b.nota ? `<div class="build-card-nota">💬 ${b.nota}</div>` : '';
+  const metaDate = b.approvedAt
+    ? `<span>✅ Approvato: ${new Date(b.approvedAt).toLocaleDateString('it-IT')}</span>` : '';
+  return `<div class="build-card">
+    <div class="build-card-header">
+      <div class="build-card-weapon">${b.armaNome}</div>
+      <span class="build-card-tipo">${b.tipoEquipaggiamento}</span>
+    </div>
+    <div class="build-card-meta">
+      <span>👤 ${b.creator}${b.firma ? ' — <em>' + b.firma + '</em>' : ''}</span>
+      <span>📁 ${b.categoriaArma}</span>
+      ${metaDate}
+      <span style="font-size:11px;color:rgba(170,120,255,.5);">ID: ${b.id}</span>
+    </div>
+    <div class="build-card-atts">${atts || '<span class="att-pill">—</span>'}</div>
+    ${nota}
+    <div class="build-card-actions">${actions(b)}</div>
+  </div>`;
+}
+
+/* ── load all data ─────────────────────────────────────────────────────── */
+async function loadAll() {
+  await Promise.all([loadBuilds(), loadWeapons(), loadAttachments()]);
+}
+
+async function loadBuilds() {
+  const data = await api('/api/admin/loadout/builds');
+  if (!data || !data.ok) return;
+
+  const attesa   = data.in_attesa   || [];
+  const approvati = data.approvati  || [];
+  const rifiutati = data.rifiutati  || [];
+
+  document.getElementById('bdgAttesa').textContent   = attesa.length;
+  document.getElementById('bdgApprovati').textContent = approvati.length;
+  document.getElementById('bdgRifiutati').textContent = rifiutati.length;
+
+  const renderList = (list, containerEl, actions) => {
+    if (!list.length) {
+      containerEl.innerHTML = '<div class="empty-msg">Nessun equipaggiamento.</div>';
+    } else {
+      containerEl.innerHTML = list.map(b => buildCard(b, actions)).join('');
+    }
+  };
+
+  renderList(attesa,   document.getElementById('listAttesa'), b => `
+    <button class="btn btn-green btn-sm" onclick="approve('${b.id}')">✅ Approva</button>
+    <button class="btn btn-red btn-sm" onclick="reject('${b.id}')">❌ Rifiuta</button>
+  `);
+  renderList(approvati, document.getElementById('listApprovati'), b => `
+    <button class="btn btn-red btn-sm" onclick="deleteBuild('${b.id}')">🗑️ Elimina</button>
+  `);
+  renderList(rifiutati, document.getElementById('listRifiutati'), b => `
+    <button class="btn btn-red btn-sm" onclick="deleteBuild('${b.id}')">🗑️ Elimina</button>
+  `);
+}
+
+/* ── build actions ──────────────────────────────────────────────────────── */
+async function approve(id) {
+  if (!await rodaConfirm('Approvare questo equipaggiamento?', 'Approva', 'Annulla')) return;
+  const d = await api(`/api/admin/loadout/approve/${id}`, { method: 'POST' });
+  if (d && d.ok) { setStatus('✅ Approvato!', true); await loadBuilds(); }
+  else setStatus(d?.message || 'Errore', false);
+}
+
+async function reject(id) {
+  if (!await rodaConfirm('Rifiutare questo equipaggiamento?', 'Rifiuta', 'Annulla')) return;
+  const d = await api(`/api/admin/loadout/reject/${id}`, { method: 'POST' });
+  if (d && d.ok) { setStatus('Rifiutato.', true); await loadBuilds(); }
+  else setStatus(d?.message || 'Errore', false);
+}
+
+async function deleteBuild(id) {
+  if (!await rodaConfirm('Eliminare definitivamente questo equipaggiamento?', 'Elimina', 'Annulla')) return;
+  const d = await api(`/api/admin/loadout/${id}`, { method: 'DELETE' });
+  if (d && d.ok) { setStatus('Eliminato.', true); await loadBuilds(); }
+  else setStatus(d?.message || 'Errore', false);
+}
+
+/* ── weapons ────────────────────────────────────────────────────────────── */
+async function loadWeapons() {
+  await fetchWeaponsAdmin();
+}
+
+function updateWeaponsTable(weapons) {
+  const el = document.getElementById('weaponsTable');
+  if (!weapons.length) { el.innerHTML = '<div class="empty-msg">Nessuna arma.</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Attiva</th><th></th></tr></thead>
+    <tbody>${weapons.map(w => `<tr>
+      <td><code style="font-size:11px;color:var(--muted)">${w.id}</code></td>
+      <td>${w.nome}</td>
+      <td><span class="att-pill">${w.categoria}</span></td>
+      <td>
+        <label class="toggle"><input type="checkbox" ${w.attiva ? 'checked' : ''} onchange="toggleWeapon('${w.id}',this)"/>
+        <span class="toggle-slider"></span></label>
+      </td>
+      <td>
+        <button class="btn btn-muted btn-xs" onclick="editWeapon(${JSON.stringify(JSON.stringify(w))})">✏️</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function saveWeapon() {
+  const id       = document.getElementById('wId').value.trim();
+  const nome     = document.getElementById('wNome').value.trim();
+  const categoria= document.getElementById('wCat').value;
+  if (!id || !nome) { setStatus('Compila ID e Nome.', false); return; }
+  const d = await api('/api/admin/loadout/weapons', {
+    method: 'POST',
+    body: JSON.stringify({ id, nome, categoria, attiva: true })
+  });
+  if (d && d.ok) {
+    setStatus('Arma salvata!', true);
+    document.getElementById('wId').value = '';
+    document.getElementById('wNome').value = '';
+    await fetchWeaponsAdmin();
+  } else setStatus(d?.message || 'Errore', false);
+}
+
+function editWeapon(jsonStr) {
+  const w = JSON.parse(jsonStr);
+  document.getElementById('wId').value = w.id;
+  document.getElementById('wNome').value = w.nome;
+  document.getElementById('wCat').value = w.categoria;
+  document.getElementById('wId').focus();
+}
+
+async function toggleWeapon(id, chk) {
+  const d = await api(`/api/admin/loadout/weapons/toggle/${id}`, { method: 'POST' });
+  if (!d || !d.ok) { chk.checked = !chk.checked; setStatus('Errore toggle arma', false); }
+  else {
+    setStatus(d.attiva ? '✅ Arma attivata' : '⛔ Arma disattivata', true);
+    await fetchWeaponsAdmin();
+  }
+}
+
+/* ── attachments ─────────────────────────────────────────────────────────── */
+let _attachmentsCache = [];
+
+async function loadAttachments() {
+  await fetchWeaponsAdmin(); // ensures _weaponsCache populated first
+  await fetchAttachmentsAdmin();
+}
+
+async function fetchWeaponsAdmin() {
+  const data = await api('/api/admin/loadout/weapons-all');
+  if (data && data.ok) {
+    _weaponsCache = data.weapons;
+    updateWeaponsTable(_weaponsCache);
+    renderCompatList();
+  }
+}
+
+async function fetchAttachmentsAdmin() {
+  const data = await api('/api/admin/loadout/attachments-all');
+  if (data && data.ok) {
+    _attachmentsCache = data.attachments;
+    updateAttachmentsTable(_attachmentsCache);
+  }
+}
+
+function renderCompatList() {
+  const el = document.getElementById('compatList');
+  if (!_weaponsCache.length) { el.textContent = 'Nessuna arma caricata.'; return; }
+  el.innerHTML = _weaponsCache.map(w =>
+    `<label class="compat-check">
+      <input type="checkbox" value="${w.id}" class="compat-cb"/> ${w.nome}
+    </label>`
+  ).join('');
+}
+
+function updateAttachmentsTable(atts) {
+  const el = document.getElementById('attachmentsTable');
+  if (!atts.length) { el.innerHTML = '<div class="empty-msg">Nessun accessorio.</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Attivo</th><th></th></tr></thead>
+    <tbody>${atts.map(a => `<tr>
+      <td><code style="font-size:11px;color:var(--muted)">${a.id}</code></td>
+      <td>${a.nome}</td>
+      <td><span class="att-pill">${a.tipo}</span></td>
+      <td>
+        <label class="toggle"><input type="checkbox" ${a.attivo ? 'checked' : ''} onchange="toggleAttachment('${a.id}',this)"/>
+        <span class="toggle-slider"></span></label>
+      </td>
+      <td>
+        <button class="btn btn-muted btn-xs" onclick="editAttachment(${JSON.stringify(JSON.stringify(a))})">✏️</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function saveAttachment() {
+  const id   = document.getElementById('aId').value.trim();
+  const nome = document.getElementById('aNome').value.trim();
+  const tipo = document.getElementById('aTipo').value;
+  const armiCompatibili = [...document.querySelectorAll('.compat-cb:checked')].map(c => c.value);
+  if (!id || !nome) { setStatus('Compila ID e Nome.', false); return; }
+  const d = await api('/api/admin/loadout/attachments', {
+    method: 'POST',
+    body: JSON.stringify({ id, nome, tipo, armiCompatibili, attivo: true })
+  });
+  if (d && d.ok) {
+    setStatus('Accessorio salvato!', true);
+    document.getElementById('aId').value = '';
+    document.getElementById('aNome').value = '';
+    document.querySelectorAll('.compat-cb').forEach(c => c.checked = false);
+    await fetchAttachmentsAdmin();
+  } else setStatus(d?.message || 'Errore', false);
+}
+
+function editAttachment(jsonStr) {
+  const a = JSON.parse(jsonStr);
+  document.getElementById('aId').value = a.id;
+  document.getElementById('aNome').value = a.nome;
+  document.getElementById('aTipo').value = a.tipo;
+  // tick compatible weapons
+  document.querySelectorAll('.compat-cb').forEach(c => {
+    c.checked = Array.isArray(a.armiCompatibili) && a.armiCompatibili.includes(c.value);
+  });
+  document.getElementById('aId').focus();
+}
+
+async function toggleAttachment(id, chk) {
+  const d = await api(`/api/admin/loadout/attachments/toggle/${id}`, { method: 'POST' });
+  if (!d || !d.ok) { chk.checked = !chk.checked; setStatus('Errore toggle accessorio', false); }
+  else {
+    setStatus(d.attivo ? '✅ Accessorio attivato' : '⛔ Accessorio disattivato', true);
+    await fetchAttachmentsAdmin();
+  }
+}
+
+/* ── logout ─────────────────────────────────────────────────────────────── */
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminToken');
+  location.href = '/login';
+});
+
+/* ── init ────────────────────────────────────────────────────────────────── */
+if (!_token) location.href = '/login';
+loadAll();
+</script>
+</body>
+</html>
