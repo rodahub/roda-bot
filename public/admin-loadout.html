@@ -282,7 +282,6 @@
 
 <script>
 /* ── helpers ──────────────────────────────────────────────────────────────── */
-let _token = localStorage.getItem('adminToken') || '';
 let _weaponsCache = [];
 
 function setStatus(msg, ok) {
@@ -296,10 +295,8 @@ function setStatus(msg, ok) {
 
 async function api(url, opts = {}) {
   try {
-    const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
-      ...opts
-    });
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    const res = await fetch(url, { ...opts, headers, credentials: 'same-origin' });
     if (res.status === 401 || res.status === 403) { location.href = '/login'; return null; }
     return await res.json();
   } catch (e) {
@@ -568,13 +565,12 @@ async function toggleAttachment(id, chk) {
 }
 
 /* ── logout ─────────────────────────────────────────────────────────────── */
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('adminToken');
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
   location.href = '/login';
 });
 
 /* ── init ────────────────────────────────────────────────────────────────── */
-if (!_token) location.href = '/login';
 loadAll();
 </script>
 </body>

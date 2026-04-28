@@ -160,6 +160,29 @@
       font-weight:850;
       white-space:nowrap
     }
+    .nav a.nav-ext{
+      border:1px solid transparent;
+      background:rgba(255,255,255,.035);
+      color:#f5efff;
+      border-radius:18px;
+      min-height:54px;
+      padding:12px 14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-size:14px;
+      font-weight:950;
+      text-align:left;
+      transition:.16s ease;
+      text-decoration:none;
+    }
+    .nav a.nav-ext:hover{
+      transform:translateX(2px);
+      background:rgba(255,255,255,.058);
+      border-color:rgba(170,120,255,.20);
+    }
     .side-footer{
       margin-top:auto;
       display:grid;
@@ -1269,10 +1292,10 @@
             <span>⚙️ Sistema</span>
             <small>Reset</small>
           </button>
-          <button onclick="location.href='/admin-loadout'">
-            <span>🔫 Loadout</span>
+          <a href="/admin-loadout" class="nav-ext">
+            <span>🎮 Loadout</span>
             <small>Gestione</small>
-          </button>
+          </a>
         </div>
         <div class="side-footer">
           <div class="pill" id="staffInfo">Connesso</div>
