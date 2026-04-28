@@ -390,6 +390,12 @@ async function processUrl(url) {
   return result;
 }
 
+// ─── Rileva gioco dall'URL ────────────────────────────────────────────────────
+function getGame(url) {
+  const m = url.match(/\/weapon\/(bo\d+)\//i);
+  return m ? m[1].toUpperCase() : 'UNKNOWN';
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('\n══════════════════════════════════════════════════');
@@ -414,9 +420,17 @@ async function main() {
   const compatList     = readJSON(COMPAT_FILE);
   const compatSet      = new Set(compatList.map(c => `${c.armaId}::${c.accessorioId}`));
 
+  // Conta URL per gioco
+  const bo6Count = allUrls.filter(u => /\/weapon\/bo6\//i.test(u)).length;
+  const bo7Count = allUrls.filter(u => /\/weapon\/bo7\//i.test(u)).length;
+  console.log(`  BO6: ${bo6Count} URL | BO7: ${bo7Count} URL\n`);
+
   // Report
   const report = {
     generatedAt              : nowISO(),
+    totalUrls                : allUrls.length,
+    bo6Urls                  : { total: bo6Count, ok: 0, failed: 0, duplicated: 0 },
+    bo7Urls                  : { total: bo7Count, ok: 0, failed: 0, duplicated: 0 },
     processedUrls            : [],
     failedUrls               : [],
     duplicatedWeaponsSkipped : [],
@@ -431,20 +445,23 @@ async function main() {
   const seenWeaponNames = new Map(); // slug-nome → { url, id }
 
   for (let i = 0; i < allUrls.length; i++) {
-    const url = allUrls[i];
-    process.stdout.write(`[${String(i+1).padStart(2)}/${allUrls.length}] ${url}\n`);
+    const url  = allUrls[i];
+    const game = getGame(url);  // 'BO6' | 'BO7' | 'UNKNOWN'
+    const gameKey = game === 'BO7' ? 'bo7Urls' : 'bo6Urls';
+    process.stdout.write(`[${String(i+1).padStart(2)}/${allUrls.length}] [${game}] ${url}\n`);
 
     try {
       const data = await processUrl(url);
 
       const nameSlug = toSlug(data.name);
 
-      // Gestione duplicati slug (es. swat-556 vs swat-5-56)
+      // Gestione duplicati slug (es. swat-556 vs swat-5-56, mk-78 vs mk78)
       if (nameSlug && seenWeaponNames.has(nameSlug)) {
         const prev = seenWeaponNames.get(nameSlug);
         console.log(`      ⚠ Duplicato: "${data.name}" già visto da ${prev.url} → skip`);
-        report.duplicatedWeaponsSkipped.push({ url, duplicateOf: prev.url, name: data.name });
-        report.processedUrls.push({ url, status: 'duplicate', name: data.name });
+        report.duplicatedWeaponsSkipped.push({ url, game, duplicateOf: prev.url, name: data.name });
+        report.processedUrls.push({ url, game, status: 'duplicate', name: data.name });
+        report[gameKey].duplicated++;
         const delay = 1200 + Math.floor(Math.random() * 400);
         await sleep(delay);
         continue;
@@ -461,7 +478,7 @@ async function main() {
         id        : weaponId,
         nome      : data.name,
         categoria : data.category || "Fucile d'assalto",
-        gioco     : 'BO6',
+        gioco     : game,
         attiva    : true,
         verificata: false,
         fonte     : 'CODMunity',
@@ -526,18 +543,20 @@ async function main() {
       const ignored = [...new Set(ignoredHere)];
       console.log(`      ✓ "${data.name}" [${data.category}] — ${validAtts} acc (${data._method})${ignored.length ? ` | slot ignorati: ${ignored.join(', ')}` : ''}`);
       report.processedUrls.push({
-        url, status: 'ok',
+        url, game, status: 'ok',
         name       : data.name,
         category   : data.category,
         attachments: validAtts,
         method     : data._method,
       });
+      report[gameKey].ok++;
 
     } catch (err) {
       const msg = err.message || String(err);
       console.log(`      ✗ ${msg}`);
-      report.failedUrls.push({ url, error: msg });
-      report.errors.push({ url, error: msg });
+      report.failedUrls.push({ url, game, error: msg });
+      report.errors.push({ url, game, error: msg });
+      report[gameKey].failed++;
     }
 
     // Delay anti-rate-limit
@@ -567,6 +586,11 @@ async function main() {
   console.log('\n══════════════════════════════════════════════════');
   console.log('  RIEPILOGO');
   console.log('══════════════════════════════════════════════════');
+  console.log(`  URL totali                : ${allUrls.length}`);
+  console.log(`  ─────────────────────────────────────────────`);
+  console.log(`  BO6  ✓ ok: ${report.bo6Urls.ok}  ✗ fail: ${report.bo6Urls.failed}  ⚠ dup: ${report.bo6Urls.duplicated}  (tot: ${report.bo6Urls.total})`);
+  console.log(`  BO7  ✓ ok: ${report.bo7Urls.ok}  ✗ fail: ${report.bo7Urls.failed}  ⚠ dup: ${report.bo7Urls.duplicated}  (tot: ${report.bo7Urls.total})`);
+  console.log(`  ─────────────────────────────────────────────`);
   console.log(`  ✓ Processati con successo : ${ok}`);
   console.log(`  ⚠ Duplicati saltati       : ${dup}`);
   console.log(`  ✗ URL falliti             : ${fail}`);
