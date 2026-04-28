@@ -1,0 +1,11 @@
+[
+  { "id": "ottica",       "nome": "Ottica",       "attivo": true, "ordine": 1 },
+  { "id": "volata",       "nome": "Volata",       "attivo": true, "ordine": 2 },
+  { "id": "canna",        "nome": "Canna",        "attivo": true, "ordine": 3 },
+  { "id": "sottocanna",   "nome": "Sottocanna",   "attivo": true, "ordine": 4 },
+  { "id": "caricatore",   "nome": "Caricatore",   "attivo": true, "ordine": 5 },
+  { "id": "impugnatura",  "nome": "Impugnatura",  "attivo": true, "ordine": 6 },
+  { "id": "calcio",       "nome": "Calcio",       "attivo": true, "ordine": 7 },
+  { "id": "laser",        "nome": "Laser",        "attivo": true, "ordine": 8 },
+  { "id": "mod-fuoco",    "nome": "Mod fuoco",    "attivo": true, "ordine": 9 }
+]
