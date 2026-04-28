@@ -6,7 +6,8 @@
   "packageManager": "npm@10.8.2",
   "scripts": {
     "start": "node server.js",
-    "build:loadout-db": "node scripts/build-loadout-db-from-codmunity.js"
+    "build:loadout-db": "node scripts/build-loadout-db-from-codmunity.js",
+    "discover:codmunity-weapons": "node scripts/discover-codmunity-weapons.js"
   },
   "dependencies": {
     "canvas": "^3.2.3",
