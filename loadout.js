@@ -467,6 +467,41 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
     }
   });
 
+  // POST /api/admin/loadout/verify-all  →  verifica in blocco per tipo
+  app.post('/api/admin/loadout/verify-all', authRequired, (req, res) => {
+    try {
+      const { type } = req.body;
+      if (!['weapons','attachments','compatibility','all'].includes(type)) {
+        return res.json({ ok: false, message: 'Tipo non valido. Usa: weapons, attachments, compatibility, all.' });
+      }
+      let updated = 0;
+      if (type === 'weapons' || type === 'all') {
+        const weapons = readWeapons();
+        weapons.forEach(w => {
+          if (!w.verificata) { w.verificata = true; w.updatedAt = nowISO(); updated++; }
+        });
+        saveWeapons(weapons);
+      }
+      if (type === 'attachments' || type === 'all') {
+        const atts = readAttachments();
+        atts.forEach(a => {
+          if (!a.verificato) { a.verificato = true; a.updatedAt = nowISO(); updated++; }
+        });
+        saveAttachments(atts);
+      }
+      if (type === 'compatibility' || type === 'all') {
+        const compat = readCompatibility();
+        compat.forEach(c => {
+          if (!c.verificato) { c.verificato = true; c.updatedAt = nowISO(); updated++; }
+        });
+        saveCompatibility(compat);
+      }
+      res.json({ ok: true, updated });
+    } catch (e) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
   // POST /api/admin/loadout/disable  →  disattiva un record
   app.post('/api/admin/loadout/disable', authRequired, (req, res) => {
     try {

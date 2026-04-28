@@ -125,6 +125,36 @@
   @media(max-width:860px){.db-cols{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.form-row.tri{grid-template-columns:1fr 1fr;}}
   @media(max-width:560px){.form-row.tri{grid-template-columns:1fr;}}
 
+  /* ─── database tabs ─── */
+  .db-tabnav{display:flex;gap:4px;padding:14px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .db-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);
+    font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;margin-bottom:-1px;
+    border-radius:8px 8px 0 0;transition:.15s;}
+  .db-tab:hover{color:var(--soft);background:rgba(123,44,255,.08);}
+  .db-tab.active{color:var(--purple2);border-bottom-color:var(--purple2);background:rgba(123,44,255,.06);}
+  .db-tab.warn{color:var(--yellow);}
+  .db-tab.warn.active{border-bottom-color:var(--yellow);}
+  .db-tabpanel{display:none;padding:22px 24px;}
+  .db-tabpanel.active{display:block;}
+
+  /* ─── verify badge ─── */
+  .v-yes{color:var(--green);font-size:11px;font-weight:700;}
+  .v-no{color:var(--yellow);font-size:11px;font-weight:700;}
+
+  /* ─── fonte chip ─── */
+  .fonte-chip{font-size:10px;color:var(--muted);background:var(--panel3);border-radius:6px;padding:1px 6px;}
+
+  /* ─── checkboxes inline ─── */
+  .check-row{display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+  .check-row label{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--muted);cursor:pointer;}
+
+  /* ─── import textarea ─── */
+  .import-ta{width:100%;min-height:110px;background:var(--panel3);border:1px solid var(--line2);
+    border-radius:10px;padding:10px 12px;color:var(--text);font-size:12px;font-family:monospace;
+    resize:vertical;outline:none;}
+  .import-ta:focus{border-color:var(--purple2);}
+  .import-result{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px;}
+
   /* ─── confirm modal ─── */
   #confirmModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);
     align-items:center;justify-content:center;padding:20px;}
@@ -194,78 +224,189 @@
     </div>
   </div>
 
-  <!-- ── DATABASE ────────────────────────────────────────────────────── -->
+  <!-- ── DATABASE LOADOUT ─────────────────────────────────────────────── -->
   <div class="section-card">
     <div class="section-hd">
-      <h2>🗄️ Database armi &amp; accessori</h2>
+      <h2>🗄️ Database Loadout</h2>
     </div>
-    <div class="section-body">
-      <div class="db-cols">
 
-        <!-- ARMI -->
-        <div>
-          <div class="form-panel" style="margin-bottom:18px;">
-            <h3>➕ Aggiungi / modifica arma</h3>
-            <div class="form-row">
-              <div><label>ID univoco</label><input type="text" id="wId" placeholder="es. ram7"/></div>
-              <div><label>Nome visualizzato</label><input type="text" id="wNome" placeholder="es. RAM-7"/></div>
-            </div>
-            <div class="form-row full">
-              <div><label>Categoria</label>
-                <select id="wCat">
-                  <option value="Fucile d'assalto">Fucile d'assalto</option>
-                  <option value="Fucile da battaglia">Fucile da battaglia</option>
-                  <option value="Mitraglietta">Mitraglietta</option>
-                  <option value="Shotgun">Shotgun</option>
-                  <option value="Cecchino">Cecchino</option>
-                  <option value="Mitragliatrice leggera">Mitragliatrice leggera</option>
-                  <option value="Fucile tattico">Fucile tattico</option>
-                  <option value="Pistola">Pistola</option>
-                </select>
-              </div>
-            </div>
-            <button class="btn btn-purple btn-sm" onclick="saveWeapon()">💾 Salva arma</button>
-          </div>
-          <div id="weaponsTable">Caricamento…</div>
-        </div>
-
-        <!-- ACCESSORI -->
-        <div>
-          <div class="form-panel" style="margin-bottom:18px;">
-            <h3>➕ Aggiungi / modifica accessorio</h3>
-            <div class="form-row">
-              <div><label>ID univoco</label><input type="text" id="aId" placeholder="es. att_mymuz"/></div>
-              <div><label>Nome visualizzato</label><input type="text" id="aNome" placeholder="es. Muzzle X"/></div>
-            </div>
-            <div class="form-row full">
-              <div><label>Tipo slot</label>
-                <select id="aTipo">
-                  <option value="Ottica">Ottica</option>
-                  <option value="Volata">Volata</option>
-                  <option value="Canna">Canna</option>
-                  <option value="Sottocanna">Sottocanna</option>
-                  <option value="Caricatore">Caricatore</option>
-                  <option value="Impugnatura">Impugnatura</option>
-                  <option value="Calcio">Calcio</option>
-                  <option value="Laser">Laser</option>
-                  <option value="Mod fuoco">Mod fuoco</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row full">
-              <div>
-                <label>Armi compatibili</label>
-                <div class="compat-list" id="compatList">Caricamento…</div>
-              </div>
-            </div>
-            <button class="btn btn-purple btn-sm" onclick="saveAttachment()" style="margin-top:10px;">💾 Salva accessorio</button>
-          </div>
-          <div id="attachmentsTable">Caricamento…</div>
-        </div>
-
-      </div><!-- /db-cols -->
+    <!-- Tab nav -->
+    <div class="db-tabnav">
+      <button class="db-tab active" data-dbtab="armi">Armi</button>
+      <button class="db-tab" data-dbtab="accessori">Accessori</button>
+      <button class="db-tab" data-dbtab="compat">Compatibilità</button>
+      <button class="db-tab warn" data-dbtab="daVerificare">⚠️ Da verificare <span id="bdgUnverified"></span></button>
+      <button class="db-tab" data-dbtab="importa">📥 Importa</button>
     </div>
-  </div>
+
+    <!-- ── TAB ARMI ── -->
+    <div class="db-tabpanel active" id="dbtab-armi">
+      <div class="form-panel" style="margin-bottom:18px;">
+        <h3>➕ Aggiungi / modifica arma</h3>
+        <div class="form-row">
+          <div><label>ID slug *</label><input type="text" id="wId" placeholder="es. kilo-141"/></div>
+          <div><label>Nome visualizzato *</label><input type="text" id="wNome" placeholder="es. KILO 141"/></div>
+        </div>
+        <div class="form-row">
+          <div><label>Categoria</label>
+            <select id="wCat">
+              <option value="Fucile d'assalto">Fucile d'assalto</option>
+              <option value="Fucile da battaglia">Fucile da battaglia</option>
+              <option value="Mitraglietta">Mitraglietta</option>
+              <option value="Shotgun">Shotgun</option>
+              <option value="Cecchino">Cecchino</option>
+              <option value="Mitragliatrice leggera">Mitragliatrice leggera</option>
+              <option value="Fucile tattico">Fucile tattico</option>
+              <option value="Pistola">Pistola</option>
+              <option value="Corpo a corpo">Corpo a corpo</option>
+              <option value="Lanciarazzi">Lanciarazzi</option>
+              <option value="Da verificare">Da verificare</option>
+            </select>
+          </div>
+          <div><label>Gioco</label>
+            <select id="wGioco">
+              <option value="Warzone">Warzone</option>
+              <option value="MW3">MW3</option>
+              <option value="BO6">BO6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div><label>Fonte</label><input type="text" id="wFonte" placeholder="es. CODMunity"/></div>
+          <div><label>Note</label><input type="text" id="wNote" placeholder="Opzionale"/></div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="wAttiva" checked> Attiva</label>
+          <label><input type="checkbox" id="wVerificata"> Verificata (appare nel pubblico)</label>
+        </div>
+        <button class="btn btn-purple btn-sm" id="saveWeaponBtn">💾 Salva arma</button>
+        <button class="btn btn-muted btn-sm" id="clearWeaponFormBtn" style="margin-left:8px;">✖ Pulisci</button>
+        <div id="weaponFormMsg" style="display:none;margin-top:10px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;"></div>
+      </div>
+      <div id="weaponsTable">Caricamento…</div>
+    </div>
+
+    <!-- ── TAB ACCESSORI ── -->
+    <div class="db-tabpanel" id="dbtab-accessori">
+      <div class="form-panel" style="margin-bottom:18px;">
+        <h3>➕ Aggiungi / modifica accessorio</h3>
+        <div class="form-row">
+          <div><label>ID slug *</label><input type="text" id="aId" placeholder="es. monolithic-suppressor"/></div>
+          <div><label>Nome visualizzato *</label><input type="text" id="aNome" placeholder="es. Monolithic Suppressor"/></div>
+        </div>
+        <div class="form-row">
+          <div><label>Tipo slot</label>
+            <select id="aTipo">
+              <option value="Ottica">Ottica</option>
+              <option value="Volata">Volata</option>
+              <option value="Canna">Canna</option>
+              <option value="Sottocanna">Sottocanna</option>
+              <option value="Caricatore">Caricatore</option>
+              <option value="Impugnatura">Impugnatura</option>
+              <option value="Calcio">Calcio</option>
+              <option value="Laser">Laser</option>
+              <option value="Mod fuoco">Mod fuoco</option>
+            </select>
+          </div>
+          <div><label>Fonte</label><input type="text" id="aFonte" placeholder="es. CODMunity"/></div>
+        </div>
+        <div class="form-row full">
+          <div><label>Note</label><input type="text" id="aNote" placeholder="Opzionale"/></div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="aAttivo" checked> Attivo</label>
+          <label><input type="checkbox" id="aVerificato"> Verificato (appare nel pubblico)</label>
+        </div>
+        <button class="btn btn-purple btn-sm" id="saveAttachmentBtn">💾 Salva accessorio</button>
+        <button class="btn btn-muted btn-sm" id="clearAttFormBtn" style="margin-left:8px;">✖ Pulisci</button>
+        <div id="attFormMsg" style="display:none;margin-top:10px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;"></div>
+      </div>
+      <div id="attachmentsTable">Caricamento…</div>
+    </div>
+
+    <!-- ── TAB COMPATIBILITÀ ── -->
+    <div class="db-tabpanel" id="dbtab-compat">
+      <div class="form-panel" style="margin-bottom:18px;">
+        <h3>➕ Aggiungi compatibilità arma / accessorio</h3>
+        <div class="form-row">
+          <div><label>Arma</label>
+            <select id="cArma"><option value="">— Seleziona arma —</option></select>
+          </div>
+          <div><label>Accessorio</label>
+            <select id="cAcc"><option value="">— Seleziona accessorio —</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div><label>Fonte</label><input type="text" id="cFonte" placeholder="es. CODMunity"/></div>
+          <div><label>Note</label><input type="text" id="cNote" placeholder="Opzionale"/></div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="cVerificata"> Verificata</label>
+        </div>
+        <button class="btn btn-purple btn-sm" id="saveCompatBtn">💾 Salva compatibilità</button>
+      </div>
+      <div id="compatTable">Caricamento…</div>
+    </div>
+
+    <!-- ── TAB DA VERIFICARE ── -->
+    <div class="db-tabpanel" id="dbtab-daVerificare">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:16px;background:rgba(123,44,255,.07);border-radius:12px;border:1px solid var(--line);">
+        <span style="font-size:12px;color:var(--muted);align-self:center;margin-right:4px;font-weight:600;">Verifica in blocco:</span>
+        <button class="btn btn-green btn-sm" id="verifyAllWeaponsBtn">✓ Tutte le armi</button>
+        <button class="btn btn-green btn-sm" id="verifyAllAttsBtn">✓ Tutti gli accessori</button>
+        <button class="btn btn-green btn-sm" id="verifyAllCompatBtn">✓ Tutte le compatibilità</button>
+        <button class="btn btn-purple btn-sm" id="verifyAllBtn">⚡ Verifica tutto</button>
+        <span id="verifyAllResult" style="font-size:12px;color:var(--muted);align-self:center;margin-left:6px;"></span>
+      </div>
+      <div id="unverifiedList">Caricamento…</div>
+    </div>
+
+    <!-- ── TAB IMPORTA ── -->
+    <div class="db-tabpanel" id="dbtab-importa">
+      <div class="form-panel" style="margin-bottom:18px;">
+        <h3>📥 Importa armi</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+          <b>JSON:</b> <code>[{"id":"kilo-141","nome":"KILO 141","categoria":"Fucile d'assalto","gioco":"Warzone"}]</code><br>
+          <b>CSV</b> (senza header): <code>id,nome,categoria,gioco</code> — tutti importati come non verificati.
+        </p>
+        <textarea id="importWeaponsText" class="import-ta" placeholder="Incolla JSON o CSV…"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+          <input type="text" id="importWeaponsFonte" placeholder="Fonte (es. CODMunity)" style="max-width:200px;"/>
+          <button class="btn btn-purple btn-sm" id="importWeaponsBtn">📥 Importa armi</button>
+          <span class="import-result" id="importWeaponsResult"></span>
+        </div>
+      </div>
+
+      <div class="form-panel" style="margin-bottom:18px;">
+        <h3>📥 Importa accessori</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+          <b>JSON:</b> <code>[{"id":"mono-supp","nome":"Monolithic Suppressor","tipo":"Muzzle"}]</code><br>
+          I tipi inglesi vengono convertiti automaticamente. <b>CSV:</b> <code>id,nome,tipo</code>
+        </p>
+        <textarea id="importAttText" class="import-ta" placeholder="Incolla JSON o CSV…"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+          <input type="text" id="importAttFonte" placeholder="Fonte (es. CODMunity)" style="max-width:200px;"/>
+          <button class="btn btn-purple btn-sm" id="importAttBtn">📥 Importa accessori</button>
+          <span class="import-result" id="importAttResult"></span>
+        </div>
+      </div>
+
+      <div class="form-panel">
+        <h3>📥 Importa compatibilità</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+          <b>JSON:</b> <code>[{"armaId":"kilo-141","accessorioId":"mono-supp"}]</code><br>
+          <b>CSV:</b> <code>armaId,accessorioId</code> — aggiorna anche la compatibilità negli accessori.
+        </p>
+        <textarea id="importCompatText" class="import-ta" placeholder="Incolla JSON o CSV…"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+          <input type="text" id="importCompatFonte" placeholder="Fonte (es. CODMunity)" style="max-width:200px;"/>
+          <button class="btn btn-purple btn-sm" id="importCompatBtn">📥 Importa compatibilità</button>
+          <span class="import-result" id="importCompatResult"></span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /section-card database -->
 
 </div><!-- /main -->
 
@@ -281,6 +422,9 @@
 </div>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   RØDA Admin Loadout — script completo
+═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
 /* ── Escape XSS ──────────────────────────────────────────────────────────── */
@@ -564,6 +708,7 @@ async function fetchAttachmentsAdmin() {
 
 function renderCompatList() {
   const el = document.getElementById('compatList');
+  if (!el) return; // elemento opzionale — non crash se assente
   if (!_weaponsCache.length) {
     el.innerHTML = '<span style="color:var(--muted);font-size:12px;">Prima aggiungi almeno un\'arma.</span>';
     return;
@@ -634,6 +779,462 @@ async function toggleAttachment(id, chk) {
   }
 }
 
+/* ── DB Tab switching ────────────────────────────────────────────────────── */
+document.querySelectorAll('.db-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.db-tabpanel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('dbtab-' + btn.dataset.dbtab);
+    if (panel) panel.classList.add('active');
+    // Carica dati "da verificare" quando apro quel tab
+    if (btn.dataset.dbtab === 'daVerificare') renderUnverified();
+    if (btn.dataset.dbtab === 'compat')       fetchDatabase();
+  });
+});
+
+/* ── Salva arma (aggiornato con nuovi campi) ─────────────────────────────── */
+function setFormMsg(elId, msg, ok) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = ok ? 'rgba(24,201,100,.15)' : 'rgba(255,77,109,.15)';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+async function saveWeapon() {
+  const id         = document.getElementById('wId').value.trim();
+  const nome       = document.getElementById('wNome').value.trim();
+  const categoria  = document.getElementById('wCat').value;
+  const gioco      = document.getElementById('wGioco').value;
+  const fonte      = document.getElementById('wFonte').value.trim();
+  const note       = document.getElementById('wNote').value.trim();
+  const attiva     = document.getElementById('wAttiva').checked;
+  const verificata = document.getElementById('wVerificata').checked;
+  if (!id || !nome) {
+    setFormMsg('weaponFormMsg', '⚠ Compila ID e Nome prima di salvare.', false);
+    setStatus('Compila ID e Nome prima di salvare.', false);
+    return;
+  }
+  const d = await api('/api/admin/loadout/weapons', {
+    method: 'POST',
+    body: JSON.stringify({ id, nome, categoria, gioco, fonte, note, attiva, verificata })
+  });
+  if (d && d.ok) {
+    setFormMsg('weaponFormMsg', '✅ Arma salvata correttamente!', true);
+    setStatus('✅ Arma salvata!', true);
+    await fetchWeaponsAdmin();
+    await fetchDatabase();
+  } else {
+    const msg = d?.message || 'Errore salvataggio arma.';
+    setFormMsg('weaponFormMsg', '❌ ' + msg, false);
+    setStatus(msg, false);
+  }
+}
+
+function clearWeaponForm() {
+  document.getElementById('wId').value    = '';
+  document.getElementById('wNome').value  = '';
+  document.getElementById('wFonte').value = '';
+  document.getElementById('wNote').value  = '';
+  document.getElementById('wAttiva').checked    = true;
+  document.getElementById('wVerificata').checked = false;
+}
+
+/* ── Salva accessorio (aggiornato con nuovi campi) ───────────────────────── */
+async function saveAttachment() {
+  const id         = document.getElementById('aId').value.trim();
+  const nome       = document.getElementById('aNome').value.trim();
+  const tipo       = document.getElementById('aTipo').value;
+  const fonte      = document.getElementById('aFonte').value.trim();
+  const note       = document.getElementById('aNote').value.trim();
+  const attivo     = document.getElementById('aAttivo').checked;
+  const verificato = document.getElementById('aVerificato').checked;
+  if (!id || !nome) {
+    setFormMsg('attFormMsg', '⚠ Compila ID e Nome prima di salvare.', false);
+    setStatus('Compila ID e Nome prima di salvare.', false);
+    return;
+  }
+  const d = await api('/api/admin/loadout/attachments', {
+    method: 'POST',
+    body: JSON.stringify({ id, nome, tipo, fonte, note, attivo, verificato, armiCompatibili: [] })
+  });
+  if (d && d.ok) {
+    setFormMsg('attFormMsg', '✅ Accessorio salvato correttamente!', true);
+    setStatus('✅ Accessorio salvato!', true);
+    await fetchAttachmentsAdmin();
+    await fetchDatabase();
+  } else {
+    const msg = d?.message || 'Errore salvataggio accessorio.';
+    setFormMsg('attFormMsg', '❌ ' + msg, false);
+    setStatus(msg, false);
+  }
+}
+
+function clearAttForm() {
+  document.getElementById('aId').value    = '';
+  document.getElementById('aNome').value  = '';
+  document.getElementById('aFonte').value = '';
+  document.getElementById('aNote').value  = '';
+  document.getElementById('aAttivo').checked    = true;
+  document.getElementById('aVerificato').checked = false;
+}
+
+/* ── Database (compat + selects) ─────────────────────────────────────────── */
+let _compatCache = [];
+
+async function fetchDatabase() {
+  const data = await api('/api/admin/loadout/database');
+  if (!data || !data.ok) return;
+  _compatCache = data.compatibility || [];
+  updateCompatTable(_compatCache);
+  populateCompatSelects();
+}
+
+function populateCompatSelects() {
+  const wSel = document.getElementById('cArma');
+  const aSel = document.getElementById('cAcc');
+  if (!wSel || !aSel) return;
+  const prevW = wSel.value, prevA = aSel.value;
+  wSel.innerHTML = '<option value="">— Seleziona arma —</option>' +
+    _weaponsCache.map(w => `<option value="${esc(w.id)}">${esc(w.nome)}</option>`).join('');
+  aSel.innerHTML = '<option value="">— Seleziona accessorio —</option>' +
+    _attachmentsCache.map(a => `<option value="${esc(a.id)}">[${esc(a.tipo)}] ${esc(a.nome)}</option>`).join('');
+  if (prevW) wSel.value = prevW;
+  if (prevA) aSel.value = prevA;
+}
+
+function updateCompatTable(compat) {
+  const el = document.getElementById('compatTable');
+  if (!el) return;
+  if (!compat.length) {
+    el.innerHTML = '<div class="empty-msg">Nessuna compatibilità registrata. Aggiungila sopra o importala.</div>';
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Arma</th><th>Accessorio</th><th>Verificata</th><th>Fonte</th><th>Azioni</th></tr></thead>
+    <tbody>${compat.map(c => `<tr>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(c.armaId)}</code></td>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(c.accessorioId)}</code></td>
+      <td>${c.verificato ? '<span class="v-yes">✓ Sì</span>' : '<span class="v-no">⚠ No</span>'}</td>
+      <td>${c.fonte ? `<span class="fonte-chip">${esc(c.fonte)}</span>` : '—'}</td>
+      <td style="display:flex;gap:6px;">
+        ${!c.verificato ? `<button class="btn btn-green btn-xs"
+          data-action="verify-compat" data-arma="${esc(c.armaId)}" data-acc="${esc(c.accessorioId)}"
+          title="Verifica">✓</button>` : ''}
+        <button class="btn btn-red btn-xs"
+          data-action="delete-compat" data-arma="${esc(c.armaId)}" data-acc="${esc(c.accessorioId)}"
+          title="Elimina">🗑️</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function saveCompat() {
+  const armaId      = document.getElementById('cArma').value;
+  const accessorioId = document.getElementById('cAcc').value;
+  const fonte       = document.getElementById('cFonte').value.trim();
+  const note        = document.getElementById('cNote').value.trim();
+  const verificata  = document.getElementById('cVerificata').checked;
+  if (!armaId || !accessorioId) { setStatus('Seleziona arma e accessorio.', false); return; }
+  const d = await api('/api/admin/loadout/compatibility', {
+    method: 'POST',
+    body: JSON.stringify({ armaId, accessorioId, fonte, note, verificato: verificata })
+  });
+  if (d && d.ok) {
+    setStatus('✅ Compatibilità salvata!', true);
+    document.getElementById('cFonte').value = '';
+    document.getElementById('cNote').value  = '';
+    document.getElementById('cVerificata').checked = false;
+    await fetchDatabase();
+    await fetchAttachmentsAdmin();
+  } else {
+    setStatus(d?.message || 'Errore salvataggio compatibilità.', false);
+  }
+}
+
+async function deleteCompat(armaId, accessorioId) {
+  if (!await rodaConfirm(`Rimuovere compatibilità ${armaId} ↔ ${accessorioId}?`, 'Elimina', 'Annulla')) return;
+  const d = await api('/api/admin/loadout/compatibility', {
+    method: 'DELETE',
+    body: JSON.stringify({ armaId, accessorioId })
+  });
+  if (d && d.ok) { setStatus('Compatibilità rimossa.', true); await fetchDatabase(); await fetchAttachmentsAdmin(); }
+  else setStatus(d?.message || 'Errore.', false);
+}
+
+/* ── Verifica / Disabilita / Elimina record ──────────────────────────────── */
+async function verifyRecord(type, id, armaId, accessorioId) {
+  const d = await api('/api/admin/loadout/verify', {
+    method: 'POST',
+    body: JSON.stringify({ type, id, armaId, accessorioId })
+  });
+  if (d && d.ok) {
+    setStatus('✅ Verificato — ora visibile nel pubblico!', true);
+    await loadAll();
+  } else setStatus(d?.message || 'Errore verifica.', false);
+}
+
+async function disableRecord(type, id) {
+  if (!await rodaConfirm(`Disattivare questo ${type === 'weapon' ? 'arma' : 'accessorio'}?`, 'Disattiva', 'Annulla')) return;
+  const d = await api('/api/admin/loadout/disable', {
+    method: 'POST', body: JSON.stringify({ type, id })
+  });
+  if (d && d.ok) { setStatus('⛔ Disattivato.', true); await fetchWeaponsAdmin(); await fetchAttachmentsAdmin(); }
+  else setStatus(d?.message || 'Errore.', false);
+}
+
+async function deleteRecord(type, id) {
+  if (!await rodaConfirm(`Eliminare definitivamente questo elemento?`, 'Elimina', 'Annulla')) return;
+  const d = await api(`/api/admin/loadout/database/${type}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  if (d && d.ok) {
+    setStatus('Eliminato.', true);
+    await fetchWeaponsAdmin(); await fetchAttachmentsAdmin(); await fetchDatabase();
+  } else setStatus(d?.message || 'Errore.', false);
+}
+
+/* ── "Da verificare" ─────────────────────────────────────────────────────── */
+function renderUnverified() {
+  const el = document.getElementById('unverifiedList');
+  if (!el) return;
+  const uvW = _weaponsCache.filter(w => !w.verificata);
+  const uvA = _attachmentsCache.filter(a => !a.verificato);
+  const uvC = _compatCache.filter(c => !c.verificato);
+  const total = uvW.length + uvA.length + uvC.length;
+  const bdg = document.getElementById('bdgUnverified');
+  if (bdg) bdg.textContent = total ? `(${total})` : '';
+  if (!total) {
+    el.innerHTML = '<div class="empty-msg" style="padding:32px">✅ Tutto verificato — nessun elemento in attesa.</div>';
+    return;
+  }
+  let html = '';
+  if (uvW.length) {
+    html += `<div style="margin-bottom:14px;font-size:13px;font-weight:700;color:var(--yellow)">Armi non verificate (${uvW.length})</div>
+    <table style="margin-bottom:20px">
+      <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Fonte</th><th>Azioni</th></tr></thead>
+      <tbody>${uvW.map(w => `<tr>
+        <td><code style="font-size:11px;color:var(--muted)">${esc(w.id)}</code></td>
+        <td>${esc(w.nome)}</td>
+        <td><span class="att-pill">${esc(w.categoria)}</span></td>
+        <td>${w.fonte ? `<span class="fonte-chip">${esc(w.fonte)}</span>` : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-green btn-xs" data-action="verify-weapon" data-id="${esc(w.id)}" title="Verifica e pubblica">✓ Verifica</button>
+          <button class="btn btn-red btn-xs" data-action="delete-weapon" data-id="${esc(w.id)}" title="Elimina">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+  if (uvA.length) {
+    html += `<div style="margin-bottom:14px;font-size:13px;font-weight:700;color:var(--yellow)">Accessori non verificati (${uvA.length})</div>
+    <table style="margin-bottom:20px">
+      <thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Fonte</th><th>Azioni</th></tr></thead>
+      <tbody>${uvA.map(a => `<tr>
+        <td><code style="font-size:11px;color:var(--muted)">${esc(a.id)}</code></td>
+        <td>${esc(a.nome)}</td>
+        <td><span class="att-pill">${esc(a.tipo)}</span></td>
+        <td>${a.fonte ? `<span class="fonte-chip">${esc(a.fonte)}</span>` : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-green btn-xs" data-action="verify-attachment" data-id="${esc(a.id)}" title="Verifica e pubblica">✓ Verifica</button>
+          <button class="btn btn-red btn-xs" data-action="delete-attachment" data-id="${esc(a.id)}" title="Elimina">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+  if (uvC.length) {
+    html += `<div style="margin-bottom:14px;font-size:13px;font-weight:700;color:var(--yellow)">Compatibilità non verificate (${uvC.length})</div>
+    <table>
+      <thead><tr><th>Arma</th><th>Accessorio</th><th>Fonte</th><th>Azioni</th></tr></thead>
+      <tbody>${uvC.map(c => `<tr>
+        <td><code style="font-size:11px;color:var(--muted)">${esc(c.armaId)}</code></td>
+        <td><code style="font-size:11px;color:var(--muted)">${esc(c.accessorioId)}</code></td>
+        <td>${c.fonte ? `<span class="fonte-chip">${esc(c.fonte)}</span>` : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-green btn-xs"
+            data-action="verify-compat" data-arma="${esc(c.armaId)}" data-acc="${esc(c.accessorioId)}"
+            title="Verifica">✓ Verifica</button>
+          <button class="btn btn-red btn-xs"
+            data-action="delete-compat" data-arma="${esc(c.armaId)}" data-acc="${esc(c.accessorioId)}"
+            title="Elimina">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ── Tabelle armi/accessori aggiornate con nuovi campi ───────────────────── */
+function updateWeaponsTable(weapons) {
+  const el = document.getElementById('weaponsTable');
+  if (!weapons.length) {
+    el.innerHTML = '<div class="empty-msg">Nessuna arma presente. Aggiungi la prima arma dal form sopra.</div>';
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Gioco</th><th>Attiva</th><th>Verif.</th><th>Fonte</th><th>Azioni</th></tr></thead>
+    <tbody>${weapons.map(w => `<tr>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(w.id)}</code></td>
+      <td>${esc(w.nome)}</td>
+      <td><span class="att-pill">${esc(w.categoria)}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${esc(w.gioco || 'Warzone')}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${w.attiva ? 'checked' : ''} data-action="toggle-weapon" data-id="${esc(w.id)}"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>${w.verificata ? '<span class="v-yes">✓</span>' : '<span class="v-no">⚠</span>'}</td>
+      <td>${w.fonte ? `<span class="fonte-chip">${esc(w.fonte)}</span>` : '—'}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-muted btn-xs" data-action="edit-weapon" data-id="${esc(w.id)}" title="Modifica">✏️</button>
+        ${!w.verificata ? `<button class="btn btn-green btn-xs" data-action="verify-weapon" data-id="${esc(w.id)}" title="Verifica">✓</button>` : ''}
+        <button class="btn btn-red btn-xs" data-action="delete-weapon" data-id="${esc(w.id)}" title="Elimina">🗑️</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function updateAttachmentsTable(atts) {
+  const el = document.getElementById('attachmentsTable');
+  if (!atts.length) {
+    el.innerHTML = '<div class="empty-msg">Nessun accessorio presente. Aggiungi il primo accessorio dal form sopra.</div>';
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Attivo</th><th>Verif.</th><th>Fonte</th><th>Azioni</th></tr></thead>
+    <tbody>${atts.map(a => `<tr>
+      <td><code style="font-size:11px;color:var(--muted)">${esc(a.id)}</code></td>
+      <td>${esc(a.nome)}</td>
+      <td><span class="att-pill">${esc(a.tipo)}</span></td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${a.attivo ? 'checked' : ''} data-action="toggle-att" data-id="${esc(a.id)}"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>${a.verificato ? '<span class="v-yes">✓</span>' : '<span class="v-no">⚠</span>'}</td>
+      <td>${a.fonte ? `<span class="fonte-chip">${esc(a.fonte)}</span>` : '—'}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-muted btn-xs" data-action="edit-attachment" data-id="${esc(a.id)}" title="Modifica">✏️</button>
+        ${!a.verificato ? `<button class="btn btn-green btn-xs" data-action="verify-attachment" data-id="${esc(a.id)}" title="Verifica">✓</button>` : ''}
+        <button class="btn btn-red btn-xs" data-action="delete-attachment" data-id="${esc(a.id)}" title="Elimina">🗑️</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+/* ── IMPORT: parser JSON o CSV ───────────────────────────────────────────── */
+function parseImportText(text, csvKeys) {
+  const t = text.trim();
+  if (!t) return null;
+  // Prova JSON
+  if (t.startsWith('[') || t.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(t);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      return { error: 'JSON non valido: ' + e.message };
+    }
+  }
+  // Prova CSV
+  const lines = t.split(/\r?\n/).filter(l => l.trim());
+  return lines.map(line => {
+    const vals = line.split(',').map(v => v.trim());
+    const obj = {};
+    csvKeys.forEach((k, i) => { obj[k] = vals[i] || ''; });
+    return obj;
+  });
+}
+
+async function importWeapons() {
+  const text  = document.getElementById('importWeaponsText').value;
+  const fonte = document.getElementById('importWeaponsFonte').value.trim();
+  const result = parseImportText(text, ['id','nome','categoria','gioco']);
+  const resEl = document.getElementById('importWeaponsResult');
+  if (!result) { resEl.textContent = '⚠ Nessun dato inserito.'; return; }
+  if (result.error) { resEl.textContent = '❌ ' + result.error; return; }
+  resEl.textContent = 'Importazione in corso…';
+  const d = await api('/api/admin/loadout/import/weapons', {
+    method: 'POST', body: JSON.stringify({ items: result, fonte })
+  });
+  if (d && d.ok) {
+    resEl.textContent = `✅ Armi: +${d.added} aggiunte, ${d.updated} aggiornate, ${d.skipped} saltate.`;
+    await fetchWeaponsAdmin();
+  } else resEl.textContent = '❌ ' + (d?.message || 'Errore importazione.');
+}
+
+async function importAttachments() {
+  const text  = document.getElementById('importAttText').value;
+  const fonte = document.getElementById('importAttFonte').value.trim();
+  const result = parseImportText(text, ['id','nome','tipo']);
+  const resEl = document.getElementById('importAttResult');
+  if (!result) { resEl.textContent = '⚠ Nessun dato inserito.'; return; }
+  if (result.error) { resEl.textContent = '❌ ' + result.error; return; }
+  resEl.textContent = 'Importazione in corso…';
+  const d = await api('/api/admin/loadout/import/attachments', {
+    method: 'POST', body: JSON.stringify({ items: result, fonte })
+  });
+  if (d && d.ok) {
+    const errs = d.errors && d.errors.length ? ' | ⚠ ' + d.errors.join('; ') : '';
+    resEl.textContent = `✅ Accessori: +${d.added} aggiunte, ${d.updated} aggiornate, ${d.skipped} saltate.${errs}`;
+    await fetchAttachmentsAdmin();
+  } else resEl.textContent = '❌ ' + (d?.message || 'Errore importazione.');
+}
+
+async function importCompat() {
+  const text  = document.getElementById('importCompatText').value;
+  const fonte = document.getElementById('importCompatFonte').value.trim();
+  const result = parseImportText(text, ['armaId','accessorioId']);
+  const resEl = document.getElementById('importCompatResult');
+  if (!result) { resEl.textContent = '⚠ Nessun dato inserito.'; return; }
+  if (result.error) { resEl.textContent = '❌ ' + result.error; return; }
+  resEl.textContent = 'Importazione in corso…';
+  const d = await api('/api/admin/loadout/import/compatibility', {
+    method: 'POST', body: JSON.stringify({ items: result, fonte })
+  });
+  if (d && d.ok) {
+    resEl.textContent = `✅ Compat: +${d.added} aggiunte, ${d.updated} aggiornate, ${d.skipped} saltate.`;
+    await fetchDatabase(); await fetchAttachmentsAdmin();
+  } else resEl.textContent = '❌ ' + (d?.message || 'Errore importazione.');
+}
+
+/* ── Aggiorna edit weapon per includere nuovi campi ─────────────────────── */
+// Override nel delegation handler già esistente
+const _origDelegation = null; // handled inline below via extended delegation
+
+/* ── Verifica in blocco ──────────────────────────────────────────────────── */
+async function verifyAll(type) {
+  const labelMap = {
+    weapons:       'tutte le armi',
+    attachments:   'tutti gli accessori',
+    compatibility: 'tutte le compatibilità',
+    all:           'tutto il database non verificato'
+  };
+  const label = labelMap[type] || type;
+  if (!await rodaConfirm(
+    `Verificare ${label}? Tutti gli elementi non ancora verificati diventeranno visibili nel pubblico.`,
+    'Verifica', 'Annulla'
+  )) return;
+  const resEl = document.getElementById('verifyAllResult');
+  if (resEl) resEl.textContent = 'Elaborazione…';
+  const d = await api('/api/admin/loadout/verify-all', {
+    method: 'POST',
+    body: JSON.stringify({ type })
+  });
+  if (d && d.ok) {
+    const msg = `✅ ${d.updated} element${d.updated === 1 ? 'o verificato' : 'i verificati'}.`;
+    if (resEl) { resEl.textContent = msg; resEl.style.color = 'var(--green)'; }
+    setStatus(msg, true);
+    await loadAll();
+  } else {
+    const msg = '❌ ' + (d?.message || 'Errore verifica batch.');
+    if (resEl) { resEl.textContent = msg; resEl.style.color = 'var(--red)'; }
+    setStatus(d?.message || 'Errore verifica batch.', false);
+  }
+}
+
 /* ── Topbar buttons ──────────────────────────────────────────────────────── */
 document.getElementById('refreshBtn').addEventListener('click', loadAll);
 
@@ -642,7 +1243,98 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   location.href = '/login';
 });
 
+document.getElementById('saveWeaponBtn').addEventListener('click', saveWeapon);
+document.getElementById('clearWeaponFormBtn').addEventListener('click', clearWeaponForm);
+document.getElementById('saveAttachmentBtn').addEventListener('click', saveAttachment);
+document.getElementById('clearAttFormBtn').addEventListener('click', clearAttForm);
+document.getElementById('saveCompatBtn').addEventListener('click', saveCompat);
+document.getElementById('importWeaponsBtn').addEventListener('click', importWeapons);
+document.getElementById('importAttBtn').addEventListener('click', importAttachments);
+document.getElementById('importCompatBtn').addEventListener('click', importCompat);
+document.getElementById('verifyAllWeaponsBtn').addEventListener('click', () => verifyAll('weapons'));
+document.getElementById('verifyAllAttsBtn').addEventListener('click',    () => verifyAll('attachments'));
+document.getElementById('verifyAllCompatBtn').addEventListener('click',  () => verifyAll('compatibility'));
+document.getElementById('verifyAllBtn').addEventListener('click',        () => verifyAll('all'));
+
+/* ── Extended event delegation (aggiunge i nuovi data-action) ────────────── */
+// I data-action esistenti (edit-weapon, edit-attachment, toggle-weapon, toggle-att,
+// approve-build, reject-build, delete-build) sono già gestiti dal listener precedente.
+// Aggiungo i nuovi data-action tramite listener aggiuntivo separato.
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+
+  if (action === 'verify-weapon') {
+    verifyRecord('weapon', btn.dataset.id);
+  } else if (action === 'verify-attachment') {
+    verifyRecord('attachment', btn.dataset.id);
+  } else if (action === 'verify-compat') {
+    verifyRecord('compatibility', null, btn.dataset.arma, btn.dataset.acc);
+  } else if (action === 'delete-weapon') {
+    deleteRecord('weapon', btn.dataset.id);
+  } else if (action === 'delete-attachment') {
+    deleteRecord('attachment', btn.dataset.id);
+  } else if (action === 'delete-compat') {
+    deleteCompat(btn.dataset.arma, btn.dataset.acc);
+  }
+  // Gli altri (edit-weapon, edit-attachment, toggle-*, *-build) sono già gestiti
+  // dal listener precedente — non serve aggiungere console.warn qui.
+});
+
+/* ── Override editWeapon per includere nuovi campi dal cache ─────────────── */
+// Il listener di delegation esistente chiama il codice inline.
+// Sovrascriviamo la parte che popola il form aggiungendo i nuovi campi.
+const _baseClick = document.addEventListener; // già registrato sopra
+// Patch: quando il delegation handler originale esegue "edit-weapon",
+// aggiungiamo anche i campi extra tramite un secondo listener che controlla
+// se i campi nuovi hanno appena ricevuto un valore; oppure usiamo l'approccio
+// più semplice: nel delegation originale (nel blocco 'use strict') aggiungiamo
+// i campi mancanti direttamente. Il listener già presente è quello di riga ~343.
+// Per evitare duplicazione, aggiungiamo la patch qui:
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action="edit-weapon"]');
+  if (!btn) return;
+  const w = _weaponById.get(btn.dataset.id);
+  if (!w) return;
+  // Popola i campi extra (quelli base già popolati dal listener precedente)
+  setTimeout(() => {
+    if (document.getElementById('wGioco'))   document.getElementById('wGioco').value   = w.gioco   || 'Warzone';
+    if (document.getElementById('wFonte'))   document.getElementById('wFonte').value   = w.fonte   || '';
+    if (document.getElementById('wNote'))    document.getElementById('wNote').value    = w.note    || '';
+    if (document.getElementById('wAttiva'))  document.getElementById('wAttiva').checked  = !!w.attiva;
+    if (document.getElementById('wVerificata')) document.getElementById('wVerificata').checked = !!w.verificata;
+    // Switcha al tab armi se non attivo
+    const tabArmi = document.querySelector('[data-dbtab="armi"]');
+    if (tabArmi && !tabArmi.classList.contains('active')) tabArmi.click();
+  }, 10);
+});
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action="edit-attachment"]');
+  if (!btn) return;
+  const a = _attById.get(btn.dataset.id);
+  if (!a) return;
+  setTimeout(() => {
+    if (document.getElementById('aFonte'))    document.getElementById('aFonte').value    = a.fonte    || '';
+    if (document.getElementById('aNote'))     document.getElementById('aNote').value     = a.note     || '';
+    if (document.getElementById('aAttivo'))   document.getElementById('aAttivo').checked   = !!a.attivo;
+    if (document.getElementById('aVerificato')) document.getElementById('aVerificato').checked = !!a.verificato;
+    const tabAcc = document.querySelector('[data-dbtab="accessori"]');
+    if (tabAcc && !tabAcc.classList.contains('active')) tabAcc.click();
+  }, 10);
+});
+
 /* ── Init ────────────────────────────────────────────────────────────────── */
+async function loadAll() {
+  setStatus('Aggiornamento in corso…');
+  await Promise.all([loadBuilds(), fetchWeaponsAdmin()]);
+  await fetchAttachmentsAdmin();
+  await fetchDatabase();
+  renderUnverified(); // aggiorna badge se tab è aperto
+  setStatus('Dati aggiornati.', true);
+}
+
 loadAll();
 </script>
 </body>

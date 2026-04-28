@@ -11,7 +11,7 @@
  *   npm run build:loadout-db
  *   npm run build:loadout-db -- --limit=3
  *
- * Tutti i dati importati restano verificata/verificato:false.
+ * Con AUTO_VERIFY_CODMUNITY_IMPORTS=true, dati con categoria/slot validi vengono auto-verificati.
  */
 
 'use strict';
@@ -20,6 +20,11 @@ const fs    = require('fs');
 const path  = require('path');
 const http  = require('http');
 const https = require('https');
+
+// ─── Auto-verifica ────────────────────────────────────────────────────────────
+// Se true, armi/accessori/compat con dati validi vengono marcati verificata:true
+// automaticamente all'importazione, rendendoli visibili nel pannello pubblico.
+const AUTO_VERIFY_CODMUNITY_IMPORTS = true;
 
 // ─── Argomenti CLI ────────────────────────────────────────────────────────────
 const args  = process.argv.slice(2);
@@ -960,10 +965,11 @@ async function main() {
         categoria : resolvedCategory,
         gioco     : game,
         attiva    : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
-        verificata: existingWeapon.verificata || false,
+        verificata: existingWeapon.verificata ||
+                    (AUTO_VERIFY_CODMUNITY_IMPORTS && resolvedCategory !== 'Da verificare' && !!weaponId && !!(data.name || existingWeapon.nome)),
         fonte     : 'CODMunity',
         fonteUrl  : url,
-        note      : 'Importato automaticamente da CODMunity. Da verificare.',
+        note      : 'Importato automaticamente da CODMunity.',
         updatedAt : todayDate(),
       });
       if (isNewWeapon) report.weaponsImported++;
@@ -993,10 +999,11 @@ async function main() {
           nome      : att.name || existingAtt.nome || attId,
           tipo      : slotIT,
           attivo    : existingAtt.attivo !== undefined ? existingAtt.attivo : true,
-          verificato: existingAtt.verificato || false,
+          verificato: existingAtt.verificato ||
+                      (AUTO_VERIFY_CODMUNITY_IMPORTS && !!slotIT && !!(att.name || existingAtt.nome)),
           fonte     : 'CODMunity',
           fonteUrl  : url,
-          note      : 'Importato automaticamente da CODMunity. Da verificare.',
+          note      : 'Importato automaticamente da CODMunity.',
           updatedAt : todayDate(),
         });
         if (isNewAtt) report.attachmentsImported++;
@@ -1010,10 +1017,10 @@ async function main() {
             armaId       : weaponId,
             accessorioId : attId,
             compatibile  : true,
-            verificato   : false,
+            verificato   : AUTO_VERIFY_CODMUNITY_IMPORTS,
             fonte        : 'CODMunity',
             fonteUrl     : url,
-            note         : 'Importato automaticamente da CODMunity. Da verificare.',
+            note         : 'Importato automaticamente da CODMunity.',
             updatedAt    : todayDate(),
           });
           compatSet.add(ck);
@@ -1137,8 +1144,14 @@ async function main() {
   }
 
   console.log('\n✅ Build completato.');
-  console.log('   Dati NON verificati (verificata/verificato: false).');
-  console.log('   Approva su /admin-loadout → Database → Da verificare.\n');
+  if (AUTO_VERIFY_CODMUNITY_IMPORTS) {
+    console.log('   AUTO_VERIFY attivo: armi/accessori con dati validi già verificati (pubblici).');
+    console.log('   Armi con categoria "Da verificare" richiedono ancora verifica manuale.');
+  } else {
+    console.log('   Dati NON verificati (verificata/verificato: false).');
+    console.log('   Approva su /admin-loadout → Database → Da verificare.');
+  }
+  console.log();
 }
 
 main().catch(e => {
