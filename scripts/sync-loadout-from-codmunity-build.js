@@ -12,199 +12,168 @@ const COMPAT = path.join(DATA, 'loadout-compatibility.json');
 const REPORT = path.join(DATA, 'loadout-build-sync-report.json');
 
 const LIMIT = Number((process.argv.find(a => /^--limit=\d+$/.test(a)) || '').split('=')[1] || 0) || null;
-const PROFILE_URLS = [
-  'https://codmunity.gg/profile/CODMunity',
-  'https://codmunity.gg/it/profile/CODMunity'
-];
+const DELAY = Number(process.env.CODMUNITY_SYNC_DELAY_MS || 1400);
 
-const SLOT_LABELS = [
-  ['Ottica', ['Optic', 'Ottica']],
-  ['Volata', ['Muzzle', 'Volata']],
-  ['Canna', ['Barrel', 'Canna']],
-  ['Sottocanna', ['Underbarrel', 'Under Barrel', 'Sottocanna']],
-  ['Caricatore', ['Magazine', 'Mag', 'Caricatore']],
-  ['Impugnatura', ['Rear Grip', 'Grip', 'Impugnatura']],
-  ['Calcio', ['Stock', 'Calcio']],
-  ['Laser', ['Laser']],
-  ['Mod fuoco', ['Fire Mods', 'Fire Mod', 'Mod fuoco', 'Munizioni', 'Ammunition']]
-];
-const ALL_SLOT_WORDS = SLOT_LABELS.flatMap(([, aliases]) => aliases).sort((a, b) => b.length - a.length);
+const SLOT_ALIASES = new Map([
+  ['optic', 'Ottica'], ['ottica', 'Ottica'],
+  ['muzzle', 'Volata'], ['volata', 'Volata'],
+  ['barrel', 'Canna'], ['canna', 'Canna'],
+  ['underbarrel', 'Sottocanna'], ['under barrel', 'Sottocanna'], ['sottocanna', 'Sottocanna'],
+  ['magazine', 'Caricatore'], ['mag', 'Caricatore'], ['caricatore', 'Caricatore'],
+  ['rear grip', 'Impugnatura'], ['grip', 'Impugnatura'], ['impugnatura', 'Impugnatura'],
+  ['stock', 'Calcio'], ['calcio', 'Calcio'],
+  ['laser', 'Laser'],
+  ['fire mods', 'Mod fuoco'], ['fire mod', 'Mod fuoco'], ['mod fuoco', 'Mod fuoco'], ['munizioni', 'Mod fuoco'], ['ammunition', 'Mod fuoco']
+]);
+const SLOT_ORDER = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
 
-const BAD_RX = /\b(codmunity|discount|promo|coupon|creator code|support a creator|use code|shop|store|subscribe|newsletter|telegram|discord|twitter|instagram|youtube|tiktok|privacy|terms|cookie|login|register|tier list|patch notes|follow|download|copy link|like this|loadout by|profile|followers|seguaci|mi piace|copia link|immagini|social|last updated|ultimo aggiornamento|ready to share|change font|image|game icon)\b/i;
-const STAT_RX = /\b(ads speed|aim down sight|recoil control|damage range|bullet velocity|sprint to fire|movement speed|fire rate|mobility|handling|accuracy|damage|control)\b/i;
-const UI_RX = /^(search|select|none|empty|attachment|attachments|loadout|build|meta|recommended|close|back|clear|filter|sort|all|save|share|copy|remove|delete|cancel|confirm|apply|reset)$/i;
+const CATEGORY_MAP = new Map([
+  ['assault rifle', 'Fucile d\'assalto'], ['fucile d\'assalto', 'Fucile d\'assalto'],
+  ['smg', 'Mitraglietta'], ['submachine gun', 'Mitraglietta'], ['mitraglietta', 'Mitraglietta'],
+  ['lmg', 'Mitragliatrice leggera'], ['light machine gun', 'Mitragliatrice leggera'], ['mitragliatrice leggera', 'Mitragliatrice leggera'],
+  ['marksman rifle', 'Fucile tattico'], ['fucile tattico', 'Fucile tattico'],
+  ['battle rifle', 'Fucile da battaglia'], ['fucile da battaglia', 'Fucile da battaglia'],
+  ['sniper rifle', 'Cecchino'], ['cecchino', 'Cecchino'],
+  ['shotgun', 'Shotgun'], ['pistol', 'Pistola'], ['pistola', 'Pistola']
+]);
+
+const BAD_RX = /\b(codmunity|discount|promo|coupon|creator code|support a creator|use code|shop|store|subscribe|newsletter|telegram|discord|twitter|instagram|youtube|tiktok|privacy|terms|cookie|login|register|tier list|patch notes|follow|download|copy link|like this|loadout by|profile|followers|ready to share|change font|game icon|separator icon|image:)\b/i;
+const STAT_RX = /\b(ads speed|aim down sight|recoil control|damage range|bullet velocity|sprint to fire|movement speed|fire rate|mobility|handling|accuracy|damage|control|ttk|rpm|reload speed|magazine size|gun kick|horizontal recoil|vertical recoil|hipfire|crouch movement)\b/i;
+const UI_RX = /^(search|select|none|empty|attachment|attachments|loadout|loadouts|build|meta|recommended|close|back|clear|filter|sort|all|save|share|copy|remove|delete|cancel|confirm|apply|reset|show loadouts|add to stats comparator|open in the stats comparator)$/i;
 
 function read(file, fallback = []) {
   try {
     if (!fs.existsSync(file)) return fallback;
     const raw = fs.readFileSync(file, 'utf8');
     return raw.trim() ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
+  } catch { return fallback; }
 }
 function write(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function clean(v) { return String(v || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim(); }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function clean(v) { return String(v || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(); }
 function slug(v) { return clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 function today() { return new Date().toISOString().slice(0, 10); }
-function wid(url) { return String(url || '').split('/').filter(Boolean).pop(); }
-function game(url, entry = {}) { const m = String(url || '').match(/\/weapon\/(bo\d+)\//i); return String(entry.game || (m && m[1]) || 'Warzone').toUpperCase(); }
+function weaponIdFromUrl(url) { return String(url || '').split('/').filter(Boolean).pop(); }
+function gameFromUrl(url, entry = {}) { const m = String(url || '').match(/\/weapon\/(bo\d+)\//i); return String(entry.game || (m && m[1]) || 'Warzone').toUpperCase(); }
 function weaponNameFromId(id) { return String(id || '').split('-').map(p => p.length <= 3 ? p.toUpperCase() : p[0].toUpperCase() + p.slice(1)).join(' '); }
+function normalizeSlot(v) { return SLOT_ALIASES.get(clean(v).toLowerCase()) || null; }
+function normalizeCategory(v) { return CATEGORY_MAP.get(clean(v).toLowerCase()) || null; }
+function isLevelLine(v) { return /^level\s*\d+$/i.test(clean(v)) || /^lvl\s*\d+$/i.test(clean(v)); }
+function badAttachmentName(v) {
+  const n = clean(v);
+  if (!n || n.length < 2 || n.length > 60 || !/[a-zA-Z0-9]/.test(n)) return true;
+  if (normalizeSlot(n)) return true;
+  if (isLevelLine(n) || /unlock|unlocked|required|weapon level|player level|max level/i.test(n)) return true;
+  if (/^\+?\-?\d+(\.\d+)?%?$/.test(n)) return true;
+  if (BAD_RX.test(n) || STAT_RX.test(n) || UI_RX.test(n)) return true;
+  if (n.includes('://') || n.includes('.gg') || n.includes('@')) return true;
+  if (n.split(' ').length > 7) return true;
+  return false;
+}
 function weaponList() {
   return read(URLS, []).map((entry, index) => {
     const url = typeof entry === 'string' ? entry : entry.url;
     return {
-      id: wid(url),
+      id: weaponIdFromUrl(url),
       url,
-      game: game(url, entry || {}),
+      game: gameFromUrl(url, entry || {}),
       codmunityOrder: Number((entry && entry.codmunityOrder) || index + 1),
       discoveredAt: (entry && entry.discoveredAt) || today()
     };
   }).filter(x => x.id && x.url).slice(0, LIMIT || undefined);
 }
-function normalizeSlot(label) {
-  const key = clean(label).toLowerCase();
-  for (const [italian, aliases] of SLOT_LABELS) {
-    if (aliases.some(a => a.toLowerCase() === key)) return italian;
+
+function extractCategory(lines) {
+  for (let i = 0; i < lines.length - 1; i++) {
+    const l = lines[i].toLowerCase();
+    if (l === 'weapon category' || l === 'categoria arma') {
+      const cat = normalizeCategory(lines[i + 1]);
+      if (cat) return cat;
+    }
   }
-  return null;
-}
-function badAttachmentName(name) {
-  const n = clean(name);
-  if (!n || n.length < 2 || n.length > 58 || !/[a-zA-Z0-9]/.test(n)) return true;
-  if (/^level\s*\d+$/i.test(n) || /unlock|unlocked|required|weapon level|player level|max level/i.test(n)) return true;
-  if (/^\+?\-?\d+(\.\d+)?%?$/.test(n)) return true;
-  if (BAD_RX.test(n) || STAT_RX.test(n) || UI_RX.test(n)) return true;
-  if (n.includes('://') || n.includes('.gg') || n.includes('@')) return true;
-  if (ALL_SLOT_WORDS.some(s => s.toLowerCase() === n.toLowerCase())) return true;
-  if (n.split(' ').length > 6) return true;
-  return false;
-}
-function cleanAttachmentName(name) {
-  return clean(name)
-    .replace(/\s+Level\s*\d+$/i, '')
-    .replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i, '')
-    .replace(/\s+Required\s+Level\s*\d+$/i, '')
-    .replace(/\s+\+?\-?\d+(\.\d+)?%$/i, '')
-    .trim();
+  for (const line of lines.slice(0, 120)) {
+    const cat = normalizeCategory(line);
+    if (cat) return cat;
+  }
+  return '';
 }
 
-function parseAttachmentsFromText(text) {
-  const compact = clean(text.replace(/\n+/g, ' '));
-  const labels = ALL_SLOT_WORDS.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const rx = new RegExp(`\\b(${labels})\\b\\s+(.+?)(?=\\b(?:${labels})\\b|Last Updated|Ultimo aggiornamento|Playstyle|Stile di gioco|Like this|Mi piace|Copy|Copia|Follow|CODMUNITY|$)`, 'gi');
-  const out = [];
-  let match;
-  while ((match = rx.exec(compact))) {
-    const slot = normalizeSlot(match[1]);
-    let name = cleanAttachmentName(match[2]);
-    name = name.replace(/^(Image|Immagine)\s+/i, '').trim();
-    if (!slot || badAttachmentName(name)) continue;
-    out.push({ slot, name });
+function extractAttachmentSection(lines, weaponName) {
+  const lowerWeapon = clean(weaponName).toLowerCase();
+  const starts = [];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].toLowerCase();
+    if (l.includes(`${lowerWeapon} attachments`) || l.includes(`accessori per ${lowerWeapon}`) || l === 'attachments' || l === 'accessori') {
+      starts.push(i);
+    }
   }
+  let start = starts.length ? starts[starts.length - 1] : -1;
+  if (start === -1) start = lines.findIndex(l => /all the attachments available/i.test(l) || /tutti gli accessori disponibili/i.test(l));
+  if (start === -1) return [];
+  let end = lines.length;
+  for (let i = start + 5; i < lines.length; i++) {
+    if (/^(best |creator |camo |balancing|statistics|warzone .* statistics|migliori |loadouts dei creatori|mimetiche|statistiche)/i.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start, end);
+}
+
+function parseAttachments(lines) {
+  const out = [];
   const seen = new Set();
-  return out.filter(item => {
-    const key = item.slot + '__' + slug(item.name);
-    if (seen.has(key)) return false;
+  for (let i = 0; i < lines.length - 1; i++) {
+    const name = clean(lines[i]);
+    const next = clean(lines[i + 1]);
+    const next2 = clean(lines[i + 2]);
+    const next3 = clean(lines[i + 3]);
+    let sl = normalizeSlot(next);
+    let advance = 1;
+    if (!sl && isLevelLine(next) && normalizeSlot(next2)) { sl = normalizeSlot(next2); advance = 2; }
+    if (!sl && normalizeSlot(next2) && isLevelLine(next3)) { sl = normalizeSlot(next2); advance = 2; }
+    if (!sl || badAttachmentName(name)) continue;
+    const key = sl + '__' + slug(name);
+    if (seen.has(key)) continue;
     seen.add(key);
-    return true;
+    out.push({ slot: sl, name });
+    i += advance;
+  }
+  return out.sort((a, b) => {
+    const sa = SLOT_ORDER.indexOf(a.slot);
+    const sb = SLOT_ORDER.indexOf(b.slot);
+    if (sa !== sb) return sa - sb;
+    return a.name.localeCompare(b.name, 'it');
   });
 }
 
-function textMatchesWeapon(text, weapon, weaponRecord) {
-  const s = slug(text);
-  const names = [weapon.id, weaponNameFromId(weapon.id), weaponRecord && weaponRecord.nome]
-    .filter(Boolean)
-    .map(slug)
-    .filter(Boolean);
-  return names.some(n => s.includes(n));
-}
-
-async function collectOfficialCodmunityLoadouts(page, weapons, weaponRecords) {
-  const map = new Map();
-  const debug = [];
-
-  for (const url of PROFILE_URLS) {
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 70000 });
-    await sleep(1500);
-    for (let i = 0; i < 14; i++) {
-      await page.evaluate(() => window.scrollBy(0, Math.floor(window.innerHeight * 0.85))).catch(() => {});
-      await sleep(450);
-    }
-
-    const cards = await page.evaluate(() => {
-      const bad = el => el.closest('header,footer,nav,[class*="cookie"],[class*="modal"],[class*="ad"],[class*="promo"],[class*="discount"],[class*="social"]');
-      const texts = [];
-      const selectors = 'article,a,[class*="loadout"],[class*="card"],[class*="grid"] > div,li';
-      for (const el of Array.from(document.querySelectorAll(selectors))) {
-        if (bad(el)) continue;
-        const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
-        if (text.length < 35 || text.length > 900) continue;
-        if (!/\b(Optic|Muzzle|Barrel|Underbarrel|Magazine|Rear Grip|Stock|Laser|Fire Mods|Ottica|Volata|Canna|Sottocanna|Caricatore|Impugnatura|Calcio|Mod fuoco)\b/i.test(text)) continue;
-        texts.push(text);
-      }
-      return Array.from(new Set(texts));
-    });
-
-    debug.push({ url, cardsFound: cards.length });
-
-    for (const cardText of cards) {
-      const attachments = parseAttachmentsFromText(cardText);
-      if (!attachments.length) continue;
-      for (const weapon of weapons) {
-        const record = weaponRecords.find(w => w.id === weapon.id);
-        if (!textMatchesWeapon(cardText, weapon, record)) continue;
-        const current = map.get(weapon.id) || [];
-        map.set(weapon.id, mergeAttachmentArrays(current, attachments));
-      }
-    }
-  }
-
-  return { map, debug };
-}
-
-function mergeAttachmentArrays(a, b) {
-  const out = [...a];
-  const seen = new Set(out.map(x => x.slot + '__' + slug(x.name)));
-  for (const item of b) {
-    const key = item.slot + '__' + slug(item.name);
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(item);
-    }
-  }
-  return out;
-}
-
 function resetCodmunityData(attachments, compatibility) {
-  const keptAttachments = attachments.filter(a => !String(a.fonte || '').includes('CODMunity'));
+  const codIds = new Set(attachments.filter(a => String(a.fonte || '').includes('CODMunity')).map(a => a.id));
+  const keptAttachments = attachments.filter(a => !codIds.has(a.id));
   const keptIds = new Set(keptAttachments.map(a => a.id));
   const keptCompatibility = compatibility.filter(c => keptIds.has(c.accessorioId) && !String(c.fonte || '').includes('CODMunity'));
-  const removed = {
-    attachments: attachments.length - keptAttachments.length,
-    compatibility: compatibility.length - keptCompatibility.length
-  };
+  const removed = { attachments: attachments.length - keptAttachments.length, compatibility: compatibility.length - keptCompatibility.length };
   attachments.splice(0, attachments.length, ...keptAttachments);
   compatibility.splice(0, compatibility.length, ...keptCompatibility);
   return removed;
 }
 
-function mergeWeapon(weapons, weapon) {
+function mergeWeapon(weapons, weapon, category) {
   const index = weapons.findIndex(w => w.id === weapon.id);
   const base = index >= 0 ? weapons[index] : {};
   const record = {
     ...base,
     id: weapon.id,
     nome: base.nome || weaponNameFromId(weapon.id),
+    categoria: category || base.categoria || 'Da verificare',
     gioco: weapon.game || base.gioco || 'Warzone',
     attiva: true,
     verificata: true,
-    fonte: 'CODMunity official profile',
-    fonteUrl: 'https://codmunity.gg/profile/CODMunity',
+    fonte: 'CODMunity weapon page',
+    fonteUrl: weapon.url,
     stato: base.stato && ['bloccato', 'disattivato'].includes(base.stato) ? base.stato : 'pubblico',
     codmunityOrder: base.codmunityOrder || weapon.codmunityOrder,
     discoveredAt: base.discoveredAt || weapon.discoveredAt,
@@ -219,137 +188,72 @@ function mergeData(attachments, compatibility, weapon, items) {
   const compMap = new Map(compatibility.map(c => [`${c.armaId}__${c.accessorioId}`, c]));
   let newA = 0;
   let newC = 0;
-
   items.forEach((item, index) => {
-    const name = cleanAttachmentName(item.name);
-    const sl = item.slot;
-    if (!sl || badAttachmentName(name)) return;
-    const id = slug(name);
+    if (!item.slot || badAttachmentName(item.name)) return;
+    const id = slug(item.name);
     if (!id) return;
-
     if (!attMap.has(id)) {
-      const att = {
-        id,
-        nome: name,
-        tipo: sl,
-        attivo: true,
-        verificato: true,
-        fonte: 'CODMunity official profile',
-        fonteUrl: 'https://codmunity.gg/profile/CODMunity',
-        note: 'Accessorio importato da loadout ufficiali CODMunity, non da testo generico della pagina.',
-        updatedAt: today(),
-        stato: 'pubblico',
-        codmunityOrder: index + 1
-      };
-      attachments.push(att);
-      attMap.set(id, att);
-      newA++;
+      const att = { id, nome: item.name, tipo: item.slot, attivo: true, verificato: true, fonte: 'CODMunity weapon page', fonteUrl: weapon.url, note: 'Accessorio importato dalla sezione Attachments della pagina arma CODMunity.', updatedAt: today(), stato: 'pubblico', codmunityOrder: index + 1 };
+      attachments.push(att); attMap.set(id, att); newA++;
     } else {
       const att = attMap.get(id);
-      att.nome = name;
-      att.tipo = sl;
-      att.attivo = true;
-      att.verificato = true;
-      att.fonte = 'CODMunity official profile';
-      att.fonteUrl = att.fonteUrl || 'https://codmunity.gg/profile/CODMunity';
-      att.updatedAt = today();
-      if (!['bloccato', 'disattivato'].includes(att.stato)) att.stato = 'pubblico';
+      att.nome = item.name; att.tipo = item.slot; att.attivo = true; att.verificato = true; att.fonte = 'CODMunity weapon page'; att.fonteUrl = weapon.url; att.updatedAt = today(); if (!['bloccato', 'disattivato'].includes(att.stato)) att.stato = 'pubblico';
     }
-
     const key = `${weapon.id}__${id}`;
     if (!compMap.has(key)) {
-      const row = {
-        id: key,
-        armaId: weapon.id,
-        accessorioId: id,
-        slot: sl,
-        compatibile: true,
-        verificato: true,
-        fonte: 'CODMunity official profile',
-        fonteUrl: 'https://codmunity.gg/profile/CODMunity',
-        note: 'Compatibilità importata da build/loadout ufficiali CODMunity.',
-        updatedAt: today(),
-        stato: 'pubblico',
-        codmunityOrder: index + 1
-      };
-      compatibility.push(row);
-      compMap.set(key, row);
-      newC++;
+      const row = { id: key, armaId: weapon.id, accessorioId: id, slot: item.slot, compatibile: true, verificato: true, fonte: 'CODMunity weapon page', fonteUrl: weapon.url, note: 'Compatibilità importata dalla sezione Attachments della pagina arma CODMunity.', updatedAt: today(), stato: 'pubblico', codmunityOrder: index + 1 };
+      compatibility.push(row); compMap.set(key, row); newC++;
+    } else {
+      const row = compMap.get(key);
+      row.slot = item.slot; row.compatibile = true; row.verificato = true; row.fonte = 'CODMunity weapon page'; row.fonteUrl = weapon.url; row.updatedAt = today(); if (!['bloccato', 'disattivato'].includes(row.stato)) row.stato = 'pubblico';
     }
   });
-
   return { newA, newC };
 }
 
 async function main() {
-  const report = {
-    startedAt: new Date().toISOString(),
-    source: 'CODMunity official profile loadouts',
-    mode: 'official-profile-loadout-cards',
-    profileDebug: [],
-    processedWeapons: [],
-    failedWeapons: [],
-    attachmentsImported: 0,
-    compatibilityImported: 0,
-    removedOldCodmunityData: null,
-    finishedAt: null
-  };
-
-  const weaponsToSync = weaponList();
+  const report = { startedAt: new Date().toISOString(), source: 'CODMunity weapon pages', mode: 'weapon-page-attachments-section', processedWeapons: [], failedWeapons: [], attachmentsImported: 0, compatibilityImported: 0, removedOldCodmunityData: null, finishedAt: null };
+  const list = weaponList();
   const weapons = read(WEAPONS, []);
   const attachments = read(ATTS, []);
   const compatibility = read(COMPAT, []);
+  report.removedOldCodmunityData = resetCodmunityData(attachments, compatibility);
 
   const puppeteer = require('puppeteer');
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-  });
-
+  const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] });
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1400 });
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36');
-
-    const official = await collectOfficialCodmunityLoadouts(page, weaponsToSync, weapons);
-    report.profileDebug = official.debug;
-
-    const totalFound = Array.from(official.map.values()).reduce((sum, arr) => sum + arr.length, 0);
-    if (totalFound > 0) {
-      report.removedOldCodmunityData = resetCodmunityData(attachments, compatibility);
-    } else {
-      report.failedWeapons.push({ armaId: '*', error: 'Nessun accessorio trovato dai loadout ufficiali CODMunity. Database precedente non cancellato.' });
-    }
-
-    for (const weapon of weaponsToSync) {
-      mergeWeapon(weapons, weapon);
-      const items = official.map.get(weapon.id) || [];
-      const merged = items.length ? mergeData(attachments, compatibility, weapon, items) : { newA: 0, newC: 0 };
-      report.attachmentsImported += merged.newA;
-      report.compatibilityImported += merged.newC;
-      report.processedWeapons.push({
-        armaId: weapon.id,
-        game: weapon.game,
-        extractionMode: 'official-profile-loadout-cards',
-        attachmentsFound: items.length,
-        attachmentsAdded: merged.newA,
-        compatibilityAdded: merged.newC
-      });
-      console.log(`${weapon.id}: ${items.length} accessori ufficiali CODMunity`);
+    for (let i = 0; i < list.length; i++) {
+      const weapon = list[i];
+      try {
+        await page.goto(weapon.url, { waitUntil: 'networkidle2', timeout: 70000 });
+        await sleep(DELAY);
+        const pageText = await page.evaluate(() => document.body ? document.body.innerText : '');
+        const lines = pageText.split(/\r?\n/).map(clean).filter(Boolean);
+        const weaponName = (lines[0] && lines[0].length < 40) ? lines[0] : weaponNameFromId(weapon.id);
+        const section = extractAttachmentSection(lines, weaponName);
+        const items = parseAttachments(section);
+        const category = extractCategory(lines);
+        mergeWeapon(weapons, weapon, category);
+        const merged = mergeData(attachments, compatibility, weapon, items);
+        report.attachmentsImported += merged.newA;
+        report.compatibilityImported += merged.newC;
+        report.processedWeapons.push({ armaId: weapon.id, game: weapon.game, url: weapon.url, weaponName, category, sectionLines: section.length, attachmentsFound: items.length, attachmentsAdded: merged.newA, compatibilityAdded: merged.newC });
+        console.log(`${weapon.id}: ${items.length} accessori dalla pagina arma`);
+      } catch (error) {
+        report.failedWeapons.push({ armaId: weapon.id, url: weapon.url, error: error.message });
+        console.log(`${weapon.id}: ERRORE ${error.message}`);
+      }
+      write(WEAPONS, weapons); write(ATTS, attachments); write(COMPAT, compatibility); write(REPORT, { ...report, finishedAt: new Date().toISOString() });
     }
   } finally {
     await browser.close().catch(() => {});
   }
-
   report.finishedAt = new Date().toISOString();
-  write(WEAPONS, weapons);
-  write(ATTS, attachments);
-  write(COMPAT, compatibility);
-  write(REPORT, report);
-  console.log('Sync CODMunity official profile completato:', report);
+  write(WEAPONS, weapons); write(ATTS, attachments); write(COMPAT, compatibility); write(REPORT, report);
+  console.log('Sync CODMunity weapon pages completato:', report);
 }
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+main().catch(error => { console.error(error); process.exit(1); });
