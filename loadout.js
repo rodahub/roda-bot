@@ -22,14 +22,6 @@ const SLOT_MAP = new Map([
 function clean(value) { return String(value || '').trim(); }
 function lower(value) { return clean(value).toLowerCase(); }
 function nowIso() { return new Date().toISOString(); }
-function slug(value) {
-  return clean(value)
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || `${Date.now()}`;
-}
-
 function normalizeSlot(value) {
   const raw = clean(value).replace(/\s+/g, ' ');
   if (!raw) return '';
@@ -149,6 +141,17 @@ function publicBuild(build) {
   };
 }
 
+function buildAttachmentResponse(attachment, row = {}) {
+  const slot = normalizeSlot(row.slot || attachment.slot || attachment.tipo);
+  return {
+    ...attachment,
+    id: getRecordId(attachment),
+    slot,
+    tipo: slot,
+    codmunityOrder: Number(row.codmunityOrder || attachment.codmunityOrder || 999999)
+  };
+}
+
 function registerLoadoutRoutes(app) {
   if (!app || typeof app.get !== 'function') throw new Error('registerLoadoutRoutes: istanza Express app non valida');
   if (app.__rodaLoadoutRoutesRegistered) return;
@@ -170,25 +173,39 @@ function registerLoadoutRoutes(app) {
     try {
       const weaponId = clean(req.query.weaponId || req.query.armaId);
       if (!weaponId) return res.json({ ok: true, attachments: [], message: 'weaponId mancante' });
+
       const attachments = readJSON('loadout-attachments.json', []);
       const compatibility = readJSON('loadout-compatibility.json', []);
       const weaponKey = lower(weaponId);
       const rows = compatibility.filter(row => lower(getWeaponIdFromCompatibility(row)) === weaponKey && isPublicCompatibility(row));
-      const rowByAttachmentId = new Map();
-      for (const row of rows) {
-        const attachmentId = lower(getAttachmentIdFromCompatibility(row));
-        if (attachmentId) rowByAttachmentId.set(attachmentId, row);
+
+      let result;
+      let compatibilitySource = 'verified';
+
+      if (rows.length > 0) {
+        const rowByAttachmentId = new Map();
+        for (const row of rows) {
+          const attachmentId = lower(getAttachmentIdFromCompatibility(row));
+          if (attachmentId) rowByAttachmentId.set(attachmentId, row);
+        }
+
+        result = attachments
+          .filter(attachment => rowByAttachmentId.has(lower(getRecordId(attachment))) && isPublicAttachment(attachment))
+          .map(attachment => buildAttachmentResponse(attachment, rowByAttachmentId.get(lower(getRecordId(attachment))) || {}));
+      } else {
+        // Fallback operativo: finché il sync CODMunity non crea compatibilità specifiche per le armi nuove,
+        // mostriamo tutti gli accessori pubblici validi. Così BO7/nuove armi non restano vuote nel builder.
+        compatibilitySource = 'fallback-public-attachments';
+        result = attachments
+          .filter(isPublicAttachment)
+          .map(attachment => buildAttachmentResponse(attachment));
       }
-      const result = attachments
-        .filter(attachment => rowByAttachmentId.has(lower(getRecordId(attachment))) && isPublicAttachment(attachment))
-        .map(attachment => {
-          const row = rowByAttachmentId.get(lower(getRecordId(attachment))) || {};
-          const slot = normalizeSlot(row.slot || attachment.slot || attachment.tipo);
-          return { ...attachment, id: getRecordId(attachment), slot, tipo: slot, codmunityOrder: Number(row.codmunityOrder || attachment.codmunityOrder || 999999) };
-        })
+
+      result = result
         .filter(attachment => SLOT_ORDER.includes(attachment.slot))
         .sort(sortAttachmentsForLoadout);
-      res.json({ ok: true, attachments: result });
+
+      res.json({ ok: true, weaponId, compatibilitySource, attachments: result });
     } catch (error) {
       res.status(500).json({ ok: false, attachments: [], error: error.message });
     }
