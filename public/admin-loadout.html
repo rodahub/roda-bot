@@ -3,90 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RØDA Loadout Admin v2.0</title>
-    <link rel="icon" type="image/png" href="/rodasitologo.png"/>
+    <title>RØDA Loadout Admin v2</title>
     <style>
-        :root { --bg: #0f0f13; --card: #1a1a24; --primary: #8b5cf6; --text: #e2e8f0; --danger: #ef4444; --success: #10b981; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
-        .version-badge { background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { background: var(--card); border: 1px solid #333; color: var(--text); padding: 10px 20px; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-        .tab-btn.active { background: var(--primary); border-color: var(--primary); font-weight: bold; }
-        .tab-content { display: none; background: var(--card); padding: 20px; border-radius: 8px; }
-        .tab-content.active { display: block; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #252530; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid var(--primary); }
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        .stat-label { font-size: 0.9rem; opacity: 0.8; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #333; }
-        th { color: var(--primary); font-size: 0.9rem; text-transform: uppercase; }
-        tr:hover { background: #252530; }
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; margin-right: 5px; }
+        :root {
+            --bg-dark: #050508;
+            --card-bg: #111120;
+            --primary: #7b2cff;
+            --primary-glow: rgba(123, 44, 255, 0.4);
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --danger: #ff4444;
+            --success: #00c851;
+            --warning: #ffbb33;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--primary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px var(--primary-glow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { font-size: 1.5rem; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        .header span { font-size: 0.9rem; color: var(--primary); font-weight: bold; }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 1rem 2rem;
+            background: rgba(17, 17, 32, 0.5);
+            overflow-x: auto;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .tab-btn:hover { border-color: var(--primary); color: #fff; }
+        .tab-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        /* Content */
+        .content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+        .hidden { display: none !important; }
+
+        /* Cards & Grid */
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(123, 44, 255, 0.15);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .stat-card { text-align: center; }
+        .stat-value { font-size: 2.5rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 0.5rem; }
+        .stat-label { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        h2, h3 { color: #fff; margin-bottom: 1rem; border-left: 3px solid var(--primary); padding-left: 10px; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a3a; }
+        th { color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; background: rgba(0,0,0,0.2); }
+        tr:hover { background: rgba(123, 44, 255, 0.05); }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            margin-right: 5px;
+            color: #fff;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: #000; }
         .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; }
-        .status-pubblico { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .status-da_controllare { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .status-bloccato { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .empty-state { text-align: center; padding: 40px; opacity: 0.6; }
-        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        input, select { background: #0f0f13; border: 1px solid #333; color: white; padding: 8px; border-radius: 4px; }
-        .log-box { background: #000; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+
+        /* Badges */
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+        .badge-public { background: rgba(0, 200, 81, 0.2); color: var(--success); }
+        .badge-draft { background: rgba(255, 187, 51, 0.2); color: var(--warning); }
+        .badge-blocked { background: rgba(255, 68, 68, 0.2); color: var(--danger); }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .toast {
+            background: var(--card-bg);
+            border-left: 4px solid var(--primary);
+            color: #fff;
+            padding: 12px 20px;
+            margin-top: 10px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease-out;
+            min-width: 250px;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Loading State */
+        .loading { text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; }
     </style>
 </head>
 <body>
-<div class="header">
-    <div>
-        <h2 style="margin:0;">RØDA Loadout Admin</h2>
-        <span class="version-badge">v2.0 SEMPLIFICATA - BUILD FINALE</span>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>RØDA Loadout Admin <span style="font-size:0.6em; vertical-align: super;">v2</span></h1>
+        <div id="connection-status" style="font-size: 0.8rem; color: var(--success);">● Online</div>
     </div>
-    <button onclick="location.reload()" class="btn btn-primary">Aggiorna Pagina</button>
-</div>
-<div class="tabs">
-    <button class="tab-btn active" onclick="showTab('panoramica')">1. Panoramica</button>
-    <button class="tab-btn" onclick="showTab('build')">2. Build Ricevute</button>
-    <button class="tab-btn" onclick="showTab('database')">3. Database</button>
-    <button class="tab-btn" onclick="showTab('controllare')">4. Da Controllare</button>
-    <button class="tab-btn" onclick="showTab('bloccati')">5. Bloccati</button>
-    <button class="tab-btn" onclick="showTab('report')">6. Report Sync</button>
-</div>
-<div id="panoramica" class="tab-content active">
-    <h3>Stato del Sistema</h3>
-    <div class="stats-grid" id="statsGrid"><div class="empty-state">Caricamento statistiche...</div></div>
-    <div style="background: #252530; padding: 15px; border-radius: 6px; margin-top: 20px;">
-        <h4>🔄 Aggiornamento Database</h4>
-        <p>Per sincronizzare armi e accessori da CODMunity, esegui nella shell del server:</p>
-        <code style="background:#000; padding: 5px 10px; display:block; margin: 10px 0; border-radius: 4px;">npm run sync:loadout-db</code>
-        <p style="font-size: 0.9rem; opacity: 0.8;">Dopo lo sync, ricarica questa pagina.</p>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" data-action="switch-tab" data-tab="overview">Panoramica</button>
+        <button class="tab-btn" data-action="switch-tab" data-tab="builds">Build Ricevute</button>
+        <button class="tab-btn" data-action="switch-tab" data-tab="database">Database</button>
+        <button class="tab-btn" data-action="switch-tab" data-tab="review">Da Controllare</button>
+        <button class="tab-btn" data-action="switch-tab" data-tab="blocked">Bloccati</button>
+        <button class="tab-btn" data-action="switch-tab" data-tab="report">Report Sync</button>
     </div>
-</div>
-<div id="build" class="tab-content"><h3>Build Inviate dagli Utenti</h3><div id="buildList"></div></div>
-<div id="database" class="tab-content">
-    <div class="filter-bar">
-        <select id="dbType" onchange="loadDatabase()"><option value="weapons">Armi</option><option value="attachments">Accessori</option><option value="compatibility">Compatibilità</option></select>
-        <input type="text" id="dbSearch" placeholder="Cerca..." onkeyup="loadDatabase()">
-        <select id="dbFilterGame" onchange="loadDatabase()" style="display:none;"><option value="">Tutti i Giochi</option><option value="BO7">BO7</option><option value="BO6">BO6</option><option value="Warzone">Warzone</option></select>
+
+    <!-- Main Content -->
+    <div class="content">
+        
+        <!-- TAB 1: PANORAMICA -->
+        <div id="overview" class="tab-content">
+            <div class="grid-stats">
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-weapons">-</span>
+                    <span class="stat-label">Armi Pubbliche</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-attachments">-</span>
+                    <span class="stat-label">Accessori</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-compatibility">-</span>
+                    <span class="stat-label">Compatibilità</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-builds">-</span>
+                    <span class="stat-label">Build Ricevute</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-review" style="color: var(--warning)">-</span>
+                    <span class="stat-label">Da Controllare</span>
+                </div>
+                <div class="card stat-card">
+                    <span class="stat-value" id="count-blocked" style="color: var(--danger)">-</span>
+                    <span class="stat-label">Bloccati</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Azioni Rapide</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Gestisci lo stato del database Loadout.</p>
+                <button class="btn btn-primary" data-action="refresh-data">🔄 Aggiorna Dati Dashboard</button>
+                <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <p>Per eseguire un sync completo da CODMunity, usa il terminale:</p>
+                    <code style="background: #000; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">npm run sync:loadout-db</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: BUILD RICEVUTE -->
+        <div id="builds" class="tab-content hidden">
+            <div class="card">
+                <h3>Build Inviate dagli Utenti</h3>
+                <div id="builds-container" class="table-container">
+                    <div class="loading">Caricamento build...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: DATABASE -->
+        <div id="database" class="tab-content hidden">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Gestione Database</h3>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="filterDB('weapons')">Armi</button>
+                        <button class="btn btn-sm btn-primary" onclick="filterDB('attachments')">Accessori</button>
+                        <button class="btn btn-sm btn-primary" onclick="filterDB('compatibility')">Compatibilità</button>
+                    </div>
+                </div>
+                <div id="db-filter-title" style="color: var(--primary); font-weight: bold; margin-bottom: 10px;">Visualizzazione: Armi</div>
+                <div id="db-container" class="table-container">
+                    <div class="loading">Caricamento database...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DA CONTROLLARE -->
+        <div id="review" class="tab-content hidden">
+            <div class="card">
+                <h3>Elementi in Revisione</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Dati importati da CODMunity che richiedono verifica manuale.</p>
+                <div id="review-container" class="table-container">
+                    <div class="loading">Nessun elemento in revisione.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: BLOCCATI -->
+        <div id="blocked" class="tab-content hidden">
+            <div class="card">
+                <h3>Elementi Bloccati / Disattivati</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Elementi nascosti dal pubblico. Il sync automatico non li riattiverà.</p>
+                <div id="blocked-container" class="table-container">
+                    <div class="loading">Nessun elemento bloccato.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: REPORT SYNC -->
+        <div id="report" class="tab-content hidden">
+            <div class="card">
+                <h3>Report Ultimo Sync</h3>
+                <div id="report-summary" style="margin-bottom: 1rem;">
+                    <!-- Riassunto testuale -->
+                </div>
+                <details style="margin-top: 1rem; border: 1px solid #333; padding: 1rem; border-radius: 6px;">
+                    <summary style="cursor: pointer; color: var(--primary); font-weight: bold;">Mostra JSON Completo (Debug)</summary>
+                    <pre id="report-json" style="background: #000; padding: 1rem; overflow-x: auto; margin-top: 1rem; font-size: 0.8rem; color: #0f0;"></pre>
+                </details>
+            </div>
+        </div>
+
     </div>
-    <div id="dbTableContainer"></div>
-</div>
-<div id="controllare" class="tab-content"><h3>Dati Dubbi (Da Verificare)</h3><p style="opacity:0.7; font-size:0.9rem;">Elementi importati ma non ancora validati.</p><div id="checkList"></div></div>
-<div id="bloccati" class="tab-content"><h3>Elementi Bloccati / Disattivati</h3><p style="opacity:0.7; font-size:0.9rem;">Questi elementi non appariranno nel pubblico.</p><div id="blockedList"></div></div>
-<div id="report" class="tab-content"><h3>Report Ultimo Sync</h3><div id="reportContent" class="log-box">Caricamento report...</div></div>
-<script>
-function showTab(id){document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));document.getElementById(id).classList.add('active');event.target.classList.add('active');if(id==='panoramica')loadStats();if(id==='build')loadBuilds();if(id==='database')loadDatabase();if(id==='controllare')loadToCheck();if(id==='bloccati')loadBlocked();if(id==='report')loadReport();}
-async function api(url){const res=await fetch(url);return res.json();}
-async function loadStats(){const data=await api('/api/admin/loadout/database');const grid=document.getElementById('statsGrid');if(!data.ok)return grid.innerHTML='<div class="empty-state">Errore caricamento</div>';const stats=[{label:'Armi Pubbliche',val:data.weapons?.filter(w=>w.stato==='pubblico').length||0},{label:'Accessori',val:data.attachments?.length||0},{label:'Compatibilità',val:data.compatibility?.length||0},{label:'Build Ricevute',val:data.builds?.length||0},{label:'Da Controllare',val:data.toCheck?.length||0},{label:'Bloccati',val:data.blocked?.length||0}];grid.innerHTML=stats.map(s=>`<div class="stat-card"><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');}
-async function loadBuilds(){const data=await api('/api/admin/loadout/builds');const container=document.getElementById('buildList');if(!data.builds||data.builds.length===0){container.innerHTML='<div class="empty-state">Nessuna build ricevuta.</div>';return;}container.innerHTML=`<table><thead><tr><th>Creator</th><th>Arma</th><th>Stile</th><th>Data</th><th>Azioni</th></tr></thead><tbody>${data.builds.map(b=>`<tr><td><strong>${b.creatorName||'Anonimo'}</strong></td><td>${b.armaNome} (${b.gioco})</td><td>${b.stile}</td><td>${new Date(b.createdAt).toLocaleDateString()}</td><td><button class="btn btn-sm btn-success" onclick="alert('Funzione in sviluppo')">✓</button><button class="btn btn-sm btn-danger" onclick="alert('Funzione in sviluppo')">✕</button></td></tr>`).join('')}</tbody></table>`;}
-async function loadDatabase(){const type=document.getElementById('dbType').value;const search=document.getElementById('dbSearch').value.toLowerCase();const gameFilter=document.getElementById('dbFilterGame').value;document.getElementById('dbFilterGame').style.display=type==='weapons'?'block':'none';const data=await api('/api/admin/loadout/database');let items=[];if(type==='weapons')items=data.weapons||[];if(type==='attachments')items=data.attachments||[];if(type==='compatibility')items=data.compatibility||[];items=items.filter(i=>{const matchSearch=(i.nome||i.armaId||'').toLowerCase().includes(search);const matchGame=type!=='weapons'||!gameFilter||i.gioco===gameFilter;const notBlocked=i.stato!=='bloccato'&&i.bloccatoManuale!==true;return matchSearch&&matchGame&&notBlocked;});const container=document.getElementById('dbTableContainer');if(items.length===0){container.innerHTML='<div class="empty-state">Nessun elemento trovato.</div>';return;}let html=`<table><thead><tr>`;if(type==='weapons')html+=`<th>Nome</th><th>Gioco</th><th>Cat</th><th>Stato</th><th>Azioni</th>`;else if(type==='attachments')html+=`<th>Nome</th><th>Slot</th><th>Stato</th><th>Azioni</th>`;else if(type==='compatibility')html+=`<th>Arma</th><th>Accessorio</th><th>Slot</th><th>Azioni</th>`;html+=`</tr></thead><tbody>`;items.slice(0,100).forEach(i=>{let row='<tr>';let statusClass=i.stato==='pubblico'?'status-pubblico':(i.stato==='bloccato'?'status-bloccato':'status-da_controllare');if(type==='weapons'){row+=`<td>${i.nome}</td><td>${i.gioco}</td><td>${i.categoria}</td><td><span class="status-badge ${statusClass}">${i.stato}</span></td>`;}else if(type==='attachments'){row+=`<td>${i.nome}</td><td>${i.tipo}</td><td><span class="status-badge ${statusClass}">${i.stato}</span></td>`;}else if(type==='compatibility'){row+=`<td>${i.armaId}</td><td>${i.accessorioId}</td><td>${i.slot}</td>`;}row+=`<td><button class="btn btn-sm btn-danger" onclick="actionDb('${type}','${i.id}','block')">Blocca</button>${type!=='compatibility'?`<button class="btn btn-sm" style="background:#444" onclick="alert('Modifica non implementata')">Mod</button>`:''}</td></tr>`;html+=row;});html+=`</tbody></table><div style="padding:10px;font-size:0.8rem;opacity:0.6">Visualizzati ${items.length>100?100:items.length} di ${items.length} elementi</div>`;container.innerHTML=html;}
-async function loadToCheck(){const data=await api('/api/admin/loadout/database');const items=[...(data.weapons||[]),...(data.attachments||[])].filter(i=>i.stato==='da_controllare'||i.verificata===false||i.verificato===false);const container=document.getElementById('checkList');if(items.length===0)return container.innerHTML='<div class="empty-state">Tutto ok, nulla da controllare.</div>';container.innerHTML=`<table><thead><tr><th>Tipo</th><th>Nome</th><th>Motivo</th><th>Azioni</th></tr></thead><tbody>${items.map(i=>`<tr><td>${i.categoria?'Arma':'Accessorio'}</td><td>${i.nome}</td><td>${i.stato==='da_controllare'?'Importazione recente':'Non verificato'}</td><td><button class="btn btn-sm btn-success" onclick="actionDb('${i.categoria?'weapons':'attachments'}','${i.id}','publish')">Pubblica</button><button class="btn btn-sm btn-danger" onclick="actionDb('${i.categoria?'weapons':'attachments'}','${i.id}','block')">Blocca</button></td></tr>`).join('')}</tbody></table>`;}
-async function loadBlocked(){const data=await api('/api/admin/loadout/database');const items=[...(data.weapons||[]),...(data.attachments||[]),...(data.compatibility||[])].filter(i=>i.stato==='bloccato'||i.bloccatoManuale===true);const container=document.getElementById('blockedList');if(items.length===0)return container.innerHTML='<div class="empty-state">Nessun elemento bloccato.</div>';container.innerHTML=`<table><thead><tr><th>Tipo</th><th>Nome/ID</th><th>Azioni</th></tr></thead><tbody>${items.map(i=>`<tr><td>${i.categoria?'Arma':(i.armaId?'Compatibilità':'Accessorio')}</td><td>${i.nome||i.id}</td><td><button class="btn btn-sm btn-success" onclick="actionDb('${i.categoria?'weapons':(i.armaId?'compatibility':'attachments')}','${i.id}','reactivate')">Riattiva</button></td></tr>`).join('')}</tbody></table>`;}
-async function loadReport(){const box=document.getElementById('reportContent');try{const res=await fetch('/data/loadout-import-report.json');const json=await res.json();box.innerText=JSON.stringify(json,null,2);}catch(e){box.innerText="Nessun report disponibile.";}}
-async function actionDb(type,id,action){if(!confirm(`Confermi ${action}?`))return;const res=await fetch(`/api/admin/loadout/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,id})});const result=await res.json();if(result.ok){alert('Completato! Ricarica la tab.');loadDatabase();}else{alert('Errore: '+result.error);}}
-loadStats();
-</script>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // --- STATO GLOBALE ---
+        let currentDBType = 'weapons';
+        let dbData = { weapons: [], attachments: [], compatibility: [] };
+        let buildsData = [];
+
+        // --- UTILS ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = type === 'error' ? 'var(--danger)' : (type === 'success' ? 'var(--success)' : 'var(--primary)');
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) options.body = JSON.stringify(body);
+                
+                const res = await fetch(endpoint, options);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                console.error(err);
+                showToast(`Errore API: ${err.message}`, 'error');
+                return null;
+            }
+        }
+
+        // --- NAVIGAZIONE TAB ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+            // Carica dati specifici se necessario
+            if (tabId === 'builds') loadBuilds();
+            if (tabId === 'database') loadDB('weapons');
+            if (tabId === 'review') loadReview();
+            if (tabId === 'blocked') loadBlocked();
+            if (tabId === 'report') loadReport();
+        }
+
+        // --- CARICAMENTO DATI GENERALI (PANORAMICA) ---
+        async function loadDashboardStats() {
+            const data = await apiCall('/api/admin/loadout/database');
+            if (!data) return;
+
+            dbData = data; // Salva per uso locale
+
+            document.getElementById('count-weapons').textContent = data.weapons.filter(w => w.stato === 'pubblico').length;
+            document.getElementById('count-attachments').textContent = data.attachments.filter(a => a.stato === 'pubblico').length;
+            document.getElementById('count-compatibility').textContent = data.compatibility.filter(c => c.stato === 'pubblico').length;
+            
+            const builds = await apiCall('/api/admin/loadout/builds');
+            if (builds) {
+                buildsData = builds;
+                document.getElementById('count-builds').textContent = builds.length;
+            }
+
+            document.getElementById('count-review').textContent = data.weapons.filter(w => w.stato === 'da_controllare').length + 
+                                                                 data.attachments.filter(a => a.stato === 'da_controllare').length;
+            document.getElementById('count-blocked').textContent = data.weapons.filter(w => w.bloccatoManuale).length + 
+                                                                   data.attachments.filter(a => a.bloccatoManuale).length;
+        }
+
+        // --- GESTIONE BUILD ---
+        async function loadBuilds() {
+            const container = document.getElementById('builds-container');
+            container.innerHTML = '<div class="loading">Caricamento...</div>';
+            
+            const builds = await apiCall('/api/admin/loadout/builds');
+            if (!builds || builds.length === 0) {
+                container.innerHTML = '<div class="loading">Nessuna build ricevuta.</div>';
+                return;
+            }
+
+            let html = `<table><thead><tr><th>Data</th><th>Creator</th><th>Arma</th><th>Stile</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>`;
+            builds.forEach(b => {
+                const statusClass = b.stato === 'approvato' ? 'badge-public' : (b.stato === 'rifiutato' ? 'badge-blocked' : 'badge-draft');
+                html += `<tr>
+                    <td>${new Date(b.createdAt).toLocaleDateString()}</td>
+                    <td><strong>${b.creatorName || 'Anonimo'}</strong></td>
+                    <td>${b.armaNome} (${b.gioco})</td>
+                    <td>${b.stile}</td>
+                    <td><span class="badge ${statusClass}">${b.stato}</span></td>
+                    <td>
+                        ${b.stato === 'da_approvare' ? `
+                        <button class="btn btn-sm btn-success" data-action="approve-build" data-id="${b.id}">✓</button>
+                        <button class="btn btn-sm btn-danger" data-action="reject-build" data-id="${b.id}">✗</button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-danger" data-action="delete-build" data-id="${b.id}">🗑</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        // --- GESTIONE DATABASE ---
+        function filterDB(type) {
+            currentDBType = type;
+            const titles = { weapons: 'Armi', attachments: 'Accessori', compatibility: 'Compatibilità' };
+            document.getElementById('db-filter-title').textContent = `Visualizzazione: ${titles[type]}`;
+            renderDBTable();
+        }
+
+        function loadDB(type) {
+            filterDB(type);
+        }
+
+        function renderDBTable() {
+            const container = document.getElementById('db-container');
+            const items = dbData[currentDBType] || [];
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="loading">Nessun dato disponibile.</div>';
+                return;
+            }
+
+            let html = `<table><thead><tr>`;
+            // Colonne dinamiche in base al tipo
+            if (currentDBType === 'weapons') html += `<th>Nome</th><th>Gioco</th><th>Cat</th><th>Stato</th><th>Azioni</th>`;
+            else if (currentDBType === 'attachments') html += `<th>Nome</th><th>Slot</th><th>Stato</th><th>Azioni</th>`;
+            else if (currentDBType === 'compatibility') html += `<th>Arma</th><th>Accessorio</th><th>Slot</th><th>Stato</th><th>Azioni</th>`;
+            html += `</tr></thead><tbody>`;
+
+            items.slice(0, 100).forEach(item => { // Limita a 100 per performance
+                let row = '<tr>';
+                let actions = '';
+                
+                if (currentDBType === 'weapons') {
+                    row += `<td>${item.nome}</td><td>${item.gioco}</td><td>${item.categoria}</td>`;
+                    actions = `<button class="btn btn-sm btn-warning" data-action="disable-item" data-type="weapon" data-id="${item.id}">Disattiva</button>
+                               <button class="btn btn-sm btn-danger" data-action="block-item" data-type="weapon" data-id="${item.id}">Blocca</button>`;
+                } else if (currentDBType === 'attachments') {
+                    row += `<td>${item.nome}</td><td>${item.tipo}</td>`;
+                    actions = `<button class="btn btn-sm btn-warning" data-action="disable-item" data-type="attachment" data-id="${item.id}">Disattiva</button>
+                               <button class="btn btn-sm btn-danger" data-action="block-item" data-type="attachment" data-id="${item.id}">Blocca</button>`;
+                } else if (currentDBType === 'compatibility') {
+                    row += `<td>${item.armaId}</td><td>${item.accessorioId}</td><td>${item.slot}</td>`;
+                    actions = `<button class="btn btn-sm btn-danger" data-action="delete-item" data-type="compatibility" data-id="${item.id}">Elimina</button>`;
+                }
+
+                const badgeClass = item.stato === 'pubblico' ? 'badge-public' : (item.stato === 'bloccato' ? 'badge-blocked' : 'badge-draft');
+                row += `<td><span class="badge ${badgeClass}">${item.stato || 'bozza'}</span></td><td>${actions}</td></tr>`;
+                html += row;
+            });
+            html += `</tbody></table>`;
+            if (items.length > 100) html += `<div style="padding:10px; text-align:center; color:#666;">... e altri ${items.length - 100} elementi</div>`;
+            
+            container.innerHTML = html;
+        }
+
+        // --- ALTRE TAB (Placeholder logici) ---
+        async function loadReview() {
+            const container = document.getElementById('review-container');
+            // Logica semplificata: mostra tutto ciò che è da_controllare
+            const data = await apiCall('/api/admin/loadout/database');
+            if(!data) return;
+            const reviewItems = [...data.weapons, ...data.attachments].filter(i => i.stato === 'da_controllare');
+            
+            if(reviewItems.length === 0) {
+                container.innerHTML = '<div class="loading">Tutto approvato! Nessun elemento in revisione.</div>';
+                return;
+            }
+            
+            let html = `<table><thead><tr><th>Tipo</th><th>Nome</th><th>Motivo</th><th>Azioni</th></tr></thead><tbody>`;
+            reviewItems.forEach(i => {
+                html += `<tr>
+                    <td>${i.categoria ? 'Arma' : 'Accessorio'}</td>
+                    <td>${i.nome}</td>
+                    <td>Importazione automatica</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" data-action="publish-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Pubblica</button>
+                        <button class="btn btn-sm btn-danger" data-action="delete-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Scarta</button>
+                    </td>
+                </tr>`;
+            });
+            container.innerHTML = html + '</tbody></table>';
+        }
+
+        async function loadBlocked() {
+            const container = document.getElementById('blocked-container');
+            const data = await apiCall('/api/admin/loadout/database');
+            if(!data) return;
+            const blockedItems = [...data.weapons, ...data.attachments].filter(i => i.bloccatoManuale || i.stato === 'bloccato');
+
+            if(blockedItems.length === 0) {
+                container.innerHTML = '<div class="loading">Nessun elemento bloccato.</div>';
+                return;
+            }
+
+            let html = `<table><thead><tr><th>Tipo</th><th>Nome</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>`;
+            blockedItems.forEach(i => {
+                html += `<tr>
+                    <td>${i.categoria ? 'Arma' : 'Accessorio'}</td>
+                    <td>${i.nome}</td>
+                    <td><span class="badge badge-blocked">Bloccato</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success" data-action="reactivate-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Riattiva</button>
+                    </td>
+                </tr>`;
+            });
+            container.innerHTML = html + '</tbody></table>';
+        }
+
+        async function loadReport() {
+            const reportEl = document.getElementById('report-json');
+            const summaryEl = document.getElementById('report-summary');
+            // Simulazione fetch report (da adattare se esiste endpoint specifico)
+            summaryEl.innerHTML = '<p>Caricamento report...</p>';
+            reportEl.textContent = "Nessun report disponibile o formato non valido.";
+            // Qui andrebbe chiamata una API reale se esistesse: /api/admin/loadout/sync-report
+        }
+
+        // --- EVENT DELEGATION CENTRALIZZATA ---
+        document.addEventListener('click', async function(e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+            const type = btn.dataset.type;
+            const id = btn.dataset.id;
+            const tab = btn.dataset.tab;
+
+            try {
+                if (action === 'switch-tab') {
+                    switchTab(tab);
+                    return;
+                }
+
+                if (action === 'refresh-data') {
+                    showToast('Aggiornamento dati...', 'info');
+                    await loadDashboardStats();
+                    showToast('Dati aggiornati!', 'success');
+                    return;
+                }
+
+                // Azioni CRUD generiche
+                let endpoint = '';
+                let method = 'POST';
+                
+                if (action === 'publish-item') endpoint = `/api/admin/loadout/publish`;
+                if (action === 'disable-item') endpoint = `/api/admin/loadout/disable`;
+                if (action === 'block-item') endpoint = `/api/admin/loadout/block`;
+                if (action === 'reactivate-item') endpoint = `/api/admin/loadout/reactivate`;
+                if (action === 'delete-item') endpoint = `/api/admin/loadout/database/${type}/${id}`;
+                if (action === 'delete-item') method = 'DELETE';
+
+                if (action === 'approve-build') endpoint = `/api/admin/loadout/builds/approve`;
+                if (action === 'reject-build') endpoint = `/api/admin/loadout/builds/reject`;
+                if (action === 'delete-build') { endpoint = `/api/admin/loadout/builds/${id}`; method = 'DELETE'; }
+
+                if (endpoint) {
+                    if (!confirm('Sei sicuro di voler eseguire questa azione?')) return;
+                    
+                    const body = (method === 'POST') ? JSON.stringify({ type, id }) : null;
+                    const res = await apiCall(endpoint, method, body);
+                    
+                    if (res && res.ok) {
+                        showToast('Azione completata con successo', 'success');
+                        // Ricarica vista corrente
+                        if (tab === 'builds' || action.includes('build')) loadBuilds();
+                        else if (tab === 'database') renderDBTable();
+                        else if (tab === 'review') loadReview();
+                        else if (tab === 'blocked') loadBlocked();
+                        else loadDashboardStats(); // Fallback ricarica tutto
+                    } else {
+                        showToast('Errore nell\'operazione', 'error');
+                    }
+                } else {
+                    console.warn('Azione non gestita:', action);
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Errore: ' + err.message, 'error');
+            }
+        });
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+        });
+
+    </script>
 </body>
 </html>
