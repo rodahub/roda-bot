@@ -5,6 +5,7 @@ const path = require('path');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const ALLOW_GENERIC_ATTACHMENT_FALLBACK = process.env.ALLOW_LOADOUT_GENERIC_FALLBACK === 'true';
 
 const SLOT_ORDER = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
 const SLOT_MAP = new Map([
@@ -179,8 +180,9 @@ function registerLoadoutRoutes(app) {
       const weaponKey = lower(weaponId);
       const rows = compatibility.filter(row => lower(getWeaponIdFromCompatibility(row)) === weaponKey && isPublicCompatibility(row));
 
-      let result;
-      let compatibilitySource = 'verified';
+      let result = [];
+      let compatibilitySource = 'codmunity-verified';
+      let message = '';
 
       if (rows.length > 0) {
         const rowByAttachmentId = new Map();
@@ -192,20 +194,22 @@ function registerLoadoutRoutes(app) {
         result = attachments
           .filter(attachment => rowByAttachmentId.has(lower(getRecordId(attachment))) && isPublicAttachment(attachment))
           .map(attachment => buildAttachmentResponse(attachment, rowByAttachmentId.get(lower(getRecordId(attachment))) || {}));
-      } else {
-        // Fallback operativo: finché il sync CODMunity non crea compatibilità specifiche per le armi nuove,
-        // mostriamo tutti gli accessori pubblici validi. Così BO7/nuove armi non restano vuote nel builder.
-        compatibilitySource = 'fallback-public-attachments';
+      } else if (ALLOW_GENERIC_ATTACHMENT_FALLBACK) {
+        compatibilitySource = 'temporary-generic-fallback';
+        message = 'Fallback temporaneo abilitato: accessori pubblici non specifici per arma.';
         result = attachments
           .filter(isPublicAttachment)
           .map(attachment => buildAttachmentResponse(attachment));
+      } else {
+        compatibilitySource = 'missing-codmunity-compatibility';
+        message = 'Nessuna compatibilità CODMunity verificata per questa arma. Esegui npm run sync:loadout-db.';
       }
 
       result = result
         .filter(attachment => SLOT_ORDER.includes(attachment.slot))
         .sort(sortAttachmentsForLoadout);
 
-      res.json({ ok: true, weaponId, compatibilitySource, attachments: result });
+      res.json({ ok: true, weaponId, compatibilitySource, message, attachments: result });
     } catch (error) {
       res.status(500).json({ ok: false, attachments: [], error: error.message });
     }
