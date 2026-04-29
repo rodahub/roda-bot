@@ -9,7 +9,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/xm4",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 80,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ak-74",
@@ -21,7 +26,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ak-74",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 79,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ames-85",
@@ -33,7 +43,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ames-85",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 78,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "gpr-91",
@@ -45,7 +60,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/gpr-91",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 77,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "model-l",
@@ -57,7 +77,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/model-l",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 76,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "goblin-mk2",
@@ -69,7 +94,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/goblin-mk2",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 75,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "as-val",
@@ -81,7 +111,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/as-val",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 74,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "krig-c",
@@ -93,7 +128,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/krig-c",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 73,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "cypher-091",
@@ -105,7 +145,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/cypher-091",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 72,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ffar-1",
@@ -117,7 +162,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ffar-1",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 71,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "kilo-141",
@@ -129,7 +179,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/kilo-141",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 70,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "cr-56-amax",
@@ -141,7 +196,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/cr-56-amax",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 69,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "c9",
@@ -153,7 +213,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/c9",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 68,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ksv",
@@ -165,7 +230,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ksv",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 67,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "tanto-22",
@@ -177,7 +247,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/tanto-22",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 66,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "pp-919",
@@ -189,7 +264,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/pp-919",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 65,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "jackal-pdw",
@@ -201,7 +281,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/jackal-pdw",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 64,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "kompakt-92",
@@ -213,7 +298,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/kompakt-92",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 63,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "saug",
@@ -225,7 +315,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/saug",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 62,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ppsh-41",
@@ -237,7 +332,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ppsh-41",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 61,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "lc10",
@@ -249,7 +349,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/lc10",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 60,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ladra",
@@ -261,7 +366,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/ladra",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 59,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "pu-21",
@@ -273,7 +383,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/pu-21",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 58,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "xmg",
@@ -285,7 +400,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/xmg",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 57,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "gpmg-7",
@@ -297,7 +417,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/gpmg-7",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 56,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "feng-82",
@@ -309,7 +434,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/feng-82",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 55,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "swat-556",
@@ -321,7 +451,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/swat-556",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 54,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "swat-5-56",
@@ -333,7 +468,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/swat-5-56",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 53,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "tsarkov-762",
@@ -345,7 +485,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/tsarkov-762",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 52,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "tsarkov-7-62",
@@ -357,7 +502,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/tsarkov-7-62",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 51,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "aek-973",
@@ -369,7 +519,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/aek-973",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 50,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "dm-10",
@@ -381,7 +536,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/dm-10",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 49,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "tr2",
@@ -393,7 +553,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/tr2",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 48,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "lw3a1-frostline",
@@ -405,7 +570,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/lw3a1-frostline",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 47,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "svd",
@@ -417,7 +587,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/svd",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 46,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "lr-762",
@@ -429,7 +604,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/lr-762",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 45,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "lr-7-62",
@@ -441,7 +621,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/lr-7-62",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 44,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "amr-mod-4",
@@ -453,7 +638,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/amr-mod-4",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 43,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "hdr",
@@ -465,7 +655,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/hdr",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 42,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "marine-sp",
@@ -477,7 +672,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/marine-sp",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 41,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "asg-89",
@@ -489,7 +689,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/asg-89",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 40,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "maelstrom",
@@ -501,7 +706,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/maelstrom",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 39,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "9mm-pm",
@@ -513,7 +723,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/9mm-pm",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 38,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "grekhova",
@@ -525,7 +740,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/grekhova",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 37,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "gs45",
@@ -537,7 +757,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/gs45",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 36,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "stryder-22",
@@ -549,7 +774,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/stryder-22",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 35,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "1911",
@@ -561,7 +791,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo6/1911",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 34,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "voyak-kt-3",
@@ -573,7 +808,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/voyak-kt-3",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 33,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "swordfish-a1",
@@ -585,7 +825,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/swordfish-a1",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 32,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ryden-45k",
@@ -597,7 +842,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/ryden-45k",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 31,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "mk-78",
@@ -609,7 +859,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/mk-78",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 30,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "mk78",
@@ -621,7 +876,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/mk78",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 29,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "egrt-17",
@@ -633,7 +893,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/egrt-17",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 28,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "vs-recon",
@@ -645,7 +910,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/vs-recon",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 27,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "sturmwolf-45",
@@ -657,7 +927,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/sturmwolf-45",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 26,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "hawker-hx",
@@ -669,7 +944,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/hawker-hx",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 25,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "peacekeeper-mk1",
@@ -681,7 +961,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/peacekeeper-mk1",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 24,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "rk-9",
@@ -693,7 +978,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/rk-9",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 23,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "m8a1",
@@ -705,7 +995,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/m8a1",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 22,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ds20-mirage",
@@ -717,7 +1012,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/ds20-mirage",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 21,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "carbon-57",
@@ -729,7 +1029,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/carbon-57",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 20,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "shadow-sk",
@@ -741,7 +1046,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/shadow-sk",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 19,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "sokol-545",
@@ -753,7 +1063,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/sokol-545",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 18,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "razor-9mm",
@@ -765,7 +1080,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/razor-9mm",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 17,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "m15-mod-0",
@@ -777,7 +1097,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/m15-mod-0",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 16,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "warden-308",
@@ -789,7 +1114,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/warden-308",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 15,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "strider-300",
@@ -801,7 +1131,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/strider-300",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 14,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "dravec-45",
@@ -813,7 +1148,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/dravec-45",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 13,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "akita",
@@ -825,7 +1165,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/akita",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 12,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "x9-maverick",
@@ -837,7 +1182,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/x9-maverick",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 11,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "maddox-rfb",
@@ -849,7 +1199,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/maddox-rfb",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 10,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "kogot-7",
@@ -861,7 +1216,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/kogot-7",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 9,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "mxr-17",
@@ -873,7 +1233,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/mxr-17",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 8,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "m34-novaline",
@@ -885,7 +1250,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/m34-novaline",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 7,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "mk35-isr",
@@ -897,7 +1267,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/mk35-isr",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 6,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "rev-46",
@@ -909,7 +1284,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/rev-46",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 5,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "ak-27",
@@ -921,7 +1301,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/ak-27",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 4,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "vst",
@@ -933,7 +1318,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/vst",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 3,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "mpc-25",
@@ -945,7 +1335,12 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/mpc-25",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 2,
+    "discoveredAt": "2026-04-28"
   },
   {
     "id": "xm325",
@@ -957,6 +1352,11 @@
     "fonte": "CODMunity",
     "fonteUrl": "https://codmunity.gg/weapon/bo7/xm325",
     "note": "Importato automaticamente da CODMunity.",
-    "updatedAt": "2026-04-28"
+    "updatedAt": "2026-04-28",
+    "stato": "pubblico",
+    "bloccatoManuale": false,
+    "bloccatoMotivo": "",
+    "releaseOrder": 1,
+    "discoveredAt": "2026-04-28"
   }
 ]

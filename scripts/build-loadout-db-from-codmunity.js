@@ -919,6 +919,9 @@ async function main() {
   const compatList     = readJSON(COMPAT_FILE);
   const compatSet      = new Set(compatList.map(c => `${c.armaId}::${c.accessorioId}`));
 
+  // Calcola il releaseOrder massimo esistente per assegnare valori crescenti ai nuovi import
+  let nextReleaseOrder = Math.max(0, ...existingWeapons.map(w => w.releaseOrder || 0)) + 1;
+
   // Report
   const report = {
     startedAt                    : nowISO(),
@@ -934,12 +937,17 @@ async function main() {
     failedUrls                   : [],
     duplicatedWeaponsSkipped     : [],
     duplicatedAttachmentsSkipped : [],
+    saltatiBloccatiManuale       : 0,    // saltati perché bloccati manualmente dall'admin
     weaponsImported              : 0,
     weaponsUpdated               : 0,
+    armiPubblicateAuto           : 0,   // armi auto-verificate e pubblicate
+    armiDaControllare            : 0,   // armi con categoria non risolta → da_controllare
     attachmentsImported          : 0,
     attachmentsUpdated           : 0,
+    accessoriPubblicatiAuto      : 0,  // accessori auto-verificati e pubblici
     compatibilityImported        : 0,
     compatibilityUpdated         : 0,
+    compatPubblicateAuto         : 0,  // compat auto-verificate
     ignoredSlots                 : [],
     warnings                     : [],
     errors                       : [],
@@ -1044,6 +1052,17 @@ async function main() {
         }
       }
 
+      // ── Controlla blocco manuale admin — NON sovrascrivere mai ───────────────
+      // existingWeapon già dichiarato sopra per il tracking categoria
+      if (existingWeapon.bloccatoManuale || existingWeapon.stato === 'bloccato') {
+        console.log(`      ⊘ "${weaponId}" bloccato manualmente dall'admin — saltato.`);
+        report.saltatiBloccatiManuale++;
+        report.processedUrls.push({ url, game, status: 'blocked', name: data.name, category: existingWeapon.categoria });
+        report[gameKey].ok++;
+        await sleep(1500 + Math.floor(Math.random() * 700));
+        continue;
+      }
+
       // Upsert arma
       // Regola categoria: non sovrascrivere una categoria valida esistente con "Da verificare"
       const resolvedCategory =
@@ -1052,23 +1071,33 @@ async function main() {
                                                            ? existingWeapon.categoria :
         'Da verificare';
 
+      const autoVerify = AUTO_VERIFY_CODMUNITY_IMPORTS && resolvedCategory !== 'Da verificare' &&
+                         !!weaponId && !!(data.name || existingWeapon.nome);
+      const statoArma  = autoVerify ? 'pubblico' : (existingWeapon.stato || 'da_controllare');
+
       const isNewWeapon = !weaponsMap.has(weaponId);
       weaponsMap.set(weaponId, {
         ...existingWeapon,
-        id        : weaponId,
-        nome      : data.name || existingWeapon.nome || weaponId,
-        categoria : resolvedCategory,
-        gioco     : game,
-        attiva    : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
-        verificata: existingWeapon.verificata ||
-                    (AUTO_VERIFY_CODMUNITY_IMPORTS && resolvedCategory !== 'Da verificare' && !!weaponId && !!(data.name || existingWeapon.nome)),
-        fonte     : 'CODMunity',
-        fonteUrl  : url,
-        note      : 'Importato automaticamente da CODMunity.',
-        updatedAt : todayDate(),
+        id             : weaponId,
+        nome           : data.name || existingWeapon.nome || weaponId,
+        categoria      : resolvedCategory,
+        gioco          : game,
+        attiva         : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
+        verificata     : existingWeapon.verificata || autoVerify,
+        stato          : statoArma,
+        bloccatoManuale: existingWeapon.bloccatoManuale || false,
+        bloccatoMotivo : existingWeapon.bloccatoMotivo  || '',
+        releaseOrder   : existingWeapon.releaseOrder    || (nextReleaseOrder++),
+        discoveredAt   : existingWeapon.discoveredAt    || todayDate(),
+        fonte          : 'CODMunity',
+        fonteUrl       : url,
+        note           : 'Importato automaticamente da CODMunity.',
+        updatedAt      : todayDate(),
       });
-      if (isNewWeapon) report.weaponsImported++;
-      else             report.weaponsUpdated++;
+      if (isNewWeapon) { report.weaponsImported++; }
+      else             { report.weaponsUpdated++;   }
+      if (autoVerify) report.armiPubblicateAuto++;
+      else            report.armiDaControllare++;
 
       // Accessori + Compatibilità
       const ignoredHere = [];
@@ -1086,33 +1115,48 @@ async function main() {
         if (!attId || attId.length < 2) continue;
 
         // Accessorio: preserva verificato se già true, non duplicare
+        // Salta se bloccato manualmente dall'admin
         const isNewAtt    = !attachmentsMap.has(attId);
         const existingAtt = attachmentsMap.get(attId) || {};
+        if (existingAtt.bloccatoManuale || existingAtt.stato === 'bloccato') {
+          report.saltatiBloccatiManuale++;
+          validAtts++; // conta comunque come trovato
+          continue;
+        }
+        const autoVerifyAtt = AUTO_VERIFY_CODMUNITY_IMPORTS && !!slotIT && !!(att.name || existingAtt.nome);
+        const statoAtt      = autoVerifyAtt ? 'pubblico' : (existingAtt.stato || 'da_controllare');
         attachmentsMap.set(attId, {
           ...existingAtt,
-          id        : attId,
-          nome      : att.name || existingAtt.nome || attId,
-          tipo      : slotIT,
-          attivo    : existingAtt.attivo !== undefined ? existingAtt.attivo : true,
-          verificato: existingAtt.verificato ||
-                      (AUTO_VERIFY_CODMUNITY_IMPORTS && !!slotIT && !!(att.name || existingAtt.nome)),
-          fonte     : 'CODMunity',
-          fonteUrl  : url,
-          note      : 'Importato automaticamente da CODMunity.',
-          updatedAt : todayDate(),
+          id             : attId,
+          nome           : att.name || existingAtt.nome || attId,
+          tipo           : slotIT,
+          attivo         : existingAtt.attivo !== undefined ? existingAtt.attivo : true,
+          verificato     : existingAtt.verificato || autoVerifyAtt,
+          stato          : statoAtt,
+          bloccatoManuale: existingAtt.bloccatoManuale || false,
+          bloccatoMotivo : existingAtt.bloccatoMotivo  || '',
+          fonte          : 'CODMunity',
+          fonteUrl       : url,
+          note           : 'Importato automaticamente da CODMunity.',
+          updatedAt      : todayDate(),
         });
-        if (isNewAtt) report.attachmentsImported++;
-        else          report.attachmentsUpdated++;
+        if (isNewAtt) { report.attachmentsImported++; }
+        else          { report.attachmentsUpdated++;   }
+        if (autoVerifyAtt) report.accessoriPubblicatiAuto++;
 
         // Compatibilità — ID: armaId__accessorioId, unica per coppia
         const ck = `${weaponId}::${attId}`;
         if (!compatSet.has(ck)) {
+          const autoVerifyCompat = AUTO_VERIFY_CODMUNITY_IMPORTS;
           compatList.push({
             id           : `${weaponId}__${attId}`,
             armaId       : weaponId,
             accessorioId : attId,
             compatibile  : true,
-            verificato   : AUTO_VERIFY_CODMUNITY_IMPORTS,
+            verificato   : autoVerifyCompat,
+            stato        : autoVerifyCompat ? 'pubblico' : 'da_controllare',
+            bloccatoManuale: false,
+            bloccatoMotivo : '',
             fonte        : 'CODMunity',
             fonteUrl     : url,
             note         : 'Importato automaticamente da CODMunity.',
@@ -1120,6 +1164,7 @@ async function main() {
           });
           compatSet.add(ck);
           report.compatibilityImported++;
+          if (autoVerifyCompat) report.compatPubblicateAuto++;
         } else {
           report.compatibilityUpdated++;
         }
@@ -1209,12 +1254,17 @@ async function main() {
   console.log(`  ─────────────────────────────────────────────`);
   console.log(`  ✓ Successi                : ${ok}`);
   console.log(`  ✗ Falliti                 : ${fail}`);
+  console.log(`  ⊘ Bloccati manualmente    : ${report.saltatiBloccatiManuale}`);
   console.log(`  ⚠ Duplicati saltati       : ${dup}`);
   console.log(`  ⚠ Warning (0 acc)        : ${warn}`);
   console.log(`  ─────────────────────────────────────────────`);
   console.log(`  Armi nuove / aggiornate   : ${report.weaponsImported} / ${report.weaponsUpdated}`);
+  console.log(`  Armi pubblicate auto      : ${report.armiPubblicateAuto}`);
+  console.log(`  Armi da controllare       : ${report.armiDaControllare}`);
   console.log(`  Accessori nuovi / agg.    : ${report.attachmentsImported} / ${report.attachmentsUpdated}`);
+  console.log(`  Accessori pubblici auto   : ${report.accessoriPubblicatiAuto}`);
   console.log(`  Compatibilità nuove / agg.: ${report.compatibilityImported} / ${report.compatibilityUpdated}`);
+  console.log(`  Compat. pubbliche auto    : ${report.compatPubblicateAuto}`);
   console.log(`  Slot ignorati             : ${report.ignoredSlots.length}`);
   console.log(`  ─────────────────────────────────────────────`);
   console.log(`  Categoria rilevata (auto) : ${report.categoryDetected.length}`);

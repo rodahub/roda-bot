@@ -178,32 +178,60 @@ function normalizeWeaponCategoryServer(raw, weaponId) {
   return raw;
 }
 
-// ─── Startup: normalizza categorie + auto-verifica nel file dati ───────────────
-// Viene eseguita una volta all'avvio per garantire che il DB locale sia sempre
-// aggiornato con le categorie corrette e verificata:true dove dovuto.
+// ─── Helpers stato ────────────────────────────────────────────────────────────
+function isPublico(item) {
+  return item.stato === 'pubblico' || (!item.bloccatoManuale && item.stato !== 'bloccato' && item.stato !== 'disattivato');
+}
+
+// ─── Startup: normalizza categorie + migra schema + auto-verifica ──────────────
 function runStartupDataFix() {
   try {
     const weapons = readWeapons();
     let changed = 0;
-    const fixed = weapons.map(w => {
-      const correctCat = normalizeWeaponCategoryServer(w.categoria, w.id);
-      const shouldVerify = VALID_WEAPON_CATEGORIES.has(correctCat);
-      if (correctCat === w.categoria && (!shouldVerify || w.verificata)) return w;
+    let nextOrder = Math.max(0, ...weapons.map(w => w.releaseOrder || 0)) + 1;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const fixed = weapons.map((w, i) => {
+      const correctCat  = normalizeWeaponCategoryServer(w.categoria, w.id);
+      const catValid    = VALID_WEAPON_CATEGORIES.has(correctCat);
+      const shouldPubbl = catValid && !w.bloccatoManuale && w.stato !== 'bloccato' && w.stato !== 'disattivato';
+
+      // Stato derivato se mancante
+      let stato = w.stato;
+      if (!stato) {
+        stato = shouldPubbl ? 'pubblico' : 'da_controllare';
+      }
+      // Se valido e non bloccato ma stato mancava → pubblicato
+      if (!w.stato && shouldPubbl) stato = 'pubblico';
+
+      const needsFix =
+        correctCat !== w.categoria ||
+        (shouldPubbl && !w.verificata) ||
+        !w.stato ||
+        w.releaseOrder === undefined ||
+        !w.discoveredAt;
+
+      if (!needsFix) return w;
       changed++;
       return {
         ...w,
-        categoria : correctCat,
-        verificata: shouldVerify ? true : w.verificata,
-        note      : 'Importato automaticamente da CODMunity.',
-        updatedAt : new Date().toISOString().slice(0, 10),
+        categoria     : correctCat,
+        stato,
+        verificata    : shouldPubbl ? true  : w.verificata,
+        attiva        : shouldPubbl ? true  : w.attiva,
+        bloccatoManuale: w.bloccatoManuale || false,
+        bloccatoMotivo : w.bloccatoMotivo  || '',
+        releaseOrder   : w.releaseOrder    || (nextOrder++),
+        discoveredAt   : w.discoveredAt    || today,
+        updatedAt      : today,
       };
     });
     if (changed > 0) {
       saveWeapons(fixed);
-      console.log(`[Loadout] Startup fix: ${changed} armi normalizzate/verificate.`);
+      console.log(`[Loadout] Startup fix: ${changed} armi aggiornate (schema+categorie+stato).`);
     }
   } catch (e) {
-    console.warn('[Loadout] Startup fix weapons fallito (non bloccante):', e.message);
+    console.warn('[Loadout] Startup fix fallito (non bloccante):', e.message);
   }
 }
 
@@ -236,29 +264,55 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
 
   // ── API PUBBLICHE ──────────────────────────────────────────────────────────
 
-  // GET /api/loadout/weapons  →  armi attive E verificate (solo pubblico)
+  // GET /api/loadout/weapons  →  solo armi pubbliche, ordinate per releaseOrder DESC
   app.get('/api/loadout/weapons', (req, res) => {
     const weapons = readWeapons()
-      .filter(w => w.attiva && w.verificata)
+      .filter(w =>
+        w.attiva !== false &&
+        w.verificata &&
+        !w.bloccatoManuale &&
+        w.stato !== 'bloccato' &&
+        w.stato !== 'disattivato' &&
+        w.stato !== 'da_controllare'
+      )
+      .sort((a, b) => {
+        // 1. releaseOrder DESC (nuovo prima)
+        const ro = (b.releaseOrder || 0) - (a.releaseOrder || 0);
+        if (ro !== 0) return ro;
+        // 2. discoveredAt DESC
+        const da = (b.discoveredAt || '').localeCompare(a.discoveredAt || '');
+        if (da !== 0) return da;
+        // 3. nome ASC
+        return (a.nome || '').localeCompare(b.nome || '');
+      })
       .map(w => ({
-        id        : w.id,
-        nome      : w.nome,
-        categoria : normalizeWeaponCategoryServer(w.categoria, w.id),
-        gioco     : w.gioco || 'BO6',
-        attiva    : w.attiva,
-        verificata: w.verificata,
+        id           : w.id,
+        nome         : w.nome,
+        categoria    : normalizeWeaponCategoryServer(w.categoria, w.id),
+        gioco        : w.gioco || 'BO6',
+        attiva       : w.attiva,
+        verificata   : w.verificata,
+        releaseOrder : w.releaseOrder,
+        discoveredAt : w.discoveredAt,
       }));
     res.json({ ok: true, weapons });
   });
 
-  // GET /api/loadout/attachments?weaponId=xxx  →  accessori attivi, verificati, compatibili
+  // GET /api/loadout/attachments?weaponId=xxx  →  accessori pubblici compatibili
   app.get('/api/loadout/attachments', (req, res) => {
     const { weaponId } = req.query;
-    let attachments = readAttachments().filter(a => a.attivo && a.verificato);
+    let attachments = readAttachments().filter(a =>
+      a.attivo !== false &&
+      a.verificato &&
+      !a.bloccatoManuale &&
+      a.stato !== 'bloccato' &&
+      a.stato !== 'disattivato' &&
+      a.stato !== 'da_controllare'
+    );
     if (weaponId) {
-      // Fonte autoritativa: loadout-compatibility.json (solo voci verificate e compatibili)
       const compat = readCompatibility().filter(
-        c => c.armaId === weaponId && c.compatibile !== false && c.verificato
+        c => c.armaId === weaponId && c.compatibile !== false && c.verificato &&
+             !c.bloccatoManuale && c.stato !== 'bloccato' && c.stato !== 'disattivato'
       );
       const compatIds = new Set(compat.map(c => c.accessorioId));
       attachments = attachments.filter(a => compatIds.has(a.id));
@@ -418,16 +472,32 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
       if (!id || !nome || !categoria) return res.json({ ok: false, message: 'id, nome e categoria sono obbligatori.' });
       const weapons = readWeapons();
       const idx = weapons.findIndex(w => w.id === id);
+      const existing = idx !== -1 ? weapons[idx] : null;
+      const isNew = !existing;
+      const today = new Date().toISOString().slice(0, 10);
+      const isVerified = verificata === true || verificata === 'true';
       const weapon = {
-        id: sanitize(id), nome: sanitize(nome), categoria: sanitize(categoria),
-        gioco: sanitize(gioco) || 'Warzone',
+        id: sanitize(id), nome: sanitize(nome),
+        categoria: sanitize(categoria),
+        gioco: sanitize(gioco) || 'BO6',
         attiva: attiva !== false,
-        verificata: verificata === true || verificata === 'true',
+        verificata: isVerified,
+        // Preserve admin-lock fields when editing; initialize for new records
+        stato: existing?.stato || (isVerified ? 'pubblico' : 'da_controllare'),
+        bloccatoManuale: existing?.bloccatoManuale || false,
+        bloccatoMotivo: existing?.bloccatoMotivo || '',
+        releaseOrder: existing?.releaseOrder || (Math.max(0, ...weapons.map(w => w.releaseOrder || 0)) + 1),
+        discoveredAt: existing?.discoveredAt || today,
         fonte: sanitize(fonte) || '', note: sanitize(note) || '',
         updatedAt: nowISO()
       };
-      if (idx === -1) weapons.push(weapon);
-      else weapons[idx] = { ...weapons[idx], ...weapon };
+      // If admin explicitly verifies → auto-publish (unless manually blocked)
+      if (isVerified && !weapon.bloccatoManuale && weapon.stato !== 'bloccato') {
+        weapon.stato = 'pubblico';
+        weapon.attiva = true;
+      }
+      if (isNew) weapons.push(weapon);
+      else weapons[idx] = weapon;
       saveWeapons(weapons);
       res.json({ ok: true, weapon });
     } catch (e) {
@@ -444,16 +514,26 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
       if (!tipoNorm) return res.json({ ok: false, message: `Tipo slot "${tipo}" non valido. Usa: ${VALID_SLOTS.join(', ')}` });
       const attachments = readAttachments();
       const idx = attachments.findIndex(a => a.id === id);
+      const existing = idx !== -1 ? attachments[idx] : null;
+      const isVerif = verificato === true || verificato === 'true';
       const att = {
         id: sanitize(id), nome: sanitize(nome), tipo: tipoNorm,
-        armiCompatibili: Array.isArray(armiCompatibili) ? armiCompatibili : [],
+        armiCompatibili: Array.isArray(armiCompatibili) ? armiCompatibili : (existing?.armiCompatibili || []),
         attivo: attivo !== false,
-        verificato: verificato === true || verificato === 'true',
+        verificato: isVerif,
+        // Preserve admin-lock fields
+        stato: existing?.stato || (isVerif ? 'pubblico' : 'da_controllare'),
+        bloccatoManuale: existing?.bloccatoManuale || false,
+        bloccatoMotivo: existing?.bloccatoMotivo || '',
         fonte: sanitize(fonte) || '', note: sanitize(note) || '',
         updatedAt: nowISO()
       };
-      if (idx === -1) attachments.push(att);
-      else attachments[idx] = { ...attachments[idx], ...att };
+      if (isVerif && !att.bloccatoManuale && att.stato !== 'bloccato') {
+        att.stato = 'pubblico';
+        att.attivo = true;
+      }
+      if (!existing) attachments.push(att);
+      else attachments[idx] = att;
       saveAttachments(attachments);
       res.json({ ok: true, attachment: att });
     } catch (e) {
@@ -559,30 +639,31 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
     }
   });
 
-  // POST /api/admin/loadout/verify  →  verifica un record
-  app.post('/api/admin/loadout/verify', authRequired, (req, res) => {
+  // POST /api/admin/loadout/publish  →  pubblica manualmente un record
+  app.post('/api/admin/loadout/publish', authRequired, (req, res) => {
     try {
       const { type, id, armaId, accessorioId } = req.body;
+      const ts = nowISO();
       if (type === 'weapon') {
         const weapons = readWeapons();
         const idx = weapons.findIndex(w => w.id === id);
         if (idx === -1) return res.json({ ok: false, message: 'Arma non trovata.' });
-        weapons[idx].verificata = true; weapons[idx].updatedAt = nowISO();
+        weapons[idx] = { ...weapons[idx], stato:'pubblico', verificata:true, attiva:true, bloccatoManuale:false, updatedAt:ts };
         saveWeapons(weapons);
       } else if (type === 'attachment') {
         const atts = readAttachments();
         const idx = atts.findIndex(a => a.id === id);
         if (idx === -1) return res.json({ ok: false, message: 'Accessorio non trovato.' });
-        atts[idx].verificato = true; atts[idx].updatedAt = nowISO();
+        atts[idx] = { ...atts[idx], stato:'pubblico', verificato:true, attivo:true, bloccatoManuale:false, updatedAt:ts };
         saveAttachments(atts);
       } else if (type === 'compatibility') {
         const compat = readCompatibility();
         const idx = compat.findIndex(c => c.armaId === armaId && c.accessorioId === accessorioId);
         if (idx === -1) return res.json({ ok: false, message: 'Compatibilità non trovata.' });
-        compat[idx].verificato = true; compat[idx].updatedAt = nowISO();
+        compat[idx] = { ...compat[idx], stato:'pubblico', verificato:true, compatibile:true, bloccatoManuale:false, updatedAt:ts };
         saveCompatibility(compat);
       } else {
-        return res.json({ ok: false, message: 'Tipo non valido. Usa: weapon, attachment, compatibility.' });
+        return res.json({ ok: false, message: 'Tipo non valido: weapon, attachment, compatibility.' });
       }
       res.json({ ok: true });
     } catch (e) {
@@ -590,32 +671,135 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
     }
   });
 
-  // POST /api/admin/loadout/verify-all  →  verifica in blocco per tipo
+  // POST /api/admin/loadout/block  →  blocca manualmente (il sync non lo riattiva)
+  app.post('/api/admin/loadout/block', authRequired, (req, res) => {
+    try {
+      const { type, id, armaId, accessorioId, reason } = req.body;
+      const ts = nowISO();
+      if (type === 'weapon') {
+        const weapons = readWeapons();
+        const idx = weapons.findIndex(w => w.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Arma non trovata.' });
+        weapons[idx] = { ...weapons[idx], stato:'bloccato', attiva:false, bloccatoManuale:true, bloccatoMotivo:sanitize(reason)||'', updatedAt:ts };
+        saveWeapons(weapons);
+      } else if (type === 'attachment') {
+        const atts = readAttachments();
+        const idx = atts.findIndex(a => a.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Accessorio non trovato.' });
+        atts[idx] = { ...atts[idx], stato:'bloccato', attivo:false, bloccatoManuale:true, bloccatoMotivo:sanitize(reason)||'', updatedAt:ts };
+        saveAttachments(atts);
+      } else if (type === 'compatibility') {
+        const compat = readCompatibility();
+        const idx = compat.findIndex(c => c.armaId === armaId && c.accessorioId === accessorioId);
+        if (idx === -1) return res.json({ ok: false, message: 'Compatibilità non trovata.' });
+        compat[idx] = { ...compat[idx], stato:'bloccato', compatibile:false, bloccatoManuale:true, bloccatoMotivo:sanitize(reason)||'', updatedAt:ts };
+        saveCompatibility(compat);
+      } else {
+        return res.json({ ok: false, message: 'Tipo non valido: weapon, attachment, compatibility.' });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
+  // POST /api/admin/loadout/reactivate  →  riattiva/sblocca un record
+  app.post('/api/admin/loadout/reactivate', authRequired, (req, res) => {
+    try {
+      const { type, id, armaId, accessorioId } = req.body;
+      const ts = nowISO();
+      if (type === 'weapon') {
+        const weapons = readWeapons();
+        const idx = weapons.findIndex(w => w.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Arma non trovata.' });
+        weapons[idx] = { ...weapons[idx], stato:'pubblico', attiva:true, verificata:true, bloccatoManuale:false, bloccatoMotivo:'', updatedAt:ts };
+        saveWeapons(weapons);
+      } else if (type === 'attachment') {
+        const atts = readAttachments();
+        const idx = atts.findIndex(a => a.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Accessorio non trovato.' });
+        atts[idx] = { ...atts[idx], stato:'pubblico', attivo:true, verificato:true, bloccatoManuale:false, bloccatoMotivo:'', updatedAt:ts };
+        saveAttachments(atts);
+      } else if (type === 'compatibility') {
+        const compat = readCompatibility();
+        const idx = compat.findIndex(c => c.armaId === armaId && c.accessorioId === accessorioId);
+        if (idx === -1) return res.json({ ok: false, message: 'Compatibilità non trovata.' });
+        compat[idx] = { ...compat[idx], stato:'pubblico', compatibile:true, verificato:true, bloccatoManuale:false, bloccatoMotivo:'', updatedAt:ts };
+        saveCompatibility(compat);
+      } else {
+        return res.json({ ok: false, message: 'Tipo non valido: weapon, attachment, compatibility.' });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
+  // POST /api/admin/loadout/verify  →  verifica + pubblica un record
+  app.post('/api/admin/loadout/verify', authRequired, (req, res) => {
+    try {
+      const { type, id, armaId, accessorioId } = req.body;
+      const ts = nowISO();
+      if (type === 'weapon') {
+        const weapons = readWeapons();
+        const idx = weapons.findIndex(w => w.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Arma non trovata.' });
+        weapons[idx] = { ...weapons[idx], verificata:true, attiva:true, stato:'pubblico', bloccatoManuale:false, updatedAt:ts };
+        saveWeapons(weapons);
+      } else if (type === 'attachment') {
+        const atts = readAttachments();
+        const idx = atts.findIndex(a => a.id === id);
+        if (idx === -1) return res.json({ ok: false, message: 'Accessorio non trovato.' });
+        atts[idx] = { ...atts[idx], verificato:true, attivo:true, stato:'pubblico', bloccatoManuale:false, updatedAt:ts };
+        saveAttachments(atts);
+      } else if (type === 'compatibility') {
+        const compat = readCompatibility();
+        const idx = compat.findIndex(c => c.armaId === armaId && c.accessorioId === accessorioId);
+        if (idx === -1) return res.json({ ok: false, message: 'Compatibilità non trovata.' });
+        compat[idx] = { ...compat[idx], verificato:true, compatibile:true, stato:'pubblico', bloccatoManuale:false, updatedAt:ts };
+        saveCompatibility(compat);
+      } else {
+        return res.json({ ok: false, message: 'Tipo non valido: weapon, attachment, compatibility.' });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
+  // POST /api/admin/loadout/verify-all  →  verifica in blocco per tipo (rispetta bloccatoManuale)
   app.post('/api/admin/loadout/verify-all', authRequired, (req, res) => {
     try {
       const { type } = req.body;
       if (!['weapons','attachments','compatibility','all'].includes(type)) {
-        return res.json({ ok: false, message: 'Tipo non valido. Usa: weapons, attachments, compatibility, all.' });
+        return res.json({ ok: false, message: 'Tipo non valido: weapons, attachments, compatibility, all.' });
       }
+      const ts = nowISO();
       let updated = 0;
       if (type === 'weapons' || type === 'all') {
         const weapons = readWeapons();
         weapons.forEach(w => {
-          if (!w.verificata) { w.verificata = true; w.updatedAt = nowISO(); updated++; }
+          if (!w.bloccatoManuale && w.stato !== 'bloccato' && !w.verificata) {
+            w.verificata = true; w.attiva = true; w.stato = 'pubblico'; w.updatedAt = ts; updated++;
+          }
         });
         saveWeapons(weapons);
       }
       if (type === 'attachments' || type === 'all') {
         const atts = readAttachments();
         atts.forEach(a => {
-          if (!a.verificato) { a.verificato = true; a.updatedAt = nowISO(); updated++; }
+          if (!a.bloccatoManuale && a.stato !== 'bloccato' && !a.verificato) {
+            a.verificato = true; a.attivo = true; a.stato = 'pubblico'; a.updatedAt = ts; updated++;
+          }
         });
         saveAttachments(atts);
       }
       if (type === 'compatibility' || type === 'all') {
         const compat = readCompatibility();
         compat.forEach(c => {
-          if (!c.verificato) { c.verificato = true; c.updatedAt = nowISO(); updated++; }
+          if (!c.bloccatoManuale && c.stato !== 'bloccato' && !c.verificato) {
+            c.verificato = true; c.compatibile = true; c.stato = 'pubblico'; c.updatedAt = ts; updated++;
+          }
         });
         saveCompatibility(compat);
       }
@@ -625,26 +809,45 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
     }
   });
 
-  // POST /api/admin/loadout/disable  →  disattiva un record
+  // POST /api/admin/loadout/disable  →  disattiva (non blocca — può essere riattivato)
   app.post('/api/admin/loadout/disable', authRequired, (req, res) => {
     try {
-      const { type, id } = req.body;
+      const { type, id, armaId, accessorioId } = req.body;
+      const ts = nowISO();
       if (type === 'weapon') {
         const weapons = readWeapons();
         const idx = weapons.findIndex(w => w.id === id);
         if (idx === -1) return res.json({ ok: false, message: 'Arma non trovata.' });
-        weapons[idx].attiva = false; weapons[idx].updatedAt = nowISO();
+        weapons[idx] = { ...weapons[idx], stato:'disattivato', attiva:false, updatedAt:ts };
         saveWeapons(weapons);
       } else if (type === 'attachment') {
         const atts = readAttachments();
         const idx = atts.findIndex(a => a.id === id);
         if (idx === -1) return res.json({ ok: false, message: 'Accessorio non trovato.' });
-        atts[idx].attivo = false; atts[idx].updatedAt = nowISO();
+        atts[idx] = { ...atts[idx], stato:'disattivato', attivo:false, updatedAt:ts };
         saveAttachments(atts);
+      } else if (type === 'compatibility') {
+        const compat = readCompatibility();
+        const idx = compat.findIndex(c => c.armaId === (armaId||id) && c.accessorioId === accessorioId);
+        if (idx === -1) return res.json({ ok: false, message: 'Compatibilità non trovata.' });
+        compat[idx] = { ...compat[idx], stato:'disattivato', compatibile:false, updatedAt:ts };
+        saveCompatibility(compat);
       } else {
-        return res.json({ ok: false, message: 'Tipo non valido. Usa: weapon, attachment.' });
+        return res.json({ ok: false, message: 'Tipo non valido: weapon, attachment, compatibility.' });
       }
       res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, message: e.message });
+    }
+  });
+
+  // GET /api/admin/loadout/sync-report  →  ultimo report di sync
+  app.get('/api/admin/loadout/sync-report', authRequired, (req, res) => {
+    try {
+      const reportFile = path.join(__dirname, 'data', 'loadout-import-report.json');
+      if (!fs.existsSync(reportFile)) return res.json({ ok: true, report: null });
+      const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+      res.json({ ok: true, report });
     } catch (e) {
       res.status(500).json({ ok: false, message: e.message });
     }
