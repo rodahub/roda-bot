@@ -11,12 +11,14 @@
       --surface:rgba(18,18,33,.97);
       --surface2:rgba(25,25,45,.95);
       --border:rgba(190,145,255,.18);
+      --border2:rgba(190,145,255,.36);
       --purple:#7b2cff;
       --purple-light:#a855f7;
       --text:#e0d8f6;
-      --muted:rgba(200,185,240,.5);
+      --muted:rgba(200,185,240,.58);
       --red:#c92b4b;
       --green:#22c55e;
+      --yellow:#ffd166;
     }
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{min-height:100%;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(123,44,255,.22),transparent 30%),radial-gradient(circle at 88% 90%,rgba(123,44,255,.12),transparent 34%),linear-gradient(180deg,#050507,#090910);color:var(--text)}
@@ -24,56 +26,30 @@
     .topbar{position:sticky;top:0;z-index:80;background:linear-gradient(180deg,rgba(9,9,16,.96),rgba(7,7,12,.8));border-bottom:1px solid var(--border);backdrop-filter:blur(16px);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
     .logo{display:flex;align-items:center;gap:10px;font-weight:950;font-size:18px;letter-spacing:-.3px}
     .logo img{width:32px;height:32px;object-fit:contain}
-    .nav-links{display:flex;gap:8px}
-    .nav-links a{font-size:13px;font-weight:600;color:var(--muted);padding:6px 12px;border-radius:20px;transition:.15s}
-    .nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(123,44,255,.15)}
-    .hero{text-align:center;padding:60px 24px 40px;max-width:700px;margin:0 auto}
-    .hero h1{font-size:clamp(28px,5vw,48px);font-weight:950;letter-spacing:-1px;line-height:1.1}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+    .nav-links a{font-size:13px;font-weight:700;color:var(--muted);padding:7px 12px;border-radius:20px;transition:.15s;border:1px solid transparent}
+    .nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(123,44,255,.15);border-color:rgba(168,85,247,.2)}
+    .hero{text-align:center;padding:58px 24px 38px;max-width:760px;margin:0 auto}
+    .hero h1{font-size:clamp(30px,5vw,54px);font-weight:950;letter-spacing:-1.4px;line-height:1.05}
     .hero h1 span{background:linear-gradient(135deg,#a855f7,#7b2cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .hero p{margin-top:14px;color:var(--muted);font-size:15px;line-height:1.6}
-    .container{max-width:1100px;margin:0 auto;padding:0 20px 60px}
-    .tabs{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:0;justify-content:center}
-    .tab{font-size:14px;font-weight:700;padding:10px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+    .hero p{margin-top:14px;color:var(--muted);font-size:15px;line-height:1.65}
+    .container{max-width:1120px;margin:0 auto;padding:0 20px 64px}
+    .tabs{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid var(--border);justify-content:center}
+    .tab{font-size:14px;font-weight:800;padding:11px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
     .tab.active{color:var(--purple-light);border-bottom-color:var(--purple-light)}
     .tab:hover{color:var(--text)}
-    .tab-panel{display:none}
-    .tab-panel.active{display:block}
-    /* Card build */
+    .tab-panel{display:none}.tab-panel.active{display:block}
     .builds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-    .build-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;transition:.2s}
+    .build-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;transition:.2s;box-shadow:0 16px 45px rgba(0,0,0,.22)}
     .build-card:hover{border-color:rgba(168,85,247,.35);transform:translateY(-2px)}
-    .bc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-    .bc-arma{font-size:17px;font-weight:900;color:#e0d8f6}
-    .bc-tipo{font-size:11px;font-weight:700;color:var(--purple-light);background:rgba(123,44,255,.15);padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
-    .bc-cat{font-size:11px;color:var(--muted);margin-top:3px}
-    .bc-creator{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)}
-    .bc-creator span{color:var(--text)}
-    .bc-atts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-    .bc-att{font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:3px 8px;color:#c4b8e8}
-    .bc-att strong{color:var(--muted);font-size:10px;display:block;margin-bottom:1px}
-    .bc-nota{font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
-    .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
-    .empty-state .icon{font-size:48px;margin-bottom:16px}
-    /* Form */
-    .form-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;max-width:640px;margin:0 auto}
-    .form-title{font-size:20px;font-weight:900;margin-bottom:22px}
-    .field{margin-bottom:16px}
-    .field label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-    .field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(190,145,255,.2);border-radius:12px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.15s}
-    .field input:focus,.field select,.field textarea:focus{border-color:var(--purple);background:rgba(123,44,255,.08)}
-    .field select{cursor:pointer}
-    .field select option{background:#0d0d1a}
-    .field textarea{resize:vertical;min-height:80px}
-    .att-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .btn{display:inline-flex;align-items:center;gap:6px;padding:11px 20px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;font-family:inherit}
-    .btn-purple{background:linear-gradient(135deg,#7b2cff,#a855f7);color:#fff}
-    .btn-purple:hover{opacity:.9;transform:translateY(-1px)}
-    .btn-purple:disabled{opacity:.5;cursor:not-allowed;transform:none}
-    .success-msg{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#4ade80;margin-top:16px}
-    .error-msg{background:rgba(201,43,75,.1);border:1px solid rgba(201,43,75,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#ff8099;margin-top:16px}
-    .section-title{font-size:22px;font-weight:900;margin-bottom:6px}
-    .section-sub{font-size:14px;color:var(--muted);margin-bottom:22px}
-    @media(max-width:640px){.att-grid{grid-template-columns:1fr}.form-card{padding:18px}.hero{padding:40px 16px 28px}}
+    .bc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px}
+    .bc-arma{font-size:17px;font-weight:950;color:#e0d8f6}.bc-tipo{font-size:11px;font-weight:800;color:var(--purple-light);background:rgba(123,44,255,.15);padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.bc-cat{font-size:11px;color:var(--muted);margin-top:3px}.bc-creator{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)}.bc-creator span{color:var(--text)}.bc-atts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.bc-att{font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;color:#c4b8e8}.bc-att strong{color:var(--muted);font-size:10px;display:block;margin-bottom:1px}.bc-nota{font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
+    .empty-state{text-align:center;padding:44px 20px;color:var(--muted);background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:18px}.empty-state .icon{width:54px;height:54px;margin:0 auto 16px;border-radius:18px;background:linear-gradient(135deg,rgba(123,44,255,.35),rgba(168,85,247,.12));border:1px solid var(--border2)}
+    .form-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;max-width:720px;margin:0 auto;box-shadow:0 24px 70px rgba(0,0,0,.32),0 0 44px rgba(123,44,255,.08)}
+    .form-title{font-size:22px;font-weight:950;margin-bottom:12px}.field{margin-bottom:16px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(190,145,255,.2);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.15s}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple);background:rgba(123,44,255,.08);box-shadow:0 0 0 3px rgba(123,44,255,.11)}.field select{cursor:pointer}.field select option{background:#0d0d1a}.field textarea{resize:vertical;min-height:80px}
+    .slot-list{display:grid;gap:12px}.slot-box{background:rgba(255,255,255,.035);border:1px solid rgba(190,145,255,.16);border-radius:16px;padding:14px}.slot-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.slot-title{font-weight:900;color:#f3edff}.slot-count{font-size:11px;color:var(--muted);background:rgba(123,44,255,.14);border:1px solid rgba(123,44,255,.2);border-radius:999px;padding:4px 8px}.slot-box select{margin-top:0}.selected-count{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:7px 10px;border-radius:999px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.24);color:#8ff0b0;font-size:12px;font-weight:800}.hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;border:none;transition:.15s;font-family:inherit;width:100%}.btn-purple{background:linear-gradient(135deg,#7b2cff,#a855f7);color:#fff}.btn-purple:hover{opacity:.94;transform:translateY(-1px)}.btn-purple:disabled{opacity:.48;cursor:not-allowed;transform:none}.success-msg{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#4ade80;margin-top:16px}.error-msg{background:rgba(201,43,75,.1);border:1px solid rgba(201,43,75,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#ff8099;margin-top:16px}.section-title{font-size:22px;font-weight:950;margin-bottom:6px}.section-sub{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.55}
+    @media(max-width:640px){.form-card{padding:18px}.hero{padding:40px 16px 28px}.topbar{align-items:flex-start;flex-direction:column}.nav-links{width:100%}.nav-links a{flex:1;text-align:center}.tabs{justify-content:flex-start;overflow-x:auto}}
   </style>
 </head>
 <body>
@@ -97,26 +73,23 @@
 </div>
 
 <div class="container">
-
   <div class="tabs">
     <div class="tab active" data-tab="builds">Equipaggiamenti</div>
     <div class="tab" data-tab="form">Crea il tuo Loadout</div>
   </div>
 
-  <!-- TAB: lista build approvate -->
   <div class="tab-panel active" id="tab-builds">
     <div class="section-title">Build della community</div>
     <div class="section-sub">Tutti gli equipaggiamenti approvati dallo staff RØDA.</div>
     <div class="builds-grid" id="buildsGrid">
-      <div class="empty-state"><div class="icon">🔫</div><p>Caricamento...</p></div>
+      <div class="empty-state"><div class="icon"></div><p>Caricamento...</p></div>
     </div>
   </div>
 
-  <!-- TAB: form invio -->
   <div class="tab-panel" id="tab-form">
     <div class="form-card">
       <div class="form-title">Crea il tuo Loadout</div>
-      <div class="section-sub">Scegli gioco, arma, stile e accessori compatibili. Il loadout verrà preparato con la grafica RØDA.</div>
+      <div class="section-sub">Scegli gioco, arma, stile e accessori compatibili. Il loadout verrà controllato dallo staff RØDA.</div>
 
       <div class="field">
         <label>Gioco</label>
@@ -176,7 +149,7 @@
       <div class="field">
         <label>Accessori compatibili</label>
         <div id="accessoriContainer">
-          <div class="empty-state" style="padding:20px;font-size:13px;color:var(--muted)">Seleziona un'arma per vedere gli accessori compatibili.</div>
+          <div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un'arma per vedere gli accessori compatibili.</div>
         </div>
       </div>
 
@@ -187,15 +160,18 @@
         </div>
       </div>
 
-      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()" disabled>🚀 Invia Loadout</button>
+      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()" disabled>Invia Loadout</button>
       <div id="formMsg" style="display:none"></div>
     </div>
   </div>
-
 </div>
 
 <script>
-  // ── Tabs ───────────────────────────────────────────────────────────────────
+  const SLOT_ORDER = ['Ottica','Volata','Canna','Sottocanna','Caricatore','Impugnatura','Calcio','Laser','Mod fuoco'];
+  const MAX_ATTACHMENTS = 5;
+  let allWeapons = [];
+  let allAttachments = [];
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -205,292 +181,236 @@
     });
   });
 
-  // ── Normalizzazione categoria (apostrofi, case, spazi) ────────────────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
   function normalizeCategoryForCompare(s) {
-    return String(s || '')
-      .trim()
-      .replace(/[''‚‛′''‚‛‘’‚‛′]/g, "'") // apostrofi → dritti
-      .replace(/\s+/g, ' ')
-      .toLowerCase();
+    return String(s || '').trim().replace(/[''‚‛′‘’]/g, "'").replace(/\s+/g, ' ').toLowerCase();
+  }
+  function normalizeSlot(s) {
+    const raw = String(s || '').trim();
+    const map = { optic:'Ottica', muzzle:'Volata', barrel:'Canna', underbarrel:'Sottocanna', magazine:'Caricatore', 'rear grip':'Impugnatura', stock:'Calcio', laser:'Laser', 'fire mods':'Mod fuoco' };
+    return map[raw.toLowerCase()] || raw;
   }
 
-  // ── Dati locali ────────────────────────────────────────────────────────────
-  let allWeapons = [];
-  let allAttachments = [];
-
-  // ── Carica armi dal server ──────────────────────────────────────────────────
   async function loadWeapons() {
     try {
-      const r = await fetch('/api/loadout/weapons');
-      if (!r.ok) {
-        console.warn('[Loadout] API /api/loadout/weapons risposta non-OK:', r.status);
-        return;
-      }
+      const r = await fetch('/api/loadout/weapons', { cache:'no-store' });
       const d = await r.json();
-      if (!d || !Array.isArray(d.weapons)) {
-        console.warn('[Loadout] API /api/loadout/weapons: formato risposta inatteso', d);
-        return;
-      }
-      allWeapons = d.weapons;
-      const bo6Count = allWeapons.filter(w => w.gioco === 'BO6').length;
-      const bo7Count = allWeapons.filter(w => w.gioco === 'BO7').length;
-      const cats = [...new Set(allWeapons.map(w => w.categoria))].sort();
-      console.log('[Loadout] Armi caricate dall\'API:', {
-        totale: allWeapons.length,
-        bo6: bo6Count,
-        bo7: bo7Count,
-        categorie: cats,
-      });
-      if (allWeapons.length === 0) {
-        console.warn('[Loadout] Nessuna arma verificata nel database. Usa /admin-loadout per verificarle.');
-      }
+      allWeapons = Array.isArray(d.weapons) ? d.weapons : [];
+      console.log('[Loadout] Armi caricate:', allWeapons.length);
     } catch (e) {
       console.warn('[Loadout] Errore caricamento armi:', e.message);
     }
   }
 
-  // ── Carica accessori per arma ──────────────────────────────────────────────
   async function loadAttachments(weaponId) {
-    const r = await fetch('/api/loadout/attachments?weaponId=' + encodeURIComponent(weaponId));
-    const d = await r.json();
-    allAttachments = d.attachments || [];
-    
+    const container = document.getElementById('accessoriContainer');
+    container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Caricamento accessori compatibili...</div>';
+    allAttachments = [];
+    updateSubmitState();
+
     if (!weaponId) {
-      console.warn('[Loadout] weaponId vuoto per loadAttachments');
+      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un\'arma per vedere gli accessori compatibili.</div>';
+      updateRiepilogo();
       return;
     }
-    if (!d || !Array.isArray(d.attachments)) {
-      console.warn('[Loadout] Risposta API attachments non valida:', d);
-    } else if (allAttachments.length === 0) {
-      console.warn('[Loadout] Nessun accessorio trovato per weaponId:', weaponId);
+
+    try {
+      const r = await fetch('/api/loadout/attachments?weaponId=' + encodeURIComponent(weaponId), { cache:'no-store' });
+      const d = await r.json();
+      allAttachments = Array.isArray(d.attachments) ? d.attachments.map(a => ({ ...a, tipo: normalizeSlot(a.tipo || a.slot), slot: normalizeSlot(a.slot || a.tipo) })) : [];
+      console.warn('Accessori loadout', { weaponId, response: d, attachmentsCount: allAttachments.length });
+      renderAttSelects();
+      updateRiepilogo();
+    } catch (e) {
+      console.error('[Loadout] Errore accessori:', e);
+      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:#ff8099">Errore caricamento accessori. Riprova tra poco.</div>';
     }
-    
-    renderAttSelects();
-    updateRiepilogo();
   }
 
-  // ── Aggiorna riepilogo live ────────────────────────────────────────────────
+  function selectedAttachmentIds() {
+    return Array.from(document.querySelectorAll('.att-select')).map(s => s.value).filter(Boolean);
+  }
+
+  function renderAttSelects() {
+    const container = document.getElementById('accessoriContainer');
+    const validAttachments = allAttachments.filter(a => SLOT_ORDER.includes(normalizeSlot(a.tipo || a.slot)));
+
+    if (!validAttachments.length) {
+      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Nessun accessorio disponibile per quest\'arma.</div>';
+      updateSubmitState();
+      return;
+    }
+
+    const bySlot = {};
+    SLOT_ORDER.forEach(slot => bySlot[slot] = []);
+    validAttachments.forEach(a => {
+      const slot = normalizeSlot(a.tipo || a.slot);
+      if (bySlot[slot]) bySlot[slot].push(a);
+    });
+
+    const slotsWithItems = SLOT_ORDER.filter(slot => bySlot[slot].length > 0);
+    container.innerHTML = `<div class="slot-list">
+      <div class="hint">Puoi scegliere massimo ${MAX_ATTACHMENTS} accessori totali. Gli slot mostrati sono quelli disponibili per l'arma selezionata.</div>
+      ${slotsWithItems.map(slot => `
+        <div class="slot-box">
+          <div class="slot-head">
+            <div class="slot-title">${esc(slot)}</div>
+            <div class="slot-count">${bySlot[slot].length} disponibili</div>
+          </div>
+          <select class="att-select" data-slot="${esc(slot)}">
+            <option value="">— Nessun accessorio —</option>
+            ${bySlot[slot].map(a => `<option value="${esc(a.id)}">${esc(a.nome || a.name || a.id)}</option>`).join('')}
+          </select>
+        </div>
+      `).join('')}
+      <div id="selectedCount" class="selected-count">0 / ${MAX_ATTACHMENTS} selezionati</div>
+    </div>`;
+
+    document.querySelectorAll('.att-select').forEach(select => {
+      select.addEventListener('change', () => {
+        enforceMaxAttachments(select);
+        updateRiepilogo();
+        updateSubmitState();
+      });
+    });
+    updateSubmitState();
+  }
+
+  function enforceMaxAttachments(changedSelect) {
+    const selected = selectedAttachmentIds();
+    if (selected.length <= MAX_ATTACHMENTS) return;
+    changedSelect.value = '';
+    showMsg(`Puoi selezionare massimo ${MAX_ATTACHMENTS} accessori.`, 'error');
+  }
+
+  function updateSubmitState() {
+    const btn = document.getElementById('submitBtn');
+    const armaId = document.getElementById('f-arma').value;
+    const creator = document.getElementById('f-creator').value.trim();
+    const count = selectedAttachmentIds().length;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.textContent = `${count} / ${MAX_ATTACHMENTS} selezionati`;
+    btn.disabled = !(armaId && creator.length >= 2 && count > 0 && count <= MAX_ATTACHMENTS);
+  }
+
   function updateRiepilogo() {
     const box = document.getElementById('riepilogoBox');
-    if (!box) return;
-    
     const gioco = document.getElementById('f-gioco').value;
     const categoria = document.getElementById('f-categoria').value;
     const armaId = document.getElementById('f-arma').value;
     const stile = document.getElementById('f-stile').value;
     const creator = document.getElementById('f-creator').value.trim();
-    
     const armaObj = allWeapons.find(w => w.id === armaId);
-    const accessoriSelezionati = Array.from(document.querySelectorAll('.att-select'))
-      .map(s => ({ slot: s.dataset?.slot || 'Vari', accessorioId: s.value, nome: s.options[s.selectedIndex]?.text }))
-      .filter(a => a.accessorioId);
-    
+    const accessoriSelezionati = Array.from(document.querySelectorAll('.att-select')).map(s => ({ slot:s.dataset.slot, accessorioId:s.value, nome:s.options[s.selectedIndex]?.text })).filter(a => a.accessorioId);
     let html = '';
-    if (gioco) html += `<div><strong>Gioco:</strong> ${gioco}</div>`;
-    if (categoria) html += `<div><strong>Categoria:</strong> ${categoria}</div>`;
-    if (armaObj) html += `<div><strong>Arma:</strong> ${armaObj.nome}</div>`;
-    if (stile) html += `<div><strong>Stile:</strong> ${stile}</div>`;
-    if (creator) html += `<div><strong>Firma creator:</strong> ${creator}</div>`;
-    
-    if (accessoriSelezionati.length > 0) {
-      html += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><strong>Accessori:</strong></div>`;
-      html += `<ul style="margin:6px 0 0 16px;font-size:12px">`;
-      accessoriSelezionati.forEach(a => {
-        html += `<li><strong>${a.slot}:</strong> ${a.nome || a.accessorioId}</li>`;
-      });
-      html += `</ul>`;
+    if (gioco) html += `<div><strong>Gioco:</strong> ${esc(gioco)}</div>`;
+    if (categoria) html += `<div><strong>Categoria:</strong> ${esc(categoria)}</div>`;
+    if (armaObj) html += `<div><strong>Arma:</strong> ${esc(armaObj.nome)}</div>`;
+    if (stile) html += `<div><strong>Stile:</strong> ${esc(stile)}</div>`;
+    if (creator) html += `<div><strong>Firma creator:</strong> ${esc(creator)}</div>`;
+    if (accessoriSelezionati.length) {
+      html += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><strong>Accessori:</strong></div><ul style="margin:6px 0 0 16px;font-size:12px">`;
+      accessoriSelezionati.forEach(a => html += `<li><strong>${esc(a.slot)}:</strong> ${esc(a.nome)}</li>`);
+      html += '</ul>';
     }
-    
-    if (!html) html = '<div style="color:var(--muted)">Nessuna selezione</div>';
-    box.innerHTML = html;
+    box.innerHTML = html || '<div style="color:var(--muted)">Nessuna selezione</div>';
   }
 
-  // ── Render select accessori ────────────────────────────────────────────────
-  function renderAttSelects() {
-    const selects = document.querySelectorAll('.att-select');
-    selects.forEach((sel, i) => {
-      const prev = sel.value;
-      sel.disabled = false;
-      // Raggruppa per tipo
-      const byType = {};
-      allAttachments.forEach(a => {
-        if (!byType[a.tipo]) byType[a.tipo] = [];
-        byType[a.tipo].push(a);
-      });
-      sel.innerHTML = `<option value="">— Slot ${i+1} (opzionale) —</option>`;
-      Object.entries(byType).forEach(([tipo, items]) => {
-        const og = document.createElement('optgroup');
-        og.label = tipo;
-        items.forEach(a => {
-          const o = document.createElement('option');
-          o.value = a.id;
-          o.textContent = a.nome;
-          if (a.id === prev) o.selected = true;
-          og.appendChild(o);
-        });
-        sel.appendChild(og);
-      });
-    });
-  }
+  document.getElementById('f-gioco').addEventListener('change', () => {
+    document.getElementById('f-categoria').dispatchEvent(new Event('change'));
+    updateRiepilogo();
+  });
 
-  // ── Cambio categoria → filtra armi ────────────────────────────────────────
   document.getElementById('f-categoria').addEventListener('change', function() {
     const cat = this.value;
+    const gioco = document.getElementById('f-gioco').value;
     const armaSelect = document.getElementById('f-arma');
-
-    if (!armaSelect) {
-      console.warn('[Loadout] Elemento #f-arma non trovato nel DOM.');
-      return;
-    }
-
-    // Reset accessori sempre
-    document.querySelectorAll('.att-select').forEach(s => {
-      s.disabled = true;
-      s.innerHTML = `<option value="">— Prima scegli l'arma —</option>`;
-    });
     allAttachments = [];
+    document.getElementById('accessoriContainer').innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un\'arma per vedere gli accessori compatibili.</div>';
+    updateSubmitState();
 
-    // Nessuna categoria selezionata → torna allo stato iniziale
     if (!cat) {
       armaSelect.disabled = true;
-      armaSelect.innerHTML = `<option value="">— Prima scegli la categoria —</option>`;
+      armaSelect.innerHTML = '<option value="">— Prima scegli la categoria —</option>';
+      updateRiepilogo();
       return;
     }
-
-    // Nessuna arma verificata in tutto il DB
-    if (allWeapons.length === 0) {
-      console.warn('[Loadout] Nessuna arma verificata disponibile nel database.');
+    if (!allWeapons.length) {
       armaSelect.disabled = true;
-      armaSelect.innerHTML = `<option value="">Nessuna arma disponibile. Verifica prima le armi dall'admin.</option>`;
+      armaSelect.innerHTML = '<option value="">Nessuna arma disponibile. Verifica prima le armi dall\'admin.</option>';
       return;
     }
-
     const catNorm = normalizeCategoryForCompare(cat);
-    const filtered = allWeapons.filter(w => normalizeCategoryForCompare(w.categoria) === catNorm);
-
-    // Categoria valida ma senza armi verificate
-    if (filtered.length === 0) {
-      const availableCategories = [...new Set(allWeapons.map(w => w.categoria))];
-      console.warn('[Loadout] Nessuna arma per categoria', {
-        selectedCategory   : cat,
-        selectedNormalized : catNorm,
-        totalWeapons       : allWeapons.length,
-        availableCategories,
-      });
+    const filtered = allWeapons.filter(w => normalizeCategoryForCompare(w.categoria) === catNorm && (!gioco || w.gioco === gioco));
+    if (!filtered.length) {
       armaSelect.disabled = true;
-      armaSelect.innerHTML = `<option value="">Nessuna arma disponibile per questa categoria.</option>`;
+      armaSelect.innerHTML = '<option value="">Nessuna arma disponibile per questa categoria.</option>';
+      updateRiepilogo();
       return;
     }
-
-    // Armi trovate → abilita la select
     armaSelect.disabled = false;
-    armaSelect.innerHTML = `<option value="">— Seleziona arma —</option>`;
+    armaSelect.innerHTML = '<option value="">— Seleziona arma —</option>';
     filtered.forEach(w => {
       const o = document.createElement('option');
       o.value = w.id;
-      o.textContent = w.nome;
+      o.textContent = `${w.nome}${w.gioco ? ' · ' + w.gioco : ''}`;
       armaSelect.appendChild(o);
     });
+    updateRiepilogo();
   });
 
-  // ── Cambio arma → carica accessori ────────────────────────────────────────
   document.getElementById('f-arma').addEventListener('change', function() {
-    if (this.value) loadAttachments(this.value);
-    else {
-      document.querySelectorAll('.att-select').forEach(s => {
-        s.disabled = true;
-        s.innerHTML = `<option value="">— Prima scegli l'arma —</option>`;
-      });
-      updateRiepilogo();
-    }
+    loadAttachments(this.value);
   });
-
-  // ── Input creator → aggiorna riepilogo ─────────────────────────────────────
-  const creatorInput = document.getElementById('f-creator');
-  if (creatorInput) {
-    creatorInput.addEventListener('input', updateRiepilogo);
-  }
-
-  // ── Cambio stile/gioco/categoria → aggiorna riepilogo ──────────────────────
-  ['f-gioco', 'f-categoria', 'f-stile'].forEach(id => {
+  ['f-creator','f-stile'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('change', updateRiepilogo);
+    el.addEventListener(id === 'f-creator' ? 'input' : 'change', () => { updateRiepilogo(); updateSubmitState(); });
   });
 
-  // ── Invia build ───────────────────────────────────────────────────────────
   async function submitBuild() {
     const btn = document.getElementById('submitBtn');
-    const msg = document.getElementById('formMsg');
     const creatorError = document.getElementById('creatorError');
-    msg.style.display = 'none';
-    if (creatorError) creatorError.style.display = 'none';
-
     const creator = document.getElementById('f-creator').value.trim();
-    const armaId  = document.getElementById('f-arma').value;
-    const stile   = document.getElementById('f-stile').value;
-    const gioco   = document.getElementById('f-gioco').value;
+    const armaId = document.getElementById('f-arma').value;
+    const stile = document.getElementById('f-stile').value;
+    const gioco = document.getElementById('f-gioco').value;
     const categoria = document.getElementById('f-categoria').value;
+    creatorError.style.display = 'none';
 
-    // Validazione firma creator
-    if (!creator) {
-      if (creatorError) { creatorError.textContent = 'Inserisci la firma creator.'; creatorError.style.display = 'block'; }
+    if (!creator || creator.length < 2) {
+      creatorError.textContent = 'Inserisci una firma creator valida.';
+      creatorError.style.display = 'block';
       return;
     }
-    if (creator.length < 2) {
-      if (creatorError) { creatorError.textContent = 'La firma deve avere almeno 2 caratteri.'; creatorError.style.display = 'block'; }
-      return;
-    }
-    if (creator.length > 30) {
-      if (creatorError) { creatorError.textContent = 'La firma può avere massimo 30 caratteri.'; creatorError.style.display = 'block'; }
-      return;
-    }
-    // Sanitizzazione base: niente HTML o script
     const cleanCreator = creator.replace(/[<>"'&]/g, '');
     if (cleanCreator !== creator) {
-      if (creatorError) { creatorError.textContent = 'La firma non può contenere caratteri speciali.'; creatorError.style.display = 'block'; }
+      creatorError.textContent = 'La firma non può contenere caratteri speciali.';
+      creatorError.style.display = 'block';
       return;
     }
+    if (!armaId) return showMsg('Seleziona un\'arma.', 'error');
 
-    if (!armaId) {
-      if (creatorError) creatorError.style.display = 'none';
-      return showMsg('Seleziona un\'arma.', 'error');
-    }
-
-    const accessori = Array.from(document.querySelectorAll('.att-select'))
-      .map(s => ({ slot: s.dataset?.slot || 'Vari', accessorioId: s.value, nome: s.options[s.selectedIndex]?.text }))
-      .filter(a => a.accessorioId);
-
-    if (accessori.length === 0) return showMsg('Seleziona almeno un accessorio.', 'error');
-
-    // Trova info arma
+    const accessori = Array.from(document.querySelectorAll('.att-select')).map(s => ({ slot:s.dataset.slot, accessorioId:s.value, nome:s.options[s.selectedIndex]?.text })).filter(a => a.accessorioId);
+    if (!accessori.length) return showMsg('Seleziona almeno un accessorio.', 'error');
+    if (accessori.length > MAX_ATTACHMENTS) return showMsg(`Puoi selezionare massimo ${MAX_ATTACHMENTS} accessori.`, 'error');
     const armaObj = allWeapons.find(w => w.id === armaId);
 
     btn.disabled = true;
     btn.textContent = 'Invio in corso...';
-
     try {
-      const r = await fetch('/api/loadout/builds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creatorName: cleanCreator,
-          gioco: gioco || armaObj?.gioco || 'BO6',
-          categoria: categoria || armaObj?.categoria || '',
-          armaId,
-          armaNome: armaObj?.nome || '',
-          stile,
-          accessori
-        })
-      });
+      const r = await fetch('/api/loadout/builds', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ creatorName:cleanCreator, gioco:gioco || armaObj?.gioco || '', categoria:categoria || armaObj?.categoria || '', armaId, armaNome:armaObj?.nome || '', stile, accessori }) });
       const d = await r.json();
-      if (d.ok) showMsg(d.message || 'Loadout inviato con successo!', 'success');
-      else      showMsg(d.message || 'Errore invio.', 'error');
+      if (d.ok) {
+        showMsg(d.message || 'Loadout inviato con successo!', 'success');
+        loadBuilds();
+      } else showMsg(d.message || 'Errore invio.', 'error');
     } catch (e) {
-      console.error('[Loadout] Errore invio:', e);
       showMsg('Errore di connessione.', 'error');
     } finally {
-      btn.disabled = false;
-      btn.textContent = '🚀 Invia Loadout';
+      btn.textContent = 'Invia Loadout';
+      updateSubmitState();
     }
   }
 
@@ -499,46 +419,31 @@
     el.className = type === 'success' ? 'success-msg' : 'error-msg';
     el.textContent = text;
     el.style.display = 'block';
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 
-  // ── Carica build pubbliche ─────────────────────────────────────────────────
   async function loadBuilds() {
     const grid = document.getElementById('buildsGrid');
     try {
-      const r = await fetch('/api/loadout/builds');
+      const r = await fetch('/api/loadout/builds', { cache:'no-store' });
       const d = await r.json();
-      const builds = d.builds || [];
-      if (builds.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">🔫</div><p>Nessun equipaggiamento approvato ancora.<br>Sii il primo a inviare il tuo!</p></div>';
+      const builds = Array.isArray(d.builds) ? d.builds : [];
+      if (!builds.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon"></div><p>Nessun equipaggiamento approvato ancora.<br>Sii il primo a inviare il tuo.</p></div>';
         return;
       }
       grid.innerHTML = builds.map(b => `
         <div class="build-card">
-          <div class="bc-header">
-            <div>
-              <div class="bc-arma">${esc(b.armaNome)}</div>
-              <div class="bc-cat">${esc(b.categoriaArma)}</div>
-            </div>
-            <span class="bc-tipo">${esc(b.tipoEquipaggiamento)}</span>
-          </div>
-          <div class="bc-creator">By <span>${esc(b.creator)}</span>${b.firma ? ` · <em>${esc(b.firma)}</em>` : ''}</div>
-          <div class="bc-atts">${(b.accessori||[]).map(a => `
-            <div class="bc-att"><strong>${esc(a.tipo)}</strong>${esc(a.nome)}</div>
-          `).join('')}</div>
-          ${b.nota ? `<div class="bc-nota">"${esc(b.nota)}"</div>` : ''}
-        </div>
-      `).join('');
+          <div class="bc-header"><div><div class="bc-arma">${esc(b.armaNome)}</div><div class="bc-cat">${esc(b.categoria || b.categoriaArma || '')}</div></div><span class="bc-tipo">${esc(b.stile || b.tipoEquipaggiamento || 'Build')}</span></div>
+          <div class="bc-creator">By <span>${esc(b.creatorName || b.creator || 'Creator RØDA')}</span></div>
+          <div class="bc-atts">${(b.accessori || []).map(a => `<div class="bc-att"><strong>${esc(a.slot || a.tipo)}</strong>${esc(a.nome)}</div>`).join('')}</div>
+          ${b.note ? `<div class="bc-nota">"${esc(b.note)}"</div>` : ''}
+        </div>`).join('');
     } catch {
-      grid.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Errore caricamento build.</p></div>';
+      grid.innerHTML = '<div class="empty-state"><div class="icon"></div><p>Errore caricamento build.</p></div>';
     }
   }
 
-  function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── Init ───────────────────────────────────────────────────────────────────
   loadWeapons();
   loadBuilds();
 </script>
