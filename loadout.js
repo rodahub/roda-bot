@@ -2,9 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const SYNC_STATUS_FILE = path.join(DATA_DIR, 'loadout-manual-sync-status.json');
 const ALLOW_GENERIC_ATTACHMENT_FALLBACK = process.env.ALLOW_LOADOUT_GENERIC_FALLBACK === 'true';
 
 const SLOT_ORDER = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
@@ -15,323 +17,107 @@ const SLOT_MAP = new Map([
   ['underbarrel', 'Sottocanna'], ['sottocanna', 'Sottocanna'],
   ['magazine', 'Caricatore'], ['caricatore', 'Caricatore'],
   ['rear grip', 'Impugnatura'], ['rear-grip', 'Impugnatura'], ['impugnatura', 'Impugnatura'],
-  ['stock', 'Calcio'], ['calcio', 'Calcio'],
-  ['laser', 'Laser'],
+  ['stock', 'Calcio'], ['calcio', 'Calcio'], ['laser', 'Laser'],
   ['fire mods', 'Mod fuoco'], ['fire-mods', 'Mod fuoco'], ['fire mod', 'Mod fuoco'], ['mod fuoco', 'Mod fuoco']
 ]);
 
-function clean(value) { return String(value || '').trim(); }
-function lower(value) { return clean(value).toLowerCase(); }
-function nowIso() { return new Date().toISOString(); }
-function normalizeSlot(value) {
-  const raw = clean(value).replace(/\s+/g, ' ');
-  if (!raw) return '';
-  return SLOT_MAP.get(raw.toLowerCase()) || raw;
+let syncProcess = null;
+let syncStatus = readSyncStatus() || { running:false, ok:false, startedAt:null, finishedAt:null, exitCode:null, lastLines:[], error:'' };
+
+function clean(v){ return String(v || '').trim(); }
+function lower(v){ return clean(v).toLowerCase(); }
+function nowIso(){ return new Date().toISOString(); }
+function normalizeSlot(v){ const raw = clean(v).replace(/\s+/g,' '); return SLOT_MAP.get(raw.toLowerCase()) || raw; }
+function isBlockedState(s){ return ['bloccato','disattivato','da_controllare'].includes(lower(s)); }
+function getId(o){ return clean(o && (o.id || o._id)); }
+function getWeaponId(row){ return clean(row && (row.armaId || row.weaponId || row.weapon || row.arma)); }
+function getAttachmentId(row){ return clean(row && (row.accessorioId || row.attachmentId || row.attachment || row.accessorio)); }
+function getBuildStatus(b){ return lower(b && (b.stato || b.status)) || 'da_approvare'; }
+function isPublicWeapon(w){ return !!(w && w.attiva !== false && w.verificata === true && w.bloccatoManuale !== true && !isBlockedState(w.stato)); }
+function isPublicAttachment(a){ return !!(a && a.attivo !== false && a.verificato === true && a.bloccatoManuale !== true && !isBlockedState(a.stato)); }
+function isPublicCompatibility(c){ return !!(c && c.compatibile !== false && c.verificato === true && c.bloccatoManuale !== true && !isBlockedState(c.stato)); }
+function isApprovedBuild(b){ return ['approvato','approved','pubblico'].includes(getBuildStatus(b)); }
+
+function readJSON(file, fallback=[]){
+  try { const p = path.join(DATA_DIR, file); if(!fs.existsSync(p)) return fallback; const raw = fs.readFileSync(p,'utf8'); return raw.trim()?JSON.parse(raw):fallback; }
+  catch(e){ console.error(`[loadout] Errore lettura ${file}:`, e.message); return fallback; }
+}
+function writeJSON(file, data){ fs.mkdirSync(DATA_DIR,{recursive:true}); fs.writeFileSync(path.join(DATA_DIR,file), JSON.stringify(data,null,2),'utf8'); }
+function readSyncStatus(){ try { if(!fs.existsSync(SYNC_STATUS_FILE)) return null; return JSON.parse(fs.readFileSync(SYNC_STATUS_FILE,'utf8')); } catch { return null; } }
+function saveSyncStatus(){ try { writeJSON('loadout-manual-sync-status.json', syncStatus); } catch(e){ console.error('[loadout-sync] status save error:', e.message); } }
+function pushSyncLine(line){ const text = clean(line); if(!text) return; syncStatus.lastLines = [...(syncStatus.lastLines || []), text].slice(-100); saveSyncStatus(); }
+function checkSyncSecret(req, res){ const secret = process.env.LOADOUT_SYNC_SECRET; if(!secret) return true; const provided = String(req.query.secret || req.headers['x-loadout-sync-secret'] || ''); if(provided === secret) return true; res.status(401).json({ok:false, message:'Secret sync mancante o non valido.'}); return false; }
+function startCodmunitySync(){
+  if(syncProcess) return { started:false, alreadyRunning:true, status:syncStatus };
+  syncStatus = { running:true, ok:false, startedAt:nowIso(), finishedAt:null, exitCode:null, lastLines:['Avvio sync CODMunity...'], error:'' };
+  saveSyncStatus();
+  syncProcess = spawn('npm', ['run','sync:loadout-db'], { cwd:__dirname, env:process.env, shell:false });
+  syncProcess.stdout.on('data', chunk => String(chunk).split(/\r?\n/).forEach(pushSyncLine));
+  syncProcess.stderr.on('data', chunk => String(chunk).split(/\r?\n/).forEach(line => pushSyncLine('[ERR] ' + line)));
+  syncProcess.on('error', err => { syncStatus.running=false; syncStatus.ok=false; syncStatus.exitCode=-1; syncStatus.finishedAt=nowIso(); syncStatus.error=err.message; pushSyncLine('[ERRORE] '+err.message); syncProcess=null; saveSyncStatus(); });
+  syncProcess.on('close', code => { syncStatus.running=false; syncStatus.ok=code===0; syncStatus.exitCode=code; syncStatus.finishedAt=nowIso(); pushSyncLine(code===0?'Sync CODMunity completato.':`Sync CODMunity terminato con codice ${code}.`); syncProcess=null; saveSyncStatus(); });
+  return { started:true, alreadyRunning:false, status:syncStatus };
 }
 
-function isBlockedState(stato) { return ['bloccato', 'disattivato', 'da_controllare'].includes(lower(stato)); }
-function getRecordId(record) { return clean(record && (record.id || record._id)); }
-function getWeaponIdFromCompatibility(row) { return clean(row && (row.armaId || row.weaponId || row.weapon || row.arma)); }
-function getAttachmentIdFromCompatibility(row) { return clean(row && (row.accessorioId || row.attachmentId || row.attachment || row.accessorio)); }
-function getBuildStatus(build) { return lower(build && (build.stato || build.status)) || 'da_approvare'; }
-
-function isPublicWeapon(weapon) {
-  return Boolean(weapon && weapon.attiva !== false && weapon.verificata === true && weapon.bloccatoManuale !== true && !isBlockedState(weapon.stato));
+function sortWeapons(a,b){
+  const gp = Number(b.gamePriority||0)-Number(a.gamePriority||0); if(gp) return gp;
+  const ro = Number(b.releaseOrder||0)-Number(a.releaseOrder||0); if(ro) return ro;
+  const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co;
+  return clean(a.nome).localeCompare(clean(b.nome),'it');
 }
-function isPublicAttachment(attachment) {
-  return Boolean(attachment && attachment.attivo !== false && attachment.verificato === true && attachment.bloccatoManuale !== true && !isBlockedState(attachment.stato));
+function sortAttachments(a,b){
+  const ia = SLOT_ORDER.indexOf(normalizeSlot(a.slot||a.tipo)); const ib = SLOT_ORDER.indexOf(normalizeSlot(b.slot||b.tipo));
+  const sa = ia === -1 ? 999 : ia; const sb = ib === -1 ? 999 : ib; if(sa!==sb) return sa-sb;
+  const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co;
+  return clean(a.nome).localeCompare(clean(b.nome),'it');
 }
-function isPublicCompatibility(row) {
-  return Boolean(row && row.compatibile !== false && row.verificato === true && row.bloccatoManuale !== true && !isBlockedState(row.stato));
-}
-function isApprovedBuild(build) { return ['approvato', 'approved', 'pubblico'].includes(getBuildStatus(build)); }
+function buildAttachmentResponse(att,row={}){ const slot = normalizeSlot(row.slot || att.slot || att.tipo); return { ...att, id:getId(att), slot, tipo:slot, codmunityOrder:Number(row.codmunityOrder || att.codmunityOrder || 999999) }; }
+function publicBuild(b){ return { id:getId(b), creatorName:clean(b.creatorName||b.creator||b.firma||'Creator RØDA'), creator:clean(b.creatorName||b.creator||b.firma||'Creator RØDA'), gioco:clean(b.gioco||b.game||''), categoria:clean(b.categoria||b.categoriaArma||''), armaId:clean(b.armaId||b.weaponId||''), armaNome:clean(b.armaNome||b.weaponName||b.arma||''), stile:clean(b.stile||b.tipoEquipaggiamento||'Personalizzato'), accessori:Array.isArray(b.accessori)?b.accessori:[], note:clean(b.note||b.nota||''), stato:getBuildStatus(b), createdAt:clean(b.createdAt||b.updatedAt||'') }; }
+function fileForType(t){ const x=lower(t); if(['weapon','weapons','arma','armi'].includes(x)) return 'loadout-weapons.json'; if(['attachment','attachments','accessorio','accessori'].includes(x)) return 'loadout-attachments.json'; if(['compatibility','compatibilita','compatibilità'].includes(x)) return 'loadout-compatibility.json'; return ''; }
+function updateItem(type,id,fn){ const file=fileForType(type); if(!file) throw new Error('Tipo non valido'); const list=readJSON(file,[]); const idx=list.findIndex(i=>lower(getId(i))===lower(id)); if(idx===-1) throw new Error('Elemento non trovato'); list[idx]=fn({...list[idx]}); writeJSON(file,list); return list[idx]; }
+function deleteItem(type,id){ const file=fileForType(type); if(!file) throw new Error('Tipo non valido'); const list=readJSON(file,[]); const next=list.filter(i=>lower(getId(i))!==lower(id)); if(next.length===list.length) throw new Error('Elemento non trovato'); writeJSON(file,next); }
 
-function readJSON(filename, fallback = []) {
-  const filePath = path.join(DATA_DIR, filename);
-  try {
-    if (!fs.existsSync(filePath)) return fallback;
-    const raw = fs.readFileSync(filePath, 'utf8');
-    if (!raw.trim()) return fallback;
-    return JSON.parse(raw);
-  } catch (error) {
-    console.error(`[loadout] Errore lettura ${filename}:`, error.message);
-    return fallback;
-  }
-}
+function registerLoadoutRoutes(app){
+  if(!app || typeof app.get !== 'function') throw new Error('registerLoadoutRoutes: istanza Express app non valida');
+  if(app.__rodaLoadoutRoutesRegistered) return;
+  Object.defineProperty(app,'__rodaLoadoutRoutesRegistered',{value:true, enumerable:false});
 
-function writeJSON(filename, data) {
-  const filePath = path.join(DATA_DIR, filename);
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
+  app.get('/loadout', (req,res)=>res.sendFile(path.join(PUBLIC_DIR,'loadout.html')));
+  app.get('/admin-loadout', (req,res)=>res.sendFile(path.join(PUBLIC_DIR,'admin-loadout.html')));
 
-function sortWeaponsForLoadout(a, b) {
-  const gpA = Number(a.gamePriority || 0);
-  const gpB = Number(b.gamePriority || 0);
-  if (gpB !== gpA) return gpB - gpA;
-  const roA = Number(a.releaseOrder || 0);
-  const roB = Number(b.releaseOrder || 0);
-  if (roB !== roA) return roB - roA;
-  const coA = Number(a.codmunityOrder || 999999);
-  const coB = Number(b.codmunityOrder || 999999);
-  if (coA !== coB) return coA - coB;
-  const da = new Date(a.discoveredAt || 0).getTime();
-  const db = new Date(b.discoveredAt || 0).getTime();
-  if (db !== da) return db - da;
-  return clean(a.nome).localeCompare(clean(b.nome), 'it');
-}
+  app.get('/api/loadout/weapons', (req,res)=>{ try { res.json({ok:true, weapons:readJSON('loadout-weapons.json',[]).filter(isPublicWeapon).sort(sortWeapons)}); } catch(e){ res.status(500).json({ok:false,weapons:[],error:e.message}); } });
+  app.get('/api/loadout/attachments', (req,res)=>{ try {
+    const weaponId=clean(req.query.weaponId||req.query.armaId); if(!weaponId) return res.json({ok:true, attachments:[], message:'weaponId mancante'});
+    const attachments=readJSON('loadout-attachments.json',[]); const compatibility=readJSON('loadout-compatibility.json',[]); const rows=compatibility.filter(r=>lower(getWeaponId(r))===lower(weaponId)&&isPublicCompatibility(r));
+    let result=[]; let compatibilitySource='codmunity-verified'; let message='';
+    if(rows.length){ const map=new Map(); rows.forEach(r=>{const id=lower(getAttachmentId(r)); if(id) map.set(id,r);}); result=attachments.filter(a=>map.has(lower(getId(a)))&&isPublicAttachment(a)).map(a=>buildAttachmentResponse(a,map.get(lower(getId(a)))||{})); }
+    else if(ALLOW_GENERIC_ATTACHMENT_FALLBACK){ compatibilitySource='temporary-generic-fallback'; message='Fallback temporaneo abilitato.'; result=attachments.filter(isPublicAttachment).map(a=>buildAttachmentResponse(a)); }
+    else { compatibilitySource='missing-codmunity-compatibility'; message='Nessuna compatibilità CODMunity verificata per questa arma. Avvia lo sync dal pannello admin.'; }
+    result=result.filter(a=>SLOT_ORDER.includes(a.slot)).sort(sortAttachments); res.json({ok:true, weaponId, compatibilitySource, message, attachments:result});
+  } catch(e){ res.status(500).json({ok:false,attachments:[],error:e.message}); } });
+  app.get('/api/loadout/builds', (req,res)=>{ try { res.json({ok:true, builds:readJSON('loadout-builds.json',[]).filter(isApprovedBuild).map(publicBuild)}); } catch(e){ res.status(500).json({ok:false,builds:[],error:e.message}); } });
+  app.post('/api/loadout/builds', (req,res)=>{ try { const body=req.body||{}; const creatorName=clean(body.creatorName||body.creator||body.firma).slice(0,40); const armaId=clean(body.armaId||body.weaponId); const accessori=Array.isArray(body.accessori)?body.accessori.slice(0,5).map(i=>({slot:normalizeSlot(i.slot||i.tipo),accessorioId:clean(i.accessorioId||i.attachmentId||i.id),nome:clean(i.nome||i.name)})).filter(i=>i.accessorioId||i.nome):[]; if(!creatorName) return res.status(400).json({ok:false,message:'Firma creator obbligatoria.'}); if(!armaId) return res.status(400).json({ok:false,message:'Arma obbligatoria.'}); if(!accessori.length) return res.status(400).json({ok:false,message:'Seleziona almeno un accessorio.'}); const builds=readJSON('loadout-builds.json',[]); const build={id:`build-${Date.now()}-${Math.random().toString(36).slice(2,8)}`, creatorName, gioco:clean(body.gioco||body.game), categoria:clean(body.categoria||body.categoriaArma), armaId, armaNome:clean(body.armaNome||body.weaponName||body.arma), stile:clean(body.stile||body.tipoEquipaggiamento||'Personalizzato'), accessori, note:clean(body.note||body.nota).slice(0,300), stato:'da_approvare', createdAt:nowIso(), updatedAt:nowIso()}; builds.unshift(build); writeJSON('loadout-builds.json',builds); res.json({ok:true,message:'Loadout inviato. Lo staff lo controllerà prima della pubblicazione.', build}); } catch(e){ res.status(500).json({ok:false,message:'Errore salvataggio build.',error:e.message}); } });
 
-function sortAttachmentsForLoadout(a, b) {
-  const slotA = normalizeSlot(a.slot || a.tipo);
-  const slotB = normalizeSlot(b.slot || b.tipo);
-  const indexA = SLOT_ORDER.indexOf(slotA);
-  const indexB = SLOT_ORDER.indexOf(slotB);
-  const safeA = indexA === -1 ? 999 : indexA;
-  const safeB = indexB === -1 ? 999 : indexB;
-  if (safeA !== safeB) return safeA - safeB;
-  const orderA = Number(a.codmunityOrder || 999999);
-  const orderB = Number(b.codmunityOrder || 999999);
-  if (orderA !== orderB) return orderA - orderB;
-  return clean(a.nome).localeCompare(clean(b.nome), 'it');
-}
+  app.get('/api/admin/loadout/database', (req,res)=>res.json({ok:true, weapons:readJSON('loadout-weapons.json',[]), attachments:readJSON('loadout-attachments.json',[]), compatibility:readJSON('loadout-compatibility.json',[])}));
+  app.get('/api/admin/loadout/builds', (req,res)=>res.json({ok:true, builds:readJSON('loadout-builds.json',[]).map(publicBuild)}));
+  app.get('/api/admin/loadout/sync-report', (req,res)=>res.json({ok:true, importReport:readJSON('loadout-import-report.json',{}), discoveryReport:readJSON('codmunity-discovery-report.json',{}), manualSyncStatus:syncStatus}));
+  app.get('/api/admin/loadout/sync-status', (req,res)=>{ if(!checkSyncSecret(req,res)) return; res.json({ok:true,status:syncStatus}); });
+  app.get('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startCodmunitySync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync CODMunity avviato.',...r}); });
+  app.post('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startCodmunitySync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync CODMunity avviato.',...r}); });
 
-function fileForType(type) {
-  const normalized = lower(type);
-  if (['weapon', 'weapons', 'arma', 'armi'].includes(normalized)) return 'loadout-weapons.json';
-  if (['attachment', 'attachments', 'accessorio', 'accessori'].includes(normalized)) return 'loadout-attachments.json';
-  if (['compatibility', 'compatibilita', 'compatibilità'].includes(normalized)) return 'loadout-compatibility.json';
-  return '';
-}
-
-function updateItem(type, id, updater) {
-  const filename = fileForType(type);
-  if (!filename) throw new Error('Tipo non valido');
-  const list = readJSON(filename, []);
-  const target = lower(id);
-  const index = list.findIndex(item => lower(getRecordId(item)) === target);
-  if (index === -1) throw new Error('Elemento non trovato');
-  list[index] = updater({ ...list[index] });
-  writeJSON(filename, list);
-  return list[index];
-}
-
-function deleteItem(type, id) {
-  const filename = fileForType(type);
-  if (!filename) throw new Error('Tipo non valido');
-  const list = readJSON(filename, []);
-  const target = lower(id);
-  const next = list.filter(item => lower(getRecordId(item)) !== target);
-  if (next.length === list.length) throw new Error('Elemento non trovato');
-  writeJSON(filename, next);
-}
-
-function publicBuild(build) {
-  return {
-    id: getRecordId(build),
-    creatorName: clean(build.creatorName || build.creator || build.firma || 'Creator RØDA'),
-    creator: clean(build.creatorName || build.creator || build.firma || 'Creator RØDA'),
-    gioco: clean(build.gioco || build.game || ''),
-    categoria: clean(build.categoria || build.categoriaArma || ''),
-    armaId: clean(build.armaId || build.weaponId || ''),
-    armaNome: clean(build.armaNome || build.weaponName || build.arma || ''),
-    stile: clean(build.stile || build.tipoEquipaggiamento || 'Personalizzato'),
-    accessori: Array.isArray(build.accessori) ? build.accessori : [],
-    note: clean(build.note || build.nota || ''),
-    stato: getBuildStatus(build),
-    createdAt: clean(build.createdAt || build.updatedAt || '')
-  };
-}
-
-function buildAttachmentResponse(attachment, row = {}) {
-  const slot = normalizeSlot(row.slot || attachment.slot || attachment.tipo);
-  return {
-    ...attachment,
-    id: getRecordId(attachment),
-    slot,
-    tipo: slot,
-    codmunityOrder: Number(row.codmunityOrder || attachment.codmunityOrder || 999999)
-  };
-}
-
-function registerLoadoutRoutes(app) {
-  if (!app || typeof app.get !== 'function') throw new Error('registerLoadoutRoutes: istanza Express app non valida');
-  if (app.__rodaLoadoutRoutesRegistered) return;
-  Object.defineProperty(app, '__rodaLoadoutRoutesRegistered', { value: true, enumerable: false });
-
-  app.get('/loadout', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'loadout.html')));
-  app.get('/admin-loadout', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin-loadout.html')));
-
-  app.get('/api/loadout/weapons', (req, res) => {
-    try {
-      const weapons = readJSON('loadout-weapons.json', []).filter(isPublicWeapon).sort(sortWeaponsForLoadout);
-      res.json({ ok: true, weapons });
-    } catch (error) {
-      res.status(500).json({ ok: false, weapons: [], error: error.message });
-    }
-  });
-
-  app.get('/api/loadout/attachments', (req, res) => {
-    try {
-      const weaponId = clean(req.query.weaponId || req.query.armaId);
-      if (!weaponId) return res.json({ ok: true, attachments: [], message: 'weaponId mancante' });
-
-      const attachments = readJSON('loadout-attachments.json', []);
-      const compatibility = readJSON('loadout-compatibility.json', []);
-      const weaponKey = lower(weaponId);
-      const rows = compatibility.filter(row => lower(getWeaponIdFromCompatibility(row)) === weaponKey && isPublicCompatibility(row));
-
-      let result = [];
-      let compatibilitySource = 'codmunity-verified';
-      let message = '';
-
-      if (rows.length > 0) {
-        const rowByAttachmentId = new Map();
-        for (const row of rows) {
-          const attachmentId = lower(getAttachmentIdFromCompatibility(row));
-          if (attachmentId) rowByAttachmentId.set(attachmentId, row);
-        }
-
-        result = attachments
-          .filter(attachment => rowByAttachmentId.has(lower(getRecordId(attachment))) && isPublicAttachment(attachment))
-          .map(attachment => buildAttachmentResponse(attachment, rowByAttachmentId.get(lower(getRecordId(attachment))) || {}));
-      } else if (ALLOW_GENERIC_ATTACHMENT_FALLBACK) {
-        compatibilitySource = 'temporary-generic-fallback';
-        message = 'Fallback temporaneo abilitato: accessori pubblici non specifici per arma.';
-        result = attachments
-          .filter(isPublicAttachment)
-          .map(attachment => buildAttachmentResponse(attachment));
-      } else {
-        compatibilitySource = 'missing-codmunity-compatibility';
-        message = 'Nessuna compatibilità CODMunity verificata per questa arma. Esegui npm run sync:loadout-db.';
-      }
-
-      result = result
-        .filter(attachment => SLOT_ORDER.includes(attachment.slot))
-        .sort(sortAttachmentsForLoadout);
-
-      res.json({ ok: true, weaponId, compatibilitySource, message, attachments: result });
-    } catch (error) {
-      res.status(500).json({ ok: false, attachments: [], error: error.message });
-    }
-  });
-
-  app.get('/api/loadout/builds', (req, res) => {
-    try {
-      const builds = readJSON('loadout-builds.json', []).filter(isApprovedBuild).map(publicBuild).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      res.json({ ok: true, builds });
-    } catch (error) {
-      res.status(500).json({ ok: false, builds: [], error: error.message });
-    }
-  });
-
-  app.post('/api/loadout/builds', (req, res) => {
-    try {
-      const body = req.body || {};
-      const creatorName = clean(body.creatorName || body.creator || body.firma).slice(0, 40);
-      const armaId = clean(body.armaId || body.weaponId);
-      const armaNome = clean(body.armaNome || body.weaponName || body.arma);
-      const accessori = Array.isArray(body.accessori) ? body.accessori.slice(0, 5).map(item => ({
-        slot: normalizeSlot(item.slot || item.tipo),
-        accessorioId: clean(item.accessorioId || item.attachmentId || item.id),
-        nome: clean(item.nome || item.name)
-      })).filter(item => item.accessorioId || item.nome) : [];
-      if (!creatorName) return res.status(400).json({ ok: false, message: 'Firma creator obbligatoria.' });
-      if (!armaId) return res.status(400).json({ ok: false, message: 'Arma obbligatoria.' });
-      if (!accessori.length) return res.status(400).json({ ok: false, message: 'Seleziona almeno un accessorio.' });
-      const builds = readJSON('loadout-builds.json', []);
-      const build = {
-        id: `build-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        creatorName,
-        gioco: clean(body.gioco || body.game),
-        categoria: clean(body.categoria || body.categoriaArma),
-        armaId,
-        armaNome,
-        stile: clean(body.stile || body.tipoEquipaggiamento || 'Personalizzato'),
-        accessori,
-        note: clean(body.note || body.nota).slice(0, 300),
-        stato: 'da_approvare',
-        createdAt: nowIso(),
-        updatedAt: nowIso()
-      };
-      builds.unshift(build);
-      writeJSON('loadout-builds.json', builds);
-      res.json({ ok: true, message: 'Loadout inviato. Lo staff lo controllerà prima della pubblicazione.', build });
-    } catch (error) {
-      res.status(500).json({ ok: false, message: 'Errore salvataggio build.', error: error.message });
-    }
-  });
-
-  app.get('/api/admin/loadout/database', (req, res) => {
-    try {
-      res.json({ ok: true, weapons: readJSON('loadout-weapons.json', []), attachments: readJSON('loadout-attachments.json', []), compatibility: readJSON('loadout-compatibility.json', []) });
-    } catch (error) {
-      res.status(500).json({ ok: false, error: error.message });
-    }
-  });
-
-  app.get('/api/admin/loadout/builds', (req, res) => {
-    try { res.json({ ok: true, builds: readJSON('loadout-builds.json', []).map(publicBuild) }); }
-    catch (error) { res.status(500).json({ ok: false, builds: [], error: error.message }); }
-  });
-
-  app.get('/api/admin/loadout/sync-report', (req, res) => {
-    try { res.json({ ok: true, importReport: readJSON('loadout-import-report.json', {}), discoveryReport: readJSON('codmunity-discovery-report.json', {}) }); }
-    catch (error) { res.status(500).json({ ok: false, error: error.message }); }
-  });
-
-  app.post('/api/admin/loadout/publish', (req, res) => {
-    try { const { type, id } = req.body || {}; const item = updateItem(type, id, item => ({ ...item, stato: 'pubblico', verificata: true, verificato: true, attiva: true, attivo: true, compatibile: item.compatibile !== false })); res.json({ ok: true, item }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.post('/api/admin/loadout/disable', (req, res) => {
-    try { const { type, id } = req.body || {}; const item = updateItem(type, id, item => ({ ...item, stato: 'disattivato', attiva: false, attivo: false, compatibile: false })); res.json({ ok: true, item }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.post('/api/admin/loadout/block', (req, res) => {
-    try { const { type, id, reason } = req.body || {}; const item = updateItem(type, id, item => ({ ...item, stato: 'bloccato', bloccatoManuale: true, bloccatoMotivo: clean(reason) || 'Blocco manuale admin' })); res.json({ ok: true, item }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.post('/api/admin/loadout/reactivate', (req, res) => {
-    try { const { type, id } = req.body || {}; const item = updateItem(type, id, item => ({ ...item, stato: 'pubblico', bloccatoManuale: false, bloccatoMotivo: '', attiva: true, attivo: true, compatibile: item.compatibile !== false, verificata: true, verificato: true })); res.json({ ok: true, item }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.delete('/api/admin/loadout/database/:type/:id', (req, res) => {
-    try { deleteItem(req.params.type, req.params.id); res.json({ ok: true }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-
-  app.post('/api/admin/loadout/builds/approve', (req, res) => {
-    try { const id = lower((req.body || {}).id); const builds = readJSON('loadout-builds.json', []); const index = builds.findIndex(b => lower(getRecordId(b)) === id); if (index === -1) throw new Error('Build non trovata'); builds[index].stato = 'approvato'; builds[index].updatedAt = nowIso(); writeJSON('loadout-builds.json', builds); res.json({ ok: true, build: publicBuild(builds[index]) }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.post('/api/admin/loadout/builds/reject', (req, res) => {
-    try { const id = lower((req.body || {}).id); const builds = readJSON('loadout-builds.json', []); const index = builds.findIndex(b => lower(getRecordId(b)) === id); if (index === -1) throw new Error('Build non trovata'); builds[index].stato = 'rifiutato'; builds[index].updatedAt = nowIso(); writeJSON('loadout-builds.json', builds); res.json({ ok: true, build: publicBuild(builds[index]) }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
-  app.delete('/api/admin/loadout/builds/:id', (req, res) => {
-    try { const id = lower(req.params.id); const builds = readJSON('loadout-builds.json', []); const next = builds.filter(build => lower(getRecordId(build)) !== id); if (next.length === builds.length) throw new Error('Build non trovata'); writeJSON('loadout-builds.json', next); res.json({ ok: true }); }
-    catch (error) { res.status(400).json({ ok: false, error: error.message }); }
-  });
+  app.post('/api/admin/loadout/publish', (req,res)=>{ try { const {type,id}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'pubblico',verificata:true,verificato:true,attiva:true,attivo:true,compatibile:i.compatibile!==false}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.post('/api/admin/loadout/disable', (req,res)=>{ try { const {type,id}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'disattivato',attiva:false,attivo:false,compatibile:false}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.post('/api/admin/loadout/block', (req,res)=>{ try { const {type,id,reason}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'bloccato',bloccatoManuale:true,bloccatoMotivo:clean(reason)||'Blocco manuale admin'}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.post('/api/admin/loadout/reactivate', (req,res)=>{ try { const {type,id}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'pubblico',bloccatoManuale:false,bloccatoMotivo:'',attiva:true,attivo:true,compatibile:i.compatibile!==false,verificata:true,verificato:true}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.delete('/api/admin/loadout/database/:type/:id', (req,res)=>{ try { deleteItem(req.params.type,req.params.id); res.json({ok:true}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.post('/api/admin/loadout/builds/approve', (req,res)=>{ try { const id=lower((req.body||{}).id); const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===id); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='approvato'; builds[idx].updatedAt=nowIso(); writeJSON('loadout-builds.json',builds); res.json({ok:true,build:publicBuild(builds[idx])}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.post('/api/admin/loadout/builds/reject', (req,res)=>{ try { const id=lower((req.body||{}).id); const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===id); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='rifiutato'; builds[idx].updatedAt=nowIso(); writeJSON('loadout-builds.json',builds); res.json({ok:true,build:publicBuild(builds[idx])}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
+  app.delete('/api/admin/loadout/builds/:id', (req,res)=>{ try { const id=lower(req.params.id); const builds=readJSON('loadout-builds.json',[]); const next=builds.filter(b=>lower(getId(b))!==id); if(next.length===builds.length) throw new Error('Build non trovata'); writeJSON('loadout-builds.json',next); res.json({ok:true}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
 
   console.log('✅ Rotte RØDA Loadout registrate.');
 }
 
-function installAutoRegisterHook() {
-  try {
-    const express = require('express');
-    const proto = express && express.application;
-    if (!proto || proto.__rodaLoadoutAutoRegisterPatched) return;
-    const originalListen = proto.listen;
-    if (typeof originalListen !== 'function') return;
-    Object.defineProperty(proto, '__rodaLoadoutAutoRegisterPatched', { value: true, enumerable: false });
-    proto.listen = function patchedLoadoutListen(...args) {
-      try { registerLoadoutRoutes(this); } catch (error) { console.error('[loadout] Auto-registrazione rotte fallita:', error.message); }
-      return originalListen.apply(this, args);
-    };
-  } catch (error) {
-    console.error('[loadout] Hook auto-register non installato:', error.message);
-  }
-}
+function installAutoRegisterHook(){ try { const express=require('express'); const proto=express&&express.application; if(!proto||proto.__rodaLoadoutAutoRegisterPatched) return; const originalListen=proto.listen; if(typeof originalListen!=='function') return; Object.defineProperty(proto,'__rodaLoadoutAutoRegisterPatched',{value:true, enumerable:false}); proto.listen=function patchedLoadoutListen(...args){ try{ registerLoadoutRoutes(this); }catch(e){ console.error('[loadout] Auto-registrazione rotte fallita:',e.message); } return originalListen.apply(this,args); }; } catch(e){ console.error('[loadout] Hook auto-register non installato:',e.message); } }
 
 module.exports = registerLoadoutRoutes;
 installAutoRegisterHook();
