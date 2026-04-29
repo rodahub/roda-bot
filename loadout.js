@@ -345,6 +345,61 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
     res.json({ ok: true, builds });
   });
 
+  // POST /api/loadout/builds  →  invia nuovo loadout (con creatorName)
+  app.post('/api/loadout/builds', (req, res) => {
+    try {
+      const { creatorName, gioco, categoria, armaId, armaNome, stile, accessori } = req.body;
+
+      // Validazioni minime
+      if (!creatorName || String(creatorName).trim().length < 2) {
+        return res.json({ ok: false, message: 'La firma creator deve avere almeno 2 caratteri.' });
+      }
+      if (!armaId) {
+        return res.json({ ok: false, message: 'Arma non specificata.' });
+      }
+
+      const weapons = readWeapons();
+      const arma = weapons.find(w => w.id === armaId);
+      if (!arma) {
+        return res.json({ ok: false, message: 'Arma non trovata.' });
+      }
+      if (!arma.attiva) {
+        return res.json({ ok: false, message: 'Arma non disponibile.' });
+      }
+
+      // Accessori opzionali ma max 5
+      const safeAccessori = Array.isArray(accessori) ? accessori.slice(0, 5) : [];
+
+      const build = {
+        id: 'loadout_' + crypto.randomBytes(6).toString('hex'),
+        stato: 'da_approvare',
+        creatorName: sanitize(String(creatorName).slice(0, 30)),
+        gioco: gioco || arma.gioco || 'BO6',
+        categoria: categoria || arma.categoria || '',
+        armaId: arma.id,
+        armaNome: arma.nome,
+        stile: stile || 'Personalizzato',
+        accessori: safeAccessori.map(a => ({
+          slot: a.slot || 'Vari',
+          accessorioId: a.accessorioId || a.id || '',
+          nome: a.nome || ''
+        })),
+        createdAt: new Date().toISOString(),
+        approvedAt: null,
+        approvedBy: null
+      };
+
+      const builds = readBuilds();
+      builds.push(build);
+      writeBuilds(builds);
+
+      res.json({ ok: true, message: 'Loadout pronto per l\'invio.', buildId: build.id });
+    } catch (e) {
+      console.error('[Loadout] Errore submit build:', e);
+      res.status(500).json({ ok: false, message: 'Errore server.' });
+    }
+  });
+
   // POST /api/loadout/submit  →  invia nuovo equipaggiamento
   app.post('/api/loadout/submit', (req, res) => {
     try {

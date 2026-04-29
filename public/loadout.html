@@ -168,6 +168,12 @@
       </div>
 
       <div class="field">
+        <label>Firma creator *</label>
+        <input type="text" id="f-creator" placeholder="Es. RooS, RØDA Player, MarcoTV" maxlength="30">
+        <div id="creatorError" style="color:#ff8099;font-size:11px;margin-top:4px;display:none"></div>
+      </div>
+
+      <div class="field">
         <label>Accessori compatibili</label>
         <div id="accessoriContainer">
           <div class="empty-state" style="padding:20px;font-size:13px;color:var(--muted)">Seleziona un'arma per vedere gli accessori compatibili.</div>
@@ -248,7 +254,55 @@
     const r = await fetch('/api/loadout/attachments?weaponId=' + encodeURIComponent(weaponId));
     const d = await r.json();
     allAttachments = d.attachments || [];
+    
+    if (!weaponId) {
+      console.warn('[Loadout] weaponId vuoto per loadAttachments');
+      return;
+    }
+    if (!d || !Array.isArray(d.attachments)) {
+      console.warn('[Loadout] Risposta API attachments non valida:', d);
+    } else if (allAttachments.length === 0) {
+      console.warn('[Loadout] Nessun accessorio trovato per weaponId:', weaponId);
+    }
+    
     renderAttSelects();
+    updateRiepilogo();
+  }
+
+  // ── Aggiorna riepilogo live ────────────────────────────────────────────────
+  function updateRiepilogo() {
+    const box = document.getElementById('riepilogoBox');
+    if (!box) return;
+    
+    const gioco = document.getElementById('f-gioco').value;
+    const categoria = document.getElementById('f-categoria').value;
+    const armaId = document.getElementById('f-arma').value;
+    const stile = document.getElementById('f-stile').value;
+    const creator = document.getElementById('f-creator').value.trim();
+    
+    const armaObj = allWeapons.find(w => w.id === armaId);
+    const accessoriSelezionati = Array.from(document.querySelectorAll('.att-select'))
+      .map(s => ({ slot: s.dataset?.slot || 'Vari', accessorioId: s.value, nome: s.options[s.selectedIndex]?.text }))
+      .filter(a => a.accessorioId);
+    
+    let html = '';
+    if (gioco) html += `<div><strong>Gioco:</strong> ${gioco}</div>`;
+    if (categoria) html += `<div><strong>Categoria:</strong> ${categoria}</div>`;
+    if (armaObj) html += `<div><strong>Arma:</strong> ${armaObj.nome}</div>`;
+    if (stile) html += `<div><strong>Stile:</strong> ${stile}</div>`;
+    if (creator) html += `<div><strong>Firma creator:</strong> ${creator}</div>`;
+    
+    if (accessoriSelezionati.length > 0) {
+      html += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><strong>Accessori:</strong></div>`;
+      html += `<ul style="margin:6px 0 0 16px;font-size:12px">`;
+      accessoriSelezionati.forEach(a => {
+        html += `<li><strong>${a.slot}:</strong> ${a.nome || a.accessorioId}</li>`;
+      });
+      html += `</ul>`;
+    }
+    
+    if (!html) html = '<div style="color:var(--muted)">Nessuna selezione</div>';
+    box.innerHTML = html;
   }
 
   // ── Render select accessori ────────────────────────────────────────────────
@@ -347,46 +401,96 @@
         s.disabled = true;
         s.innerHTML = `<option value="">— Prima scegli l'arma —</option>`;
       });
+      updateRiepilogo();
     }
+  });
+
+  // ── Input creator → aggiorna riepilogo ─────────────────────────────────────
+  const creatorInput = document.getElementById('f-creator');
+  if (creatorInput) {
+    creatorInput.addEventListener('input', updateRiepilogo);
+  }
+
+  // ── Cambio stile/gioco/categoria → aggiorna riepilogo ──────────────────────
+  ['f-gioco', 'f-categoria', 'f-stile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', updateRiepilogo);
   });
 
   // ── Invia build ───────────────────────────────────────────────────────────
   async function submitBuild() {
     const btn = document.getElementById('submitBtn');
     const msg = document.getElementById('formMsg');
+    const creatorError = document.getElementById('creatorError');
     msg.style.display = 'none';
+    if (creatorError) creatorError.style.display = 'none';
 
     const creator = document.getElementById('f-creator').value.trim();
-    const firma   = document.getElementById('f-firma').value.trim();
     const armaId  = document.getElementById('f-arma').value;
-    const tipo    = document.getElementById('f-tipo').value;
-    const nota    = document.getElementById('f-nota').value.trim();
+    const stile   = document.getElementById('f-stile').value;
+    const gioco   = document.getElementById('f-gioco').value;
+    const categoria = document.getElementById('f-categoria').value;
+
+    // Validazione firma creator
+    if (!creator) {
+      if (creatorError) { creatorError.textContent = 'Inserisci la firma creator.'; creatorError.style.display = 'block'; }
+      return;
+    }
+    if (creator.length < 2) {
+      if (creatorError) { creatorError.textContent = 'La firma deve avere almeno 2 caratteri.'; creatorError.style.display = 'block'; }
+      return;
+    }
+    if (creator.length > 30) {
+      if (creatorError) { creatorError.textContent = 'La firma può avere massimo 30 caratteri.'; creatorError.style.display = 'block'; }
+      return;
+    }
+    // Sanitizzazione base: niente HTML o script
+    const cleanCreator = creator.replace(/[<>"'&]/g, '');
+    if (cleanCreator !== creator) {
+      if (creatorError) { creatorError.textContent = 'La firma non può contenere caratteri speciali.'; creatorError.style.display = 'block'; }
+      return;
+    }
+
+    if (!armaId) {
+      if (creatorError) creatorError.style.display = 'none';
+      return showMsg('Seleziona un\'arma.', 'error');
+    }
 
     const accessori = Array.from(document.querySelectorAll('.att-select'))
-      .map(s => s.value).filter(Boolean);
+      .map(s => ({ slot: s.dataset?.slot || 'Vari', accessorioId: s.value, nome: s.options[s.selectedIndex]?.text }))
+      .filter(a => a.accessorioId);
 
-    if (!creator) return showMsg('Inserisci il tuo nome.', 'error');
-    if (!armaId)  return showMsg('Seleziona un\'arma.', 'error');
-    if (!tipo)    return showMsg('Seleziona il tipo di equipaggiamento.', 'error');
-    if (accessori.length === 0) return showMsg('Inserisci almeno un accessorio.', 'error');
+    if (accessori.length === 0) return showMsg('Seleziona almeno un accessorio.', 'error');
+
+    // Trova info arma
+    const armaObj = allWeapons.find(w => w.id === armaId);
 
     btn.disabled = true;
     btn.textContent = 'Invio in corso...';
 
     try {
-      const r = await fetch('/api/loadout/submit', {
+      const r = await fetch('/api/loadout/builds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creator, firma, armaId, tipoEquipaggiamento: tipo, accessori, nota })
+        body: JSON.stringify({
+          creatorName: cleanCreator,
+          gioco: gioco || armaObj?.gioco || 'BO6',
+          categoria: categoria || armaObj?.categoria || '',
+          armaId,
+          armaNome: armaObj?.nome || '',
+          stile,
+          accessori
+        })
       });
       const d = await r.json();
-      if (d.ok) showMsg(d.message, 'success');
+      if (d.ok) showMsg(d.message || 'Loadout inviato con successo!', 'success');
       else      showMsg(d.message || 'Errore invio.', 'error');
-    } catch {
+    } catch (e) {
+      console.error('[Loadout] Errore invio:', e);
       showMsg('Errore di connessione.', 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = '🚀 Invia equipaggiamento';
+      btn.textContent = '🚀 Invia Loadout';
     }
   }
 
