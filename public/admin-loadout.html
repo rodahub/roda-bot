@@ -1,577 +1,92 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RØDA Loadout Admin v2</title>
-    <style>
-        :root {
-            --bg-dark: #050508;
-            --card-bg: #111120;
-            --primary: #7b2cff;
-            --primary-glow: rgba(123, 44, 255, 0.4);
-            --text: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --danger: #ff4444;
-            --success: #00c851;
-            --warning: #ffbb33;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-        }
-
-        /* Header */
-        .header {
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--primary);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px var(--primary-glow);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header h1 { font-size: 1.5rem; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
-        .header span { font-size: 0.9rem; color: var(--primary); font-weight: bold; }
-
-        /* Navigation */
-        .nav-tabs {
-            display: flex;
-            gap: 10px;
-            padding: 1rem 2rem;
-            background: rgba(17, 17, 32, 0.5);
-            overflow-x: auto;
-            border-bottom: 1px solid #333;
-        }
-
-        .tab-btn {
-            background: transparent;
-            border: 1px solid #333;
-            color: var(--text-muted);
-            padding: 0.6rem 1.2rem;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            font-size: 0.9rem;
-        }
-
-        .tab-btn:hover { border-color: var(--primary); color: #fff; }
-        .tab-btn.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 0 12px var(--primary-glow);
-        }
-
-        /* Content */
-        .content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
-        .hidden { display: none !important; }
-
-        /* Cards & Grid */
-        .grid-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(123, 44, 255, 0.15);
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .stat-card { text-align: center; }
-        .stat-value { font-size: 2.5rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 0.5rem; }
-        .stat-label { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        h2, h3 { color: #fff; margin-bottom: 1rem; border-left: 3px solid var(--primary); padding-left: 10px; }
-
-        /* Tables */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a3a; }
-        th { color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; background: rgba(0,0,0,0.2); }
-        tr:hover { background: rgba(123, 44, 255, 0.05); }
-
-        /* Buttons */
-        .btn {
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: opacity 0.2s;
-            margin-right: 5px;
-            color: #fff;
-        }
-        .btn:hover { opacity: 0.9; }
-        .btn-primary { background: var(--primary); }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: #000; }
-        .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
-
-        /* Badges */
-        .badge { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
-        .badge-public { background: rgba(0, 200, 81, 0.2); color: var(--success); }
-        .badge-draft { background: rgba(255, 187, 51, 0.2); color: var(--warning); }
-        .badge-blocked { background: rgba(255, 68, 68, 0.2); color: var(--danger); }
-
-        /* Toast */
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .toast {
-            background: var(--card-bg);
-            border-left: 4px solid var(--primary);
-            color: #fff;
-            padding: 12px 20px;
-            margin-top: 10px;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            animation: slideIn 0.3s ease-out;
-            min-width: 250px;
-        }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        /* Loading State */
-        .loading { text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RØDA Loadout Admin v3</title>
+  <style>
+    :root{--bg:#050508;--card:#111120;--card2:#17172b;--line:rgba(170,120,255,.22);--purple:#7b2cff;--purple2:#a855f7;--text:#f4efff;--muted:#aaa1c7;--green:#00c851;--red:#ff4d6d;--yellow:#ffbb33;--blue:#57b7ff;}
+    *{box-sizing:border-box;margin:0;padding:0}body{background:radial-gradient(circle at top left,rgba(123,44,255,.18),transparent 32%),linear-gradient(180deg,#050508,#090914);color:var(--text);font-family:Inter,Arial,sans-serif;min-height:100vh}.header{position:sticky;top:0;z-index:10;background:rgba(8,8,16,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:22px;font-weight:950;letter-spacing:-.4px}.brand span{color:var(--purple2);font-size:13px;margin-left:8px}.status{font-size:13px;color:var(--green);font-weight:800}.tabs{display:flex;gap:8px;padding:14px 22px;background:rgba(17,17,32,.52);border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto}.tab{border:1px solid rgba(255,255,255,.09);background:transparent;color:var(--muted);padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:850;white-space:nowrap}.tab.active,.tab:hover{background:rgba(123,44,255,.2);border-color:rgba(168,85,247,.48);color:#fff}.wrap{max-width:1320px;margin:0 auto;padding:24px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}.card{background:linear-gradient(180deg,rgba(22,22,42,.96),rgba(15,15,28,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 18px 60px rgba(0,0,0,.24)}.stat{text-align:center}.num{font-size:36px;font-weight:950;color:var(--purple2);line-height:1}.label{margin-top:8px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:800}h2{font-size:22px;margin-bottom:8px}h3{font-size:17px;margin-bottom:12px;border-left:3px solid var(--purple);padding-left:10px}.muted{color:var(--muted);font-size:14px;line-height:1.55}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:12px;padding:11px 15px;color:#fff;font-weight:900;cursor:pointer;background:var(--purple);box-shadow:0 0 24px rgba(123,44,255,.18)}.btn:hover{filter:brightness(1.08)}.btn:disabled{opacity:.5;cursor:not-allowed}.btn.green{background:var(--green);color:#06130b}.btn.red{background:var(--red)}.btn.yellow{background:var(--yellow);color:#151008}.btn.dark{background:#24243a;color:var(--text);border:1px solid rgba(255,255,255,.08)}.panel{display:none}.panel.active{display:block}.table-wrap{overflow:auto;border:1px solid rgba(255,255,255,.06);border-radius:14px}table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}th{color:var(--purple2);background:rgba(0,0,0,.22);text-transform:uppercase;font-size:11px;letter-spacing:.05em}tr:hover{background:rgba(123,44,255,.06)}.badge{display:inline-flex;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:900}.ok{background:rgba(0,200,81,.14);color:#67ffa2}.warn{background:rgba(255,187,51,.14);color:#ffd166}.bad{background:rgba(255,77,109,.14);color:#ff8ba2}.toastbox{position:fixed;right:18px;bottom:18px;z-index:1000;display:grid;gap:8px}.toast{background:#151529;border-left:4px solid var(--purple);box-shadow:0 16px 44px rgba(0,0,0,.42);border-radius:10px;padding:12px 14px;min-width:260px}.sync-box{background:rgba(123,44,255,.08);border:1px solid rgba(168,85,247,.25);border-radius:16px;padding:16px;margin-top:14px}.sync-lines{background:#050508;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;min-height:110px;max-height:260px;overflow:auto;color:#c8f7d2;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;margin-top:12px}.hidden{display:none!important}@media(max-width:700px){.header{align-items:flex-start;flex-direction:column}.wrap{padding:16px}.brand{font-size:18px}.grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
 </head>
 <body>
+  <header class="header"><div class="brand">RØDA Loadout Admin <span>v3 CODMunity Sync</span></div><div class="status" id="topStatus">● Online</div></header>
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Panoramica</button>
+    <button class="tab" data-tab="sync">Sync CODMunity</button>
+    <button class="tab" data-tab="builds">Build ricevute</button>
+    <button class="tab" data-tab="database">Database</button>
+    <button class="tab" data-tab="review">Da controllare</button>
+    <button class="tab" data-tab="blocked">Bloccati</button>
+    <button class="tab" data-tab="report">Report</button>
+  </nav>
 
-    <!-- Header -->
-    <div class="header">
-        <h1>RØDA Loadout Admin <span style="font-size:0.6em; vertical-align: super;">v2</span></h1>
-        <div id="connection-status" style="font-size: 0.8rem; color: var(--success);">● Online</div>
-    </div>
-
-    <!-- Navigation -->
-    <div class="nav-tabs">
-        <button class="tab-btn active" data-action="switch-tab" data-tab="overview">Panoramica</button>
-        <button class="tab-btn" data-action="switch-tab" data-tab="builds">Build Ricevute</button>
-        <button class="tab-btn" data-action="switch-tab" data-tab="database">Database</button>
-        <button class="tab-btn" data-action="switch-tab" data-tab="review">Da Controllare</button>
-        <button class="tab-btn" data-action="switch-tab" data-tab="blocked">Bloccati</button>
-        <button class="tab-btn" data-action="switch-tab" data-tab="report">Report Sync</button>
-    </div>
-
-    <!-- Main Content -->
-    <div class="content">
-        
-        <!-- TAB 1: PANORAMICA -->
-        <div id="overview" class="tab-content">
-            <div class="grid-stats">
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-weapons">-</span>
-                    <span class="stat-label">Armi Pubbliche</span>
-                </div>
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-attachments">-</span>
-                    <span class="stat-label">Accessori</span>
-                </div>
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-compatibility">-</span>
-                    <span class="stat-label">Compatibilità</span>
-                </div>
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-builds">-</span>
-                    <span class="stat-label">Build Ricevute</span>
-                </div>
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-review" style="color: var(--warning)">-</span>
-                    <span class="stat-label">Da Controllare</span>
-                </div>
-                <div class="card stat-card">
-                    <span class="stat-value" id="count-blocked" style="color: var(--danger)">-</span>
-                    <span class="stat-label">Bloccati</span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>Azioni Rapide</h3>
-                <p style="color: var(--text-muted); margin-bottom: 1rem;">Gestisci lo stato del database Loadout.</p>
-                <button class="btn btn-primary" data-action="refresh-data">🔄 Aggiorna Dati Dashboard</button>
-                <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
-                    <p>Per eseguire un sync completo da CODMunity, usa il terminale:</p>
-                    <code style="background: #000; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">npm run sync:loadout-db</code>
-                </div>
-            </div>
+  <main class="wrap">
+    <section id="overview" class="panel active">
+      <div class="grid">
+        <div class="card stat"><div class="num" id="countWeapons">-</div><div class="label">Armi</div></div>
+        <div class="card stat"><div class="num" id="countAttachments">-</div><div class="label">Accessori</div></div>
+        <div class="card stat"><div class="num" id="countCompat">-</div><div class="label">Compatibilità</div></div>
+        <div class="card stat"><div class="num" id="countBuilds">-</div><div class="label">Build</div></div>
+      </div>
+      <div class="card">
+        <h3>Azioni rapide</h3>
+        <p class="muted">Da qui puoi aggiornare la dashboard oppure avviare la sincronizzazione automatica da CODMunity senza usare terminale Railway.</p>
+        <div class="actions">
+          <button class="btn" data-action="refresh">🔄 Aggiorna dashboard</button>
+          <button class="btn green" data-action="run-sync">⚡ Sincronizza CODMunity ora</button>
+          <button class="btn dark" data-tab-jump="sync">📊 Apri stato sync</button>
         </div>
+      </div>
+    </section>
 
-        <!-- TAB 2: BUILD RICEVUTE -->
-        <div id="builds" class="tab-content hidden">
-            <div class="card">
-                <h3>Build Inviate dagli Utenti</h3>
-                <div id="builds-container" class="table-container">
-                    <div class="loading">Caricamento build...</div>
-                </div>
-            </div>
+    <section id="sync" class="panel">
+      <div class="card">
+        <h2>Sincronizzazione CODMunity</h2>
+        <p class="muted">Premi il bottone qui sotto: il server Railway esegue <b>npm run sync:loadout-db</b> e aggiorna armi, accessori e compatibilità reali CODMunity.</p>
+        <div class="actions">
+          <button class="btn green" id="syncBtn" data-action="run-sync">⚡ Avvia sync CODMunity</button>
+          <button class="btn" data-action="sync-status">🔍 Controlla stato</button>
         </div>
-
-        <!-- TAB 3: DATABASE -->
-        <div id="database" class="tab-content hidden">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3>Gestione Database</h3>
-                    <div>
-                        <button class="btn btn-sm btn-primary" onclick="filterDB('weapons')">Armi</button>
-                        <button class="btn btn-sm btn-primary" onclick="filterDB('attachments')">Accessori</button>
-                        <button class="btn btn-sm btn-primary" onclick="filterDB('compatibility')">Compatibilità</button>
-                    </div>
-                </div>
-                <div id="db-filter-title" style="color: var(--primary); font-weight: bold; margin-bottom: 10px;">Visualizzazione: Armi</div>
-                <div id="db-container" class="table-container">
-                    <div class="loading">Caricamento database...</div>
-                </div>
-            </div>
+        <div class="sync-box">
+          <div id="syncSummary" class="muted">Stato sync non ancora caricato.</div>
+          <pre id="syncLines" class="sync-lines">Premi “Controlla stato” o “Avvia sync CODMunity”.</pre>
         </div>
+      </div>
+    </section>
 
-        <!-- TAB 4: DA CONTROLLARE -->
-        <div id="review" class="tab-content hidden">
-            <div class="card">
-                <h3>Elementi in Revisione</h3>
-                <p style="color: var(--text-muted); margin-bottom: 1rem;">Dati importati da CODMunity che richiedono verifica manuale.</p>
-                <div id="review-container" class="table-container">
-                    <div class="loading">Nessun elemento in revisione.</div>
-                </div>
-            </div>
-        </div>
+    <section id="builds" class="panel"><div class="card"><h3>Build ricevute</h3><div id="buildsBox" class="table-wrap">Caricamento...</div></div></section>
+    <section id="database" class="panel"><div class="card"><h3>Database Loadout</h3><div class="actions"><button class="btn dark" data-db="weapons">Armi</button><button class="btn dark" data-db="attachments">Accessori</button><button class="btn dark" data-db="compatibility">Compatibilità</button></div><div id="dbBox" class="table-wrap" style="margin-top:14px">Caricamento...</div></div></section>
+    <section id="review" class="panel"><div class="card"><h3>Da controllare</h3><div id="reviewBox" class="table-wrap">Caricamento...</div></div></section>
+    <section id="blocked" class="panel"><div class="card"><h3>Bloccati / Disattivati</h3><div id="blockedBox" class="table-wrap">Caricamento...</div></div></section>
+    <section id="report" class="panel"><div class="card"><h3>Report sync</h3><pre id="reportBox" class="sync-lines">Caricamento...</pre></div></section>
+  </main>
+  <div class="toastbox" id="toastbox"></div>
 
-        <!-- TAB 5: BLOCCATI -->
-        <div id="blocked" class="tab-content hidden">
-            <div class="card">
-                <h3>Elementi Bloccati / Disattivati</h3>
-                <p style="color: var(--text-muted); margin-bottom: 1rem;">Elementi nascosti dal pubblico. Il sync automatico non li riattiverà.</p>
-                <div id="blocked-container" class="table-container">
-                    <div class="loading">Nessun elemento bloccato.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 6: REPORT SYNC -->
-        <div id="report" class="tab-content hidden">
-            <div class="card">
-                <h3>Report Ultimo Sync</h3>
-                <div id="report-summary" style="margin-bottom: 1rem;">
-                    <!-- Riassunto testuale -->
-                </div>
-                <details style="margin-top: 1rem; border: 1px solid #333; padding: 1rem; border-radius: 6px;">
-                    <summary style="cursor: pointer; color: var(--primary); font-weight: bold;">Mostra JSON Completo (Debug)</summary>
-                    <pre id="report-json" style="background: #000; padding: 1rem; overflow-x: auto; margin-top: 1rem; font-size: 0.8rem; color: #0f0;"></pre>
-                </details>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
-
-    <script>
-        // --- STATO GLOBALE ---
-        let currentDBType = 'weapons';
-        let dbData = { weapons: [], attachments: [], compatibility: [] };
-        let buildsData = [];
-
-        // --- UTILS ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.borderLeftColor = type === 'error' ? 'var(--danger)' : (type === 'success' ? 'var(--success)' : 'var(--primary)');
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        async function apiCall(endpoint, method = 'GET', body = null) {
-            try {
-                const options = { method, headers: { 'Content-Type': 'application/json' } };
-                if (body) options.body = JSON.stringify(body);
-                
-                const res = await fetch(endpoint, options);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return await res.json();
-            } catch (err) {
-                console.error(err);
-                showToast(`Errore API: ${err.message}`, 'error');
-                return null;
-            }
-        }
-
-        // --- NAVIGAZIONE TAB ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(tabId).classList.remove('hidden');
-            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-
-            // Carica dati specifici se necessario
-            if (tabId === 'builds') loadBuilds();
-            if (tabId === 'database') loadDB('weapons');
-            if (tabId === 'review') loadReview();
-            if (tabId === 'blocked') loadBlocked();
-            if (tabId === 'report') loadReport();
-        }
-
-        // --- CARICAMENTO DATI GENERALI (PANORAMICA) ---
-        async function loadDashboardStats() {
-            const data = await apiCall('/api/admin/loadout/database');
-            if (!data) return;
-
-            dbData = data; // Salva per uso locale
-
-            document.getElementById('count-weapons').textContent = data.weapons.filter(w => w.stato === 'pubblico').length;
-            document.getElementById('count-attachments').textContent = data.attachments.filter(a => a.stato === 'pubblico').length;
-            document.getElementById('count-compatibility').textContent = data.compatibility.filter(c => c.stato === 'pubblico').length;
-            
-            const builds = await apiCall('/api/admin/loadout/builds');
-            if (builds) {
-                buildsData = builds;
-                document.getElementById('count-builds').textContent = builds.length;
-            }
-
-            document.getElementById('count-review').textContent = data.weapons.filter(w => w.stato === 'da_controllare').length + 
-                                                                 data.attachments.filter(a => a.stato === 'da_controllare').length;
-            document.getElementById('count-blocked').textContent = data.weapons.filter(w => w.bloccatoManuale).length + 
-                                                                   data.attachments.filter(a => a.bloccatoManuale).length;
-        }
-
-        // --- GESTIONE BUILD ---
-        async function loadBuilds() {
-            const container = document.getElementById('builds-container');
-            container.innerHTML = '<div class="loading">Caricamento...</div>';
-            
-            const builds = await apiCall('/api/admin/loadout/builds');
-            if (!builds || builds.length === 0) {
-                container.innerHTML = '<div class="loading">Nessuna build ricevuta.</div>';
-                return;
-            }
-
-            let html = `<table><thead><tr><th>Data</th><th>Creator</th><th>Arma</th><th>Stile</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>`;
-            builds.forEach(b => {
-                const statusClass = b.stato === 'approvato' ? 'badge-public' : (b.stato === 'rifiutato' ? 'badge-blocked' : 'badge-draft');
-                html += `<tr>
-                    <td>${new Date(b.createdAt).toLocaleDateString()}</td>
-                    <td><strong>${b.creatorName || 'Anonimo'}</strong></td>
-                    <td>${b.armaNome} (${b.gioco})</td>
-                    <td>${b.stile}</td>
-                    <td><span class="badge ${statusClass}">${b.stato}</span></td>
-                    <td>
-                        ${b.stato === 'da_approvare' ? `
-                        <button class="btn btn-sm btn-success" data-action="approve-build" data-id="${b.id}">✓</button>
-                        <button class="btn btn-sm btn-danger" data-action="reject-build" data-id="${b.id}">✗</button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-danger" data-action="delete-build" data-id="${b.id}">🗑</button>
-                    </td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-            container.innerHTML = html;
-        }
-
-        // --- GESTIONE DATABASE ---
-        function filterDB(type) {
-            currentDBType = type;
-            const titles = { weapons: 'Armi', attachments: 'Accessori', compatibility: 'Compatibilità' };
-            document.getElementById('db-filter-title').textContent = `Visualizzazione: ${titles[type]}`;
-            renderDBTable();
-        }
-
-        function loadDB(type) {
-            filterDB(type);
-        }
-
-        function renderDBTable() {
-            const container = document.getElementById('db-container');
-            const items = dbData[currentDBType] || [];
-            
-            if (items.length === 0) {
-                container.innerHTML = '<div class="loading">Nessun dato disponibile.</div>';
-                return;
-            }
-
-            let html = `<table><thead><tr>`;
-            // Colonne dinamiche in base al tipo
-            if (currentDBType === 'weapons') html += `<th>Nome</th><th>Gioco</th><th>Cat</th><th>Stato</th><th>Azioni</th>`;
-            else if (currentDBType === 'attachments') html += `<th>Nome</th><th>Slot</th><th>Stato</th><th>Azioni</th>`;
-            else if (currentDBType === 'compatibility') html += `<th>Arma</th><th>Accessorio</th><th>Slot</th><th>Stato</th><th>Azioni</th>`;
-            html += `</tr></thead><tbody>`;
-
-            items.slice(0, 100).forEach(item => { // Limita a 100 per performance
-                let row = '<tr>';
-                let actions = '';
-                
-                if (currentDBType === 'weapons') {
-                    row += `<td>${item.nome}</td><td>${item.gioco}</td><td>${item.categoria}</td>`;
-                    actions = `<button class="btn btn-sm btn-warning" data-action="disable-item" data-type="weapon" data-id="${item.id}">Disattiva</button>
-                               <button class="btn btn-sm btn-danger" data-action="block-item" data-type="weapon" data-id="${item.id}">Blocca</button>`;
-                } else if (currentDBType === 'attachments') {
-                    row += `<td>${item.nome}</td><td>${item.tipo}</td>`;
-                    actions = `<button class="btn btn-sm btn-warning" data-action="disable-item" data-type="attachment" data-id="${item.id}">Disattiva</button>
-                               <button class="btn btn-sm btn-danger" data-action="block-item" data-type="attachment" data-id="${item.id}">Blocca</button>`;
-                } else if (currentDBType === 'compatibility') {
-                    row += `<td>${item.armaId}</td><td>${item.accessorioId}</td><td>${item.slot}</td>`;
-                    actions = `<button class="btn btn-sm btn-danger" data-action="delete-item" data-type="compatibility" data-id="${item.id}">Elimina</button>`;
-                }
-
-                const badgeClass = item.stato === 'pubblico' ? 'badge-public' : (item.stato === 'bloccato' ? 'badge-blocked' : 'badge-draft');
-                row += `<td><span class="badge ${badgeClass}">${item.stato || 'bozza'}</span></td><td>${actions}</td></tr>`;
-                html += row;
-            });
-            html += `</tbody></table>`;
-            if (items.length > 100) html += `<div style="padding:10px; text-align:center; color:#666;">... e altri ${items.length - 100} elementi</div>`;
-            
-            container.innerHTML = html;
-        }
-
-        // --- ALTRE TAB (Placeholder logici) ---
-        async function loadReview() {
-            const container = document.getElementById('review-container');
-            // Logica semplificata: mostra tutto ciò che è da_controllare
-            const data = await apiCall('/api/admin/loadout/database');
-            if(!data) return;
-            const reviewItems = [...data.weapons, ...data.attachments].filter(i => i.stato === 'da_controllare');
-            
-            if(reviewItems.length === 0) {
-                container.innerHTML = '<div class="loading">Tutto approvato! Nessun elemento in revisione.</div>';
-                return;
-            }
-            
-            let html = `<table><thead><tr><th>Tipo</th><th>Nome</th><th>Motivo</th><th>Azioni</th></tr></thead><tbody>`;
-            reviewItems.forEach(i => {
-                html += `<tr>
-                    <td>${i.categoria ? 'Arma' : 'Accessorio'}</td>
-                    <td>${i.nome}</td>
-                    <td>Importazione automatica</td>
-                    <td>
-                        <button class="btn btn-sm btn-success" data-action="publish-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Pubblica</button>
-                        <button class="btn btn-sm btn-danger" data-action="delete-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Scarta</button>
-                    </td>
-                </tr>`;
-            });
-            container.innerHTML = html + '</tbody></table>';
-        }
-
-        async function loadBlocked() {
-            const container = document.getElementById('blocked-container');
-            const data = await apiCall('/api/admin/loadout/database');
-            if(!data) return;
-            const blockedItems = [...data.weapons, ...data.attachments].filter(i => i.bloccatoManuale || i.stato === 'bloccato');
-
-            if(blockedItems.length === 0) {
-                container.innerHTML = '<div class="loading">Nessun elemento bloccato.</div>';
-                return;
-            }
-
-            let html = `<table><thead><tr><th>Tipo</th><th>Nome</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>`;
-            blockedItems.forEach(i => {
-                html += `<tr>
-                    <td>${i.categoria ? 'Arma' : 'Accessorio'}</td>
-                    <td>${i.nome}</td>
-                    <td><span class="badge badge-blocked">Bloccato</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-success" data-action="reactivate-item" data-type="${i.categoria?'weapon':'attachment'}" data-id="${i.id}">Riattiva</button>
-                    </td>
-                </tr>`;
-            });
-            container.innerHTML = html + '</tbody></table>';
-        }
-
-        async function loadReport() {
-            const reportEl = document.getElementById('report-json');
-            const summaryEl = document.getElementById('report-summary');
-            // Simulazione fetch report (da adattare se esiste endpoint specifico)
-            summaryEl.innerHTML = '<p>Caricamento report...</p>';
-            reportEl.textContent = "Nessun report disponibile o formato non valido.";
-            // Qui andrebbe chiamata una API reale se esistesse: /api/admin/loadout/sync-report
-        }
-
-        // --- EVENT DELEGATION CENTRALIZZATA ---
-        document.addEventListener('click', async function(e) {
-            const btn = e.target.closest('[data-action]');
-            if (!btn) return;
-
-            const action = btn.dataset.action;
-            const type = btn.dataset.type;
-            const id = btn.dataset.id;
-            const tab = btn.dataset.tab;
-
-            try {
-                if (action === 'switch-tab') {
-                    switchTab(tab);
-                    return;
-                }
-
-                if (action === 'refresh-data') {
-                    showToast('Aggiornamento dati...', 'info');
-                    await loadDashboardStats();
-                    showToast('Dati aggiornati!', 'success');
-                    return;
-                }
-
-                // Azioni CRUD generiche
-                let endpoint = '';
-                let method = 'POST';
-                
-                if (action === 'publish-item') endpoint = `/api/admin/loadout/publish`;
-                if (action === 'disable-item') endpoint = `/api/admin/loadout/disable`;
-                if (action === 'block-item') endpoint = `/api/admin/loadout/block`;
-                if (action === 'reactivate-item') endpoint = `/api/admin/loadout/reactivate`;
-                if (action === 'delete-item') endpoint = `/api/admin/loadout/database/${type}/${id}`;
-                if (action === 'delete-item') method = 'DELETE';
-
-                if (action === 'approve-build') endpoint = `/api/admin/loadout/builds/approve`;
-                if (action === 'reject-build') endpoint = `/api/admin/loadout/builds/reject`;
-                if (action === 'delete-build') { endpoint = `/api/admin/loadout/builds/${id}`; method = 'DELETE'; }
-
-                if (endpoint) {
-                    if (!confirm('Sei sicuro di voler eseguire questa azione?')) return;
-                    
-                    const body = (method === 'POST') ? JSON.stringify({ type, id }) : null;
-                    const res = await apiCall(endpoint, method, body);
-                    
-                    if (res && res.ok) {
-                        showToast('Azione completata con successo', 'success');
-                        // Ricarica vista corrente
-                        if (tab === 'builds' || action.includes('build')) loadBuilds();
-                        else if (tab === 'database') renderDBTable();
-                        else if (tab === 'review') loadReview();
-                        else if (tab === 'blocked') loadBlocked();
-                        else loadDashboardStats(); // Fallback ricarica tutto
-                    } else {
-                        showToast('Errore nell\'operazione', 'error');
-                    }
-                } else {
-                    console.warn('Azione non gestita:', action);
-                }
-
-            } catch (err) {
-                console.error(err);
-                showToast('Errore: ' + err.message, 'error');
-            }
-        });
-
-        // --- INIT ---
-        window.addEventListener('DOMContentLoaded', () => {
-            loadDashboardStats();
-        });
-
-    </script>
+<script>
+let db={weapons:[],attachments:[],compatibility:[]};
+let builds=[];
+let dbType='weapons';
+let syncTimer=null;
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function toast(msg,type='info'){const el=document.createElement('div');el.className='toast';el.style.borderLeftColor=type==='error'?'var(--red)':type==='success'?'var(--green)':'var(--purple)';el.textContent=msg;$('toastbox').appendChild(el);setTimeout(()=>el.remove(),3500)}
+async function api(url,opt={}){const r=await fetch(url,{cache:'no-store',headers:{'Content-Type':'application/json'},...opt});const d=await r.json().catch(()=>({ok:false,error:'Risposta non JSON'}));if(!r.ok||d.ok===false)throw new Error(d.error||d.message||('HTTP '+r.status));return d;}
+function badge(v){const x=String(v||'bozza');const cls=x==='pubblico'||x==='approvato'?'ok':x==='bloccato'||x==='rifiutato'||x==='disattivato'?'bad':'warn';return `<span class="badge ${cls}">${esc(x)}</span>`}
+function table(rows,cols){if(!rows.length)return '<div style="padding:22px;color:var(--muted)">Nessun dato.</div>';return `<table><thead><tr>${cols.map(c=>`<th>${esc(c.t)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${c.v(r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function switchTab(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));$(id).classList.add('active');document.querySelector(`[data-tab="${id}"]`)?.classList.add('active');if(id==='builds')loadBuilds();if(id==='database')renderDB();if(id==='review')renderReview();if(id==='blocked')renderBlocked();if(id==='report')loadReport();if(id==='sync')loadSyncStatus();}
+async function loadDashboard(){try{const d=await api('/api/admin/loadout/database');db={weapons:d.weapons||[],attachments:d.attachments||[],compatibility:d.compatibility||[]};$('countWeapons').textContent=db.weapons.length;$('countAttachments').textContent=db.attachments.length;$('countCompat').textContent=db.compatibility.length;const b=await api('/api/admin/loadout/builds');builds=b.builds||[];$('countBuilds').textContent=builds.length;}catch(e){toast(e.message,'error')}}
+async function loadBuilds(){try{const d=await api('/api/admin/loadout/builds');builds=d.builds||[];$('buildsBox').innerHTML=table(builds,[{t:'Creator',v:r=>esc(r.creatorName)},{t:'Arma',v:r=>esc(r.armaNome)},{t:'Stile',v:r=>esc(r.stile)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn green" data-action="approve-build" data-id="${esc(r.id)}">Approva</button><button class="btn red" data-action="reject-build" data-id="${esc(r.id)}">Rifiuta</button><button class="btn red" data-action="delete-build" data-id="${esc(r.id)}">Elimina</button>`}]);}catch(e){$('buildsBox').textContent=e.message}}
+function renderDB(){const rows=db[dbType]||[];const cols=dbType==='weapons'?[{t:'Nome',v:r=>esc(r.nome)},{t:'Gioco',v:r=>esc(r.gioco)},{t:'Categoria',v:r=>esc(r.categoria)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn yellow" data-action="disable-item" data-type="weapon" data-id="${esc(r.id)}">Disattiva</button><button class="btn red" data-action="block-item" data-type="weapon" data-id="${esc(r.id)}">Blocca</button>`}]:dbType==='attachments'?[{t:'Nome',v:r=>esc(r.nome)},{t:'Slot',v:r=>esc(r.tipo||r.slot)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn yellow" data-action="disable-item" data-type="attachment" data-id="${esc(r.id)}">Disattiva</button><button class="btn red" data-action="block-item" data-type="attachment" data-id="${esc(r.id)}">Blocca</button>`}]:[{t:'Arma',v:r=>esc(r.armaId)},{t:'Accessorio',v:r=>esc(r.accessorioId)},{t:'Slot',v:r=>esc(r.slot)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn red" data-action="delete-item" data-type="compatibility" data-id="${esc(r.id)}">Elimina</button>`}];$('dbBox').innerHTML=table(rows.slice(0,300),cols);}
+function renderReview(){const rows=[...db.weapons.map(x=>({...x,_type:'weapon'})),...db.attachments.map(x=>({...x,_type:'attachment'}))].filter(x=>x.stato==='da_controllare'||x.verificata===false||x.verificato===false);$('reviewBox').innerHTML=table(rows.slice(0,300),[{t:'Tipo',v:r=>r._type},{t:'Nome',v:r=>esc(r.nome)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn green" data-action="publish-item" data-type="${r._type}" data-id="${esc(r.id)}">Pubblica</button><button class="btn red" data-action="block-item" data-type="${r._type}" data-id="${esc(r.id)}">Blocca</button>`}]);}
+function renderBlocked(){const rows=[...db.weapons.map(x=>({...x,_type:'weapon'})),...db.attachments.map(x=>({...x,_type:'attachment'}))].filter(x=>x.bloccatoManuale||x.stato==='bloccato'||x.stato==='disattivato');$('blockedBox').innerHTML=table(rows,[{t:'Tipo',v:r=>r._type},{t:'Nome',v:r=>esc(r.nome)},{t:'Stato',v:r=>badge(r.stato)},{t:'Azioni',v:r=>`<button class="btn green" data-action="reactivate-item" data-type="${r._type}" data-id="${esc(r.id)}">Riattiva</button>`}]);}
+async function loadReport(){try{const d=await api('/api/admin/loadout/sync-report');$('reportBox').textContent=JSON.stringify(d,null,2)}catch(e){$('reportBox').textContent=e.message}}
+async function loadSyncStatus(){try{const d=await api('/api/admin/loadout/sync-status');const s=d.status||{};$('syncSummary').innerHTML=`<b>Running:</b> ${s.running?'SÌ':'NO'} · <b>OK:</b> ${s.ok?'SÌ':'NO'} · <b>Exit:</b> ${s.exitCode??'-'}<br><b>Started:</b> ${esc(s.startedAt||'-')}<br><b>Finished:</b> ${esc(s.finishedAt||'-')}`;$('syncLines').textContent=(s.lastLines||[]).join('\n') || 'Nessun log disponibile.';if(s.running){$('syncBtn').disabled=true;if(!syncTimer)syncTimer=setInterval(loadSyncStatus,3500)}else{$('syncBtn').disabled=false;if(syncTimer){clearInterval(syncTimer);syncTimer=null}await loadDashboard()}}catch(e){$('syncSummary').textContent='Errore stato sync: '+e.message;$('syncLines').textContent=e.message}}
+async function runSync(){try{if(!confirm('Avviare adesso lo sync CODMunity? Può richiedere alcuni minuti.'))return;$('syncBtn').disabled=true;toast('Sync CODMunity avviato','success');switchTab('sync');await api('/api/admin/loadout/run-sync',{method:'POST'});loadSyncStatus();}catch(e){toast(e.message,'error');$('syncBtn').disabled=false}}
+async function actionPost(action,type,id){const map={ 'publish-item':'/api/admin/loadout/publish','disable-item':'/api/admin/loadout/disable','block-item':'/api/admin/loadout/block','reactivate-item':'/api/admin/loadout/reactivate','approve-build':'/api/admin/loadout/builds/approve','reject-build':'/api/admin/loadout/builds/reject'};const url=map[action];if(!url)return;await api(url,{method:'POST',body:JSON.stringify({type,id})});toast('Azione completata','success');await loadDashboard();loadBuilds();renderDB();renderReview();renderBlocked();}
+async function actionDelete(action,type,id){const url=action==='delete-build'?`/api/admin/loadout/builds/${encodeURIComponent(id)}`:`/api/admin/loadout/database/${encodeURIComponent(type)}/${encodeURIComponent(id)}`;await api(url,{method:'DELETE'});toast('Eliminato','success');await loadDashboard();loadBuilds();renderDB();}
+document.addEventListener('click',async e=>{const tab=e.target.closest('[data-tab]');if(tab){switchTab(tab.dataset.tab);return}const jump=e.target.closest('[data-tab-jump]');if(jump){switchTab(jump.dataset.tabJump);return}const dbBtn=e.target.closest('[data-db]');if(dbBtn){dbType=dbBtn.dataset.db;renderDB();return}const btn=e.target.closest('[data-action]');if(!btn)return;const a=btn.dataset.action;try{if(a==='refresh'){await loadDashboard();toast('Dashboard aggiornata','success');return}if(a==='run-sync'){await runSync();return}if(a==='sync-status'){await loadSyncStatus();return}if(a==='delete-build'||a==='delete-item'){if(confirm('Confermi eliminazione?'))await actionDelete(a,btn.dataset.type,btn.dataset.id);return}if(a.endsWith('item')||a.endsWith('build')){if(confirm('Confermi azione?'))await actionPost(a,btn.dataset.type,btn.dataset.id);return}}catch(err){toast(err.message,'error')}});
+window.addEventListener('DOMContentLoaded',()=>{loadDashboard();loadSyncStatus();});
+</script>
 </body>
 </html>
