@@ -22,6 +22,10 @@ const SLOT_MAP = {
   'fire mods':'Mod fuoco', 'fire mod':'Mod fuoco', 'fire-mods':'Mod fuoco', 'mod fuoco':'Mod fuoco'
 };
 
+const PROMO_RX = /\b(codmunity|cod\s*munity|discount|promo|coupon|code|creator\s*code|support\s*a\s*creator|use\s+code|shop|store|sale|deal|subscribe|newsletter|telegram|discord|twitter|x\.com|instagram|youtube|tiktok|privacy|terms|cookie|login|sign\s*in|register|premium|pro|bundle|battle\s*pass|blackcell|warzone\s*meta|best\s*loadout|patch\s*notes|tier\s*list)\b/i;
+const UI_RX = /^(search|select|none|empty|attachment|attachments|loadout|build|meta|recommended|close|back|clear|filter|sort|all|any|save|share|copy|remove|delete|cancel|confirm|apply|reset|next|previous|primary|secondary)$/i;
+const STAT_RX = /\b(ads\s*speed|aim\s*down\s*sight|recoil\s*control|damage\s*range|bullet\s*velocity|sprint\s*to\s*fire|movement\s*speed|hipfire|hip\s*fire|fire\s*rate|flinch|idle\s*sway|gun\s*kick|horizontal|vertical|mobility|handling|accuracy|range|damage|control)\b/i;
+
 function read(file, fallback = []) { try { if (!fs.existsSync(file)) return fallback; const raw = fs.readFileSync(file, 'utf8'); return raw.trim() ? JSON.parse(raw) : fallback; } catch { return fallback; } }
 function write(file, data) { fs.mkdirSync(path.dirname(file), { recursive:true }); fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8'); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -31,20 +35,33 @@ function slot(v) { return SLOT_MAP[clean(v).toLowerCase()] || null; }
 function wid(url) { return String(url || '').split('/').filter(Boolean).pop(); }
 function game(url, entry) { const m = String(url || '').match(/\/weapon\/(bo\d+)\//i); return String(entry.game || (m && m[1]) || 'Warzone').toUpperCase(); }
 function today() { return new Date().toISOString().slice(0, 10); }
+
 function badName(v) {
   const n = clean(v);
-  if (!n || n.length < 2 || n.length > 64 || !/[a-zA-Z]/.test(n)) return true;
+  const s = slug(n);
+  if (!n || n.length < 2 || n.length > 48 || !/[a-zA-Z]/.test(n)) return true;
   if (SLOT_MAP[n.toLowerCase()]) return true;
   if (/^level\s*\d+$/i.test(n) || /^lvl\s*\d+$/i.test(n)) return true;
-  if (/unlock|unlocked|required|weapon level|player level|max level/i.test(n)) return true;
+  if (/unlock|unlocked|required|weapon\s*level|player\s*level|max\s*level/i.test(n)) return true;
   if (/^\+?\-?\d+(\.\d+)?%?$/.test(n)) return true;
-  if (/^(search|select|none|empty|attachment|attachments|loadout|build|meta|recommended|close|back|clear|filter|sort)$/i.test(n)) return true;
-  if (/\b(ads speed|recoil control|damage range|bullet velocity|sprint to fire)\b/i.test(n)) return true;
-  if (n.split(' ').length > 7) return true;
+  if (UI_RX.test(n) || PROMO_RX.test(n) || STAT_RX.test(n)) return true;
+  if (/^\d+\s*(round|rounds|mag|mags)$/i.test(n)) return false;
+  if (n.split(' ').length > 5) return true;
+  if (s.includes('level-') || s.includes('unlock-at') || s.includes('codmunity') || s.includes('discount-code') || s.includes('use-code')) return true;
   return false;
 }
-function cleanAttName(v) { return clean(v).replace(/\s+Level\s*\d+$/i, '').replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i, '').replace(/\s+Required\s+Level\s*\d+$/i, '').trim(); }
+function cleanAttName(v) { return clean(v).replace(/\s+Level\s*\d+$/i, '').replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i, '').replace(/\s+Required\s+Level\s*\d+$/i, '').replace(/\s+\+?\-?\d+(\.\d+)?%$/i, '').trim(); }
 function weaponList() { return read(URLS, []).map((e, i) => { const url = typeof e === 'string' ? e : e.url; return { id:wid(url), url, game:game(url, e || {}), codmunityOrder:Number(e.codmunityOrder || i + 1), discoveredAt:e.discoveredAt || today() }; }).filter(x => x.id && x.url).slice(0, LIMIT || undefined); }
+
+function purgeInvalidExisting(attachments, compatibility) {
+  const before = attachments.length;
+  const valid = attachments.filter(a => !badName(a.nome || a.name || a.id) && slot(a.tipo || a.slot));
+  const validIds = new Set(valid.map(a => a.id));
+  const compatValid = compatibility.filter(c => validIds.has(c.accessorioId));
+  attachments.splice(0, attachments.length, ...valid);
+  compatibility.splice(0, compatibility.length, ...compatValid);
+  return { removedAttachments: before - valid.length, removedCompatibility: compatibility.length - compatValid.length };
+}
 
 async function openBuilder(page) {
   await page.goto(CREATE_URL, { waitUntil:'networkidle2', timeout:60000 });
@@ -66,6 +83,7 @@ async function pickWeapon(page, weapon) {
     const slug = v => String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
     const ids = [w.id, w.id.replace(/-/g,' ')].map(slug);
     const els = Array.from(document.querySelectorAll('button,a,[role="button"],li,div')).filter(el => {
+      if (el.closest('header,footer,nav,[class*="cookie"],[class*="modal"],[class*="ad"],[class*="promo"],[class*="discount"]')) return false;
       const r = el.getBoundingClientRect(); if (r.width < 20 || r.height < 12) return false;
       const text = (el.innerText || el.textContent || '').trim(); if (!text || text.length > 90) return false;
       const s = slug(text); return ids.some(id => s === id || s.includes(id) || id.includes(s));
@@ -78,31 +96,37 @@ async function pickWeapon(page, weapon) {
 async function extract(page) {
   return page.evaluate((SLOTS) => {
     const slotMap = { optic:'Ottica', optics:'Ottica', ottica:'Ottica', muzzle:'Volata', volata:'Volata', barrel:'Canna', canna:'Canna', underbarrel:'Sottocanna', 'under barrel':'Sottocanna', sottocanna:'Sottocanna', magazine:'Caricatore', mag:'Caricatore', caricatore:'Caricatore', 'rear grip':'Impugnatura', grip:'Impugnatura', impugnatura:'Impugnatura', stock:'Calcio', calcio:'Calcio', laser:'Laser', 'fire mods':'Mod fuoco', 'fire mod':'Mod fuoco', 'mod fuoco':'Mod fuoco' };
+    const PROMO = /\b(codmunity|cod\s*munity|discount|promo|coupon|code|creator\s*code|support\s*a\s*creator|use\s+code|shop|store|sale|deal|subscribe|newsletter|telegram|discord|twitter|instagram|youtube|tiktok|privacy|terms|cookie|login|register|premium|bundle|tier\s*list|patch\s*notes)\b/i;
+    const STAT = /\b(ads\s*speed|aim\s*down\s*sight|recoil\s*control|damage\s*range|bullet\s*velocity|sprint\s*to\s*fire|movement\s*speed|fire\s*rate|flinch|idle\s*sway|mobility|handling|accuracy|range|damage|control)\b/i;
     const clean = v => String(v||'').replace(/\s+/g,' ').trim();
     const normSlot = v => slotMap[clean(v).toLowerCase()] || null;
-    const bad = n => !n || n.length < 2 || n.length > 64 || !/[a-zA-Z]/.test(n) || slotMap[n.toLowerCase()] || /^level\s*\d+$/i.test(n) || /unlock|unlocked|required|weapon level|player level|max level/i.test(n) || /^\+?\-?\d+(\.\d+)?%?$/.test(n) || /^(search|select|none|empty|attachment|attachments|loadout|build|meta|recommended|close|back|clear|filter|sort)$/i.test(n);
+    const bad = n => !n || n.length < 2 || n.length > 48 || !/[a-zA-Z]/.test(n) || slotMap[n.toLowerCase()] || /^level\s*\d+$/i.test(n) || /unlock|unlocked|required|weapon level|player level|max level/i.test(n) || /^\+?\-?\d+(\.\d+)?%?$/.test(n) || /^(search|select|none|empty|attachment|attachments|loadout|build|meta|recommended|close|back|clear|filter|sort|all|any|save|share|copy|remove|delete|cancel|confirm|apply|reset)$/i.test(n) || PROMO.test(n) || STAT.test(n) || n.split(' ').length > 5;
     const textOf = el => clean(el.getAttribute('data-name') || el.getAttribute('data-value') || el.getAttribute('aria-label') || el.getAttribute('title') || el.innerText || el.textContent);
+    function isBadContainer(el) { return !!el.closest('header,footer,nav,[class*="cookie"],[class*="modal"],[class*="ad"],[class*="promo"],[class*="discount"],[class*="footer"],[class*="navbar"],[class*="social"]'); }
     function nearestSlot(el) {
       let cur = el;
-      for (let d=0; cur && d<8; d++, cur=cur.parentElement) {
+      for (let d=0; cur && d<6; d++, cur=cur.parentElement) {
+        if (isBadContainer(cur)) return null;
         const attrSlot = normSlot(`${cur.getAttribute('data-slot')||''} ${cur.getAttribute('data-type')||''} ${cur.getAttribute('aria-label')||''}`);
         if (attrSlot) return attrSlot;
         const heads = Array.from(cur.querySelectorAll('h1,h2,h3,h4,h5,h6,[class*="title"],[class*="label"],[class*="slot"],[class*="category"]')).slice(0,8);
         for (const h of heads) { const s = normSlot(h.innerText || h.textContent); if (s) return s; }
         const all = clean(cur.innerText || cur.textContent).toLowerCase();
+        if (PROMO.test(all)) return null;
         for (const a of Object.keys(slotMap)) { if (all.startsWith(a) || all.includes(` ${a} `) || all.includes(`${a}:`)) return slotMap[a]; }
       }
       return null;
     }
     const out=[];
-    const els = Array.from(document.querySelectorAll('button,[role="option"],[role="button"],li,[class*="attachment"],[class*="option"],[class*="item"],[class*="card"]'));
+    const els = Array.from(document.querySelectorAll('[data-name],[data-value],button,[role="option"],li,[class*="attachment"],[class*="option"],[class*="item"],[class*="card"]'));
     for (const el of els) {
+      if (isBadContainer(el)) continue;
       const r = el.getBoundingClientRect(); if (r.width < 25 || r.height < 12) continue;
       const s = nearestSlot(el); if (!s || !SLOTS.includes(s)) continue;
       let name = textOf(el);
       const lines = name.split('\n').map(clean).filter(Boolean);
-      if (lines.length > 1) name = lines.find(x => !bad(x) && !normSlot(x)) || lines[0];
-      name = clean(name).replace(/\s+Level\s*\d+$/i,'').replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i,'').trim();
+      if (lines.length > 1) name = lines.find(x => !bad(x) && !normSlot(x)) || '';
+      name = clean(name).replace(/\s+Level\s*\d+$/i,'').replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i,'').replace(/\s+Required\s+Level\s*\d+$/i,'').trim();
       if (bad(name)) continue;
       out.push({slot:s,name});
     }
@@ -124,7 +148,7 @@ function mergeData(attachments, compatibility, w, items) {
   items.forEach((it, idx) => {
     const name = cleanAttName(it.name); const sl = slot(it.slot); if (!sl || badName(name)) return;
     const id = slug(name); if (!id) return;
-    if (!attMap.has(id)) { const a = { id, nome:name, tipo:sl, attivo:true, verificato:true, fonte:'CODMunity Build', fonteUrl:CREATE_URL, note:'Accessorio importato da CODMunity Build.', updatedAt:today(), stato:'pubblico', codmunityOrder:idx+1 }; attachments.push(a); attMap.set(id,a); newA++; }
+    if (!attMap.has(id)) { const a = { id, nome:name, tipo:sl, attivo:true, verificato:true, fonte:'CODMunity Build', fonteUrl:CREATE_URL, note:'Accessorio importato da CODMunity Build dopo controllo anti-UI/promo.', updatedAt:today(), stato:'pubblico', codmunityOrder:idx+1 }; attachments.push(a); attMap.set(id,a); newA++; }
     else { const a = attMap.get(id); a.nome = name; a.tipo = sl; a.attivo = true; a.verificato = true; a.fonte = 'CODMunity Build'; a.updatedAt = today(); if (!['bloccato','disattivato'].includes(a.stato)) a.stato='pubblico'; }
     const key = `${w.id}__${id}`;
     if (!compMap.has(key)) { const c = { id:key, armaId:w.id, accessorioId:id, slot:sl, compatibile:true, verificato:true, fonte:'CODMunity Build', fonteUrl:CREATE_URL, note:'Compatibilità importata da CODMunity Build.', updatedAt:today(), stato:'pubblico', codmunityOrder:idx+1 }; compatibility.push(c); compMap.set(key,c); newC++; }
@@ -134,8 +158,10 @@ function mergeData(attachments, compatibility, w, items) {
 }
 
 async function main() {
-  const report = { startedAt:new Date().toISOString(), source:CREATE_URL, processedWeapons:[], failedWeapons:[], attachmentsImported:0, compatibilityImported:0, finishedAt:null };
+  const report = { startedAt:new Date().toISOString(), source:CREATE_URL, processedWeapons:[], failedWeapons:[], attachmentsImported:0, compatibilityImported:0, removedInvalidExisting:0, finishedAt:null };
   const weapons = read(WEAPONS), attachments = read(ATTS), compatibility = read(COMPAT), list = weaponList();
+  const purged = purgeInvalidExisting(attachments, compatibility);
+  report.removedInvalidExisting = purged.removedAttachments;
   const puppeteer = require('puppeteer');
   const browser = await puppeteer.launch({ headless:'new', args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-gpu'] });
   try {
