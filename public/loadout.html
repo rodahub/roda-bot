@@ -115,16 +115,21 @@
   <!-- TAB: form invio -->
   <div class="tab-panel" id="tab-form">
     <div class="form-card">
-      <div class="form-title">🎯 Crea il tuo Loadout</div>
+      <div class="form-title">Crea il tuo Loadout</div>
+      <div class="section-sub">Scegli gioco, arma, stile e accessori compatibili. Il loadout verrà preparato con la grafica RØDA.</div>
 
       <div class="field">
-        <label>Nome Creator / Player *</label>
-        <input type="text" id="f-creator" placeholder="es. RooS" maxlength="80">
+        <label>Gioco</label>
+        <select id="f-gioco">
+          <option value="">Tutti</option>
+          <option>BO7</option>
+          <option>BO6</option>
+          <option>Warzone</option>
+          <option>MW3</option>
+          <option>MW2</option>
+        </select>
       </div>
-      <div class="field">
-        <label>Firma sulla grafica</label>
-        <input type="text" id="f-firma" placeholder="es. Build by RooS" maxlength="100">
-      </div>
+
       <div class="field">
         <label>Categoria arma *</label>
         <select id="f-categoria">
@@ -141,42 +146,42 @@
           <option>Lanciarazzi</option>
         </select>
       </div>
+
       <div class="field">
         <label>Arma *</label>
         <select id="f-arma" disabled>
           <option value="">— Prima scegli la categoria —</option>
         </select>
       </div>
+
       <div class="field">
-        <label>Tipo equipaggiamento *</label>
-        <select id="f-tipo">
-          <option value="">— Seleziona tipo —</option>
+        <label>Stile build *</label>
+        <select id="f-stile">
+          <option value="Personalizzato">Personalizzato</option>
+          <option>Meta</option>
           <option>Lungo raggio</option>
-          <option>Corto raggio</option>
           <option>Supporto cecchino</option>
-          <option>Ranked</option>
+          <option>Mobilità</option>
           <option>Resurgence</option>
-          <option>Generico</option>
+          <option>Ranked</option>
         </select>
       </div>
 
       <div class="field">
-        <label>Accessori (da 1 a 5) *</label>
-        <div class="att-grid" id="attsContainer">
-          <select class="att-select" data-slot="0" disabled><option value="">— Prima scegli l'arma —</option></select>
-          <select class="att-select" data-slot="1" disabled><option value="">— Prima scegli l'arma —</option></select>
-          <select class="att-select" data-slot="2" disabled><option value="">— Prima scegli l'arma —</option></select>
-          <select class="att-select" data-slot="3" disabled><option value="">— Prima scegli l'arma —</option></select>
-          <select class="att-select" data-slot="4" disabled><option value="">— Prima scegli l'arma —</option></select>
+        <label>Accessori compatibili</label>
+        <div id="accessoriContainer">
+          <div class="empty-state" style="padding:20px;font-size:13px;color:var(--muted)">Seleziona un'arma per vedere gli accessori compatibili.</div>
         </div>
       </div>
 
       <div class="field">
-        <label>Nota opzionale</label>
-        <textarea id="f-nota" placeholder="Descrivi il contesto d'uso o consigli..." maxlength="500"></textarea>
+        <label>Riepilogo</label>
+        <div id="riepilogoBox" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.8">
+          <div style="color:var(--muted)">Nessuna selezione</div>
+        </div>
       </div>
 
-      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()">🚀 Invia equipaggiamento</button>
+      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()" disabled>🚀 Invia Loadout</button>
       <div id="formMsg" style="display:none"></div>
     </div>
   </div>
