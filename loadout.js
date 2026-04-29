@@ -3,17 +3,17 @@
 /**
  * RØDA Loadout routes.
  *
- * Importantissimo: questo file NON deve mai chiamare app.get/app.post al top-level.
- * server.js deve importarlo e chiamarlo passando l'istanza Express:
- *
- *   const registerLoadoutRoutes = require('./loadout');
- *   registerLoadoutRoutes(app);
+ * Questo modulo esporta registerLoadoutRoutes(app), ma installa anche un
+ * auto-hook sicuro su Express: se server.js fa solo require('./loadout') senza
+ * chiamare la funzione, le rotte vengono registrate appena app.listen() parte.
+ * Così evitiamo sia il crash app is not defined sia i click a vuoto su /loadout.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const DATA_DIR = path.join(__dirname, 'data');
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 function readJSON(filename, fallback = []) {
   const filePath = path.join(DATA_DIR, filename);
@@ -221,6 +221,21 @@ function registerLoadoutRoutes(app) {
   if (!app || typeof app.get !== 'function') {
     throw new Error('registerLoadoutRoutes: istanza Express app non valida');
   }
+
+  if (app.__rodaLoadoutRoutesRegistered) {
+    return;
+  }
+
+  Object.defineProperty(app, '__rodaLoadoutRoutesRegistered', {
+    value: true,
+    enumerable: false,
+    configurable: false
+  });
+
+  // Pagina pubblica Loadout: risolve i menu che puntano a /loadout.
+  app.get('/loadout', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'loadout.html'));
+  });
 
   app.get('/api/loadout/weapons', (req, res) => {
     try {
@@ -440,4 +455,40 @@ function registerLoadoutRoutes(app) {
   console.log('✅ Rotte RØDA Loadout registrate.');
 }
 
+function installAutoRegisterHook() {
+  try {
+    const express = require('express');
+    const proto = express && express.application;
+
+    if (!proto || proto.__rodaLoadoutAutoRegisterPatched) {
+      return;
+    }
+
+    const originalListen = proto.listen;
+
+    if (typeof originalListen !== 'function') {
+      return;
+    }
+
+    Object.defineProperty(proto, '__rodaLoadoutAutoRegisterPatched', {
+      value: true,
+      enumerable: false,
+      configurable: false
+    });
+
+    proto.listen = function patchedLoadoutListen(...args) {
+      try {
+        registerLoadoutRoutes(this);
+      } catch (error) {
+        console.error('[loadout] Auto-registrazione rotte fallita:', error.message);
+      }
+
+      return originalListen.apply(this, args);
+    };
+  } catch (error) {
+    console.error('[loadout] Hook auto-register non installato:', error.message);
+  }
+}
+
 module.exports = registerLoadoutRoutes;
+installAutoRegisterHook();
