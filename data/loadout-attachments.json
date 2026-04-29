@@ -1,1 +1,167 @@
-[]
+[
+  {
+    "id": "monolithic-suppressor",
+    "nome": "Monolithic Suppressor",
+    "tipo": "Volata",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "tactical-suppressor",
+    "nome": "Tactical Suppressor",
+    "tipo": "Volata",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "compensator",
+    "nome": "Compensator",
+    "tipo": "Volata",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "red-dot-sight",
+    "nome": "Red Dot Sight",
+    "tipo": "Ottica",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "holo-sight",
+    "nome": "Holo Sight",
+    "tipo": "Ottica",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "thermal-optic",
+    "nome": "Thermal Optic",
+    "tipo": "Ottica",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "long-barrel",
+    "nome": "Long Barrel",
+    "tipo": "Canna",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "foregrip",
+    "nome": "Foregrip",
+    "tipo": "Sottocanna",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "angled-grip",
+    "nome": "Angled Grip",
+    "tipo": "Sottocanna",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "extended-mag",
+    "nome": "Extended Mag",
+    "tipo": "Caricatore",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "fast-mag",
+    "nome": "Fast Mag",
+    "tipo": "Caricatore",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "stippled-grip",
+    "nome": "Stippled Grip Tape",
+    "tipo": "Impugnatura",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "light-stock",
+    "nome": "Light Stock",
+    "tipo": "Calcio",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "tactical-stock",
+    "nome": "Tactical Stock",
+    "tipo": "Calcio",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  },
+  {
+    "id": "1mw-laser",
+    "nome": "1mW Laser",
+    "tipo": "Laser",
+    "attivo": true,
+    "verificato": true,
+    "stato": "pubblico",
+    "fonte": "CODMunity",
+    "fonteUrl": "https://codmunity.gg",
+    "updatedAt": "2026-04-29"
+  }
+]

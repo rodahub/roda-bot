@@ -883,7 +883,12 @@ async function main() {
   }
 
   let allUrls = JSON.parse(fs.readFileSync(URLS_FILE, 'utf8'))
-    .map(u => String(u).trim())
+    .map(u => {
+      // Supporta sia formato stringa che formato oggetto ricco
+      if (typeof u === 'string') return u.trim();
+      if (u && typeof u === 'object' && u.url) return String(u.url).trim();
+      return null;
+    })
     .filter(Boolean);
   if (LIMIT) allUrls = allUrls.slice(0, LIMIT);
 
