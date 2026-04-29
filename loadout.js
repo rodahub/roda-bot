@@ -1,352 +1,443 @@
+'use strict';
+
 /**
- * RØDA Loadout Routes Module
- * Questo file esporta una funzione che registra le rotte sull'istanza Express passata.
- * NON usare app.get() al top-level.
+ * RØDA Loadout routes.
+ *
+ * Importantissimo: questo file NON deve mai chiamare app.get/app.post al top-level.
+ * server.js deve importarlo e chiamarlo passando l'istanza Express:
+ *
+ *   const registerLoadoutRoutes = require('./loadout');
+ *   registerLoadoutRoutes(app);
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Helper per leggere/scrivere JSON in modo sicuro
-const readJSON = (filename) => {
-  const filePath = path.join(__dirname, 'data', filename);
-  if (!fs.existsSync(filePath)) return [];
+const DATA_DIR = path.join(__dirname, 'data');
+
+function readJSON(filename, fallback = []) {
+  const filePath = path.join(DATA_DIR, filename);
+
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (e) {
-    console.error(`Errore lettura ${filename}:`, e.message);
-    return [];
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    if (!raw.trim()) return fallback;
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error(`[loadout] Errore lettura ${filename}:`, error.message);
+    return fallback;
   }
-};
+}
 
-const writeJSON = (filename, data) => {
-  const filePath = path.join(__dirname, 'data', filename);
+function writeJSON(filename, data) {
+  const filePath = path.join(DATA_DIR, filename);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-};
+}
 
-/**
- * Registra tutte le rotte Loadout sull'app Express fornita.
- * @param {Express.Application} app 
- */
-module.exports = function registerLoadoutRoutes(app) {
-  if (!app) {
-    throw new Error('registerLoadoutRoutes: app non definita');
+function clean(value) {
+  return String(value || '').trim();
+}
+
+function lower(value) {
+  return clean(value).toLowerCase();
+}
+
+function isBlockedState(stato) {
+  return ['bloccato', 'disattivato', 'da_controllare'].includes(lower(stato));
+}
+
+function isPublicWeapon(weapon) {
+  return Boolean(
+    weapon &&
+    weapon.attiva === true &&
+    weapon.verificata === true &&
+    weapon.bloccatoManuale !== true &&
+    !isBlockedState(weapon.stato)
+  );
+}
+
+function isPublicAttachment(attachment) {
+  return Boolean(
+    attachment &&
+    attachment.attivo === true &&
+    attachment.verificato === true &&
+    attachment.bloccatoManuale !== true &&
+    !isBlockedState(attachment.stato)
+  );
+}
+
+function isPublicCompatibility(row) {
+  return Boolean(
+    row &&
+    row.compatibile === true &&
+    row.verificato === true &&
+    row.bloccatoManuale !== true &&
+    !isBlockedState(row.stato)
+  );
+}
+
+const SLOT_ORDER = [
+  'Ottica',
+  'Volata',
+  'Canna',
+  'Sottocanna',
+  'Caricatore',
+  'Impugnatura',
+  'Calcio',
+  'Laser',
+  'Mod fuoco'
+];
+
+const SLOT_MAP = new Map([
+  ['optic', 'Ottica'],
+  ['ottica', 'Ottica'],
+  ['muzzle', 'Volata'],
+  ['volata', 'Volata'],
+  ['barrel', 'Canna'],
+  ['canna', 'Canna'],
+  ['underbarrel', 'Sottocanna'],
+  ['sottocanna', 'Sottocanna'],
+  ['magazine', 'Caricatore'],
+  ['caricatore', 'Caricatore'],
+  ['rear grip', 'Impugnatura'],
+  ['rear-grip', 'Impugnatura'],
+  ['impugnatura', 'Impugnatura'],
+  ['stock', 'Calcio'],
+  ['calcio', 'Calcio'],
+  ['laser', 'Laser'],
+  ['fire mods', 'Mod fuoco'],
+  ['fire-mods', 'Mod fuoco'],
+  ['fire mod', 'Mod fuoco'],
+  ['mod fuoco', 'Mod fuoco']
+]);
+
+function normalizeSlot(value) {
+  const raw = clean(value).replace(/\s+/g, ' ');
+  if (!raw) return '';
+  return SLOT_MAP.get(raw.toLowerCase()) || raw;
+}
+
+function sortWeaponsForLoadout(a, b) {
+  const gpA = Number(a.gamePriority || 0);
+  const gpB = Number(b.gamePriority || 0);
+  if (gpB !== gpA) return gpB - gpA;
+
+  const roA = Number(a.releaseOrder || 0);
+  const roB = Number(b.releaseOrder || 0);
+  if (roB !== roA) return roB - roA;
+
+  const coA = Number(a.codmunityOrder || 999999);
+  const coB = Number(b.codmunityOrder || 999999);
+  if (coA !== coB) return coA - coB;
+
+  const da = new Date(a.discoveredAt || 0).getTime();
+  const db = new Date(b.discoveredAt || 0).getTime();
+  if (db !== da) return db - da;
+
+  return clean(a.nome).localeCompare(clean(b.nome), 'it');
+}
+
+function sortAttachmentsForLoadout(a, b) {
+  const slotA = normalizeSlot(a.slot || a.tipo);
+  const slotB = normalizeSlot(b.slot || b.tipo);
+  const indexA = SLOT_ORDER.indexOf(slotA);
+  const indexB = SLOT_ORDER.indexOf(slotB);
+  const safeA = indexA === -1 ? 999 : indexA;
+  const safeB = indexB === -1 ? 999 : indexB;
+  if (safeA !== safeB) return safeA - safeB;
+
+  const orderA = Number(a.codmunityOrder || 999999);
+  const orderB = Number(b.codmunityOrder || 999999);
+  if (orderA !== orderB) return orderA - orderB;
+
+  return clean(a.nome).localeCompare(clean(b.nome), 'it');
+}
+
+function getRecordId(record) {
+  return clean(record && (record.id || record._id));
+}
+
+function getWeaponIdFromCompatibility(row) {
+  return clean(row && (row.armaId || row.weaponId || row.weapon || row.arma));
+}
+
+function getAttachmentIdFromCompatibility(row) {
+  return clean(row && (row.accessorioId || row.attachmentId || row.attachment || row.accessorio));
+}
+
+function findItem(list, id) {
+  const target = lower(id);
+  return list.find(item => lower(getRecordId(item)) === target) || null;
+}
+
+function getDatabase() {
+  return {
+    weapons: readJSON('loadout-weapons.json', []),
+    attachments: readJSON('loadout-attachments.json', []),
+    compatibility: readJSON('loadout-compatibility.json', []),
+    builds: readJSON('loadout-builds.json', []),
+    importReport: readJSON('loadout-import-report.json', {}),
+    discoveryReport: readJSON('codmunity-discovery-report.json', {})
+  };
+}
+
+function fileForType(type) {
+  const normalized = lower(type);
+  if (['weapon', 'weapons', 'arma', 'armi'].includes(normalized)) return 'loadout-weapons.json';
+  if (['attachment', 'attachments', 'accessorio', 'accessori'].includes(normalized)) return 'loadout-attachments.json';
+  if (['compatibility', 'compatibilita', 'compatibilità'].includes(normalized)) return 'loadout-compatibility.json';
+  return '';
+}
+
+function updateItem(type, id, updater) {
+  const filename = fileForType(type);
+  if (!filename) throw new Error('Tipo non valido');
+
+  const list = readJSON(filename, []);
+  const target = lower(id);
+  const index = list.findIndex(item => lower(getRecordId(item)) === target);
+  if (index === -1) throw new Error('Elemento non trovato');
+
+  list[index] = updater({ ...list[index] });
+  writeJSON(filename, list);
+  return list[index];
+}
+
+function deleteItem(type, id) {
+  const filename = fileForType(type);
+  if (!filename) throw new Error('Tipo non valido');
+
+  const list = readJSON(filename, []);
+  const target = lower(id);
+  const next = list.filter(item => lower(getRecordId(item)) !== target);
+  if (next.length === list.length) throw new Error('Elemento non trovato');
+
+  writeJSON(filename, next);
+  return true;
+}
+
+function registerLoadoutRoutes(app) {
+  if (!app || typeof app.get !== 'function') {
+    throw new Error('registerLoadoutRoutes: istanza Express app non valida');
   }
 
-  // ==========================================
-  // API PUBBLICHE
-  // ==========================================
-
-  /**
-   * GET /api/loadout/weapons
-   * Restituisce lista armi pubbliche ordinate (BO7 prima, nuove sopra vecchie).
-   */
   app.get('/api/loadout/weapons', (req, res) => {
     try {
-      let weapons = readJSON('loadout-weapons.json');
+      const weapons = readJSON('loadout-weapons.json', [])
+        .filter(isPublicWeapon)
+        .sort(sortWeaponsForLoadout);
 
-      // Filtra solo armi pubbliche/attive
-      const publicWeapons = weapons.filter(w => 
-        w.attiva === true && 
-        w.verificata === true && 
-        w.bloccatoManuale !== true &&
-        (!w.stato || w.stato === 'pubblico')
+      res.json({ ok: true, weapons });
+    } catch (error) {
+      console.error('[loadout] Errore /api/loadout/weapons:', error);
+      res.status(500).json({ ok: false, weapons: [], error: error.message });
+    }
+  });
+
+  app.get('/api/loadout/attachments', (req, res) => {
+    try {
+      const weaponId = clean(req.query.weaponId || req.query.armaId);
+      if (!weaponId) {
+        return res.json({ ok: true, attachments: [], message: 'weaponId mancante' });
+      }
+
+      const attachments = readJSON('loadout-attachments.json', []);
+      const compatibility = readJSON('loadout-compatibility.json', []);
+      const weaponKey = lower(weaponId);
+
+      const rows = compatibility.filter(row =>
+        lower(getWeaponIdFromCompatibility(row)) === weaponKey && isPublicCompatibility(row)
       );
 
-      // Ordinamento: gamePriority DESC -> releaseOrder DESC -> codmunityOrder ASC
-      publicWeapons.sort((a, b) => {
-        const gpA = Number(a.gamePriority || 0);
-        const gpB = Number(b.gamePriority || 0);
-        if (gpB !== gpA) return gpB - gpA;
-
-        const roA = Number(a.releaseOrder || 0);
-        const roB = Number(b.releaseOrder || 0);
-        if (roB !== roA) return roB - roA;
-
-        const coA = Number(a.codmunityOrder || 999999);
-        const coB = Number(b.codmunityOrder || 999999);
-        if (coA !== coB) return coA - coB;
-
-        return (a.nome || '').localeCompare(b.nome || '');
-      });
-
-      res.json({ ok: true, weapons: publicWeapons });
-    } catch (err) {
-      console.error('Errore API weapons:', err);
-      res.status(500).json({ ok: false, error: err.message, weapons: [] });
-    }
-  });
-
-  /**
-   * GET /api/loadout/attachments?weaponId=...
-   * Restituisce accessori compatibili con l'arma specifica.
-   */
-  app.get('/api/loadout/attachments', async (req, res) => {
-    try {
-      const weaponId = req.query.weaponId;
-      if (!weaponId) {
-        return res.json({ ok: false, error: 'weaponId mancante', attachments: [] });
+      const rowByAttachmentId = new Map();
+      for (const row of rows) {
+        const attachmentId = lower(getAttachmentIdFromCompatibility(row));
+        if (attachmentId) rowByAttachmentId.set(attachmentId, row);
       }
 
-      const attachmentsDB = readJSON('loadout-attachments.json');
-      const compatibilityDB = readJSON('loadout-compatibility.json');
+      const result = attachments
+        .filter(attachment => rowByAttachmentId.has(lower(getRecordId(attachment))) && isPublicAttachment(attachment))
+        .map(attachment => {
+          const row = rowByAttachmentId.get(lower(getRecordId(attachment))) || {};
+          const slot = normalizeSlot(row.slot || attachment.slot || attachment.tipo);
 
-      // 1. Trova compatibilità valide per quest'arma
-      const validCompatibility = compatibilityDB.filter(c => {
-        const matchId = (c.armaId === weaponId || c.weaponId === weaponId);
-        const isPublic = c.compatibile === true && c.verificato === true && c.bloccatoManuale !== true;
-        const stateOk = !c.stato || c.stato === 'pubblico';
-        return matchId && isPublic && stateOk;
-      });
-
-      if (validCompatibility.length === 0) {
-        return res.json({ ok: true, attachments: [], message: 'Nessun accessorio compatibile' });
-      }
-
-      // 2. Estrai ID accessori permessi
-      const allowedIds = validCompatibility.map(c => c.accessorioId || c.attachmentId);
-
-      // 3. Filtra accessori reali
-      const slotOrder = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
-      const slotMap = {
-        'Optic': 'Ottica', 'Muzzle': 'Volata', 'Barrel': 'Canna', 
-        'Underbarrel': 'Sottocanna', 'Magazine': 'Caricatore', 
-        'Rear Grip': 'Impugnatura', 'Stock': 'Calcio', 
-        'Fire Mods': 'Mod fuoco', 'Laser': 'Laser'
-      };
-
-      const result = attachmentsDB
-        .filter(a => {
-          const isAllowed = allowedIds.includes(a.id);
-          const isActive = a.attivo === true && a.verificato === true && a.bloccatoManuale !== true;
-          const stateOk = !a.stato || a.stato === 'pubblico';
-          return isAllowed && isActive && stateOk;
+          return {
+            ...attachment,
+            id: getRecordId(attachment),
+            slot,
+            tipo: slot,
+            codmunityOrder: Number(row.codmunityOrder || attachment.codmunityOrder || 999999)
+          };
         })
-        .map(a => ({
-          ...a,
-          slot: slotMap[a.tipo] || a.tipo || 'Altro',
-          tipo: slotMap[a.tipo] || a.tipo || 'Altro'
-        }))
-        .sort((a, b) => {
-          const slotA = slotOrder.indexOf(a.slot);
-          const slotB = slotOrder.indexOf(b.slot);
-          if (slotA !== slotB) return slotA - slotB;
-          if (a.codmunityOrder && b.codmunityOrder) return a.codmunityOrder - b.codmunityOrder;
-          return (a.nome || '').localeCompare(b.nome || '');
-        });
+        .filter(attachment => SLOT_ORDER.includes(attachment.slot))
+        .sort(sortAttachmentsForLoadout);
 
       res.json({ ok: true, attachments: result });
-
-    } catch (err) {
-      console.error('Errore API attachments:', err);
-      res.status(500).json({ ok: false, error: err.message, attachments: [] });
+    } catch (error) {
+      console.error('[loadout] Errore /api/loadout/attachments:', error);
+      res.status(500).json({ ok: false, attachments: [], error: error.message });
     }
   });
 
-  // ==========================================
-  // API ADMIN LOADOUT
-  // ==========================================
-
-  /**
-   * GET /api/admin/loadout/database
-   * Restituisce tutto il DB (armi, accessori, compatibilità) per la dashboard admin.
-   */
   app.get('/api/admin/loadout/database', (req, res) => {
     try {
-      const weapons = readJSON('loadout-weapons.json');
-      const attachments = readJSON('loadout-attachments.json');
-      const compatibility = readJSON('loadout-compatibility.json');
-      res.json({ weapons, attachments, compatibility });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      const db = getDatabase();
+      res.json({
+        ok: true,
+        weapons: db.weapons,
+        attachments: db.attachments,
+        compatibility: db.compatibility
+      });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
     }
   });
 
-  /**
-   * GET /api/admin/loadout/builds
-   * Restituisce le build inviate dagli utenti.
-   */
   app.get('/api/admin/loadout/builds', (req, res) => {
     try {
-      const builds = readJSON('loadout-builds.json');
-      res.json(Array.isArray(builds) ? builds : []);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.json({ ok: true, builds: readJSON('loadout-builds.json', []) });
+    } catch (error) {
+      res.status(500).json({ ok: false, builds: [], error: error.message });
     }
   });
 
-  /**
-   * GET /api/admin/loadout/sync-report
-   * Restituisce il report dell'ultimo sync.
-   */
   app.get('/api/admin/loadout/sync-report', (req, res) => {
     try {
-      const report = readJSON('loadout-import-report.json');
-      res.json(report || {});
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.json({
+        ok: true,
+        importReport: readJSON('loadout-import-report.json', {}),
+        discoveryReport: readJSON('codmunity-discovery-report.json', {})
+      });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
     }
   });
-
-  // --- AZIONI CRUD ADMIN ---
-
-  const updateItemState = (type, id, updates) => {
-    const fileMap = {
-      weapon: 'loadout-weapons.json',
-      attachment: 'loadout-attachments.json',
-      compatibility: 'loadout-compatibility.json'
-    };
-    const fileName = fileMap[type];
-    if (!fileName) throw new Error('Tipo non valido');
-
-    const db = readJSON(fileName);
-    const item = db.find(i => i.id === id);
-    
-    if (!item) throw new Error('Elemento non trovato');
-
-    Object.assign(item, updates);
-    writeJSON(fileName, db);
-    return true;
-  };
 
   app.post('/api/admin/loadout/publish', (req, res) => {
     try {
-      const { type, id } = req.body;
-      const updates = {
+      const { type, id } = req.body || {};
+      const item = updateItem(type, id, item => ({
+        ...item,
         stato: 'pubblico',
+        verificata: true,
         verificato: true,
-        verificata: true, // per armi
-        attiva: true,     // per armi
-        attivo: true,     // per accessori
-        compatibile: true // per compatibilità
-      };
-      updateItemState(type, id, updates);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+        attiva: true,
+        attivo: true,
+        compatibile: item.compatibile !== false
+      }));
+
+      res.json({ ok: true, item });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.post('/api/admin/loadout/disable', (req, res) => {
     try {
-      const { type, id } = req.body;
-      const updates = {
+      const { type, id } = req.body || {};
+      const item = updateItem(type, id, item => ({
+        ...item,
         stato: 'disattivato',
         attiva: false,
         attivo: false,
         compatibile: false
-      };
-      updateItemState(type, id, updates);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+      }));
+
+      res.json({ ok: true, item });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.post('/api/admin/loadout/block', (req, res) => {
     try {
-      const { type, id, reason } = req.body;
-      const updates = {
+      const { type, id, reason } = req.body || {};
+      const item = updateItem(type, id, item => ({
+        ...item,
         stato: 'bloccato',
         bloccatoManuale: true,
-        bloccatoMotivo: reason || 'Blocco manuale admin'
-      };
-      updateItemState(type, id, updates);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+        bloccatoMotivo: clean(reason) || 'Blocco manuale admin'
+      }));
+
+      res.json({ ok: true, item });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.post('/api/admin/loadout/reactivate', (req, res) => {
     try {
-      const { type, id } = req.body;
-      const updates = {
+      const { type, id } = req.body || {};
+      const item = updateItem(type, id, item => ({
+        ...item,
         stato: 'pubblico',
         bloccatoManuale: false,
         bloccatoMotivo: '',
         attiva: true,
         attivo: true,
-        compatibile: true
-      };
-      updateItemState(type, id, updates);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+        compatibile: item.compatibile !== false,
+        verificata: true,
+        verificato: true
+      }));
+
+      res.json({ ok: true, item });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.delete('/api/admin/loadout/database/:type/:id', (req, res) => {
     try {
-      const { type, id } = req.params;
-      const fileMap = {
-        weapon: 'loadout-weapons.json',
-        attachment: 'loadout-attachments.json',
-        compatibility: 'loadout-compatibility.json'
-      };
-      const fileName = fileMap[type];
-      if (!fileName) throw new Error('Tipo non valido');
-
-      let db = readJSON(fileName);
-      const initialLen = db.length;
-      db = db.filter(i => i.id !== id);
-
-      if (db.length === initialLen) throw new Error('Elemento non trovato');
-
-      writeJSON(fileName, db);
+      deleteItem(req.params.type, req.params.id);
       res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
-  // --- GESTIONE BUILD ---
-
   app.post('/api/admin/loadout/builds/approve', (req, res) => {
     try {
-      const { id } = req.body;
-      let builds = readJSON('loadout-builds.json');
-      const build = builds.find(b => b.id === id);
+      const id = clean((req.body || {}).id);
+      const builds = readJSON('loadout-builds.json', []);
+      const build = findItem(builds, id);
       if (!build) throw new Error('Build non trovata');
-      
       build.stato = 'approvato';
       writeJSON('loadout-builds.json', builds);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+      res.json({ ok: true, build });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.post('/api/admin/loadout/builds/reject', (req, res) => {
     try {
-      const { id } = req.body;
-      let builds = readJSON('loadout-builds.json');
-      const build = builds.find(b => b.id === id);
+      const id = clean((req.body || {}).id);
+      const builds = readJSON('loadout-builds.json', []);
+      const build = findItem(builds, id);
       if (!build) throw new Error('Build non trovata');
-      
       build.stato = 'rifiutato';
       writeJSON('loadout-builds.json', builds);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+      res.json({ ok: true, build });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
   app.delete('/api/admin/loadout/builds/:id', (req, res) => {
     try {
-      const { id } = req.params;
-      let builds = readJSON('loadout-builds.json');
-      const initialLen = builds.length;
-      builds = builds.filter(b => b.id !== id);
-      
-      if (builds.length === initialLen) throw new Error('Build non trovata');
-      
-      writeJSON('loadout-builds.json', builds);
+      const id = lower(req.params.id);
+      const builds = readJSON('loadout-builds.json', []);
+      const next = builds.filter(build => lower(getRecordId(build)) !== id);
+      if (next.length === builds.length) throw new Error('Build non trovata');
+      writeJSON('loadout-builds.json', next);
       res.json({ ok: true });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message });
+    } catch (error) {
+      res.status(400).json({ ok: false, error: error.message });
     }
   });
 
-  console.log('✅ Rotte Loadout registrate con successo.');
-};
+  console.log('✅ Rotte RØDA Loadout registrate.');
+}
+
+module.exports = registerLoadoutRoutes;
