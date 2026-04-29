@@ -1,89 +1,562 @@
 [
-  "https://codmunity.gg/weapon/bo6/xm4",
-  "https://codmunity.gg/weapon/bo6/ak-74",
-  "https://codmunity.gg/weapon/bo6/ames-85",
-  "https://codmunity.gg/weapon/bo6/gpr-91",
-  "https://codmunity.gg/weapon/bo6/model-l",
-  "https://codmunity.gg/weapon/bo6/goblin-mk2",
-  "https://codmunity.gg/weapon/bo6/as-val",
-  "https://codmunity.gg/weapon/bo6/krig-c",
-  "https://codmunity.gg/weapon/bo6/cypher-091",
-  "https://codmunity.gg/weapon/bo6/ffar-1",
-  "https://codmunity.gg/weapon/bo6/kilo-141",
-  "https://codmunity.gg/weapon/bo6/cr-56-amax",
-
-  "https://codmunity.gg/weapon/bo6/c9",
-  "https://codmunity.gg/weapon/bo6/ksv",
-  "https://codmunity.gg/weapon/bo6/tanto-22",
-  "https://codmunity.gg/weapon/bo6/pp-919",
-  "https://codmunity.gg/weapon/bo6/jackal-pdw",
-  "https://codmunity.gg/weapon/bo6/kompakt-92",
-  "https://codmunity.gg/weapon/bo6/saug",
-  "https://codmunity.gg/weapon/bo6/ppsh-41",
-  "https://codmunity.gg/weapon/bo6/lc10",
-  "https://codmunity.gg/weapon/bo6/ladra",
-
-  "https://codmunity.gg/weapon/bo6/pu-21",
-  "https://codmunity.gg/weapon/bo6/xmg",
-  "https://codmunity.gg/weapon/bo6/gpmg-7",
-  "https://codmunity.gg/weapon/bo6/feng-82",
-
-  "https://codmunity.gg/weapon/bo6/swat-556",
-  "https://codmunity.gg/weapon/bo6/swat-5-56",
-  "https://codmunity.gg/weapon/bo6/tsarkov-762",
-  "https://codmunity.gg/weapon/bo6/tsarkov-7-62",
-  "https://codmunity.gg/weapon/bo6/aek-973",
-  "https://codmunity.gg/weapon/bo6/dm-10",
-  "https://codmunity.gg/weapon/bo6/tr2",
-
-  "https://codmunity.gg/weapon/bo6/lw3a1-frostline",
-  "https://codmunity.gg/weapon/bo6/svd",
-  "https://codmunity.gg/weapon/bo6/lr-762",
-  "https://codmunity.gg/weapon/bo6/lr-7-62",
-  "https://codmunity.gg/weapon/bo6/amr-mod-4",
-  "https://codmunity.gg/weapon/bo6/hdr",
-
-  "https://codmunity.gg/weapon/bo6/marine-sp",
-  "https://codmunity.gg/weapon/bo6/asg-89",
-  "https://codmunity.gg/weapon/bo6/maelstrom",
-
-  "https://codmunity.gg/weapon/bo6/9mm-pm",
-  "https://codmunity.gg/weapon/bo6/grekhova",
-  "https://codmunity.gg/weapon/bo6/gs45",
-  "https://codmunity.gg/weapon/bo6/stryder-22",
-  "https://codmunity.gg/weapon/bo6/1911",
-
-  "https://codmunity.gg/weapon/bo7/voyak-kt-3",
-  "https://codmunity.gg/weapon/bo7/swordfish-a1",
-  "https://codmunity.gg/weapon/bo7/ryden-45k",
-  "https://codmunity.gg/weapon/bo7/mk-78",
-  "https://codmunity.gg/weapon/bo7/mk78",
-  "https://codmunity.gg/weapon/bo7/egrt-17",
-  "https://codmunity.gg/weapon/bo7/vs-recon",
-  "https://codmunity.gg/weapon/bo7/sturmwolf-45",
-  "https://codmunity.gg/weapon/bo7/hawker-hx",
-  "https://codmunity.gg/weapon/bo7/peacekeeper-mk1",
-  "https://codmunity.gg/weapon/bo7/rk-9",
-  "https://codmunity.gg/weapon/bo7/m8a1",
-  "https://codmunity.gg/weapon/bo7/ds20-mirage",
-  "https://codmunity.gg/weapon/bo7/carbon-57",
-  "https://codmunity.gg/weapon/bo7/shadow-sk",
-  "https://codmunity.gg/weapon/bo7/sokol-545",
-  "https://codmunity.gg/weapon/bo7/razor-9mm",
-  "https://codmunity.gg/weapon/bo7/m15-mod-0",
-  "https://codmunity.gg/weapon/bo7/warden-308",
-  "https://codmunity.gg/weapon/bo7/strider-300",
-  "https://codmunity.gg/weapon/bo7/dravec-45",
-  "https://codmunity.gg/weapon/bo7/akita",
-  "https://codmunity.gg/weapon/bo7/x9-maverick",
-  "https://codmunity.gg/weapon/bo7/maddox-rfb",
-  "https://codmunity.gg/weapon/bo7/kogot-7",
-  "https://codmunity.gg/weapon/bo7/mxr-17",
-  "https://codmunity.gg/weapon/bo7/m34-novaline",
-  "https://codmunity.gg/weapon/bo7/mk35-isr",
-  "https://codmunity.gg/weapon/bo7/rev-46",
-  "https://codmunity.gg/weapon/bo7/ak-27",
-  "https://codmunity.gg/weapon/bo7/vst",
-  "https://codmunity.gg/weapon/bo7/mpc-25",
-  "https://codmunity.gg/weapon/bo7/xm325"
+  {
+    "url": "https://codmunity.gg/weapon/bo6/xm4",
+    "game": "BO6",
+    "codmunityOrder": 1,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ak-74",
+    "game": "BO6",
+    "codmunityOrder": 2,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ames-85",
+    "game": "BO6",
+    "codmunityOrder": 3,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/gpr-91",
+    "game": "BO6",
+    "codmunityOrder": 4,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/model-l",
+    "game": "BO6",
+    "codmunityOrder": 5,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/goblin-mk2",
+    "game": "BO6",
+    "codmunityOrder": 6,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/as-val",
+    "game": "BO6",
+    "codmunityOrder": 7,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/krig-c",
+    "game": "BO6",
+    "codmunityOrder": 8,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/cypher-091",
+    "game": "BO6",
+    "codmunityOrder": 9,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ffar-1",
+    "game": "BO6",
+    "codmunityOrder": 10,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/kilo-141",
+    "game": "BO6",
+    "codmunityOrder": 11,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/cr-56-amax",
+    "game": "BO6",
+    "codmunityOrder": 12,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/c9",
+    "game": "BO6",
+    "codmunityOrder": 13,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ksv",
+    "game": "BO6",
+    "codmunityOrder": 14,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/tanto-22",
+    "game": "BO6",
+    "codmunityOrder": 15,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/pp-919",
+    "game": "BO6",
+    "codmunityOrder": 16,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/jackal-pdw",
+    "game": "BO6",
+    "codmunityOrder": 17,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/kompakt-92",
+    "game": "BO6",
+    "codmunityOrder": 18,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/saug",
+    "game": "BO6",
+    "codmunityOrder": 19,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ppsh-41",
+    "game": "BO6",
+    "codmunityOrder": 20,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/lc10",
+    "game": "BO6",
+    "codmunityOrder": 21,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/ladra",
+    "game": "BO6",
+    "codmunityOrder": 22,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/pu-21",
+    "game": "BO6",
+    "codmunityOrder": 23,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/xmg",
+    "game": "BO6",
+    "codmunityOrder": 24,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/gpmg-7",
+    "game": "BO6",
+    "codmunityOrder": 25,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/feng-82",
+    "game": "BO6",
+    "codmunityOrder": 26,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/swat-556",
+    "game": "BO6",
+    "codmunityOrder": 27,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/swat-5-56",
+    "game": "BO6",
+    "codmunityOrder": 28,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/tsarkov-762",
+    "game": "BO6",
+    "codmunityOrder": 29,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/tsarkov-7-62",
+    "game": "BO6",
+    "codmunityOrder": 30,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/aek-973",
+    "game": "BO6",
+    "codmunityOrder": 31,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/dm-10",
+    "game": "BO6",
+    "codmunityOrder": 32,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/tr2",
+    "game": "BO6",
+    "codmunityOrder": 33,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/lw3a1-frostline",
+    "game": "BO6",
+    "codmunityOrder": 34,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/svd",
+    "game": "BO6",
+    "codmunityOrder": 35,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/lr-762",
+    "game": "BO6",
+    "codmunityOrder": 36,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/lr-7-62",
+    "game": "BO6",
+    "codmunityOrder": 37,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/amr-mod-4",
+    "game": "BO6",
+    "codmunityOrder": 38,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/hdr",
+    "game": "BO6",
+    "codmunityOrder": 39,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/marine-sp",
+    "game": "BO6",
+    "codmunityOrder": 40,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/asg-89",
+    "game": "BO6",
+    "codmunityOrder": 41,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/maelstrom",
+    "game": "BO6",
+    "codmunityOrder": 42,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/9mm-pm",
+    "game": "BO6",
+    "codmunityOrder": 43,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/grekhova",
+    "game": "BO6",
+    "codmunityOrder": 44,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/gs45",
+    "game": "BO6",
+    "codmunityOrder": 45,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/stryder-22",
+    "game": "BO6",
+    "codmunityOrder": 46,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo6/1911",
+    "game": "BO6",
+    "codmunityOrder": 47,
+    "sourcePage": "https://codmunity.gg/bo6",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/voyak-kt-3",
+    "game": "BO7",
+    "codmunityOrder": 48,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/swordfish-a1",
+    "game": "BO7",
+    "codmunityOrder": 49,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/ryden-45k",
+    "game": "BO7",
+    "codmunityOrder": 50,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/mk-78",
+    "game": "BO7",
+    "codmunityOrder": 51,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/mk78",
+    "game": "BO7",
+    "codmunityOrder": 52,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/egrt-17",
+    "game": "BO7",
+    "codmunityOrder": 53,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/vs-recon",
+    "game": "BO7",
+    "codmunityOrder": 54,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/sturmwolf-45",
+    "game": "BO7",
+    "codmunityOrder": 55,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/hawker-hx",
+    "game": "BO7",
+    "codmunityOrder": 56,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/peacekeeper-mk1",
+    "game": "BO7",
+    "codmunityOrder": 57,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/rk-9",
+    "game": "BO7",
+    "codmunityOrder": 58,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/m8a1",
+    "game": "BO7",
+    "codmunityOrder": 59,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/ds20-mirage",
+    "game": "BO7",
+    "codmunityOrder": 60,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/carbon-57",
+    "game": "BO7",
+    "codmunityOrder": 61,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/shadow-sk",
+    "game": "BO7",
+    "codmunityOrder": 62,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/sokol-545",
+    "game": "BO7",
+    "codmunityOrder": 63,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/razor-9mm",
+    "game": "BO7",
+    "codmunityOrder": 64,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/m15-mod-0",
+    "game": "BO7",
+    "codmunityOrder": 65,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/warden-308",
+    "game": "BO7",
+    "codmunityOrder": 66,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/strider-300",
+    "game": "BO7",
+    "codmunityOrder": 67,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/dravec-45",
+    "game": "BO7",
+    "codmunityOrder": 68,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/akita",
+    "game": "BO7",
+    "codmunityOrder": 69,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/x9-maverick",
+    "game": "BO7",
+    "codmunityOrder": 70,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/maddox-rfb",
+    "game": "BO7",
+    "codmunityOrder": 71,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/kogot-7",
+    "game": "BO7",
+    "codmunityOrder": 72,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/mxr-17",
+    "game": "BO7",
+    "codmunityOrder": 73,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/m34-novaline",
+    "game": "BO7",
+    "codmunityOrder": 74,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/mk35-isr",
+    "game": "BO7",
+    "codmunityOrder": 75,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/rev-46",
+    "game": "BO7",
+    "codmunityOrder": 76,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/ak-27",
+    "game": "BO7",
+    "codmunityOrder": 77,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/vst",
+    "game": "BO7",
+    "codmunityOrder": 78,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/mpc-25",
+    "game": "BO7",
+    "codmunityOrder": 79,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  },
+  {
+    "url": "https://codmunity.gg/weapon/bo7/xm325",
+    "game": "BO7",
+    "codmunityOrder": 80,
+    "sourcePage": "https://codmunity.gg/bo7",
+    "discoveredAt": "2026-04-28"
+  }
 ]

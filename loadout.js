@@ -264,8 +264,34 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
 
   // ── API PUBBLICHE ──────────────────────────────────────────────────────────
 
-  // GET /api/loadout/weapons  →  solo armi pubbliche, ordinate per releaseOrder DESC
+  // GET /api/loadout/weapons  →  solo armi pubbliche, ordinate per CODMunity order
   app.get('/api/loadout/weapons', (req, res) => {
+    // Funzione di ordinamento centralizzata
+    function sortWeaponsForLoadout(a, b) {
+      // 1. gamePriority DESC (BO7=500 prima di BO6=400)
+      const gpA = Number(a.gamePriority || 0);
+      const gpB = Number(b.gamePriority || 0);
+      if (gpB !== gpA) return gpB - gpA;
+
+      // 2. releaseOrder DESC (nuove armi prima)
+      const roA = Number(a.releaseOrder || 0);
+      const roB = Number(b.releaseOrder || 0);
+      if (roB !== roA) return roB - roA;
+
+      // 3. codmunityOrder ASC (ordine originale CODMunity)
+      const coA = Number(a.codmunityOrder || 999999);
+      const coB = Number(b.codmunityOrder || 999999);
+      if (coA !== coB) return coA - coB;
+
+      // 4. discoveredAt DESC (scoperte più recenti prima)
+      const da = new Date(a.discoveredAt || 0).getTime();
+      const db = new Date(b.discoveredAt || 0).getTime();
+      if (db !== da) return db - da;
+
+      // 5. nome ASC (fallback alfabetico)
+      return String(a.nome || '').localeCompare(String(b.nome || ''), 'it');
+    }
+
     const weapons = readWeapons()
       .filter(w =>
         w.attiva !== false &&
@@ -275,16 +301,7 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
         w.stato !== 'disattivato' &&
         w.stato !== 'da_controllare'
       )
-      .sort((a, b) => {
-        // 1. releaseOrder DESC (nuovo prima)
-        const ro = (b.releaseOrder || 0) - (a.releaseOrder || 0);
-        if (ro !== 0) return ro;
-        // 2. discoveredAt DESC
-        const da = (b.discoveredAt || '').localeCompare(a.discoveredAt || '');
-        if (da !== 0) return da;
-        // 3. nome ASC
-        return (a.nome || '').localeCompare(b.nome || '');
-      })
+      .sort(sortWeaponsForLoadout)
       .map(w => ({
         id           : w.id,
         nome         : w.nome,
@@ -292,7 +309,9 @@ module.exports = function registerLoadoutRoutes(app, authRequired) {
         gioco        : w.gioco || 'BO6',
         attiva       : w.attiva,
         verificata   : w.verificata,
+        gamePriority : w.gamePriority,
         releaseOrder : w.releaseOrder,
+        codmunityOrder: w.codmunityOrder,
         discoveredAt : w.discoveredAt,
       }));
     res.json({ ok: true, weapons });

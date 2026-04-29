@@ -1,8 +1,22 @@
-node_modules
-storage-data
-storage/data
-uploads
-.env
-.env.*
-npm-debug.log*
+```
+# Dependencies
+node_modules/
+
+# Logs and temp files
 *.log
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+*.js.map
+```

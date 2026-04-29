@@ -1075,6 +1075,26 @@ async function main() {
                          !!weaponId && !!(data.name || existingWeapon.nome);
       const statoArma  = autoVerify ? 'pubblico' : (existingWeapon.stato || 'da_controllare');
 
+      // Game priority e codmunityOrder da URL
+      const GAME_PRIORITY = { 'BO7': 500, 'BO6': 400, 'Warzone': 300, 'MW3': 200, 'MW2': 100 };
+      const gamePriority = GAME_PRIORITY[game] || 100;
+
+      // Estrai codmunityOrder da data/codmunity-weapon-urls.json se disponibile
+      let codmunityOrder = 9999;
+      try {
+        const urlList = readJSON(URLS_FILE);
+        const urlEntry = urlList.find(u => {
+          if (typeof u === 'string') return u.toLowerCase().includes(weaponId);
+          return u.url && u.url.toLowerCase().includes(weaponId);
+        });
+        if (urlEntry && typeof urlEntry === 'object' && urlEntry.codmunityOrder) {
+          codmunityOrder = urlEntry.codmunityOrder;
+        }
+      } catch {}
+
+      // Calcola releaseOrder: gamePriority + codmunityOrder (BO7 sopra BO6)
+      const newReleaseOrder = gamePriority + (codmunityOrder < 1000 ? codmunityOrder : nextReleaseOrder);
+
       const isNewWeapon = !weaponsMap.has(weaponId);
       weaponsMap.set(weaponId, {
         ...existingWeapon,
@@ -1082,12 +1102,14 @@ async function main() {
         nome           : data.name || existingWeapon.nome || weaponId,
         categoria      : resolvedCategory,
         gioco          : game,
+        gamePriority   : existingWeapon.gamePriority || gamePriority,
+        codmunityOrder : existingWeapon.codmunityOrder || codmunityOrder,
         attiva         : existingWeapon.attiva !== undefined ? existingWeapon.attiva : true,
         verificata     : existingWeapon.verificata || autoVerify,
         stato          : statoArma,
         bloccatoManuale: existingWeapon.bloccatoManuale || false,
         bloccatoMotivo : existingWeapon.bloccatoMotivo  || '',
-        releaseOrder   : existingWeapon.releaseOrder    || (nextReleaseOrder++),
+        releaseOrder   : Math.max(existingWeapon.releaseOrder || 0, newReleaseOrder),
         discoveredAt   : existingWeapon.discoveredAt    || todayDate(),
         fonte          : 'CODMunity',
         fonteUrl       : url,

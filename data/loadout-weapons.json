@@ -13,8 +13,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 80,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 401,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 1
   },
   {
     "id": "ak-74",
@@ -30,8 +32,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 79,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 402,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 2
   },
   {
     "id": "ames-85",
@@ -47,8 +51,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 78,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 403,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 3
   },
   {
     "id": "gpr-91",
@@ -64,8 +70,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 77,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 404,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 4
   },
   {
     "id": "model-l",
@@ -81,8 +89,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 76,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 405,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 5
   },
   {
     "id": "goblin-mk2",
@@ -98,8 +108,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 75,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 406,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 6
   },
   {
     "id": "as-val",
@@ -115,8 +127,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 74,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 407,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 7
   },
   {
     "id": "krig-c",
@@ -132,8 +146,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 73,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 408,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 8
   },
   {
     "id": "cypher-091",
@@ -149,8 +165,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 72,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 409,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 9
   },
   {
     "id": "ffar-1",
@@ -166,8 +184,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 71,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 410,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 10
   },
   {
     "id": "kilo-141",
@@ -183,8 +203,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 70,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 411,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 11
   },
   {
     "id": "cr-56-amax",
@@ -200,8 +222,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 69,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 412,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 12
   },
   {
     "id": "c9",
@@ -217,8 +241,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 68,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 413,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 13
   },
   {
     "id": "ksv",
@@ -234,8 +260,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 67,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 414,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 14
   },
   {
     "id": "tanto-22",
@@ -251,8 +279,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 66,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 415,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 15
   },
   {
     "id": "pp-919",
@@ -268,8 +298,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 65,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 416,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 16
   },
   {
     "id": "jackal-pdw",
@@ -285,8 +317,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 64,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 417,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 17
   },
   {
     "id": "kompakt-92",
@@ -302,8 +336,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 63,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 418,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 18
   },
   {
     "id": "saug",
@@ -319,8 +355,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 62,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 419,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 19
   },
   {
     "id": "ppsh-41",
@@ -336,8 +374,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 61,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 420,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 20
   },
   {
     "id": "lc10",
@@ -353,8 +393,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 60,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 421,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 21
   },
   {
     "id": "ladra",
@@ -370,8 +412,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 59,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 422,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 22
   },
   {
     "id": "pu-21",
@@ -387,8 +431,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 58,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 423,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 23
   },
   {
     "id": "xmg",
@@ -404,8 +450,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 57,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 424,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 24
   },
   {
     "id": "gpmg-7",
@@ -421,8 +469,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 56,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 425,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 25
   },
   {
     "id": "feng-82",
@@ -438,8 +488,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 55,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 426,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 26
   },
   {
     "id": "swat-556",
@@ -455,8 +507,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 54,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 427,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 27
   },
   {
     "id": "swat-5-56",
@@ -472,8 +526,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 53,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 428,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 28
   },
   {
     "id": "tsarkov-762",
@@ -489,8 +545,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 52,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 429,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 29
   },
   {
     "id": "tsarkov-7-62",
@@ -506,8 +564,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 51,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 430,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 30
   },
   {
     "id": "aek-973",
@@ -523,8 +583,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 50,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 431,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 31
   },
   {
     "id": "dm-10",
@@ -540,8 +602,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 49,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 432,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 32
   },
   {
     "id": "tr2",
@@ -557,8 +621,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 48,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 433,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 33
   },
   {
     "id": "lw3a1-frostline",
@@ -574,8 +640,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 47,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 434,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 34
   },
   {
     "id": "svd",
@@ -591,8 +659,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 46,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 435,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 35
   },
   {
     "id": "lr-762",
@@ -608,8 +678,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 45,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 436,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 36
   },
   {
     "id": "lr-7-62",
@@ -625,8 +697,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 44,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 437,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 37
   },
   {
     "id": "amr-mod-4",
@@ -642,8 +716,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 43,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 438,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 38
   },
   {
     "id": "hdr",
@@ -659,8 +735,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 42,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 439,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 39
   },
   {
     "id": "marine-sp",
@@ -676,8 +754,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 41,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 440,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 40
   },
   {
     "id": "asg-89",
@@ -693,8 +773,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 40,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 441,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 41
   },
   {
     "id": "maelstrom",
@@ -710,8 +792,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 39,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 442,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 42
   },
   {
     "id": "9mm-pm",
@@ -727,8 +811,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 38,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 443,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 43
   },
   {
     "id": "grekhova",
@@ -744,8 +830,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 37,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 444,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 44
   },
   {
     "id": "gs45",
@@ -761,8 +849,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 36,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 445,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 45
   },
   {
     "id": "stryder-22",
@@ -778,8 +868,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 35,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 446,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 46
   },
   {
     "id": "1911",
@@ -795,8 +887,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 34,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 447,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 400,
+    "codmunityOrder": 47
   },
   {
     "id": "voyak-kt-3",
@@ -812,8 +906,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 33,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 548,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 48
   },
   {
     "id": "swordfish-a1",
@@ -829,8 +925,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 32,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 549,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 49
   },
   {
     "id": "ryden-45k",
@@ -846,8 +944,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 31,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 550,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 50
   },
   {
     "id": "mk-78",
@@ -863,8 +963,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 30,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 551,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 51
   },
   {
     "id": "mk78",
@@ -880,8 +982,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 29,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 552,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 52
   },
   {
     "id": "egrt-17",
@@ -897,8 +1001,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 28,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 553,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 53
   },
   {
     "id": "vs-recon",
@@ -914,8 +1020,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 27,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 554,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 54
   },
   {
     "id": "sturmwolf-45",
@@ -931,8 +1039,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 26,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 555,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 55
   },
   {
     "id": "hawker-hx",
@@ -948,8 +1058,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 25,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 556,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 56
   },
   {
     "id": "peacekeeper-mk1",
@@ -965,8 +1077,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 24,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 557,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 57
   },
   {
     "id": "rk-9",
@@ -982,8 +1096,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 23,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 558,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 58
   },
   {
     "id": "m8a1",
@@ -999,8 +1115,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 22,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 559,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 59
   },
   {
     "id": "ds20-mirage",
@@ -1016,8 +1134,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 21,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 560,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 60
   },
   {
     "id": "carbon-57",
@@ -1033,8 +1153,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 20,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 561,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 61
   },
   {
     "id": "shadow-sk",
@@ -1050,8 +1172,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 19,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 562,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 62
   },
   {
     "id": "sokol-545",
@@ -1067,8 +1191,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 18,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 563,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 63
   },
   {
     "id": "razor-9mm",
@@ -1084,8 +1210,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 17,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 564,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 64
   },
   {
     "id": "m15-mod-0",
@@ -1101,8 +1229,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 16,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 565,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 65
   },
   {
     "id": "warden-308",
@@ -1118,8 +1248,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 15,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 566,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 66
   },
   {
     "id": "strider-300",
@@ -1135,8 +1267,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 14,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 567,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 67
   },
   {
     "id": "dravec-45",
@@ -1152,8 +1286,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 13,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 568,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 68
   },
   {
     "id": "akita",
@@ -1169,8 +1305,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 12,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 569,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 69
   },
   {
     "id": "x9-maverick",
@@ -1186,8 +1324,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 11,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 570,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 70
   },
   {
     "id": "maddox-rfb",
@@ -1203,8 +1343,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 10,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 571,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 71
   },
   {
     "id": "kogot-7",
@@ -1220,8 +1362,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 9,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 572,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 72
   },
   {
     "id": "mxr-17",
@@ -1237,8 +1381,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 8,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 573,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 73
   },
   {
     "id": "m34-novaline",
@@ -1254,8 +1400,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 7,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 574,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 74
   },
   {
     "id": "mk35-isr",
@@ -1271,8 +1419,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 6,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 575,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 75
   },
   {
     "id": "rev-46",
@@ -1288,8 +1438,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 5,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 576,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 76
   },
   {
     "id": "ak-27",
@@ -1305,8 +1457,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 4,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 577,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 77
   },
   {
     "id": "vst",
@@ -1322,8 +1476,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 3,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 578,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 78
   },
   {
     "id": "mpc-25",
@@ -1339,8 +1495,10 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 2,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 579,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 79
   },
   {
     "id": "xm325",
@@ -1356,7 +1514,9 @@
     "stato": "pubblico",
     "bloccatoManuale": false,
     "bloccatoMotivo": "",
-    "releaseOrder": 1,
-    "discoveredAt": "2026-04-28"
+    "releaseOrder": 580,
+    "discoveredAt": "2026-04-28",
+    "gamePriority": 500,
+    "codmunityOrder": 80
   }
 ]

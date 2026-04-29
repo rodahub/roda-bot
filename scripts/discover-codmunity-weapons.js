@@ -157,12 +157,48 @@ function extractUrlsFromObject(obj, found, depth = 0) {
   }
 }
 
-// ─── Normalizza lista URL (raggruppata BO6 poi BO7, ordinata per slug) ─────────
+// ─── Normalizza lista URL (raggruppata BO7 prima di BO6, ordinata per slug) ─────────
+// Supporta sia formato stringa semplice che formato oggetto ricco:
+// { url: "...", game: "BO7", codmunityOrder: 1, sourcePage: "...", discoveredAt: "..." }
 function normalizeUrlList(urls) {
-  const bo6 = [...urls].filter(u => u.includes('/bo6/')).sort();
-  const bo7 = [...urls].filter(u => u.includes('/bo7/')).sort();
-  const other = [...urls].filter(u => !u.includes('/bo6/') && !u.includes('/bo7/')).sort();
-  return [...bo6, ...bo7, ...other];
+  // Converti tutto in formato oggetto ricco se necessario
+  const normalized = urls.map(u => {
+    if (typeof u === 'string') {
+      // Formato legacy: converti in oggetto ricco
+      const m = u.match(/\/weapon\/(bo[67])\/([a-z0-9-]+)/i);
+      const game = m ? m[1].toUpperCase() : 'UNKNOWN';
+      return {
+        url: u,
+        game: game,
+        codmunityOrder: 9999,
+        sourcePage: 'https://codmunity.gg/' + (game === 'BO7' ? 'bo7' : 'bo6'),
+        discoveredAt: new Date().toISOString().slice(0, 10),
+      };
+    }
+    return u;
+  });
+
+  // Ordina: BO7 prima di BO6, poi per slug alfabetico
+  const bo7 = normalized.filter(u => String(u.game || '').toUpperCase() === 'BO7').sort((a, b) => {
+    const aSlug = String(a.url || a).split('/').pop().toLowerCase();
+    const bSlug = String(b.url || b).split('/').pop().toLowerCase();
+    return aSlug.localeCompare(bSlug);
+  });
+  const bo6 = normalized.filter(u => String(u.game || '').toUpperCase() === 'BO6').sort((a, b) => {
+    const aSlug = String(a.url || a).split('/').pop().toLowerCase();
+    const bSlug = String(b.url || b).split('/').pop().toLowerCase();
+    return aSlug.localeCompare(bSlug);
+  });
+  const other = normalized.filter(u => {
+    const g = String(u.game || '').toUpperCase();
+    return g !== 'BO7' && g !== 'BO6';
+  }).sort((a, b) => {
+    const aUrl = String(a.url || a);
+    const bUrl = String(b.url || b);
+    return aUrl.localeCompare(bUrl);
+  });
+
+  return [...bo7, ...bo6, ...other];
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
