@@ -1,4 +1,4 @@
-// SOSTITUISCI LA VECCHIA ROTTA CON QUESTA
+
 app.get('/api/loadout/attachments', async (req, res) => {
   try {
     const weaponId = req.query.weaponId;
