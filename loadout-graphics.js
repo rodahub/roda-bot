@@ -92,31 +92,48 @@ function attachmentLines(build) {
     });
 }
 
+function textSizeByLength(text, baseSize, smallSize, maxBaseLength) {
+  return text.length > maxBaseLength ? smallSize : baseSize;
+}
+
 function overlaySvg(build, width, height) {
   const weapon = fitText(build.armaNome || build.weaponName || build.arma || 'LOADOUT', 26).toUpperCase();
   const creator = fitText(build.creatorName || build.creator || build.firma || 'Creator RØDA', 30);
   const lines = attachmentLines(build);
   while (lines.length < 5) lines.push('—');
 
-  const slotY = [0.455, 0.55, 0.645, 0.74, 0.835];
+  const weaponSize = Math.round(width * textSizeByLength(weapon, 0.072, 0.058, 14));
+  const slotSize = Math.round(width * 0.037);
+  const creatorSize = Math.round(width * textSizeByLength(creator, 0.043, 0.036, 18));
+
+  const slotY = [0.452, 0.548, 0.644, 0.74, 0.836];
   const slotText = lines.map((line, idx) => (
-    `<text x="${width / 2}" y="${height * slotY[idx]}" text-anchor="middle" class="slot">${escapeXml(fitText(line, 42))}</text>`
+    `<text x="${width / 2}" y="${height * slotY[idx]}" text-anchor="middle" dominant-baseline="middle" class="slot">${escapeXml(fitText(line, 42))}</text>`
   )).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <defs>
-      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.75"/>
+      <filter id="weaponGlow" x="-45%" y="-45%" width="190%" height="190%">
+        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#b66cff" flood-opacity="0.95"/>
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+      </filter>
+      <filter id="slotGlow" x="-35%" y="-35%" width="170%" height="170%">
+        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#9d5cff" flood-opacity="0.45"/>
+        <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.55"/>
+      </filter>
+      <filter id="creatorGlow" x="-45%" y="-45%" width="190%" height="190%">
+        <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#b66cff" flood-opacity="0.85"/>
+        <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.7"/>
       </filter>
       <style>
-        .weapon{font-family:Arial Black,Arial,sans-serif;font-size:${Math.round(width * 0.058)}px;font-weight:900;fill:#fff;letter-spacing:2px;filter:url(#shadow)}
-        .slot{font-family:Arial Black,Arial,sans-serif;font-size:${Math.round(width * 0.034)}px;font-weight:900;fill:#1d0648;letter-spacing:.2px;filter:url(#shadow)}
-        .creator{font-family:Arial Black,Arial,sans-serif;font-size:${Math.round(width * 0.038)}px;font-weight:900;fill:#fff;letter-spacing:1.5px;filter:url(#shadow)}
+        .weapon{font-family:Arial Black,Arial,sans-serif;font-size:${weaponSize}px;font-weight:900;fill:#ffffff;letter-spacing:2.5px;filter:url(#weaponGlow)}
+        .slot{font-family:Arial Black,Arial,sans-serif;font-size:${slotSize}px;font-weight:900;fill:#22064f;letter-spacing:.2px;filter:url(#slotGlow)}
+        .creator{font-family:Arial Black,Arial,sans-serif;font-size:${creatorSize}px;font-weight:900;fill:#ffffff;letter-spacing:1.6px;filter:url(#creatorGlow)}
       </style>
     </defs>
-    <text x="${width / 2}" y="${height * 0.366}" text-anchor="middle" class="weapon">${escapeXml(weapon)}</text>
+    <text x="${width / 2}" y="${height * 0.358}" text-anchor="middle" dominant-baseline="middle" class="weapon">${escapeXml(weapon)}</text>
     ${slotText}
-    <text x="${width * 0.59}" y="${height * 0.956}" text-anchor="middle" class="creator">${escapeXml(creator)}</text>
+    <text x="${width * 0.59}" y="${height * 0.957}" text-anchor="middle" dominant-baseline="middle" class="creator">${escapeXml(creator)}</text>
   </svg>`;
 }
 
