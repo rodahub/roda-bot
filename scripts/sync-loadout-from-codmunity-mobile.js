@@ -2,14 +2,8 @@
 
 /**
  * RØDA Loadout Sync — CODMunity Mobile Builder
- *
- * Replica la logica vista da cellulare su https://codmunity.gg/create-loadout:
- * 1. entra nel builder mobile
- * 2. seleziona l'arma
- * 3. apre ogni slot accessorio
- * 4. legge le opzioni visibili nel menu dello slot
- * 5. crea SOLO armi, accessori e compatibilità
- *
+ * Replica la logica mobile del builder CODMunity:
+ * seleziona gioco/categoria/arma, apre ogni slot e legge solo le opzioni reali.
  * Non pubblica build automatiche.
  */
 
@@ -56,6 +50,15 @@ const CATEGORY_FALLBACK = new Map([
   ['marine-sp', 'Shotgun'], ['asg-89', 'Shotgun'], ['maeltrom', 'Shotgun'],
   ['gs45', 'Pistola'], ['9mm-pm', 'Pistola'], ['grekhova', 'Pistola'], ['stryder-22', 'Pistola']
 ]);
+const CATEGORY_ALIASES = {
+  'Fucile d\'assalto': ['Fucile d\'assalto', 'Assault Rifle', 'Assault Rifles'],
+  Mitraglietta: ['Mitraglietta', 'SMG', 'Submachine Gun', 'Submachine Guns'],
+  Cecchino: ['Cecchino', 'Sniper', 'Sniper Rifle', 'Sniper Rifles'],
+  'Fucile tattico': ['Fucile tattico', 'Tactical Rifle', 'Marksman Rifle'],
+  'Mitragliatrice leggera': ['Mitragliatrice leggera', 'LMG', 'Light Machine Gun'],
+  Shotgun: ['Shotgun', 'Fucile a pompa'],
+  Pistola: ['Pistola', 'Pistol']
+};
 
 const BAD_RX = /\b(cookie|privacy|terms|login|register|subscribe|newsletter|discord|telegram|twitter|instagram|youtube|tiktok|promo|discount|coupon|code|store|shop|premium|advertisement|sponsored|patch notes|tier list|home|menu|search|filter|sort|copy link|share|follow|prestige|unlock|sblocca|scatta una foto|loadout name|description|codice di condivisione|accessori popolari|selezione rapida)\b/i;
 const STAT_RX = /\b(ads speed|ads movement|aim down sight|recoil control|rinculo|damage range|bullet velocity|sprint to fire|movement speed|fire rate|mobility|handling|accuracy|damage|control|ttk|rpm|reload speed|magazine size)\b/i;
@@ -84,12 +87,7 @@ function isBadAttachmentName(v) {
   return false;
 }
 function cleanAttachmentName(v) {
-  return clean(v)
-    .replace(/^[-–—•*]\s*/, '')
-    .replace(/\s+Level\s*\d+$/i, '')
-    .replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i, '')
-    .replace(/\s+Required\s+Level\s*\d+$/i, '')
-    .trim();
+  return clean(v).replace(/^[-–—•*]\s*/, '').replace(/\s+Level\s*\d+$/i, '').replace(/\s+Unlock(?:ed)?\s+at\s+Level\s*\d+$/i, '').replace(/\s+Required\s+Level\s*\d+$/i, '').trim();
 }
 function getWeaponItems() {
   const raw = read(URLS_FILE, []);
@@ -99,39 +97,31 @@ function getWeaponItems() {
     return { id, url, game: gameFromUrl(url, entry || {}), nome: (entry && (entry.nome || entry.name)) || nameFromId(id), codmunityOrder: Number((entry && entry.codmunityOrder) || index + 1), discoveredAt: (entry && entry.discoveredAt) || today() };
   }).filter(w => w.id && w.url).slice(0, LIMIT || undefined);
 }
+async function safeScreenshot(page, name) { if (!DEBUG) return null; try { const file = path.join(DATA, `debug-${name}.png`); await page.screenshot({ path: file, fullPage: true }); return file; } catch (_) { return null; } }
+async function acceptBanners(page) { await page.evaluate(() => { for (const el of Array.from(document.querySelectorAll('button,[role="button"]'))) { const t = (el.innerText || el.textContent || '').toLowerCase().trim(); if (['accept','agree','ok','accetta','acconsento'].some(w => t.includes(w))) el.click(); } }).catch(() => {}); }
+async function openBuilder(page) { await page.goto(BUILDER_URL, { waitUntil: 'networkidle2', timeout: 70000 }); await sleep(900); await acceptBanners(page); }
 
-async function safeScreenshot(page, name) {
-  if (!DEBUG) return null;
-  try {
-    const file = path.join(DATA, `debug-${name}.png`);
-    await page.screenshot({ path: file, fullPage: true });
-    return file;
-  } catch (_) { return null; }
-}
-
-async function acceptBanners(page) {
-  await page.evaluate(() => {
-    const words = ['accept', 'agree', 'ok', 'accetta', 'acconsento'];
-    for (const el of Array.from(document.querySelectorAll('button,[role="button"]'))) {
-      const t = (el.innerText || el.textContent || '').toLowerCase().trim();
-      if (words.some(w => t.includes(w))) el.click();
+async function selectNativeSelect(page, candidates) {
+  return page.evaluate((candidates) => {
+    const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const wanted = candidates.map(norm).filter(Boolean);
+    for (const select of Array.from(document.querySelectorAll('select')).filter(s => !s.disabled)) {
+      const options = Array.from(select.options || []);
+      const match = options.find(o => wanted.some(w => norm(o.textContent).includes(w) || norm(o.value).includes(w) || w.includes(norm(o.textContent))));
+      if (match) {
+        select.value = match.value;
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      }
     }
-  }).catch(() => {});
+    return false;
+  }, candidates);
 }
-
-async function openBuilder(page) {
-  await page.goto(BUILDER_URL, { waitUntil: 'networkidle2', timeout: 70000 });
-  await sleep(900);
-  await acceptBanners(page);
-}
-
 async function typeIntoBestSearch(page, text) {
   return page.evaluate((value) => {
-    const inputs = Array.from(document.querySelectorAll('input'))
-      .filter(i => !i.disabled && i.offsetParent !== null)
-      .map(i => ({ i, score: `${i.placeholder || ''} ${i.getAttribute('aria-label') || ''} ${i.type || ''}`.toLowerCase() }))
-      .sort((a, b) => (b.score.includes('search') ? 1 : 0) - (a.score.includes('search') ? 1 : 0));
-    const target = inputs[0] && inputs[0].i;
+    const inputs = Array.from(document.querySelectorAll('input')).filter(i => !i.disabled && i.offsetParent !== null);
+    const target = inputs.find(i => /search|cerca|weapon|arma/i.test(`${i.placeholder||''} ${i.getAttribute('aria-label')||''}`)) || inputs[0];
     if (!target) return false;
     target.focus();
     target.value = '';
@@ -142,19 +132,19 @@ async function typeIntoBestSearch(page, text) {
     return true;
   }, text);
 }
-
 async function clickText(page, texts, opts = {}) {
   const arr = Array.isArray(texts) ? texts : [texts];
   return page.evaluate(({ arr, exact, maxLen }) => {
-    const wanted = arr.map(x => String(x || '').toLowerCase().trim()).filter(Boolean);
-    const candidates = Array.from(document.querySelectorAll('button,a,[role="button"],[role="option"],li,div,span'))
+    const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const wanted = arr.map(norm).filter(Boolean);
+    const candidates = Array.from(document.querySelectorAll('button,a,[role="button"],[role="option"],li,div,span,label'))
       .filter(el => {
         const rect = el.getBoundingClientRect();
         if (rect.width < 18 || rect.height < 12 || rect.bottom < 0 || rect.top > innerHeight) return false;
         const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
         if (!text || text.length > maxLen) return false;
-        const low = text.toLowerCase();
-        return wanted.some(w => exact ? low === w : low.includes(w));
+        const low = norm(text);
+        return wanted.some(w => exact ? low === w : low.includes(w) || w.includes(low));
       })
       .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
     if (!candidates[0]) return false;
@@ -163,74 +153,79 @@ async function clickText(page, texts, opts = {}) {
     return true;
   }, { arr, exact: !!opts.exact, maxLen: opts.maxLen || 110 });
 }
-
+async function chooseFromDropdown(page, openerTexts, optionTexts) {
+  await clickText(page, openerTexts, { maxLen: 140 }).catch(() => false);
+  await sleep(450);
+  await typeIntoBestSearch(page, optionTexts[0]).catch(() => false);
+  await sleep(450);
+  return clickText(page, optionTexts, { maxLen: 100 });
+}
+async function pageLooksWeaponSelected(page, weapon) {
+  const weaponName = weapon.nome || nameFromId(weapon.id);
+  const names = [weaponName, weapon.id.replace(/-/g, ' '), weapon.id];
+  return page.evaluate((names) => {
+    const body = (document.body && document.body.innerText || '').toLowerCase();
+    const hasWeapon = names.some(n => body.includes(String(n).toLowerCase()));
+    const hasSlots = ['ottica','optic','volata','muzzle','canna','barrel'].some(s => body.includes(s));
+    return hasWeapon && hasSlots;
+  }, names);
+}
 async function selectWeapon(page, weapon) {
   const weaponName = weapon.nome || nameFromId(weapon.id);
-  const candidates = [weaponName, weapon.id.replace(/-/g, ' '), weapon.id].filter(Boolean);
+  const weaponCandidates = [weaponName, weapon.id.replace(/-/g, ' '), weapon.id].filter(Boolean);
+  const gameCandidates = [weapon.game, weapon.game && weapon.game.replace(/^BO/i, 'BO '), 'Warzone'].filter(Boolean);
+  const category = categoryForWeapon(weapon.id);
+  const categoryCandidates = [category, ...(CATEGORY_ALIASES[category] || [])].filter(Boolean);
 
-  // Prova: se c'è un campo/cerca arma nel builder, digita e clicca il risultato.
+  await selectNativeSelect(page, gameCandidates).catch(() => false);
+  await sleep(250);
+  await selectNativeSelect(page, categoryCandidates).catch(() => false);
+  await sleep(250);
+  await selectNativeSelect(page, weaponCandidates).catch(() => false);
+  await sleep(600);
+  if (await pageLooksWeaponSelected(page, weapon)) return true;
+
+  await chooseFromDropdown(page, ['gioco', 'game', 'warzone', 'bo6', 'bo7'], gameCandidates).catch(() => false);
+  await sleep(350);
+  await chooseFromDropdown(page, ['categoria arma', 'weapon category', 'categoria', 'category'], categoryCandidates).catch(() => false);
+  await sleep(450);
+  await chooseFromDropdown(page, ['arma', 'weapon', 'select weapon', 'scegli arma'], weaponCandidates).catch(() => false);
+  await sleep(800);
+  if (await pageLooksWeaponSelected(page, weapon)) return true;
+
   await typeIntoBestSearch(page, weaponName).catch(() => false);
   await sleep(700);
-  if (await clickText(page, candidates, { maxLen: 90 })) return true;
+  if (await clickText(page, weaponCandidates, { maxLen: 90 }).catch(() => false)) {
+    await sleep(800);
+    if (await pageLooksWeaponSelected(page, weapon)) return true;
+  }
 
-  // Prova ad aprire un selettore arma/weapon e cercare di nuovo.
-  await clickText(page, ['arma', 'weapon', 'select weapon', 'scegli arma'], { maxLen: 120 }).catch(() => false);
-  await sleep(500);
-  await typeIntoBestSearch(page, weaponName).catch(() => false);
-  await sleep(700);
-  if (await clickText(page, candidates, { maxLen: 90 })) return true;
-
-  // Alcuni builder accettano URL parametrici: proviamo e poi verifichiamo se compare l'arma.
   const urls = [
+    `${BUILDER_URL}?game=${encodeURIComponent(weapon.game)}&weapon=${encodeURIComponent(weapon.id)}`,
     `${BUILDER_URL}?weapon=${encodeURIComponent(weapon.id)}`,
-    `${BUILDER_URL}?weapon=${encodeURIComponent(weaponName)}`,
-    `${BUILDER_URL}?w=${encodeURIComponent(weapon.id)}`
+    `${BUILDER_URL}/${encodeURIComponent(String(weapon.game).toLowerCase())}/${encodeURIComponent(weapon.id)}`
   ];
   for (const url of urls) {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 70000 }).catch(() => null);
     await sleep(900);
-    const found = await page.evaluate((names) => {
-      const body = (document.body && document.body.innerText || '').toLowerCase();
-      return names.some(n => body.includes(String(n).toLowerCase()));
-    }, candidates);
-    if (found) return true;
+    if (await pageLooksWeaponSelected(page, weapon)) return true;
   }
   return false;
 }
-
-async function openSlot(page, slotName) {
-  const aliases = SLOT_ALIASES[slotName] || [slotName];
-  return clickText(page, aliases, { exact: false, maxLen: 80 });
-}
-
+async function openSlot(page, slotName) { return clickText(page, SLOT_ALIASES[slotName] || [slotName], { exact: false, maxLen: 80 }); }
 async function extractOpenDropdownOptions(page, slotName) {
   return page.evaluate(({ slotName }) => {
     const badRx = /cookie|privacy|terms|login|register|subscribe|newsletter|discord|telegram|twitter|instagram|youtube|tiktok|promo|discount|coupon|code|store|shop|premium|advertisement|sponsored|patch notes|tier list|home|menu|search|filter|sort|copy link|share|follow|prestige|unlock|sblocca|scatta una foto|loadout name|description|codice di condivisione|accessori popolari|selezione rapida/i;
     const statRx = /ads speed|ads movement|aim down sight|recoil control|rinculo|damage range|bullet velocity|sprint to fire|movement speed|fire rate|mobility|handling|accuracy|damage|control|ttk|rpm|reload speed|magazine size/i;
     const clean = v => String(v || '').replace(/\s+/g, ' ').trim();
-    const visible = el => {
-      const r = el.getBoundingClientRect();
-      const st = getComputedStyle(el);
-      return r.width > 20 && r.height > 12 && r.bottom > 0 && r.top < innerHeight && st.display !== 'none' && st.visibility !== 'hidden';
-    };
+    const visible = el => { const r = el.getBoundingClientRect(); const st = getComputedStyle(el); return r.width > 20 && r.height > 12 && r.bottom > 0 && r.top < innerHeight && st.display !== 'none' && st.visibility !== 'hidden'; };
     const badContainer = el => !!el.closest('header,footer,nav,[class*="cookie"],[class*="promo"],[class*="discount"],[class*="social"],[class*="ad"]');
-    const badName = n => {
-      n = clean(n);
-      if (!n || n.length < 2 || n.length > 74 || !/[a-zA-Z0-9]/.test(n)) return true;
-      if (/^level\s*\d+$/i.test(n) || /^lvl\s*\d+$/i.test(n)) return true;
-      if (/^\+?\-?\d+(\.\d+)?%?$/.test(n)) return true;
-      if (badRx.test(n)) return true;
-      if (n.includes('://') || n.includes('.gg') || n.includes('@')) return true;
-      if (n.split(' ').length > 8) return true;
-      return false;
-    };
-    const roots = Array.from(document.querySelectorAll('[role="listbox"],[role="menu"],[role="dialog"],[class*="dropdown"],[class*="popover"],[class*="select"],[class*="modal"]'))
-      .filter(el => visible(el) && !badContainer(el));
+    const badName = n => { n = clean(n); if (!n || n.length < 2 || n.length > 74 || !/[a-zA-Z0-9]/.test(n)) return true; if (/^level\s*\d+$/i.test(n) || /^lvl\s*\d+$/i.test(n)) return true; if (/^\+?\-?\d+(\.\d+)?%?$/.test(n)) return true; if (badRx.test(n)) return true; if (n.includes('://') || n.includes('.gg') || n.includes('@')) return true; if (n.split(' ').length > 8) return true; return false; };
+    const roots = Array.from(document.querySelectorAll('[role="listbox"],[role="menu"],[role="dialog"],[class*="dropdown"],[class*="popover"],[class*="select"],[class*="modal"]')).filter(el => visible(el) && !badContainer(el));
     const scanRoots = roots.length ? roots : [document.body];
     const raw = [];
     for (const root of scanRoots) {
-      const els = Array.from(root.querySelectorAll('[data-name],[data-value],[role="option"],button,li,div'))
-        .filter(el => visible(el) && !badContainer(el));
+      const els = Array.from(root.querySelectorAll('[data-name],[data-value],[role="option"],button,li,div,span')).filter(el => visible(el) && !badContainer(el));
       for (const el of els) {
         let text = clean(el.getAttribute('data-name') || el.getAttribute('data-value') || el.getAttribute('aria-label') || el.getAttribute('title') || el.innerText || el.textContent);
         const lines = text.split('\n').map(clean).filter(Boolean);
@@ -241,15 +236,9 @@ async function extractOpenDropdownOptions(page, slotName) {
       }
     }
     const seen = new Set();
-    return raw.filter(name => {
-      const key = name.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).map(name => ({ slot: slotName, name }));
+    return raw.filter(name => { const key = name.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; }).map(name => ({ slot: slotName, name }));
   }, { slotName });
 }
-
 async function extractWeaponAttachments(page, weapon) {
   const out = [];
   for (const slotName of SLOT_ORDER) {
@@ -263,34 +252,13 @@ async function extractWeaponAttachments(page, weapon) {
     await sleep(180);
   }
   const seen = new Set();
-  return out.filter(item => {
-    const key = item.slot + '__' + slug(item.name);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return out.filter(item => { const key = item.slot + '__' + slug(item.name); if (seen.has(key)) return false; seen.add(key); return true; });
 }
-
 function mergeWeapon(weapons, weapon) {
   const todayStr = today();
   if (weapons.some(w => w.id === weapon.id)) return;
-  weapons.push({
-    id: weapon.id,
-    nome: weapon.nome || nameFromId(weapon.id),
-    categoria: categoryForWeapon(weapon.id),
-    gioco: weapon.game || 'Warzone',
-    attiva: true,
-    verificata: true,
-    fonte: SOURCE,
-    fonteUrl: BUILDER_URL,
-    note: 'Arma importata dal builder mobile CODMunity. Gli utenti creano le build dal sito RØDA.',
-    stato: 'pubblico',
-    codmunityOrder: weapon.codmunityOrder,
-    discoveredAt: weapon.discoveredAt || todayStr,
-    updatedAt: todayStr
-  });
+  weapons.push({ id: weapon.id, nome: weapon.nome || nameFromId(weapon.id), categoria: categoryForWeapon(weapon.id), gioco: weapon.game || 'Warzone', attiva: true, verificata: true, fonte: SOURCE, fonteUrl: BUILDER_URL, note: 'Arma importata dal builder mobile CODMunity. Gli utenti creano le build dal sito RØDA.', stato: 'pubblico', codmunityOrder: weapon.codmunityOrder, discoveredAt: weapon.discoveredAt || todayStr, updatedAt: todayStr });
 }
-
 function mergeCompatibility(state, weapon, items) {
   const { weapons, attachments, compatibility } = state;
   mergeWeapon(weapons, weapon);
@@ -301,53 +269,24 @@ function mergeCompatibility(state, weapon, items) {
     const name = cleanAttachmentName(item.name);
     const id = slug(name);
     if (!id || isBadAttachmentName(name)) return;
-    if (!attMap.has(id)) {
-      const att = { id, nome: name, tipo: item.slot, attivo: true, verificato: true, fonte: SOURCE, fonteUrl: BUILDER_URL, note: 'Accessorio letto dallo slot reale del builder mobile CODMunity.', stato: 'pubblico', updatedAt: todayStr, codmunityOrder: index + 1 };
-      attachments.push(att);
-      attMap.set(id, att);
-    }
+    if (!attMap.has(id)) { const att = { id, nome: name, tipo: item.slot, attivo: true, verificato: true, fonte: SOURCE, fonteUrl: BUILDER_URL, note: 'Accessorio letto dallo slot reale del builder mobile CODMunity.', stato: 'pubblico', updatedAt: todayStr, codmunityOrder: index + 1 }; attachments.push(att); attMap.set(id, att); }
     const key = `${weapon.id}__${id}`;
-    if (!compMap.has(key)) {
-      const row = { id: key, armaId: weapon.id, accessorioId: id, slot: item.slot, compatibile: true, verificato: true, fonte: SOURCE, fonteUrl: BUILDER_URL, note: 'Compatibilità letta dallo slot reale del builder mobile CODMunity.', stato: 'pubblico', updatedAt: todayStr, codmunityOrder: index + 1 };
-      compatibility.push(row);
-      compMap.set(key, row);
-    }
+    if (!compMap.has(key)) { const row = { id: key, armaId: weapon.id, accessorioId: id, slot: item.slot, compatibile: true, verificato: true, fonte: SOURCE, fonteUrl: BUILDER_URL, note: 'Compatibilità letta dallo slot reale del builder mobile CODMunity.', stato: 'pubblico', updatedAt: todayStr, codmunityOrder: index + 1 }; compatibility.push(row); compMap.set(key, row); }
   });
 }
-
 async function main() {
-  const report = {
-    startedAt: nowIso(),
-    source: SOURCE,
-    mode: 'codmunity-mobile-builder-slot-options',
-    processedWeapons: [],
-    failedWeapons: [],
-    weaponsImported: 0,
-    attachmentsImported: 0,
-    compatibilityImported: 0,
-    removedPreviousDatabase: {
-      weapons: read(WEAPONS_FILE, []).length,
-      attachments: read(ATTACHMENTS_FILE, []).length,
-      compatibility: read(COMPAT_FILE, []).length,
-      builds: read(BUILDS_FILE, []).length
-    },
-    finishedAt: null
-  };
-
+  const report = { startedAt: nowIso(), source: SOURCE, mode: 'codmunity-mobile-builder-slot-options-v2', processedWeapons: [], failedWeapons: [], weaponsImported: 0, attachmentsImported: 0, compatibilityImported: 0, removedPreviousDatabase: { weapons: read(WEAPONS_FILE, []).length, attachments: read(ATTACHMENTS_FILE, []).length, compatibility: read(COMPAT_FILE, []).length, builds: read(BUILDS_FILE, []).length }, finishedAt: null };
   const weapons = [];
   const attachments = [];
   const compatibility = [];
   const builds = read(BUILDS_FILE, []).filter(b => ![SOURCE, 'FPSMeta', 'WZLoad', 'WarzoneLoadout', 'CODMunity'].includes(b.fonte));
   const list = getWeaponItems();
-
   const puppeteer = require('puppeteer');
   const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] });
-
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
     await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
-
     for (let i = 0; i < list.length; i++) {
       const weapon = list[i];
       console.log(`[${i + 1}/${list.length}] CODMunity mobile: ${weapon.nome}`);
@@ -357,33 +296,19 @@ async function main() {
         await sleep(900);
         const items = selected ? await extractWeaponAttachments(page, weapon) : [];
         if (items.length) mergeCompatibility({ weapons, attachments, compatibility }, weapon, items);
-        report.processedWeapons.push({ armaId: weapon.id, nome: weapon.nome, selected, attachmentsFound: items.length });
+        report.processedWeapons.push({ armaId: weapon.id, nome: weapon.nome, game: weapon.game, categoria: categoryForWeapon(weapon.id), selected, attachmentsFound: items.length });
         console.log(`  ${selected ? 'selezionata' : 'NON selezionata'} · ${items.length} accessori`);
         if (DEBUG && (!selected || !items.length)) await safeScreenshot(page, `codmunity-${weapon.id}`);
-      } catch (error) {
-        report.failedWeapons.push({ armaId: weapon.id, nome: weapon.nome, error: error.message });
-        console.log(`  ERRORE ${error.message}`);
-      }
-      write(WEAPONS_FILE, weapons);
-      write(ATTACHMENTS_FILE, attachments);
-      write(COMPAT_FILE, compatibility);
-      write(REPORT_FILE, { ...report, finishedAt: nowIso() });
+      } catch (error) { report.failedWeapons.push({ armaId: weapon.id, nome: weapon.nome, error: error.message }); console.log(`  ERRORE ${error.message}`); }
+      write(WEAPONS_FILE, weapons); write(ATTACHMENTS_FILE, attachments); write(COMPAT_FILE, compatibility); write(REPORT_FILE, { ...report, finishedAt: nowIso() });
       await sleep(DELAY);
     }
-  } finally {
-    await browser.close().catch(() => {});
-  }
-
+  } finally { await browser.close().catch(() => {}); }
   report.weaponsImported = weapons.length;
   report.attachmentsImported = attachments.length;
   report.compatibilityImported = compatibility.length;
   report.finishedAt = nowIso();
-  write(WEAPONS_FILE, weapons);
-  write(ATTACHMENTS_FILE, attachments);
-  write(COMPAT_FILE, compatibility);
-  write(BUILDS_FILE, builds);
-  write(REPORT_FILE, report);
+  write(WEAPONS_FILE, weapons); write(ATTACHMENTS_FILE, attachments); write(COMPAT_FILE, compatibility); write(BUILDS_FILE, builds); write(REPORT_FILE, report);
   console.log('Sync CODMunity mobile completato:', report);
 }
-
 main().catch(error => { console.error(error); process.exit(1); });
