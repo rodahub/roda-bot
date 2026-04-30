@@ -96,7 +96,7 @@ async function processBuildGraphics() {
   } finally { processing = false; if (queued) scheduleProcess(50); }
 }
 
-async function sendGraphic(req, res) {
+async function sendGraphic(req, res, forceDownload = false) {
   try {
     const id = clean(req.params.id);
     const builds = readBuilds();
@@ -107,7 +107,7 @@ async function sendGraphic(req, res) {
     build.imageUrl = result.imageUrl;
     build.graphicGeneratedAt = new Date().toISOString();
     writeBuilds(builds);
-    if (req.query.download === '1') {
+    if (forceDownload || req.query.download === '1') {
       return res.download(result.outputPath, `${safeFileName(build.armaNome || id)}-roda-loadout.png`);
     }
     return res.sendFile(result.outputPath);
@@ -126,7 +126,8 @@ function patchGraphicRoutes() {
     try {
       if (!this.__rodaGraphicRoutesRegistered) {
         Object.defineProperty(this, '__rodaGraphicRoutesRegistered', { value: true, enumerable: false });
-        this.get('/api/loadout/builds/:id/graphic', sendGraphic);
+        this.get('/api/loadout/builds/:id/graphic', (req, res) => sendGraphic(req, res, req.query.download === '1'));
+        this.get('/scarica-build/:id.png', (req, res) => sendGraphic(req, res, true));
       }
     } catch (error) {
       console.error('[loadout-graphics] Errore registrazione endpoint:', error.message);
