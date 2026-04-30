@@ -1,451 +1,56 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RØDA Loadout</title>
-  <link rel="icon" href="/roda-logo.png" type="image/png">
+  <link rel="icon" href="/roda-logo.png" type="image/png" />
   <style>
-    :root{
-      --bg:#050507;
-      --surface:rgba(18,18,33,.97);
-      --surface2:rgba(25,25,45,.95);
-      --border:rgba(190,145,255,.18);
-      --border2:rgba(190,145,255,.36);
-      --purple:#7b2cff;
-      --purple-light:#a855f7;
-      --text:#e0d8f6;
-      --muted:rgba(200,185,240,.58);
-      --red:#c92b4b;
-      --green:#22c55e;
-      --yellow:#ffd166;
-    }
-    *{margin:0;padding:0;box-sizing:border-box}
-    html,body{min-height:100%;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(123,44,255,.22),transparent 30%),radial-gradient(circle at 88% 90%,rgba(123,44,255,.12),transparent 34%),linear-gradient(180deg,#050507,#090910);color:var(--text)}
-    a{color:inherit;text-decoration:none}
-    .topbar{position:sticky;top:0;z-index:80;background:linear-gradient(180deg,rgba(9,9,16,.96),rgba(7,7,12,.8));border-bottom:1px solid var(--border);backdrop-filter:blur(16px);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .logo{display:flex;align-items:center;gap:10px;font-weight:950;font-size:18px;letter-spacing:-.3px}
-    .logo img{width:32px;height:32px;object-fit:contain}
-    .nav-links{display:flex;gap:8px;flex-wrap:wrap}
-    .nav-links a{font-size:13px;font-weight:700;color:var(--muted);padding:7px 12px;border-radius:20px;transition:.15s;border:1px solid transparent}
-    .nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(123,44,255,.15);border-color:rgba(168,85,247,.2)}
-    .hero{text-align:center;padding:58px 24px 38px;max-width:760px;margin:0 auto}
-    .hero h1{font-size:clamp(30px,5vw,54px);font-weight:950;letter-spacing:-1.4px;line-height:1.05}
-    .hero h1 span{background:linear-gradient(135deg,#a855f7,#7b2cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .hero p{margin-top:14px;color:var(--muted);font-size:15px;line-height:1.65}
-    .container{max-width:1120px;margin:0 auto;padding:0 20px 64px}
-    .tabs{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid var(--border);justify-content:center}
-    .tab{font-size:14px;font-weight:800;padding:11px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
-    .tab.active{color:var(--purple-light);border-bottom-color:var(--purple-light)}
-    .tab:hover{color:var(--text)}
-    .tab-panel{display:none}.tab-panel.active{display:block}
-    .builds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-    .build-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;transition:.2s;box-shadow:0 16px 45px rgba(0,0,0,.22)}
-    .build-card:hover{border-color:rgba(168,85,247,.35);transform:translateY(-2px)}
-    .bc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px}
-    .bc-arma{font-size:17px;font-weight:950;color:#e0d8f6}.bc-tipo{font-size:11px;font-weight:800;color:var(--purple-light);background:rgba(123,44,255,.15);padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.bc-cat{font-size:11px;color:var(--muted);margin-top:3px}.bc-creator{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)}.bc-creator span{color:var(--text)}.bc-atts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.bc-att{font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;color:#c4b8e8}.bc-att strong{color:var(--muted);font-size:10px;display:block;margin-bottom:1px}.bc-nota{font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
-    .empty-state{text-align:center;padding:44px 20px;color:var(--muted);background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:18px}.empty-state .icon{width:54px;height:54px;margin:0 auto 16px;border-radius:18px;background:linear-gradient(135deg,rgba(123,44,255,.35),rgba(168,85,247,.12));border:1px solid var(--border2)}
-    .form-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;max-width:720px;margin:0 auto;box-shadow:0 24px 70px rgba(0,0,0,.32),0 0 44px rgba(123,44,255,.08)}
-    .form-title{font-size:22px;font-weight:950;margin-bottom:12px}.field{margin-bottom:16px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(190,145,255,.2);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.15s}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple);background:rgba(123,44,255,.08);box-shadow:0 0 0 3px rgba(123,44,255,.11)}.field select{cursor:pointer}.field select option{background:#0d0d1a}.field textarea{resize:vertical;min-height:80px}
-    .slot-list{display:grid;gap:12px}.slot-box{background:rgba(255,255,255,.035);border:1px solid rgba(190,145,255,.16);border-radius:16px;padding:14px}.slot-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.slot-title{font-weight:900;color:#f3edff}.slot-count{font-size:11px;color:var(--muted);background:rgba(123,44,255,.14);border:1px solid rgba(123,44,255,.2);border-radius:999px;padding:4px 8px}.slot-box select{margin-top:0}.selected-count{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:7px 10px;border-radius:999px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.24);color:#8ff0b0;font-size:12px;font-weight:800}.hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;border:none;transition:.15s;font-family:inherit;width:100%}.btn-purple{background:linear-gradient(135deg,#7b2cff,#a855f7);color:#fff}.btn-purple:hover{opacity:.94;transform:translateY(-1px)}.btn-purple:disabled{opacity:.48;cursor:not-allowed;transform:none}.success-msg{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#4ade80;margin-top:16px}.error-msg{background:rgba(201,43,75,.1);border:1px solid rgba(201,43,75,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#ff8099;margin-top:16px}.section-title{font-size:22px;font-weight:950;margin-bottom:6px}.section-sub{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.55}
-    @media(max-width:640px){.form-card{padding:18px}.hero{padding:40px 16px 28px}.topbar{align-items:flex-start;flex-direction:column}.nav-links{width:100%}.nav-links a{flex:1;text-align:center}.tabs{justify-content:flex-start;overflow-x:auto}}
+    :root{--bg:#050507;--surface:rgba(18,18,33,.97);--surface2:rgba(25,25,45,.95);--border:rgba(190,145,255,.18);--border2:rgba(190,145,255,.36);--purple:#7b2cff;--purple-light:#a855f7;--text:#e0d8f6;--muted:rgba(200,185,240,.58);--red:#c92b4b;--green:#22c55e;--yellow:#ffd166}*{margin:0;padding:0;box-sizing:border-box}html,body{min-height:100%;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(123,44,255,.22),transparent 30%),radial-gradient(circle at 88% 90%,rgba(123,44,255,.12),transparent 34%),linear-gradient(180deg,#050507,#090910);color:var(--text)}a{color:inherit;text-decoration:none}.topbar{position:sticky;top:0;z-index:80;background:linear-gradient(180deg,rgba(9,9,16,.96),rgba(7,7,12,.8));border-bottom:1px solid var(--border);backdrop-filter:blur(16px);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}.logo{display:flex;align-items:center;gap:10px;font-weight:950;font-size:18px;letter-spacing:-.3px}.logo img{width:32px;height:32px;object-fit:contain}.nav-links{display:flex;gap:8px;flex-wrap:wrap}.nav-links a{font-size:13px;font-weight:700;color:var(--muted);padding:7px 12px;border-radius:20px;border:1px solid transparent}.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(123,44,255,.15);border-color:rgba(168,85,247,.2)}.hero{text-align:center;padding:58px 24px 38px;max-width:760px;margin:0 auto}.hero h1{font-size:clamp(30px,5vw,54px);font-weight:950;letter-spacing:-1.4px;line-height:1.05}.hero h1 span{background:linear-gradient(135deg,#a855f7,#7b2cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero p{margin-top:14px;color:var(--muted);font-size:15px;line-height:1.65}.container{max-width:1120px;margin:0 auto;padding:0 20px 64px}.tabs{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid var(--border);justify-content:center}.tab{font-size:14px;font-weight:800;padding:11px 18px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}.tab.active{color:var(--purple-light);border-bottom-color:var(--purple-light)}.tab-panel{display:none}.tab-panel.active{display:block}.builds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}.build-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:0 16px 45px rgba(0,0,0,.22)}.bc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px}.bc-arma{font-size:17px;font-weight:950;color:#e0d8f6}.bc-tipo{font-size:11px;font-weight:800;color:var(--purple-light);background:rgba(123,44,255,.15);padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.bc-cat{font-size:11px;color:var(--muted);margin-top:3px}.bc-creator{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)}.bc-creator span{color:var(--text)}.bc-atts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.bc-att{font-size:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;color:#c4b8e8}.bc-att strong{color:var(--muted);font-size:10px;display:block;margin-bottom:1px}.bc-nota{font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}.empty-state{text-align:center;padding:34px 18px;color:var(--muted);background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:18px}.form-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;max-width:760px;margin:0 auto;box-shadow:0 24px 70px rgba(0,0,0,.32),0 0 44px rgba(123,44,255,.08)}.form-title{font-size:22px;font-weight:950;margin-bottom:12px}.section-title{font-size:22px;font-weight:950;margin-bottom:6px}.section-sub{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.55}.field{margin-bottom:16px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(190,145,255,.2);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple);background:rgba(123,44,255,.08);box-shadow:0 0 0 3px rgba(123,44,255,.11)}.field select option{background:#0d0d1a}.slot-list{display:grid;gap:12px}.slot-box{background:rgba(255,255,255,.035);border:1px solid rgba(190,145,255,.16);border-radius:16px;padding:14px}.slot-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.slot-title{font-weight:900;color:#f3edff}.slot-count{font-size:11px;color:var(--muted);background:rgba(123,44,255,.14);border:1px solid rgba(123,44,255,.2);border-radius:999px;padding:4px 8px}.selected-count{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:7px 10px;border-radius:999px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.24);color:#8ff0b0;font-size:12px;font-weight:800}.hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;border:none;font-family:inherit;width:100%}.btn-purple{background:linear-gradient(135deg,#7b2cff,#a855f7);color:#fff}.btn-purple:disabled{opacity:.48;cursor:not-allowed}.success-msg{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#4ade80;margin-top:16px}.error-msg{background:rgba(201,43,75,.1);border:1px solid rgba(201,43,75,.3);border-radius:12px;padding:14px 18px;font-size:14px;color:#ff8099;margin-top:16px}@media(max-width:640px){.form-card{padding:18px}.hero{padding:40px 16px 28px}.topbar{align-items:flex-start;flex-direction:column}.nav-links{width:100%}.nav-links a{flex:1;text-align:center}.tabs{justify-content:flex-start;overflow-x:auto}}
   </style>
 </head>
 <body>
-
-<header class="topbar">
-  <a class="logo" href="/">
-    <img src="/roda-logo.png" alt="RØDA">
-    <span>RØDA CUP</span>
-  </a>
-  <nav class="nav-links">
-    <a href="/">Home</a>
-    <a href="/clan">Clan</a>
-    <a href="/streamer">Streamer</a>
-    <a href="/loadout" class="active">Loadout</a>
-  </nav>
-</header>
-
-<div class="hero">
-  <h1>RØDA <span>Loadout</span></h1>
-  <p>Crea e condividi i tuoi equipaggiamenti Warzone con la community.<br>Ogni build approvata dallo staff diventa ufficiale.</p>
-</div>
-
+<header class="topbar"><a class="logo" href="/"><img src="/roda-logo.png" alt="RØDA"><span>RØDA CUP</span></a><nav class="nav-links"><a href="/">Home</a><a href="/clan">Clan</a><a href="/streamer">Streamer</a><a href="/loadout" class="active">Loadout</a></nav></header>
+<div class="hero"><h1>RØDA <span>Loadout</span></h1><p>Crea e condividi i tuoi equipaggiamenti Warzone con la community.<br>Ogni build inviata viene controllata dallo staff.</p></div>
 <div class="container">
-  <div class="tabs">
-    <div class="tab active" data-tab="builds">Equipaggiamenti</div>
-    <div class="tab" data-tab="form">Crea il tuo Loadout</div>
-  </div>
-
-  <div class="tab-panel active" id="tab-builds">
-    <div class="section-title">Build della community</div>
-    <div class="section-sub">Tutti gli equipaggiamenti approvati dallo staff RØDA.</div>
-    <div class="builds-grid" id="buildsGrid">
-      <div class="empty-state"><div class="icon"></div><p>Caricamento...</p></div>
-    </div>
-  </div>
-
+  <div class="tabs"><div class="tab active" data-tab="builds">Equipaggiamenti</div><div class="tab" data-tab="form">Crea il tuo Loadout</div></div>
+  <div class="tab-panel active" id="tab-builds"><div class="section-title">Build della community</div><div class="section-sub">Tutti gli equipaggiamenti approvati dallo staff RØDA.</div><div class="builds-grid" id="buildsGrid"><div class="empty-state">Caricamento...</div></div></div>
   <div class="tab-panel" id="tab-form">
     <div class="form-card">
-      <div class="form-title">Crea il tuo Loadout</div>
-      <div class="section-sub">Scegli gioco, arma, stile e accessori compatibili. Il loadout verrà controllato dallo staff RØDA.</div>
-
-      <div class="field">
-        <label>Gioco</label>
-        <select id="f-gioco">
-          <option value="">Tutti</option>
-          <option>BO7</option>
-          <option>BO6</option>
-          <option>Warzone</option>
-          <option>MW3</option>
-          <option>MW2</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Categoria arma *</label>
-        <select id="f-categoria">
-          <option value="">— Seleziona categoria —</option>
-          <option>Fucile d'assalto</option>
-          <option>Mitraglietta</option>
-          <option>Mitragliatrice leggera</option>
-          <option>Fucile tattico</option>
-          <option>Fucile da battaglia</option>
-          <option>Cecchino</option>
-          <option>Shotgun</option>
-          <option>Pistola</option>
-          <option>Corpo a corpo</option>
-          <option>Lanciarazzi</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Arma *</label>
-        <select id="f-arma" disabled>
-          <option value="">— Prima scegli la categoria —</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Stile build *</label>
-        <select id="f-stile">
-          <option value="Personalizzato">Personalizzato</option>
-          <option>Meta</option>
-          <option>Lungo raggio</option>
-          <option>Supporto cecchino</option>
-          <option>Mobilità</option>
-          <option>Resurgence</option>
-          <option>Ranked</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Firma creator *</label>
-        <input type="text" id="f-creator" placeholder="Es. RooS, RØDA Player, MarcoTV" maxlength="30">
-        <div id="creatorError" style="color:#ff8099;font-size:11px;margin-top:4px;display:none"></div>
-      </div>
-
-      <div class="field">
-        <label>Accessori compatibili</label>
-        <div id="accessoriContainer">
-          <div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un'arma per vedere gli accessori compatibili.</div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Riepilogo</label>
-        <div id="riepilogoBox" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.8">
-          <div style="color:var(--muted)">Nessuna selezione</div>
-        </div>
-      </div>
-
-      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()" disabled>Invia Loadout</button>
-      <div id="formMsg" style="display:none"></div>
+      <div class="form-title">Crea il tuo Loadout</div><div class="section-sub">Scegli arma e accessori verificati. Il loadout viene inviato allo staff per approvazione.</div>
+      <div class="field"><label>Gioco</label><select id="f-gioco"><option value="">Tutti</option><option>Warzone</option><option>BO7</option><option>BO6</option><option>MW3</option><option>MW2</option></select></div>
+      <div class="field"><label>Categoria arma</label><select id="f-categoria"><option value="">Tutte le categorie disponibili</option></select></div>
+      <div class="field"><label>Arma *</label><select id="f-arma" disabled><option value="">Caricamento armi...</option></select></div>
+      <div class="field"><label>Stile build *</label><select id="f-stile"><option>Personalizzato</option><option>Meta</option><option>Lungo raggio</option><option>Corto raggio</option><option>Supporto cecchino</option><option>Mobilità</option><option>Resurgence</option><option>Ranked</option></select></div>
+      <div class="field"><label>Firma creator *</label><input type="text" id="f-creator" placeholder="Es. RooS, RØDA Player, MarcoTV" maxlength="30"><div id="creatorError" style="color:#ff8099;font-size:11px;margin-top:4px;display:none"></div></div>
+      <div class="field"><label>Accessori compatibili</label><div id="accessoriContainer"><div class="empty-state">Seleziona un'arma per vedere gli accessori compatibili.</div></div></div>
+      <div class="field"><label>Riepilogo</label><div id="riepilogoBox" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.8"><div style="color:var(--muted)">Nessuna selezione</div></div></div>
+      <button class="btn btn-purple" id="submitBtn" onclick="submitBuild()" disabled>Invia Loadout</button><div id="formMsg" style="display:none"></div>
     </div>
   </div>
 </div>
-
 <script>
-  const SLOT_ORDER = ['Ottica','Volata','Canna','Sottocanna','Caricatore','Impugnatura','Calcio','Laser','Mod fuoco'];
-  const MAX_ATTACHMENTS = 5;
-  let allWeapons = [];
-  let allAttachments = [];
-
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    });
-  });
-
-  function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function normalizeCategoryForCompare(s) {
-    return String(s || '').trim().replace(/[''‚‛′‘’]/g, "'").replace(/\s+/g, ' ').toLowerCase();
-  }
-  function normalizeSlot(s) {
-    const raw = String(s || '').trim();
-    const map = { optic:'Ottica', muzzle:'Volata', barrel:'Canna', underbarrel:'Sottocanna', magazine:'Caricatore', 'rear grip':'Impugnatura', stock:'Calcio', laser:'Laser', 'fire mods':'Mod fuoco' };
-    return map[raw.toLowerCase()] || raw;
-  }
-
-  async function loadWeapons() {
-    try {
-      const r = await fetch('/api/loadout/weapons', { cache:'no-store' });
-      const d = await r.json();
-      allWeapons = Array.isArray(d.weapons) ? d.weapons : [];
-      console.log('[Loadout] Armi caricate:', allWeapons.length);
-    } catch (e) {
-      console.warn('[Loadout] Errore caricamento armi:', e.message);
-    }
-  }
-
-  async function loadAttachments(weaponId) {
-    const container = document.getElementById('accessoriContainer');
-    container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Caricamento accessori compatibili...</div>';
-    allAttachments = [];
-    updateSubmitState();
-
-    if (!weaponId) {
-      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un\'arma per vedere gli accessori compatibili.</div>';
-      updateRiepilogo();
-      return;
-    }
-
-    try {
-      const r = await fetch('/api/loadout/attachments?weaponId=' + encodeURIComponent(weaponId), { cache:'no-store' });
-      const d = await r.json();
-      allAttachments = Array.isArray(d.attachments) ? d.attachments.map(a => ({ ...a, tipo: normalizeSlot(a.tipo || a.slot), slot: normalizeSlot(a.slot || a.tipo) })) : [];
-      console.warn('Accessori loadout', { weaponId, response: d, attachmentsCount: allAttachments.length });
-      renderAttSelects();
-      updateRiepilogo();
-    } catch (e) {
-      console.error('[Loadout] Errore accessori:', e);
-      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:#ff8099">Errore caricamento accessori. Riprova tra poco.</div>';
-    }
-  }
-
-  function selectedAttachmentIds() {
-    return Array.from(document.querySelectorAll('.att-select')).map(s => s.value).filter(Boolean);
-  }
-
-  function renderAttSelects() {
-    const container = document.getElementById('accessoriContainer');
-    const validAttachments = allAttachments.filter(a => SLOT_ORDER.includes(normalizeSlot(a.tipo || a.slot)));
-
-    if (!validAttachments.length) {
-      container.innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Nessun accessorio disponibile per quest\'arma.</div>';
-      updateSubmitState();
-      return;
-    }
-
-    const bySlot = {};
-    SLOT_ORDER.forEach(slot => bySlot[slot] = []);
-    validAttachments.forEach(a => {
-      const slot = normalizeSlot(a.tipo || a.slot);
-      if (bySlot[slot]) bySlot[slot].push(a);
-    });
-
-    const slotsWithItems = SLOT_ORDER.filter(slot => bySlot[slot].length > 0);
-    container.innerHTML = `<div class="slot-list">
-      <div class="hint">Puoi scegliere massimo ${MAX_ATTACHMENTS} accessori totali. Gli slot mostrati sono quelli disponibili per l'arma selezionata.</div>
-      ${slotsWithItems.map(slot => `
-        <div class="slot-box">
-          <div class="slot-head">
-            <div class="slot-title">${esc(slot)}</div>
-            <div class="slot-count">${bySlot[slot].length} disponibili</div>
-          </div>
-          <select class="att-select" data-slot="${esc(slot)}">
-            <option value="">— Nessun accessorio —</option>
-            ${bySlot[slot].map(a => `<option value="${esc(a.id)}">${esc(a.nome || a.name || a.id)}</option>`).join('')}
-          </select>
-        </div>
-      `).join('')}
-      <div id="selectedCount" class="selected-count">0 / ${MAX_ATTACHMENTS} selezionati</div>
-    </div>`;
-
-    document.querySelectorAll('.att-select').forEach(select => {
-      select.addEventListener('change', () => {
-        enforceMaxAttachments(select);
-        updateRiepilogo();
-        updateSubmitState();
-      });
-    });
-    updateSubmitState();
-  }
-
-  function enforceMaxAttachments(changedSelect) {
-    const selected = selectedAttachmentIds();
-    if (selected.length <= MAX_ATTACHMENTS) return;
-    changedSelect.value = '';
-    showMsg(`Puoi selezionare massimo ${MAX_ATTACHMENTS} accessori.`, 'error');
-  }
-
-  function updateSubmitState() {
-    const btn = document.getElementById('submitBtn');
-    const armaId = document.getElementById('f-arma').value;
-    const creator = document.getElementById('f-creator').value.trim();
-    const count = selectedAttachmentIds().length;
-    const countEl = document.getElementById('selectedCount');
-    if (countEl) countEl.textContent = `${count} / ${MAX_ATTACHMENTS} selezionati`;
-    btn.disabled = !(armaId && creator.length >= 2 && count > 0 && count <= MAX_ATTACHMENTS);
-  }
-
-  function updateRiepilogo() {
-    const box = document.getElementById('riepilogoBox');
-    const gioco = document.getElementById('f-gioco').value;
-    const categoria = document.getElementById('f-categoria').value;
-    const armaId = document.getElementById('f-arma').value;
-    const stile = document.getElementById('f-stile').value;
-    const creator = document.getElementById('f-creator').value.trim();
-    const armaObj = allWeapons.find(w => w.id === armaId);
-    const accessoriSelezionati = Array.from(document.querySelectorAll('.att-select')).map(s => ({ slot:s.dataset.slot, accessorioId:s.value, nome:s.options[s.selectedIndex]?.text })).filter(a => a.accessorioId);
-    let html = '';
-    if (gioco) html += `<div><strong>Gioco:</strong> ${esc(gioco)}</div>`;
-    if (categoria) html += `<div><strong>Categoria:</strong> ${esc(categoria)}</div>`;
-    if (armaObj) html += `<div><strong>Arma:</strong> ${esc(armaObj.nome)}</div>`;
-    if (stile) html += `<div><strong>Stile:</strong> ${esc(stile)}</div>`;
-    if (creator) html += `<div><strong>Firma creator:</strong> ${esc(creator)}</div>`;
-    if (accessoriSelezionati.length) {
-      html += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><strong>Accessori:</strong></div><ul style="margin:6px 0 0 16px;font-size:12px">`;
-      accessoriSelezionati.forEach(a => html += `<li><strong>${esc(a.slot)}:</strong> ${esc(a.nome)}</li>`);
-      html += '</ul>';
-    }
-    box.innerHTML = html || '<div style="color:var(--muted)">Nessuna selezione</div>';
-  }
-
-  document.getElementById('f-gioco').addEventListener('change', () => {
-    document.getElementById('f-categoria').dispatchEvent(new Event('change'));
-    updateRiepilogo();
-  });
-
-  document.getElementById('f-categoria').addEventListener('change', function() {
-    const cat = this.value;
-    const gioco = document.getElementById('f-gioco').value;
-    const armaSelect = document.getElementById('f-arma');
-    allAttachments = [];
-    document.getElementById('accessoriContainer').innerHTML = '<div class="empty-state" style="padding:22px;font-size:13px;color:var(--muted)">Seleziona un\'arma per vedere gli accessori compatibili.</div>';
-    updateSubmitState();
-
-    if (!cat) {
-      armaSelect.disabled = true;
-      armaSelect.innerHTML = '<option value="">— Prima scegli la categoria —</option>';
-      updateRiepilogo();
-      return;
-    }
-    if (!allWeapons.length) {
-      armaSelect.disabled = true;
-      armaSelect.innerHTML = '<option value="">Nessuna arma disponibile. Verifica prima le armi dall\'admin.</option>';
-      return;
-    }
-    const catNorm = normalizeCategoryForCompare(cat);
-    const filtered = allWeapons.filter(w => normalizeCategoryForCompare(w.categoria) === catNorm && (!gioco || w.gioco === gioco));
-    if (!filtered.length) {
-      armaSelect.disabled = true;
-      armaSelect.innerHTML = '<option value="">Nessuna arma disponibile per questa categoria.</option>';
-      updateRiepilogo();
-      return;
-    }
-    armaSelect.disabled = false;
-    armaSelect.innerHTML = '<option value="">— Seleziona arma —</option>';
-    filtered.forEach(w => {
-      const o = document.createElement('option');
-      o.value = w.id;
-      o.textContent = `${w.nome}${w.gioco ? ' · ' + w.gioco : ''}`;
-      armaSelect.appendChild(o);
-    });
-    updateRiepilogo();
-  });
-
-  document.getElementById('f-arma').addEventListener('change', function() {
-    loadAttachments(this.value);
-  });
-  ['f-creator','f-stile'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener(id === 'f-creator' ? 'input' : 'change', () => { updateRiepilogo(); updateSubmitState(); });
-  });
-
-  async function submitBuild() {
-    const btn = document.getElementById('submitBtn');
-    const creatorError = document.getElementById('creatorError');
-    const creator = document.getElementById('f-creator').value.trim();
-    const armaId = document.getElementById('f-arma').value;
-    const stile = document.getElementById('f-stile').value;
-    const gioco = document.getElementById('f-gioco').value;
-    const categoria = document.getElementById('f-categoria').value;
-    creatorError.style.display = 'none';
-
-    if (!creator || creator.length < 2) {
-      creatorError.textContent = 'Inserisci una firma creator valida.';
-      creatorError.style.display = 'block';
-      return;
-    }
-    const cleanCreator = creator.replace(/[<>"'&]/g, '');
-    if (cleanCreator !== creator) {
-      creatorError.textContent = 'La firma non può contenere caratteri speciali.';
-      creatorError.style.display = 'block';
-      return;
-    }
-    if (!armaId) return showMsg('Seleziona un\'arma.', 'error');
-
-    const accessori = Array.from(document.querySelectorAll('.att-select')).map(s => ({ slot:s.dataset.slot, accessorioId:s.value, nome:s.options[s.selectedIndex]?.text })).filter(a => a.accessorioId);
-    if (!accessori.length) return showMsg('Seleziona almeno un accessorio.', 'error');
-    if (accessori.length > MAX_ATTACHMENTS) return showMsg(`Puoi selezionare massimo ${MAX_ATTACHMENTS} accessori.`, 'error');
-    const armaObj = allWeapons.find(w => w.id === armaId);
-
-    btn.disabled = true;
-    btn.textContent = 'Invio in corso...';
-    try {
-      const r = await fetch('/api/loadout/builds', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ creatorName:cleanCreator, gioco:gioco || armaObj?.gioco || '', categoria:categoria || armaObj?.categoria || '', armaId, armaNome:armaObj?.nome || '', stile, accessori }) });
-      const d = await r.json();
-      if (d.ok) {
-        showMsg(d.message || 'Loadout inviato con successo!', 'success');
-        loadBuilds();
-      } else showMsg(d.message || 'Errore invio.', 'error');
-    } catch (e) {
-      showMsg('Errore di connessione.', 'error');
-    } finally {
-      btn.textContent = 'Invia Loadout';
-      updateSubmitState();
-    }
-  }
-
-  function showMsg(text, type) {
-    const el = document.getElementById('formMsg');
-    el.className = type === 'success' ? 'success-msg' : 'error-msg';
-    el.textContent = text;
-    el.style.display = 'block';
-    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
-  }
-
-  async function loadBuilds() {
-    const grid = document.getElementById('buildsGrid');
-    try {
-      const r = await fetch('/api/loadout/builds', { cache:'no-store' });
-      const d = await r.json();
-      const builds = Array.isArray(d.builds) ? d.builds : [];
-      if (!builds.length) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon"></div><p>Nessun equipaggiamento approvato ancora.<br>Sii il primo a inviare il tuo.</p></div>';
-        return;
-      }
-      grid.innerHTML = builds.map(b => `
-        <div class="build-card">
-          <div class="bc-header"><div><div class="bc-arma">${esc(b.armaNome)}</div><div class="bc-cat">${esc(b.categoria || b.categoriaArma || '')}</div></div><span class="bc-tipo">${esc(b.stile || b.tipoEquipaggiamento || 'Build')}</span></div>
-          <div class="bc-creator">By <span>${esc(b.creatorName || b.creator || 'Creator RØDA')}</span></div>
-          <div class="bc-atts">${(b.accessori || []).map(a => `<div class="bc-att"><strong>${esc(a.slot || a.tipo)}</strong>${esc(a.nome)}</div>`).join('')}</div>
-          ${b.note ? `<div class="bc-nota">"${esc(b.note)}"</div>` : ''}
-        </div>`).join('');
-    } catch {
-      grid.innerHTML = '<div class="empty-state"><div class="icon"></div><p>Errore caricamento build.</p></div>';
-    }
-  }
-
-  loadWeapons();
-  loadBuilds();
+const SLOT_ORDER=['Ottica','Volata','Canna','Sottocanna','Caricatore','Impugnatura','Calcio','Laser','Mod fuoco','Munizioni','Kit conversione','Cinghia'];
+const MAX_ATTACHMENTS=5;let allWeapons=[];let allAttachments=[];
+document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));tab.classList.add('active');document.getElementById('tab-'+tab.dataset.tab).classList.add('active')}));
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function norm(s){return String(s||'').trim().replace(/[''‚‛′‘’]/g,"'").replace(/\s+/g,' ').toLowerCase()}
+function normalizeSlot(s){const raw=String(s||'').trim();const map={optic:'Ottica',muzzle:'Volata',barrel:'Canna',underbarrel:'Sottocanna',magazine:'Caricatore',mag:'Caricatore','rear grip':'Impugnatura',stock:'Calcio',laser:'Laser','fire mods':'Mod fuoco',ammunition:'Munizioni',ammo:'Munizioni'};return map[raw.toLowerCase()]||raw}
+function weaponHasCompat(w){return Number(w.compatCount||0)>0 || !('compatCount' in w)}
+function fillCategories(){const select=document.getElementById('f-categoria');const cats=[...new Set(allWeapons.map(w=>w.categoria||'Da verificare').filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));select.innerHTML='<option value="">Tutte le categorie disponibili</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('')}
+function renderWeapons(){const arma=document.getElementById('f-arma');const cat=document.getElementById('f-categoria').value;const game=document.getElementById('f-gioco').value;let list=allWeapons.filter(w=>(!cat||norm(w.categoria)===norm(cat))&&(!game||w.gioco===game));allAttachments=[];document.getElementById('accessoriContainer').innerHTML='<div class="empty-state">Seleziona un\'arma per vedere gli accessori compatibili.</div>';if(!list.length){arma.disabled=true;arma.innerHTML='<option value="">Nessuna arma disponibile con questi filtri</option>';updateRiepilogo();updateSubmitState();return}arma.disabled=false;arma.innerHTML='<option value="">— Seleziona arma —</option>'+list.map(w=>`<option value="${esc(w.id)}">${esc(w.nome)}${w.categoria?' · '+esc(w.categoria):''}${w.gioco?' · '+esc(w.gioco):''}</option>`).join('');updateRiepilogo();updateSubmitState()}
+async function loadWeapons(){try{const r=await fetch('/api/loadout/weapons',{cache:'no-store'});const d=await r.json();allWeapons=Array.isArray(d.weapons)?d.weapons:[];fillCategories();renderWeapons();console.log('[Loadout] Armi caricate:',allWeapons.length)}catch(e){console.warn('[Loadout] Errore armi:',e.message);document.getElementById('f-arma').innerHTML='<option>Errore caricamento armi</option>'}}
+async function loadAttachments(weaponId){const c=document.getElementById('accessoriContainer');c.innerHTML='<div class="empty-state">Caricamento accessori compatibili...</div>';allAttachments=[];updateSubmitState();if(!weaponId){c.innerHTML='<div class="empty-state">Seleziona un\'arma per vedere gli accessori compatibili.</div>';updateRiepilogo();return}try{const r=await fetch('/api/loadout/attachments?weaponId='+encodeURIComponent(weaponId),{cache:'no-store'});const d=await r.json();allAttachments=Array.isArray(d.attachments)?d.attachments.map(a=>({...a,tipo:normalizeSlot(a.tipo||a.slot),slot:normalizeSlot(a.slot||a.tipo)})):[];console.warn('Accessori loadout',{weaponId,response:d,attachmentsCount:allAttachments.length});renderAttSelects();updateRiepilogo()}catch(e){c.innerHTML='<div class="empty-state" style="color:#ff8099">Errore caricamento accessori.</div>'}}
+function selectedAttachmentIds(){return Array.from(document.querySelectorAll('.att-select')).map(s=>s.value).filter(Boolean)}
+function renderAttSelects(){const c=document.getElementById('accessoriContainer');const valid=allAttachments.filter(a=>SLOT_ORDER.includes(normalizeSlot(a.tipo||a.slot)));if(!valid.length){c.innerHTML='<div class="empty-state">Nessun accessorio disponibile per quest\'arma. Avvia/controlla lo sync FPSMeta dal pannello admin.</div>';updateSubmitState();return}const by={};SLOT_ORDER.forEach(s=>by[s]=[]);valid.forEach(a=>{const s=normalizeSlot(a.tipo||a.slot);if(by[s])by[s].push(a)});const slots=SLOT_ORDER.filter(s=>by[s].length);c.innerHTML=`<div class="slot-list"><div class="hint">Puoi scegliere massimo ${MAX_ATTACHMENTS} accessori totali.</div>${slots.map(s=>`<div class="slot-box"><div class="slot-head"><div class="slot-title">${esc(s)}</div><div class="slot-count">${by[s].length} disponibili</div></div><select class="att-select" data-slot="${esc(s)}"><option value="">— Nessun accessorio —</option>${by[s].map(a=>`<option value="${esc(a.id)}">${esc(a.nome||a.name||a.id)}</option>`).join('')}</select></div>`).join('')}<div id="selectedCount" class="selected-count">0 / ${MAX_ATTACHMENTS} selezionati</div></div>`;document.querySelectorAll('.att-select').forEach(s=>s.addEventListener('change',()=>{enforceMax(s);updateRiepilogo();updateSubmitState()}));updateSubmitState()}
+function enforceMax(changed){if(selectedAttachmentIds().length<=MAX_ATTACHMENTS)return;changed.value='';showMsg(`Puoi selezionare massimo ${MAX_ATTACHMENTS} accessori.`,'error')}
+function updateSubmitState(){const b=document.getElementById('submitBtn');const arma=document.getElementById('f-arma').value;const creator=document.getElementById('f-creator').value.trim();const count=selectedAttachmentIds().length;const ce=document.getElementById('selectedCount');if(ce)ce.textContent=`${count} / ${MAX_ATTACHMENTS} selezionati`;b.disabled=!(arma&&creator.length>=2&&count>0&&count<=MAX_ATTACHMENTS)}
+function updateRiepilogo(){const box=document.getElementById('riepilogoBox');const armaId=document.getElementById('f-arma').value;const armaObj=allWeapons.find(w=>w.id===armaId);const accessori=Array.from(document.querySelectorAll('.att-select')).map(s=>({slot:s.dataset.slot,accessorioId:s.value,nome:s.options[s.selectedIndex]?.text})).filter(a=>a.accessorioId);let html='';if(armaObj)html+=`<div><strong>Arma:</strong> ${esc(armaObj.nome)}</div><div><strong>Categoria:</strong> ${esc(armaObj.categoria||'')}</div>`;html+=`<div><strong>Stile:</strong> ${esc(document.getElementById('f-stile').value)}</div>`;const creator=document.getElementById('f-creator').value.trim();if(creator)html+=`<div><strong>Firma creator:</strong> ${esc(creator)}</div>`;if(accessori.length){html+='<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><strong>Accessori:</strong></div><ul style="margin:6px 0 0 16px;font-size:12px">';accessori.forEach(a=>html+=`<li><strong>${esc(a.slot)}:</strong> ${esc(a.nome)}</li>`);html+='</ul>'}box.innerHTML=html||'<div style="color:var(--muted)">Nessuna selezione</div>'}
+document.getElementById('f-gioco').addEventListener('change',renderWeapons);document.getElementById('f-categoria').addEventListener('change',renderWeapons);document.getElementById('f-arma').addEventListener('change',e=>loadAttachments(e.target.value));['f-creator','f-stile'].forEach(id=>document.getElementById(id).addEventListener(id==='f-creator'?'input':'change',()=>{updateRiepilogo();updateSubmitState()}));
+async function submitBuild(){const btn=document.getElementById('submitBtn');const creator=document.getElementById('f-creator').value.trim();if(!creator||creator.length<2)return showMsg('Inserisci una firma creator valida.','error');if(/[<>"'&]/.test(creator))return showMsg('La firma non può contenere caratteri speciali.','error');const armaId=document.getElementById('f-arma').value;const armaObj=allWeapons.find(w=>w.id===armaId);const accessori=Array.from(document.querySelectorAll('.att-select')).map(s=>({slot:s.dataset.slot,accessorioId:s.value,nome:s.options[s.selectedIndex]?.text})).filter(a=>a.accessorioId);if(!armaId)return showMsg('Seleziona un\'arma.','error');if(!accessori.length)return showMsg('Seleziona almeno un accessorio.','error');btn.disabled=true;btn.textContent='Invio in corso...';try{const r=await fetch('/api/loadout/builds',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creatorName:creator,gioco:armaObj?.gioco||'Warzone',categoria:armaObj?.categoria||'',armaId,armaNome:armaObj?.nome||'',stile:document.getElementById('f-stile').value,accessori})});const d=await r.json();if(d.ok){showMsg(d.message||'Loadout inviato con successo!','success');loadBuilds()}else showMsg(d.message||'Errore invio.','error')}catch(e){showMsg('Errore di connessione.','error')}finally{btn.textContent='Invia Loadout';updateSubmitState()}}
+function showMsg(text,type){const el=document.getElementById('formMsg');el.className=type==='success'?'success-msg':'error-msg';el.textContent=text;el.style.display='block'}
+async function loadBuilds(){const grid=document.getElementById('buildsGrid');try{const r=await fetch('/api/loadout/builds',{cache:'no-store'});const d=await r.json();const builds=Array.isArray(d.builds)?d.builds:[];if(!builds.length){grid.innerHTML='<div class="empty-state">Nessun equipaggiamento approvato ancora.<br>Sii il primo a inviare il tuo.</div>';return}grid.innerHTML=builds.map(b=>`<div class="build-card"><div class="bc-header"><div><div class="bc-arma">${esc(b.armaNome)}</div><div class="bc-cat">${esc(b.categoria||'')}</div></div><span class="bc-tipo">${esc(b.stile||'Build')}</span></div><div class="bc-creator">By <span>${esc(b.creatorName||'Creator RØDA')}</span></div><div class="bc-atts">${(b.accessori||[]).map(a=>`<div class="bc-att"><strong>${esc(a.slot||a.tipo)}</strong>${esc(a.nome)}</div>`).join('')}</div>${b.note?`<div class="bc-nota">"${esc(b.note)}"</div>`:''}</div>`).join('')}catch(e){grid.innerHTML='<div class="empty-state">Errore caricamento build.</div>'}}
+loadWeapons();loadBuilds();
 </script>
 </body>
 </html>
