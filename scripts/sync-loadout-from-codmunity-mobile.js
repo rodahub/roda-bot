@@ -18,6 +18,7 @@ const URLS_FILE = path.join(DATA, 'codmunity-weapon-urls.json');
 const WEAPONS_FILE = path.join(DATA, 'loadout-weapons.json');
 const ATTACHMENTS_FILE = path.join(DATA, 'loadout-attachments.json');
 const COMPAT_FILE = path.join(DATA, 'loadout-compatibility.json');
+const BUILDS_FILE = path.join(DATA, 'loadout-builds.json');
 const REPORT_FILE = path.join(DATA, 'loadout-codmunity-mobile-sync-report.json');
 const BUILDER_URL = 'https://codmunity.gg/create-loadout';
 const SOURCE = 'CODMunity Mobile Builder';
@@ -36,7 +37,6 @@ function write(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 function clean(v) { return String(v || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(); }
-function slug(v) { return clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 function nowIso() { return new Date().toISOString(); }
 function weaponIdFromUrl(url) { return String(url || '').split('/').filter(Boolean).pop() || ''; }
 function gameFromUrl(url, entry = {}) { const m = String(url || '').match(/\/weapon\/(bo\d+)\//i); return String(entry.game || (m && m[1]) || 'Warzone').toUpperCase(); }
