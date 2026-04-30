@@ -5,7 +5,7 @@
   "main": "server.js",
   "packageManager": "npm@10.8.2",
   "scripts": {
-    "start": "node server.js",
+    "start": "node -r ./loadout-graphics.js server.js",
     "build:loadout-db": "node scripts/sync-loadout-from-codmunity-weapon-pages.js",
     "discover:codmunity-weapons": "node scripts/discover-codmunity-weapons.js",
     "sync:loadout-db": "node scripts/discover-codmunity-weapons.js && node scripts/sync-loadout-from-codmunity-weapon-pages.js"
