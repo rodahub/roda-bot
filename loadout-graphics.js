@@ -96,8 +96,47 @@ async function processBuildGraphics() {
   } finally { processing = false; if (queued) scheduleProcess(50); }
 }
 
+async function sendGraphic(req, res) {
+  try {
+    const id = clean(req.params.id);
+    const builds = readBuilds();
+    const build = builds.find((item) => getId(item) === id);
+    if (!build) return res.status(404).send('Build non trovata');
+    const result = await generateLoadoutGraphic(build);
+    build.graphicUrl = result.imageUrl;
+    build.imageUrl = result.imageUrl;
+    build.graphicGeneratedAt = new Date().toISOString();
+    writeBuilds(builds);
+    if (req.query.download === '1') {
+      return res.download(result.outputPath, `${safeFileName(build.armaNome || id)}-roda-loadout.png`);
+    }
+    return res.sendFile(result.outputPath);
+  } catch (error) {
+    console.error('[loadout-graphics] Errore endpoint grafica:', error.message);
+    return res.status(500).send(error.message || 'Errore generazione grafica');
+  }
+}
+
+function patchGraphicRoutes() {
+  const proto = express && express.application;
+  if (!proto || proto.__rodaGraphicRoutePatch) return;
+  Object.defineProperty(proto, '__rodaGraphicRoutePatch', { value: true, enumerable: false });
+  const originalListen = proto.listen;
+  proto.listen = function patchedListen(...args) {
+    try {
+      if (!this.__rodaGraphicRoutesRegistered) {
+        Object.defineProperty(this, '__rodaGraphicRoutesRegistered', { value: true, enumerable: false });
+        this.get('/api/loadout/builds/:id/graphic', sendGraphic);
+      }
+    } catch (error) {
+      console.error('[loadout-graphics] Errore registrazione endpoint:', error.message);
+    }
+    return originalListen.apply(this, args);
+  };
+}
+
 function patchBuildWrites() { const originalWriteFileSync = fs.writeFileSync; fs.writeFileSync = function patchedWriteFileSync(file, ...args) { const result = originalWriteFileSync.call(this, file, ...args); try { if (!internalWrite && path.resolve(String(file)) === path.resolve(BUILDS_FILE)) scheduleProcess(); } catch {} return result; }; }
 function patchJsonResponses() { if (!express || !express.response || express.response.__rodaGraphicJsonPatch) return; const originalJson = express.response.json; Object.defineProperty(express.response, '__rodaGraphicJsonPatch', { value: true, enumerable: false }); express.response.json = function patchedJson(body) { try { const builds = readBuilds(); const byId = new Map(builds.map((b) => [getId(b), b])); if (body && Array.isArray(body.builds)) body.builds = body.builds.map((b) => ({ ...b, graphicUrl: (byId.get(getId(b)) || {}).graphicUrl || b.graphicUrl || '', imageUrl: (byId.get(getId(b)) || {}).imageUrl || b.imageUrl || '' })); if (body && body.build) { const raw = byId.get(getId(body.build)); if (raw && raw.graphicUrl) body.build = { ...body.build, graphicUrl: raw.graphicUrl, imageUrl: raw.imageUrl || raw.graphicUrl }; } } catch {} return originalJson.call(this, body); }; }
 
-patchBuildWrites(); patchJsonResponses(); scheduleProcess(1500);
+patchBuildWrites(); patchJsonResponses(); patchGraphicRoutes(); scheduleProcess(1500);
 module.exports = { generateLoadoutGraphic, processBuildGraphics };
