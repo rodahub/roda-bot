@@ -6,9 +6,9 @@
   "packageManager": "npm@10.8.2",
   "scripts": {
     "start": "node server.js",
-    "build:loadout-db": "node scripts/sync-loadout-from-wzload.js",
+    "build:loadout-db": "node scripts/sync-loadout-from-fpsmeta.js",
     "discover:codmunity-weapons": "node scripts/discover-codmunity-weapons.js",
-    "sync:loadout-db": "node scripts/sync-loadout-from-wzload.js"
+    "sync:loadout-db": "node scripts/sync-loadout-from-fpsmeta.js"
   },
   "dependencies": {
     "canvas": "^3.2.3",
