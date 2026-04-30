@@ -11,19 +11,11 @@ const ALLOW_GENERIC_ATTACHMENT_FALLBACK = process.env.ALLOW_LOADOUT_GENERIC_FALL
 
 const SLOT_ORDER = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
 const SLOT_MAP = new Map([
-  ['optic', 'Ottica'], ['ottica', 'Ottica'],
-  ['muzzle', 'Volata'], ['volata', 'Volata'],
-  ['barrel', 'Canna'], ['canna', 'Canna'],
-  ['underbarrel', 'Sottocanna'], ['sottocanna', 'Sottocanna'],
-  ['magazine', 'Caricatore'], ['caricatore', 'Caricatore'],
-  ['rear grip', 'Impugnatura'], ['rear-grip', 'Impugnatura'], ['impugnatura', 'Impugnatura'],
-  ['stock', 'Calcio'], ['calcio', 'Calcio'], ['laser', 'Laser'],
-  ['fire mods', 'Mod fuoco'], ['fire-mods', 'Mod fuoco'], ['fire mod', 'Mod fuoco'], ['mod fuoco', 'Mod fuoco']
+  ['optic', 'Ottica'], ['ottica', 'Ottica'], ['muzzle', 'Volata'], ['volata', 'Volata'], ['barrel', 'Canna'], ['canna', 'Canna'], ['underbarrel', 'Sottocanna'], ['sottocanna', 'Sottocanna'], ['magazine', 'Caricatore'], ['caricatore', 'Caricatore'], ['rear grip', 'Impugnatura'], ['rear-grip', 'Impugnatura'], ['impugnatura', 'Impugnatura'], ['stock', 'Calcio'], ['calcio', 'Calcio'], ['laser', 'Laser'], ['fire mods', 'Mod fuoco'], ['fire-mods', 'Mod fuoco'], ['fire mod', 'Mod fuoco'], ['mod fuoco', 'Mod fuoco']
 ]);
 
 let syncProcess = null;
 let syncStatus = readSyncStatus() || { running:false, ok:false, startedAt:null, finishedAt:null, exitCode:null, lastLines:[], error:'' };
-
 function clean(v){ return String(v || '').trim(); }
 function lower(v){ return clean(v).toLowerCase(); }
 function nowIso(){ return new Date().toISOString(); }
@@ -37,40 +29,25 @@ function isPublicWeapon(w){ return !!(w && w.attiva !== false && w.verificata ==
 function isPublicAttachment(a){ return !!(a && a.attivo !== false && a.verificato === true && a.bloccatoManuale !== true && !isBlockedState(a.stato)); }
 function isPublicCompatibility(c){ return !!(c && c.compatibile !== false && c.verificato === true && c.bloccatoManuale !== true && !isBlockedState(c.stato)); }
 function isApprovedBuild(b){ return ['approvato','approved','pubblico'].includes(getBuildStatus(b)); }
-
-function readJSON(file, fallback=[]){
-  try { const p = path.join(DATA_DIR, file); if(!fs.existsSync(p)) return fallback; const raw = fs.readFileSync(p,'utf8'); return raw.trim()?JSON.parse(raw):fallback; }
-  catch(e){ console.error(`[loadout] Errore lettura ${file}:`, e.message); return fallback; }
-}
+function readJSON(file, fallback=[]){ try { const p = path.join(DATA_DIR, file); if(!fs.existsSync(p)) return fallback; const raw = fs.readFileSync(p,'utf8'); return raw.trim()?JSON.parse(raw):fallback; } catch(e){ console.error(`[loadout] Errore lettura ${file}:`, e.message); return fallback; } }
 function writeJSON(file, data){ fs.mkdirSync(DATA_DIR,{recursive:true}); fs.writeFileSync(path.join(DATA_DIR,file), JSON.stringify(data,null,2),'utf8'); }
 function readSyncStatus(){ try { if(!fs.existsSync(SYNC_STATUS_FILE)) return null; return JSON.parse(fs.readFileSync(SYNC_STATUS_FILE,'utf8')); } catch { return null; } }
 function saveSyncStatus(){ try { writeJSON('loadout-manual-sync-status.json', syncStatus); } catch(e){ console.error('[loadout-sync] status save error:', e.message); } }
 function pushSyncLine(line){ const text = clean(line); if(!text) return; syncStatus.lastLines = [...(syncStatus.lastLines || []), text].slice(-100); saveSyncStatus(); }
 function checkSyncSecret(req, res){ const secret = process.env.LOADOUT_SYNC_SECRET; if(!secret) return true; const provided = String(req.query.secret || req.headers['x-loadout-sync-secret'] || ''); if(provided === secret) return true; res.status(401).json({ok:false, message:'Secret sync mancante o non valido.'}); return false; }
-function startCodmunitySync(){
+function startWzLoadSync(){
   if(syncProcess) return { started:false, alreadyRunning:true, status:syncStatus };
-  syncStatus = { running:true, ok:false, startedAt:nowIso(), finishedAt:null, exitCode:null, lastLines:['Avvio sync CODMunity...'], error:'' };
+  syncStatus = { running:true, ok:false, startedAt:nowIso(), finishedAt:null, exitCode:null, lastLines:['Avvio sync WZLoad...'], error:'' };
   saveSyncStatus();
   syncProcess = spawn('npm', ['run','sync:loadout-db'], { cwd:__dirname, env:process.env, shell:false });
   syncProcess.stdout.on('data', chunk => String(chunk).split(/\r?\n/).forEach(pushSyncLine));
   syncProcess.stderr.on('data', chunk => String(chunk).split(/\r?\n/).forEach(line => pushSyncLine('[ERR] ' + line)));
   syncProcess.on('error', err => { syncStatus.running=false; syncStatus.ok=false; syncStatus.exitCode=-1; syncStatus.finishedAt=nowIso(); syncStatus.error=err.message; pushSyncLine('[ERRORE] '+err.message); syncProcess=null; saveSyncStatus(); });
-  syncProcess.on('close', code => { syncStatus.running=false; syncStatus.ok=code===0; syncStatus.exitCode=code; syncStatus.finishedAt=nowIso(); pushSyncLine(code===0?'Sync CODMunity completato.':`Sync CODMunity terminato con codice ${code}.`); syncProcess=null; saveSyncStatus(); });
+  syncProcess.on('close', code => { syncStatus.running=false; syncStatus.ok=code===0; syncStatus.exitCode=code; syncStatus.finishedAt=nowIso(); pushSyncLine(code===0?'Sync WZLoad completato.':`Sync WZLoad terminato con codice ${code}.`); syncProcess=null; saveSyncStatus(); });
   return { started:true, alreadyRunning:false, status:syncStatus };
 }
-
-function sortWeapons(a,b){
-  const gp = Number(b.gamePriority||0)-Number(a.gamePriority||0); if(gp) return gp;
-  const ro = Number(b.releaseOrder||0)-Number(a.releaseOrder||0); if(ro) return ro;
-  const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co;
-  return clean(a.nome).localeCompare(clean(b.nome),'it');
-}
-function sortAttachments(a,b){
-  const ia = SLOT_ORDER.indexOf(normalizeSlot(a.slot||a.tipo)); const ib = SLOT_ORDER.indexOf(normalizeSlot(b.slot||b.tipo));
-  const sa = ia === -1 ? 999 : ia; const sb = ib === -1 ? 999 : ib; if(sa!==sb) return sa-sb;
-  const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co;
-  return clean(a.nome).localeCompare(clean(b.nome),'it');
-}
+function sortWeapons(a,b){ const gp = Number(b.gamePriority||0)-Number(a.gamePriority||0); if(gp) return gp; const ro = Number(b.releaseOrder||0)-Number(a.releaseOrder||0); if(ro) return ro; const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co; return clean(a.nome).localeCompare(clean(b.nome),'it'); }
+function sortAttachments(a,b){ const ia = SLOT_ORDER.indexOf(normalizeSlot(a.slot||a.tipo)); const ib = SLOT_ORDER.indexOf(normalizeSlot(b.slot||b.tipo)); const sa = ia === -1 ? 999 : ia; const sb = ib === -1 ? 999 : ib; if(sa!==sb) return sa-sb; const co = Number(a.codmunityOrder||999999)-Number(b.codmunityOrder||999999); if(co) return co; return clean(a.nome).localeCompare(clean(b.nome),'it'); }
 function buildAttachmentResponse(att,row={}){ const slot = normalizeSlot(row.slot || att.slot || att.tipo); return { ...att, id:getId(att), slot, tipo:slot, codmunityOrder:Number(row.codmunityOrder || att.codmunityOrder || 999999) }; }
 function publicBuild(b){ return { id:getId(b), creatorName:clean(b.creatorName||b.creator||b.firma||'Creator RØDA'), creator:clean(b.creatorName||b.creator||b.firma||'Creator RØDA'), gioco:clean(b.gioco||b.game||''), categoria:clean(b.categoria||b.categoriaArma||''), armaId:clean(b.armaId||b.weaponId||''), armaNome:clean(b.armaNome||b.weaponName||b.arma||''), stile:clean(b.stile||b.tipoEquipaggiamento||'Personalizzato'), accessori:Array.isArray(b.accessori)?b.accessori:[], note:clean(b.note||b.nota||''), stato:getBuildStatus(b), createdAt:clean(b.createdAt||b.updatedAt||'') }; }
 function fileForType(t){ const x=lower(t); if(['weapon','weapons','arma','armi'].includes(x)) return 'loadout-weapons.json'; if(['attachment','attachments','accessorio','accessori'].includes(x)) return 'loadout-attachments.json'; if(['compatibility','compatibilita','compatibilità'].includes(x)) return 'loadout-compatibility.json'; return ''; }
@@ -81,30 +58,18 @@ function registerLoadoutRoutes(app){
   if(!app || typeof app.get !== 'function') throw new Error('registerLoadoutRoutes: istanza Express app non valida');
   if(app.__rodaLoadoutRoutesRegistered) return;
   Object.defineProperty(app,'__rodaLoadoutRoutesRegistered',{value:true, enumerable:false});
-
   app.get('/loadout', (req,res)=>res.sendFile(path.join(PUBLIC_DIR,'loadout.html')));
   app.get('/admin-loadout', (req,res)=>res.sendFile(path.join(PUBLIC_DIR,'admin-loadout.html')));
-
   app.get('/api/loadout/weapons', (req,res)=>{ try { res.json({ok:true, weapons:readJSON('loadout-weapons.json',[]).filter(isPublicWeapon).sort(sortWeapons)}); } catch(e){ res.status(500).json({ok:false,weapons:[],error:e.message}); } });
-  app.get('/api/loadout/attachments', (req,res)=>{ try {
-    const weaponId=clean(req.query.weaponId||req.query.armaId); if(!weaponId) return res.json({ok:true, attachments:[], message:'weaponId mancante'});
-    const attachments=readJSON('loadout-attachments.json',[]); const compatibility=readJSON('loadout-compatibility.json',[]); const rows=compatibility.filter(r=>lower(getWeaponId(r))===lower(weaponId)&&isPublicCompatibility(r));
-    let result=[]; let compatibilitySource='codmunity-verified'; let message='';
-    if(rows.length){ const map=new Map(); rows.forEach(r=>{const id=lower(getAttachmentId(r)); if(id) map.set(id,r);}); result=attachments.filter(a=>map.has(lower(getId(a)))&&isPublicAttachment(a)).map(a=>buildAttachmentResponse(a,map.get(lower(getId(a)))||{})); }
-    else if(ALLOW_GENERIC_ATTACHMENT_FALLBACK){ compatibilitySource='temporary-generic-fallback'; message='Fallback temporaneo abilitato.'; result=attachments.filter(isPublicAttachment).map(a=>buildAttachmentResponse(a)); }
-    else { compatibilitySource='missing-codmunity-compatibility'; message='Nessuna compatibilità CODMunity verificata per questa arma. Avvia lo sync dal pannello admin.'; }
-    result=result.filter(a=>SLOT_ORDER.includes(a.slot)).sort(sortAttachments); res.json({ok:true, weaponId, compatibilitySource, message, attachments:result});
-  } catch(e){ res.status(500).json({ok:false,attachments:[],error:e.message}); } });
+  app.get('/api/loadout/attachments', (req,res)=>{ try { const weaponId=clean(req.query.weaponId||req.query.armaId); if(!weaponId) return res.json({ok:true, attachments:[], message:'weaponId mancante'}); const attachments=readJSON('loadout-attachments.json',[]); const compatibility=readJSON('loadout-compatibility.json',[]); const rows=compatibility.filter(r=>lower(getWeaponId(r))===lower(weaponId)&&isPublicCompatibility(r)); let result=[]; let compatibilitySource='wzload-verified'; let message=''; if(rows.length){ const map=new Map(); rows.forEach(r=>{const id=lower(getAttachmentId(r)); if(id) map.set(id,r);}); result=attachments.filter(a=>map.has(lower(getId(a)))&&isPublicAttachment(a)).map(a=>buildAttachmentResponse(a,map.get(lower(getId(a)))||{})); } else if(ALLOW_GENERIC_ATTACHMENT_FALLBACK){ compatibilitySource='temporary-generic-fallback'; message='Fallback temporaneo abilitato.'; result=attachments.filter(isPublicAttachment).map(a=>buildAttachmentResponse(a)); } else { compatibilitySource='missing-wzload-compatibility'; message='Nessuna compatibilità WZLoad verificata per questa arma. Avvia lo sync dal pannello admin.'; } result=result.filter(a=>SLOT_ORDER.includes(a.slot)).sort(sortAttachments); res.json({ok:true, weaponId, compatibilitySource, message, attachments:result}); } catch(e){ res.status(500).json({ok:false,attachments:[],error:e.message}); } });
   app.get('/api/loadout/builds', (req,res)=>{ try { res.json({ok:true, builds:readJSON('loadout-builds.json',[]).filter(isApprovedBuild).map(publicBuild)}); } catch(e){ res.status(500).json({ok:false,builds:[],error:e.message}); } });
   app.post('/api/loadout/builds', (req,res)=>{ try { const body=req.body||{}; const creatorName=clean(body.creatorName||body.creator||body.firma).slice(0,40); const armaId=clean(body.armaId||body.weaponId); const accessori=Array.isArray(body.accessori)?body.accessori.slice(0,5).map(i=>({slot:normalizeSlot(i.slot||i.tipo),accessorioId:clean(i.accessorioId||i.attachmentId||i.id),nome:clean(i.nome||i.name)})).filter(i=>i.accessorioId||i.nome):[]; if(!creatorName) return res.status(400).json({ok:false,message:'Firma creator obbligatoria.'}); if(!armaId) return res.status(400).json({ok:false,message:'Arma obbligatoria.'}); if(!accessori.length) return res.status(400).json({ok:false,message:'Seleziona almeno un accessorio.'}); const builds=readJSON('loadout-builds.json',[]); const build={id:`build-${Date.now()}-${Math.random().toString(36).slice(2,8)}`, creatorName, gioco:clean(body.gioco||body.game), categoria:clean(body.categoria||body.categoriaArma), armaId, armaNome:clean(body.armaNome||body.weaponName||body.arma), stile:clean(body.stile||body.tipoEquipaggiamento||'Personalizzato'), accessori, note:clean(body.note||body.nota).slice(0,300), stato:'da_approvare', createdAt:nowIso(), updatedAt:nowIso()}; builds.unshift(build); writeJSON('loadout-builds.json',builds); res.json({ok:true,message:'Loadout inviato. Lo staff lo controllerà prima della pubblicazione.', build}); } catch(e){ res.status(500).json({ok:false,message:'Errore salvataggio build.',error:e.message}); } });
-
   app.get('/api/admin/loadout/database', (req,res)=>res.json({ok:true, weapons:readJSON('loadout-weapons.json',[]), attachments:readJSON('loadout-attachments.json',[]), compatibility:readJSON('loadout-compatibility.json',[])}));
   app.get('/api/admin/loadout/builds', (req,res)=>res.json({ok:true, builds:readJSON('loadout-builds.json',[]).map(publicBuild)}));
-  app.get('/api/admin/loadout/sync-report', (req,res)=>res.json({ok:true, importReport:readJSON('loadout-import-report.json',{}), discoveryReport:readJSON('codmunity-discovery-report.json',{}), manualSyncStatus:syncStatus}));
+  app.get('/api/admin/loadout/sync-report', (req,res)=>res.json({ok:true, wzloadReport:readJSON('loadout-wzload-sync-report.json',{}), manualSyncStatus:syncStatus}));
   app.get('/api/admin/loadout/sync-status', (req,res)=>{ if(!checkSyncSecret(req,res)) return; res.json({ok:true,status:syncStatus}); });
-  app.get('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startCodmunitySync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync CODMunity avviato.',...r}); });
-  app.post('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startCodmunitySync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync CODMunity avviato.',...r}); });
-
+  app.get('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startWzLoadSync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync WZLoad avviato.',...r}); });
+  app.post('/api/admin/loadout/run-sync', (req,res)=>{ if(!checkSyncSecret(req,res)) return; const r=startWzLoadSync(); res.json({ok:true,message:r.alreadyRunning?'Sync già in corso.':'Sync WZLoad avviato.',...r}); });
   app.post('/api/admin/loadout/publish', (req,res)=>{ try { const {type,id}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'pubblico',verificata:true,verificato:true,attiva:true,attivo:true,compatibile:i.compatibile!==false}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.post('/api/admin/loadout/disable', (req,res)=>{ try { const {type,id}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'disattivato',attiva:false,attivo:false,compatibile:false}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.post('/api/admin/loadout/block', (req,res)=>{ try { const {type,id,reason}=req.body||{}; res.json({ok:true,item:updateItem(type,id,i=>({...i,stato:'bloccato',bloccatoManuale:true,bloccatoMotivo:clean(reason)||'Blocco manuale admin'}))}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
@@ -113,11 +78,8 @@ function registerLoadoutRoutes(app){
   app.post('/api/admin/loadout/builds/approve', (req,res)=>{ try { const id=lower((req.body||{}).id); const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===id); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='approvato'; builds[idx].updatedAt=nowIso(); writeJSON('loadout-builds.json',builds); res.json({ok:true,build:publicBuild(builds[idx])}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.post('/api/admin/loadout/builds/reject', (req,res)=>{ try { const id=lower((req.body||{}).id); const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===id); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='rifiutato'; builds[idx].updatedAt=nowIso(); writeJSON('loadout-builds.json',builds); res.json({ok:true,build:publicBuild(builds[idx])}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.delete('/api/admin/loadout/builds/:id', (req,res)=>{ try { const id=lower(req.params.id); const builds=readJSON('loadout-builds.json',[]); const next=builds.filter(b=>lower(getId(b))!==id); if(next.length===builds.length) throw new Error('Build non trovata'); writeJSON('loadout-builds.json',next); res.json({ok:true}); } catch(e){ res.status(400).json({ok:false,error:e.message}); } });
-
   console.log('✅ Rotte RØDA Loadout registrate.');
 }
-
 function installAutoRegisterHook(){ try { const express=require('express'); const proto=express&&express.application; if(!proto||proto.__rodaLoadoutAutoRegisterPatched) return; const originalListen=proto.listen; if(typeof originalListen!=='function') return; Object.defineProperty(proto,'__rodaLoadoutAutoRegisterPatched',{value:true, enumerable:false}); proto.listen=function patchedLoadoutListen(...args){ try{ registerLoadoutRoutes(this); }catch(e){ console.error('[loadout] Auto-registrazione rotte fallita:',e.message); } return originalListen.apply(this,args); }; } catch(e){ console.error('[loadout] Hook auto-register non installato:',e.message); } }
-
 module.exports = registerLoadoutRoutes;
 installAutoRegisterHook();
