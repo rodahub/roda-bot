@@ -50,9 +50,9 @@ function patchPublicHtml(html, filePath) {
   }
 
   if (name === 'index.html') {
-    out = stripHtmlTagContaining(out, 'button', ['data-page="loadout"', "data-page='loadout'", '>loadout<', 'loadout']);
-    out = stripHtmlTagContaining(out, 'a', ['href="/loadout"', "href='/loadout'", 'href="/loadout.html"', "href='/loadout.html"]);
-    out = stripHtmlTagContaining(out, 'div', ['<strong>loadout</strong>', '>loadout<']);
+    // Togli solo il pulsante Loadout della barra sotto/tab interni.
+    // Non tocchiamo i link <a href="/loadout"> del menu sospeso.
+    out = stripHtmlTagContaining(out, 'button', ['data-page="loadout"', "data-page='loadout'"]);
   }
 
   return out;
