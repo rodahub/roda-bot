@@ -1,26 +1,369 @@
 'use strict';
-const fs=require('fs');
-const path=require('path');
-const sharp=require('sharp');
-const ROOT_DIR=__dirname;
-const DATA_DIR=path.join(ROOT_DIR,'data');
-const ASSETS_DIR=path.join(ROOT_DIR,'public','assets');
-const BUILDS_FILE=path.join(DATA_DIR,'loadout-builds.json');
-const OUT_DIR=path.join(DATA_DIR,'loadout-graphics');
-const PUBLIC_URL_PREFIX='/loadout-graphics';
-function clean(v){return String(v||'').split(/\s+/).join(' ').trim()}
-function idOf(b){return clean(b&&(b.id||b._id))}
-function fileSafe(v){return clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'')||`loadout-${Date.now()}`}
-function xml(v){return clean(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&apos;')}
-function fit(v,n){const s=clean(v);return s.length<=n?s:s.slice(0,n-1).trim()+'…'}
-function readBuilds(){try{if(!fs.existsSync(BUILDS_FILE))return[];const raw=fs.readFileSync(BUILDS_FILE,'utf8');return raw.trim()?JSON.parse(raw):[]}catch(e){console.error('[loadout-graphics] Errore lettura builds:',e.message);return[]}}
-function writeBuilds(rows){fs.mkdirSync(DATA_DIR,{recursive:true});fs.writeFileSync(BUILDS_FILE,JSON.stringify(rows,null,2),'utf8')}
-function templateAssetPath(){const names=['loadout-template-base.png','loadout-template.png','roda-loadout-template.png','loadout-template-base.jpg','loadout-template-base.jpeg','loadout-template-base.webp','loadout-template.webp'];for(const n of names){const p=path.join(ASSETS_DIR,n);if(fs.existsSync(p))return p}return''}
-function fallbackTemplateSvg(){return `<svg xmlns="http://www.w3.org/2000/svg" width="941" height="1672" viewBox="0 0 941 1672"><defs><radialGradient id="bg" cx="50%" cy="17%" r="76%"><stop offset="0" stop-color="#fff"/><stop offset=".24" stop-color="#efe4ff"/><stop offset=".58" stop-color="#6234d6"/><stop offset="1" stop-color="#05030f"/></radialGradient><linearGradient id="dark" x1="0" x2="1"><stop offset="0" stop-color="#09001f"/><stop offset=".52" stop-color="#25006e"/><stop offset="1" stop-color="#080019"/></linearGradient><linearGradient id="light" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset=".52" stop-color="#d9c9ff"/><stop offset="1" stop-color="#fff"/></linearGradient><filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><pattern id="n" width="55" height="55" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="1" fill="#fff" opacity=".15"/><circle cx="31" cy="18" r="1" fill="#fff" opacity=".08"/><circle cx="45" cy="41" r="1" fill="#fff" opacity=".12"/></pattern></defs><rect width="941" height="1672" fill="url(#bg)"/><rect width="941" height="1672" fill="url(#n)" opacity=".5"/><path d="M28 22H913L930 48V1622L910 1650H31L11 1624V48Z" fill="none" stroke="#b37bff" stroke-width="4" filter="url(#g)"/><circle cx="470" cy="205" r="122" fill="none" stroke="#8c42ff" stroke-width="7" opacity=".75" filter="url(#g)"/><path d="M319 300L604 84L500 273L627 197L353 405L448 219Z" fill="#6420ff" stroke="#f7f0ff" stroke-width="5" filter="url(#g)"/><text x="470" y="454" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="74" font-weight="900" fill="#3d0aa8" stroke="#fff" stroke-width="1.5" filter="url(#g)">RØDA</text>${bar(510,75,866,157,'dark')}${bar(700,75,866,145,'light')}${bar(860,75,866,145,'light')}${bar(1020,75,866,145,'light')}${bar(1180,75,866,145,'light')}${bar(1340,75,866,145,'light')}<g transform="translate(0 1510)"><path d="M75 0H866L900 31V104L866 134H75L41 104V31Z" fill="url(#dark)" stroke="#c99aff" stroke-width="4" filter="url(#g)"/><path d="M91 23H190V110H91Z" fill="none" stroke="#c99aff" stroke-width="3"/><path d="M120 93L157 42L178 63L137 105Z" fill="#efe8ff" stroke="#6f22ff" stroke-width="2" filter="url(#g)"/><path d="M238 96H820" stroke="#dccaff" stroke-width="3" opacity=".75"/></g></svg>`}
-function bar(y,x1,x2,h,type){return `<g transform="translate(0 ${y})"><path d="M${x1} 0H${x2}L900 ${type==='dark'?35:33}V${type==='dark'?122:112}L${x2} ${h}H${x1}L41 ${type==='dark'?122:112}V${type==='dark'?35:33}Z" fill="url(#${type})" stroke="#c99aff" stroke-width="${type==='dark'?4:3}" filter="url(#g)"/></g>`}
-async function baseBuffer(){const asset=templateAssetPath();if(asset)return sharp(asset).resize(941,1672,{fit:'fill'}).png().toBuffer();const b64=path.join(ASSETS_DIR,'loadout-template-svg.base64.txt');if(fs.existsSync(b64)){try{const raw=fs.readFileSync(b64,'utf8').replace(/\s+/g,'');if(raw&&raw!=='USE_REAL_TEMPLATE_PLACEHOLDER')return sharp(Buffer.from(raw,'base64')).resize(941,1672,{fit:'fill'}).png().toBuffer()}catch(e){console.error('[loadout-graphics] Template base64 non valido, uso fallback:',e.message)}}return sharp(Buffer.from(fallbackTemplateSvg())).png().toBuffer()}
-function rows(build){const list=Array.isArray(build.accessori)?build.accessori:[];const out=list.map(x=>({label:fit(x.slot||x.tipo||'',16),value:fit(x.nome||x.name||x.accessorioNome||x.accessorioId||x.attachmentId||'',28)})).filter(x=>x.label||x.value).slice(0,5);while(out.length<5)out.push({label:'',value:''});return out}
-function overlay(build,w,h){const weapon=fit(build.armaNome||build.weaponName||build.arma||'LOADOUT',24).toUpperCase();const creator=fit(build.creatorName||build.creator||build.firma||'Creator RØDA',24);const weaponSize=Math.round(w*(weapon.length>14?.071:.09));const labelSize=Math.round(w*.030);const valueSize=Math.round(w*.036);const creatorSize=Math.round(w*(creator.length>16?.046:.058));const ys=[.452,.548,.644,.740,.836];const labelX=Math.round(w*.205);const valueX=Math.round(w*.415);const rowSvg=rows(build).map((r,i)=>{if(!r.label&&!r.value)return'';const y=Math.round(h*ys[i]);return `<g class="row"><text x="${labelX}" y="${y}" text-anchor="start" dominant-baseline="middle" class="label">${xml(r.label?r.label+':':'')}</text><text x="${valueX}" y="${y}" text-anchor="start" dominant-baseline="middle" class="value">${xml(r.value)}</text></g>`}).join('');return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><filter id="weaponGlow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#f3e8ff" flood-opacity="1"/><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#ba72ff" flood-opacity="1"/><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000" flood-opacity=".82"/></filter><filter id="textGlow" x="-55%" y="-55%" width="210%" height="210%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#c69aff" flood-opacity=".75"/><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000" flood-opacity=".48"/></filter><filter id="creatorGlow" x="-80%" y="-80%" width="260%" height="260%"><feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#ffffff" flood-opacity=".95"/><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#b66cff" flood-opacity="1"/><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".75"/></filter><style>.weapon{font-family:Arial Black,Arial,sans-serif;font-size:${weaponSize}px;font-weight:900;fill:#fff;letter-spacing:2.4px;filter:url(#weaponGlow)}.row{filter:url(#textGlow)}.label{font-family:Arial Black,Arial,sans-serif;font-size:${labelSize}px;font-weight:900;fill:#21064f;letter-spacing:.25px}.value{font-family:Arial Black,Arial,sans-serif;font-size:${valueSize}px;font-weight:900;fill:#371070;letter-spacing:.15px}.creator{font-family:Arial Black,Arial,sans-serif;font-size:${creatorSize}px;font-weight:900;fill:#fff;letter-spacing:1.6px;filter:url(#creatorGlow)}</style></defs><text x="${Math.round(w/2)}" y="${Math.round(h*.353)}" text-anchor="middle" dominant-baseline="middle" class="weapon">${xml(weapon)}</text>${rowSvg}<text x="${Math.round(w*.61)}" y="${Math.round(h*.932)}" text-anchor="middle" dominant-baseline="middle" class="creator">${xml(creator)}</text></svg>`}
-async function generateLoadoutGraphic(build){fs.mkdirSync(OUT_DIR,{recursive:true});const id=idOf(build)||fileSafe(build.armaNome||build.weaponName||'loadout');const fileName=`${fileSafe(id)}.png`;const outputPath=path.join(OUT_DIR,fileName);const imageUrl=`${PUBLIC_URL_PREFIX}/${fileName}`;const base=await baseBuffer();const meta=await sharp(base).metadata();const w=meta.width||941,h=meta.height||1672;await sharp(base).composite([{input:Buffer.from(overlay(build,w,h)),top:0,left:0}]).png().toFile(outputPath);return{imageUrl,outputPath,url:imageUrl,fileName}}
-async function processBuildGraphics(){const builds=readBuilds();let changed=false;for(const b of builds){if(!idOf(b)||!clean(b.armaNome||b.weaponName||b.arma)||!clean(b.creatorName||b.creator||b.firma)||!Array.isArray(b.accessori)||!b.accessori.length)continue;const r=await generateLoadoutGraphic(b);if(b.graphicUrl!==r.imageUrl||b.imageUrl!==r.imageUrl)changed=true;b.graphicUrl=r.imageUrl;b.imageUrl=r.imageUrl;b.graphicGeneratedAt=new Date().toISOString()}if(changed)writeBuilds(builds)}
-module.exports={generateLoadoutGraphic,processBuildGraphics};
+
+const fs = require('fs');
+const path = require('path');
+const sharp = require('sharp');
+
+const ROOT_DIR = __dirname;
+const DATA_DIR = path.join(ROOT_DIR, 'data');
+const ASSETS_DIR = path.join(ROOT_DIR, 'public', 'assets');
+const BUILDS_FILE = path.join(DATA_DIR, 'loadout-builds.json');
+const OUT_DIR = path.join(DATA_DIR, 'loadout-graphics');
+const PUBLIC_URL_PREFIX = '/loadout-graphics';
+
+function clean(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function getId(build) {
+  return clean(build && (build.id || build._id));
+}
+
+function safeFileName(value) {
+  return clean(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || `loadout-${Date.now()}`;
+}
+
+function escapeHtml(value) {
+  return clean(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function fitText(value, max = 34) {
+  const text = clean(value);
+  if (!text) return '';
+  return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trim()}…`;
+}
+
+function readBuilds() {
+  try {
+    if (!fs.existsSync(BUILDS_FILE)) return [];
+    const raw = fs.readFileSync(BUILDS_FILE, 'utf8');
+    return raw.trim() ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.error('[loadout-graphics] Errore lettura builds:', error.message);
+    return [];
+  }
+}
+
+function writeBuilds(builds) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(BUILDS_FILE, JSON.stringify(builds, null, 2), 'utf8');
+}
+
+function findTemplatePath() {
+  const names = [
+    'loadout-template-base.png',
+    'loadout-template.png',
+    'roda-loadout-template.png',
+    'loadout-template-base.jpg',
+    'loadout-template-base.jpeg',
+    'loadout-template-base.webp',
+    'loadout-template.webp'
+  ];
+
+  for (const name of names) {
+    const filePath = path.join(ASSETS_DIR, name);
+    if (fs.existsSync(filePath)) return filePath;
+  }
+
+  throw new Error('Template PNG non trovato: public/assets/loadout-template-base.png');
+}
+
+function getRows(build) {
+  const items = Array.isArray(build.accessori) ? build.accessori : [];
+  const rows = items
+    .map((item) => {
+      const label = clean(item.slot || item.tipo || item.label || '');
+      const value = clean(
+        item.nome ||
+        item.name ||
+        item.accessorioNome ||
+        item.accessorioId ||
+        item.attachmentId ||
+        ''
+      );
+
+      if (!label && !value) return null;
+
+      return {
+        label: fitText(label, 16),
+        value: fitText(value, 30)
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+
+  while (rows.length < 5) rows.push({ label: '', value: '' });
+  return rows;
+}
+
+function templateDataUrl(templatePath) {
+  const ext = path.extname(templatePath).toLowerCase();
+  const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : 'image/png';
+  const buffer = fs.readFileSync(templatePath);
+  return `data:${mime};base64,${buffer.toString('base64')}`;
+}
+
+function buildRenderHtml({ build, width, height, backgroundDataUrl }) {
+  const weapon = fitText(build.armaNome || build.weaponName || build.arma || 'LOADOUT', 24).toUpperCase();
+  const creator = fitText(build.creatorName || build.creator || build.firma || 'Creator RØDA', 24);
+  const rows = getRows(build);
+
+  const rowHtml = rows.map((row, index) => `
+    <div class="att-row row-${index + 1}">
+      <div class="att-label">${escapeHtml(row.label)}</div>
+      <div class="att-value">${escapeHtml(row.value)}</div>
+    </div>
+  `).join('');
+
+  return `<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    width: ${width}px;
+    height: ${height}px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .canvas {
+    position: relative;
+    width: ${width}px;
+    height: ${height}px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    z-index: 0;
+  }
+  .panel {
+    position: absolute;
+    z-index: 2;
+    border: 2px solid rgba(150, 72, 255, .62);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.72), rgba(212,190,255,.48)),
+      radial-gradient(circle at 50% 0%, rgba(148,78,255,.20), transparent 58%);
+    border-radius: 34px;
+    box-shadow:
+      0 0 22px rgba(112, 44, 255, .30),
+      inset 0 0 24px rgba(255,255,255,.52),
+      inset 0 0 18px rgba(126,63,255,.20);
+    backdrop-filter: blur(1px);
+  }
+  .weapon-panel {
+    left: 12.6%;
+    top: 22.2%;
+    width: 74.8%;
+    height: 7.1%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 44px;
+    border-color: rgba(136, 55, 255, .88);
+    background:
+      linear-gradient(90deg, rgba(12,2,38,.92), rgba(88,33,190,.88), rgba(13,2,40,.92));
+    box-shadow:
+      0 0 30px rgba(125, 52, 255, .70),
+      0 0 74px rgba(125, 52, 255, .30),
+      inset 0 0 22px rgba(255,255,255,.18);
+  }
+  .weapon-name {
+    color: #fff;
+    font-family: Arial Black, Arial, sans-serif;
+    font-size: ${Math.round(width * (weapon.length > 14 ? 0.066 : 0.078))}px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    line-height: 1;
+    text-align: center;
+    transform: translateY(-1px);
+    text-shadow:
+      0 0 5px #fff,
+      0 0 18px rgba(178, 105, 255, .95),
+      0 5px 8px rgba(0,0,0,.75);
+    white-space: nowrap;
+    max-width: 88%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .attachments {
+    position: absolute;
+    z-index: 2;
+    left: 11.2%;
+    top: 32.4%;
+    width: 77.6%;
+    height: 37.6%;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5%;
+  }
+  .att-row {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 31% 1fr;
+    align-items: center;
+    column-gap: 3.5%;
+    padding: 0 6.2%;
+    border: 2px solid rgba(142, 62, 255, .40);
+    border-radius: 34px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.76), rgba(226,210,255,.62), rgba(255,255,255,.76));
+    box-shadow:
+      0 0 20px rgba(122, 44, 255, .24),
+      inset 0 0 18px rgba(255,255,255,.60),
+      inset 0 0 12px rgba(132,63,255,.14);
+  }
+  .att-label,
+  .att-value {
+    font-family: Arial Black, Arial, sans-serif;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    text-shadow:
+      0 0 6px rgba(255,255,255,.75),
+      0 0 10px rgba(149,74,255,.42),
+      0 2px 3px rgba(0,0,0,.20);
+  }
+  .att-label {
+    font-size: ${Math.round(width * 0.034)}px;
+    font-weight: 900;
+    color: #21074e;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .att-value {
+    font-size: ${Math.round(width * 0.038)}px;
+    font-weight: 900;
+    color: #36107a;
+    letter-spacing: .2px;
+  }
+  .creator-panel {
+    left: 19.8%;
+    top: 78.5%;
+    width: 60.4%;
+    height: 6.7%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 38px;
+    border-color: rgba(141, 61, 255, .72);
+    background:
+      linear-gradient(90deg, rgba(22,4,60,.86), rgba(109,51,206,.76), rgba(22,4,60,.86));
+    box-shadow:
+      0 0 30px rgba(125, 52, 255, .48),
+      inset 0 0 18px rgba(255,255,255,.18);
+  }
+  .creator-name {
+    color: #fff;
+    font-family: Arial Black, Arial, sans-serif;
+    font-size: ${Math.round(width * (creator.length > 16 ? 0.048 : 0.059))}px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 1.8px;
+    text-align: center;
+    transform: translateY(-1px);
+    text-shadow:
+      0 0 4px #fff,
+      0 0 16px rgba(178, 105, 255, .95),
+      0 4px 7px rgba(0,0,0,.78);
+    white-space: nowrap;
+    max-width: 88%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <img class="bg" src="${backgroundDataUrl}" alt="">
+    <div class="weapon-panel panel"><div class="weapon-name">${escapeHtml(weapon)}</div></div>
+    <div class="attachments">${rowHtml}</div>
+    <div class="creator-panel panel"><div class="creator-name">${escapeHtml(creator)}</div></div>
+  </div>
+</body>
+</html>`;
+}
+
+async function renderWithPuppeteer({ html, outputPath, width, height }) {
+  const puppeteer = require('puppeteer');
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width, height, deviceScaleFactor: 1 });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.screenshot({ path: outputPath, type: 'png', omitBackground: false });
+  } finally {
+    await browser.close();
+  }
+}
+
+async function generateLoadoutGraphic(build) {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  const templatePath = findTemplatePath();
+  const id = getId(build) || safeFileName(build.armaNome || build.weaponName || 'loadout');
+  const fileName = `${safeFileName(id)}.png`;
+  const outputPath = path.join(OUT_DIR, fileName);
+  const imageUrl = `${PUBLIC_URL_PREFIX}/${fileName}`;
+
+  const meta = await sharp(templatePath).metadata();
+  const width = meta.width || 1152;
+  const height = meta.height || 2048;
+  const backgroundDataUrl = templateDataUrl(templatePath);
+  const html = buildRenderHtml({ build, width, height, backgroundDataUrl });
+
+  await renderWithPuppeteer({ html, outputPath, width, height });
+
+  return { imageUrl, outputPath, url: imageUrl, fileName };
+}
+
+async function processBuildGraphics() {
+  const builds = readBuilds();
+  let changed = false;
+
+  for (const build of builds) {
+    const id = getId(build);
+    const hasRequiredData = id && clean(build.armaNome || build.weaponName || build.arma) && clean(build.creatorName || build.creator || build.firma);
+    const hasAttachment = Array.isArray(build.accessori) && build.accessori.length > 0;
+    if (!hasRequiredData || !hasAttachment) continue;
+
+    const result = await generateLoadoutGraphic(build);
+    if (build.graphicUrl !== result.imageUrl || build.imageUrl !== result.imageUrl) changed = true;
+    build.graphicUrl = result.imageUrl;
+    build.imageUrl = result.imageUrl;
+    build.graphicGeneratedAt = new Date().toISOString();
+  }
+
+  if (changed) writeBuilds(builds);
+}
+
+module.exports = { generateLoadoutGraphic, processBuildGraphics };
