@@ -5,6 +5,39 @@ const path = require('path');
 const express = require('express');
 const graphics = require('./loadout-graphics');
 
+function stripHtmlTagContaining(html, tagName, needles) {
+  let out = String(html || '');
+  const lowerTag = String(tagName || '').toLowerCase();
+  const items = (Array.isArray(needles) ? needles : [needles]).map(x => String(x || '').toLowerCase()).filter(Boolean);
+  if (!lowerTag || !items.length) return out;
+
+  const openToken = '<' + lowerTag;
+  const closeToken = '</' + lowerTag + '>';
+  let searchFrom = 0;
+
+  while (true) {
+    const lower = out.toLowerCase();
+    const start = lower.indexOf(openToken, searchFrom);
+    if (start === -1) break;
+
+    const end = lower.indexOf(closeToken, start);
+    if (end === -1) break;
+
+    const endWithClose = end + closeToken.length;
+    const chunk = out.slice(start, endWithClose);
+    const chunkLower = chunk.toLowerCase();
+
+    if (items.some(n => chunkLower.includes(n))) {
+      out = out.slice(0, start) + out.slice(endWithClose);
+      searchFrom = Math.max(0, start - 1);
+    } else {
+      searchFrom = endWithClose;
+    }
+  }
+
+  return out;
+}
+
 function patchPublicHtml(html, filePath) {
   const name = path.basename(String(filePath || '')).toLowerCase();
   let out = String(html || '');
@@ -17,11 +50,9 @@ function patchPublicHtml(html, filePath) {
   }
 
   if (name === 'index.html') {
-    out = out.replace(/<button([^>]*data-page=["']loadout["'][\s\S]*?<\/button>/gi, '');
-    out = out.replace(/<a([^>]*href=["']\/loadout["'][\s\S]*?<\/a>/gi, '');
-    out = out.replace(/<a([^>]*href=["']\/loadout\.html["'][\s\S]*?<\/a>/gi, '');
-    out = out.replace(/<div class=["']tab-btn["'][^>]*>\s*<span>[^<]*<\/span>\s*<strong>LOADOUT<\/strong>\s*<\/div>/gi, '');
-    out = out.replace(/<button[^>]*>\s*<span[^>]*>[^<]*<\/span>\s*<span[^>]*>LOADOUT<\/span>\s*<\/button>/gi, '');
+    out = stripHtmlTagContaining(out, 'button', ['data-page="loadout"', "data-page='loadout'", '>loadout<', 'loadout']);
+    out = stripHtmlTagContaining(out, 'a', ['href="/loadout"', "href='/loadout'", 'href="/loadout.html"', "href='/loadout.html"]);
+    out = stripHtmlTagContaining(out, 'div', ['<strong>loadout</strong>', '>loadout<']);
   }
 
   return out;
