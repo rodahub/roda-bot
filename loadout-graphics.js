@@ -103,21 +103,25 @@ function makeOverlay(build, width, height) {
   const labelFont = Math.round(width * 0.034);
   const valueFont = Math.round(width * 0.039);
 
+  // Spostati visibilmente più in basso rispetto al logo RØDA.
   const weaponX = width * 0.102;
-  const weaponY = height * 0.225;
+  const weaponY = height * 0.247;
   const weaponW = width * 0.796;
   const weaponH = height * 0.075;
 
   const rowX = width * 0.097;
-  const rowY = height * 0.352;
+  const rowY = height * 0.374;
   const rowW = width * 0.806;
   const rowH = height * 0.070;
   const rowGap = height * 0.026;
 
   const creatorX = width * 0.201;
-  const creatorY = height * 0.805;
+  const creatorY = height * 0.827;
   const creatorW = width * 0.598;
   const creatorH = height * 0.070;
+
+  const panelRadius = width * 0.030;
+  const creatorRadius = width * 0.026;
 
   const rowSvg = rows.map((row, index) => {
     const y = rowY + index * (rowH + rowGap);
@@ -125,25 +129,38 @@ function makeOverlay(build, width, height) {
     return `<g>
       <rect x="${rowX}" y="${y}" width="${rowW}" height="${rowH}" rx="${width * 0.026}" fill="#fbf8ff" opacity="0.94" stroke="#ccb0ff" stroke-width="${Math.max(2, width * 0.002)}"/>
       <text x="${rowX + rowW * 0.06}" y="${cy}" class="label">${xml(row.label)}</text>
-      <text x="${rowX + rowW * 0.46}" y="${cy}" class="value">${xml(row.value)}</text>
+      <text x="${rowX + rowW * 0.56}" y="${cy}" class="value">${xml(row.value)}</text>
     </g>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <defs>
       <linearGradient id="purplePanel" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#2f0d68"/>
-        <stop offset="0.5" stop-color="#5422b3"/>
-        <stop offset="1" stop-color="#34106f"/>
+        <stop offset="0" stop-color="#3a0f89"/>
+        <stop offset="0.48" stop-color="#7b32ff"/>
+        <stop offset="1" stop-color="#3b0b88"/>
       </linearGradient>
-      <filter id="panelGlow" x="-60%" y="-60%" width="220%" height="220%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.015}" flood-color="#8d5dff" flood-opacity="0.85"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.006}" flood-color="#ffffff" flood-opacity="0.24"/>
-        <feDropShadow dx="0" dy="${width * 0.004}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.38"/>
+      <linearGradient id="panelShine" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+        <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.06"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0.0"/>
+      </linearGradient>
+      <filter id="auraGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="${width * 0.018}" result="blur"/>
+        <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.47  0 1 0 0 0.20  0 0 1 0 1  0 0 0 0.95 0" result="purpleBlur"/>
+        <feMerge>
+          <feMergeNode in="purpleBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <filter id="panelGlow" x="-70%" y="-70%" width="240%" height="240%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.020}" flood-color="#9b6cff" flood-opacity="0.95"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.008}" flood-color="#ffffff" flood-opacity="0.34"/>
+        <feDropShadow dx="0" dy="${width * 0.004}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.42"/>
       </filter>
       <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.004}" flood-color="#ffffff" flood-opacity="0.9"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.007}" flood-color="#9b74ff" flood-opacity="0.7"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.005}" flood-color="#ffffff" flood-opacity="0.95"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.009}" flood-color="#b995ff" flood-opacity="0.8"/>
       </filter>
       <style>
         text{dominant-baseline:middle}
@@ -154,11 +171,18 @@ function makeOverlay(build, width, height) {
         .value{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${valueFont}px;font-weight:800;fill:#4b22a3;text-anchor:start}
       </style>
     </defs>
-    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${width * 0.03}" fill="url(#purplePanel)" stroke="#8d5dff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
-    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.035}" class="weapon">${xml(weapon)}</text>
+
+    <rect x="${weaponX - width * 0.012}" y="${weaponY - height * 0.009}" width="${weaponW + width * 0.024}" height="${weaponH + height * 0.018}" rx="${panelRadius * 1.2}" fill="#8f5cff" opacity="0.42" filter="url(#auraGlow)"/>
+    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${panelRadius}" fill="url(#purplePanel)" stroke="#b995ff" stroke-width="${Math.max(3, width * 0.003)}" filter="url(#panelGlow)"/>
+    <rect x="${weaponX + width * 0.02}" y="${weaponY + height * 0.006}" width="${weaponW - width * 0.04}" height="${weaponH * 0.36}" rx="${panelRadius * 0.7}" fill="url(#panelShine)" opacity="0.45"/>
+    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.16}" class="weapon">${xml(weapon)}</text>
+
     ${rowSvg}
-    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${width * 0.026}" fill="url(#purplePanel)" stroke="#8d5dff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
-    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.035}" class="creator">${xml(creator)}</text>
+
+    <rect x="${creatorX - width * 0.012}" y="${creatorY - height * 0.009}" width="${creatorW + width * 0.024}" height="${creatorH + height * 0.018}" rx="${creatorRadius * 1.2}" fill="#8f5cff" opacity="0.42" filter="url(#auraGlow)"/>
+    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${creatorRadius}" fill="url(#purplePanel)" stroke="#b995ff" stroke-width="${Math.max(3, width * 0.003)}" filter="url(#panelGlow)"/>
+    <rect x="${creatorX + width * 0.02}" y="${creatorY + height * 0.006}" width="${creatorW - width * 0.04}" height="${creatorH * 0.36}" rx="${creatorRadius * 0.7}" fill="url(#panelShine)" opacity="0.45"/>
+    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.16}" class="creator">${xml(creator)}</text>
   </svg>`;
 }
 
