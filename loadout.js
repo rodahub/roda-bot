@@ -11,6 +11,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const GRAPHICS_DIR = path.join(DATA_DIR, 'loadout-graphics');
 const SYNC_STATUS_FILE = path.join(DATA_DIR, 'loadout-manual-sync-status.json');
 const ALLOW_GENERIC_ATTACHMENT_FALLBACK = process.env.ALLOW_LOADOUT_GENERIC_FALLBACK === 'true';
+const PUBLIC_LOADOUT_VERSION = 'spotlight-v2-2026-05-01';
 const SLOT_ORDER = ['Ottica', 'Volata', 'Canna', 'Sottocanna', 'Caricatore', 'Impugnatura', 'Calcio', 'Laser', 'Mod fuoco'];
 const SLOT_MAP = new Map([
   ['optic','Ottica'],['ottica','Ottica'],['muzzle','Volata'],['volata','Volata'],['barrel','Canna'],['canna','Canna'],['underbarrel','Sottocanna'],['sottocanna','Sottocanna'],['magazine','Caricatore'],['caricatore','Caricatore'],['rear grip','Impugnatura'],['rear-grip','Impugnatura'],['impugnatura','Impugnatura'],['stock','Calcio'],['calcio','Calcio'],['laser','Laser'],['fire mods','Mod fuoco'],['fire-mods','Mod fuoco'],['fire mod','Mod fuoco'],['mod fuoco','Mod fuoco']
@@ -45,13 +46,21 @@ function fileForType(t){ const x=lower(t); if(['weapon','weapons','arma','armi']
 function updateItem(type,id,fn){ const file=fileForType(type); if(!file) throw new Error('Tipo non valido'); const list=readJSON(file,[]); const idx=list.findIndex(i=>lower(getId(i))===lower(id)); if(idx===-1) throw new Error('Elemento non trovato'); list[idx]=fn({...list[idx]}); writeJSON(file,list); return list[idx]; }
 function deleteItem(type,id){ const file=fileForType(type); if(!file) throw new Error('Tipo non valido'); const list=readJSON(file,[]); const next=list.filter(i=>lower(getId(i))!==lower(id)); if(next.length===list.length) throw new Error('Elemento non trovato'); writeJSON(file,next); }
 async function approveBuildById(id){ const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===lower(id)); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='approvato'; builds[idx].updatedAt=nowIso(); builds[idx].approvedAt=nowIso(); try{ const graphic=await generateLoadoutGraphic(builds[idx]); builds[idx].graphicUrl=graphic.url; builds[idx].imageUrl=graphic.url; builds[idx].graphicError=''; }catch(e){ builds[idx].graphicError=e.message || 'Errore generazione grafica'; console.error('[loadout-graphic]',builds[idx].graphicError); } writeJSON('loadout-builds.json',builds); return builds[idx]; }
+function sendPublicLoadoutPage(req,res){
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma','no-cache');
+  res.setHeader('Expires','0');
+  res.setHeader('X-Roda-Loadout-Version', PUBLIC_LOADOUT_VERSION);
+  return res.sendFile(path.join(PUBLIC_DIR,'loadout.html'));
+}
 function registerLoadoutRoutes(app){
   if(!app || typeof app.get!=='function') throw new Error('registerLoadoutRoutes: istanza Express app non valida');
   if(app.__rodaLoadoutRoutesRegistered) return;
   Object.defineProperty(app,'__rodaLoadoutRoutesRegistered',{value:true,enumerable:false});
   fs.mkdirSync(GRAPHICS_DIR,{recursive:true});
   app.use('/loadout-graphics', express.static(GRAPHICS_DIR));
-  app.get('/loadout',(req,res)=>res.sendFile(path.join(PUBLIC_DIR,'loadout.html')));
+  app.get('/loadout-version',(req,res)=>res.json({ok:true,version:PUBLIC_LOADOUT_VERSION,file:path.join(PUBLIC_DIR,'loadout.html')}));
+  app.get(['/loadout','/loadout.html'], sendPublicLoadoutPage);
   app.get('/admin-loadout',(req,res)=>res.sendFile(path.join(PUBLIC_DIR,'admin-loadout.html')));
   app.get('/api/loadout/weapons',(req,res)=>{ try{ res.json({ok:true,weapons:readJSON('loadout-weapons.json',[]).filter(isPublicWeapon).sort(sortWeapons)}); }catch(e){ res.status(500).json({ok:false,weapons:[],error:e.message}); } });
   app.get('/api/loadout/attachments',(req,res)=>{ try{ const weaponId=clean(req.query.weaponId||req.query.armaId); if(!weaponId) return res.json({ok:true,attachments:[],message:'weaponId mancante'}); const attachments=readJSON('loadout-attachments.json',[]); const compatibility=readJSON('loadout-compatibility.json',[]); const rows=compatibility.filter(r=>lower(getWeaponId(r))===lower(weaponId)&&isPublicCompatibility(r)); let result=[]; let compatibilitySource='verified'; let message=''; if(rows.length){ const map=new Map(); rows.forEach(r=>{const id=lower(getAttachmentId(r)); if(id) map.set(id,r);}); result=attachments.filter(a=>map.has(lower(getId(a)))&&isPublicAttachment(a)).map(a=>buildAttachmentResponse(a,map.get(lower(getId(a)))||{})); }else if(ALLOW_GENERIC_ATTACHMENT_FALLBACK){ compatibilitySource='temporary-generic-fallback'; message='Fallback temporaneo abilitato.'; result=attachments.filter(isPublicAttachment).map(a=>buildAttachmentResponse(a)); }else{ compatibilitySource='missing-compatibility'; message='Nessuna compatibilità verificata per questa arma.'; } result=result.filter(a=>SLOT_ORDER.includes(a.slot)).sort(sortAttachments); res.json({ok:true,weaponId,compatibilitySource,message,attachments:result}); }catch(e){ res.status(500).json({ok:false,attachments:[],error:e.message}); } });
@@ -72,7 +81,7 @@ function registerLoadoutRoutes(app){
   app.post('/api/admin/loadout/builds/regenerate-graphic',async(req,res)=>{ try{ const build=await approveBuildById((req.body||{}).id); res.json({ok:true,build:publicBuild(build)}); }catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.post('/api/admin/loadout/builds/reject',(req,res)=>{ try{ const id=lower((req.body||{}).id); const builds=readJSON('loadout-builds.json',[]); const idx=builds.findIndex(b=>lower(getId(b))===id); if(idx===-1) throw new Error('Build non trovata'); builds[idx].stato='rifiutato'; builds[idx].updatedAt=nowIso(); writeJSON('loadout-builds.json',builds); res.json({ok:true,build:publicBuild(builds[idx])}); }catch(e){ res.status(400).json({ok:false,error:e.message}); } });
   app.delete('/api/admin/loadout/builds/:id',(req,res)=>{ try{ const id=lower(req.params.id); const builds=readJSON('loadout-builds.json',[]); const next=builds.filter(b=>lower(getId(b))!==id); if(next.length===builds.length) throw new Error('Build non trovata'); writeJSON('loadout-builds.json',next); res.json({ok:true}); }catch(e){ res.status(400).json({ok:false,error:e.message}); } });
-  console.log('✅ Rotte RØDA Loadout registrate.');
+  console.log(`✅ Rotte RØDA Loadout registrate (${PUBLIC_LOADOUT_VERSION}).`);
 }
 function installAutoRegisterHook(){ try{ const expressPkg=require('express'); const proto=expressPkg&&expressPkg.application; if(!proto||proto.__rodaLoadoutAutoRegisterPatched) return; const originalListen=proto.listen; if(typeof originalListen!=='function') return; Object.defineProperty(proto,'__rodaLoadoutAutoRegisterPatched',{value:true,enumerable:false}); proto.listen=function patchedLoadoutListen(...args){ try{ registerLoadoutRoutes(this); }catch(e){ console.error('[loadout] Auto-registrazione rotte fallita:',e.message); } return originalListen.apply(this,args); }; }catch(e){ console.error('[loadout] Hook auto-register non installato:',e.message); } }
 module.exports=registerLoadoutRoutes;
