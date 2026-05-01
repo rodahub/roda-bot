@@ -98,34 +98,34 @@ function makeOverlay(build, width, height) {
   const creator = fit(build.creatorName || build.creator || build.firma || 'Creator RØDA', 24);
   const rows = getRows(build);
 
-  const weaponFont = Math.round(width * (weapon.length > 12 ? 0.074 : 0.084));
+  const weaponFont = Math.round(width * (weapon.length > 12 ? 0.072 : 0.082));
   const creatorFont = Math.round(width * (creator.length > 15 ? 0.056 : 0.066));
   const labelFont = Math.round(width * 0.034);
   const valueFont = Math.round(width * 0.039);
 
   const weaponX = width * 0.102;
-  const weaponY = height * 0.185;
+  const weaponY = height * 0.225;
   const weaponW = width * 0.796;
-  const weaponH = height * 0.077;
+  const weaponH = height * 0.075;
 
   const rowX = width * 0.097;
-  const rowY = height * 0.292;
+  const rowY = height * 0.352;
   const rowW = width * 0.806;
-  const rowH = height * 0.071;
-  const rowGap = height * 0.027;
+  const rowH = height * 0.070;
+  const rowGap = height * 0.026;
 
   const creatorX = width * 0.201;
-  const creatorY = height * 0.774;
+  const creatorY = height * 0.805;
   const creatorW = width * 0.598;
-  const creatorH = height * 0.073;
+  const creatorH = height * 0.070;
 
   const rowSvg = rows.map((row, index) => {
     const y = rowY + index * (rowH + rowGap);
     const cy = y + rowH / 2;
     return `<g>
-      <rect x="${rowX}" y="${y}" width="${rowW}" height="${rowH}" rx="${width * 0.026}" fill="#fbf8ff" opacity="0.92" stroke="#c7a7ff" stroke-width="${Math.max(2, width * 0.002)}"/>
+      <rect x="${rowX}" y="${y}" width="${rowW}" height="${rowH}" rx="${width * 0.026}" fill="#fbf8ff" opacity="0.94" stroke="#ccb0ff" stroke-width="${Math.max(2, width * 0.002)}"/>
       <text x="${rowX + rowW * 0.06}" y="${cy}" class="label">${xml(row.label)}</text>
-      <text x="${rowX + rowW * 0.37}" y="${cy}" class="value">${xml(row.value)}</text>
+      <text x="${rowX + rowW * 0.46}" y="${cy}" class="value">${xml(row.value)}</text>
     </g>`;
   }).join('');
 
@@ -133,31 +133,32 @@ function makeOverlay(build, width, height) {
     <defs>
       <linearGradient id="purplePanel" x1="0" x2="1" y1="0" y2="1">
         <stop offset="0" stop-color="#2f0d68"/>
-        <stop offset="0.5" stop-color="#4a1f97"/>
-        <stop offset="1" stop-color="#2b0a5f"/>
+        <stop offset="0.5" stop-color="#5422b3"/>
+        <stop offset="1" stop-color="#34106f"/>
       </linearGradient>
-      <filter id="panelGlow" x="-45%" y="-45%" width="190%" height="190%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.008}" flood-color="#7b37ff" flood-opacity="0.55"/>
-        <feDropShadow dx="0" dy="${width * 0.003}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.32"/>
+      <filter id="panelGlow" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.015}" flood-color="#8d5dff" flood-opacity="0.85"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.006}" flood-color="#ffffff" flood-opacity="0.24"/>
+        <feDropShadow dx="0" dy="${width * 0.004}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.38"/>
       </filter>
-      <filter id="textGlow" x="-45%" y="-45%" width="190%" height="190%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.005}" flood-color="#ffffff" flood-opacity="0.9"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.008}" flood-color="#b06fff" flood-opacity="0.5"/>
+      <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.004}" flood-color="#ffffff" flood-opacity="0.9"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.007}" flood-color="#9b74ff" flood-opacity="0.7"/>
       </filter>
       <style>
         text{dominant-baseline:middle}
         .weapon,.creator{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-weight:900;fill:#fff;text-anchor:middle;filter:url(#textGlow)}
-        .weapon{font-size:${weaponFont}px;letter-spacing:${width * 0.0009}px}
-        .creator{font-size:${creatorFont}px;letter-spacing:${width * 0.0008}px}
-        .label{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${labelFont}px;font-weight:900;fill:#32106b;text-anchor:start}
-        .value{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${valueFont}px;font-weight:800;fill:#4a1f97;text-anchor:start}
+        .weapon{font-size:${weaponFont}px;letter-spacing:${width * 0.0005}px}
+        .creator{font-size:${creatorFont}px;letter-spacing:${width * 0.0004}px}
+        .label{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${labelFont}px;font-weight:900;fill:#351071;text-anchor:start}
+        .value{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${valueFont}px;font-weight:800;fill:#4b22a3;text-anchor:start}
       </style>
     </defs>
-    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${width * 0.03}" fill="url(#purplePanel)" filter="url(#panelGlow)"/>
-    <text x="${width / 2}" y="${weaponY + weaponH / 2}" class="weapon">${xml(weapon)}</text>
+    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${width * 0.03}" fill="url(#purplePanel)" stroke="#8d5dff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
+    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.035}" class="weapon">${xml(weapon)}</text>
     ${rowSvg}
-    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${width * 0.026}" fill="url(#purplePanel)" filter="url(#panelGlow)"/>
-    <text x="${width / 2}" y="${creatorY + creatorH / 2}" class="creator">${xml(creator)}</text>
+    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${width * 0.026}" fill="url(#purplePanel)" stroke="#8d5dff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
+    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.035}" class="creator">${xml(creator)}</text>
   </svg>`;
 }
 
