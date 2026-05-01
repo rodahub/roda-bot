@@ -5,7 +5,7 @@ const path = require('path');
 const express = require('express');
 const graphics = require('./loadout-graphics');
 
-function stripHtmlTagContaining(html, tagName, needles) {
+function stripHtmlTagContainingAll(html, tagName, needles) {
   let out = String(html || '');
   const lowerTag = String(tagName || '').toLowerCase();
   const items = (Array.isArray(needles) ? needles : [needles]).map(x => String(x || '').toLowerCase()).filter(Boolean);
@@ -24,7 +24,7 @@ function stripHtmlTagContaining(html, tagName, needles) {
     const endWithClose = end + closeToken.length;
     const chunk = out.slice(start, endWithClose);
     const chunkLower = chunk.toLowerCase();
-    if (items.some(n => chunkLower.includes(n))) {
+    if (items.every(n => chunkLower.includes(n))) {
       out = out.slice(0, start) + out.slice(endWithClose);
       searchFrom = Math.max(0, start - 1);
     } else {
@@ -39,7 +39,9 @@ function patchBackButtonStyle(html) {
   const loadoutStyle = `.back-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:999px;font-size:15px;font-weight:950;color:var(--text);background:linear-gradient(135deg,rgba(123,44,255,.30),rgba(255,255,255,.04));border:1px solid rgba(160,110,255,.34);box-shadow:0 0 26px rgba(123,44,255,.26);white-space:nowrap;transition:.16s ease;touch-action:manipulation}.back-btn:hover{background:rgba(123,44,255,.22);border-color:rgba(160,110,255,.45);transform:translateY(-1px)}.back-btn:active{transform:translateY(1px);opacity:.82}`;
 
   out = out.replace(/\.back-btn\s*\{[^{}]*\}\s*\.back-btn:hover\s*\{[^{}]*\}\s*\.back-btn:active\s*\{[^{}]*\}/, loadoutStyle);
-  out = out.replace(/Torna al sito/g, '← Indietro');
+  // Se la pagina ha già l'icona freccia SVG, il testo deve essere solo "Indietro".
+  out = out.replace(/Torna al sito/g, 'Indietro');
+  out = out.replace(/←\s*Indietro/g, 'Indietro');
   return out;
 }
 
@@ -49,13 +51,19 @@ function patchPublicHtml(html, filePath) {
 
   if (name === 'index.html') {
     // Togli solo il pulsante Loadout della barra sotto/tab interni.
-    // Non rimuove i link del menu sospeso.
-    out = stripHtmlTagContaining(out, 'button', ['data-page="loadout"', "data-page='loadout'"]);
+    // Non rimuove il link Loadout del menu sospeso.
+    out = stripHtmlTagContainingAll(out, 'button', ['class="tab-btn"', 'loadout']);
+    out = stripHtmlTagContainingAll(out, 'button', ["class='tab-btn'", 'loadout']);
+    out = stripHtmlTagContainingAll(out, 'button', ['class="fl-btn"', 'loadout']);
+    out = stripHtmlTagContainingAll(out, 'button', ["class='fl-btn'", 'loadout']);
+    out = stripHtmlTagContainingAll(out, 'button', ['data-page="loadout"']);
+    out = stripHtmlTagContainingAll(out, 'button', ["data-page='loadout'"]);
+    out = stripHtmlTagContainingAll(out, 'button', ['showpage(\'loadout\')']);
+    out = stripHtmlTagContainingAll(out, 'button', ['showpage("loadout")']);
     return out;
   }
 
   if (name === 'clan.html' || name === 'streamer.html') {
-    // Patch sicuro: cambia solo stile/testo del bottone, non rimuove HTML o SVG.
     return patchBackButtonStyle(out);
   }
 
