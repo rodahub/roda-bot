@@ -42,16 +42,10 @@ function patchPublicHtml(html, filePath) {
   const name = path.basename(String(filePath || '')).toLowerCase();
   let out = String(html || '');
 
-  if (name === 'clan.html' || name === 'streamer.html') {
-    out = out.replace(/\.back-btn\s*\{[\s\S]*?\}\s*\.back-btn:hover\s*\{[\s\S]*?\}\s*\.back-btn:active\s*\{[\s\S]*?\}/, `.back-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:999px;font-size:15px;font-weight:950;color:var(--text);background:linear-gradient(135deg,rgba(123,44,255,.30),rgba(255,255,255,.04));border:1px solid rgba(160,110,255,.34);box-shadow:0 0 26px rgba(123,44,255,.26);white-space:nowrap;transition:.16s ease;touch-action:manipulation}.back-btn:hover{background:rgba(123,44,255,.22);border-color:rgba(160,110,255,.45);transform:translateY(-1px)}.back-btn:active{transform:translateY(1px);opacity:.82}`);
-    out = out.replace(/>\s*Torna al sito\s*<\/a>/g, '>← Indietro</a>');
-    out = out.replace(/<svg[\s\S]*?<\/svg>\s*← Indietro/g, '← Indietro');
-    out = out.replace(/<svg[\s\S]*?<\/svg>\s*Torna al sito/g, '← Indietro');
-  }
-
+  // Non tocchiamo più clan.html e streamer.html: il patch runtime poteva rompere pagine minificate.
+  // Manteniamo solo il fix sicuro sulla home: togliere Loadout dalla barra sotto,
+  // senza rimuoverlo dal menu sospeso.
   if (name === 'index.html') {
-    // Togli solo il pulsante Loadout della barra sotto/tab interni.
-    // Non tocchiamo i link <a href="/loadout"> del menu sospeso.
     out = stripHtmlTagContaining(out, 'button', ['data-page="loadout"', "data-page='loadout'"]);
   }
 
@@ -66,7 +60,7 @@ function installPublicHtmlPatch() {
 
   response.sendFile = function patchedSendFile(filePath, options, callback) {
     const name = path.basename(String(filePath || '')).toLowerCase();
-    if (!['index.html', 'clan.html', 'streamer.html'].includes(name)) {
+    if (name !== 'index.html') {
       return originalSendFile.apply(this, arguments);
     }
 
