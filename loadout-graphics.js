@@ -105,18 +105,18 @@ function makeOverlay(build, width, height) {
 
   // Layout compatto: tutto vicino, ma separato, come post grafico unico.
   const weaponX = width * 0.102;
-  const weaponY = height * 0.225;
+  const weaponY = height * 0.235;
   const weaponW = width * 0.796;
   const weaponH = height * 0.070;
 
   const rowX = width * 0.097;
-  const rowY = height * 0.318;
+  const rowY = height * 0.328;
   const rowW = width * 0.806;
   const rowH = height * 0.066;
   const rowGap = height * 0.019;
 
   const creatorX = width * 0.201;
-  const creatorY = height * 0.756;
+  const creatorY = height * 0.766;
   const creatorW = width * 0.598;
   const creatorH = height * 0.066;
 
@@ -172,7 +172,7 @@ function makeOverlay(build, width, height) {
 
     <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${creatorRadius}" fill="url(#purplePanel)" stroke="#8450ff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
     <rect x="${creatorX + width * 0.018}" y="${creatorY + height * 0.005}" width="${creatorW - width * 0.036}" height="${creatorH * 0.34}" rx="${creatorRadius * 0.72}" fill="url(#panelShine)" opacity="0.40"/>
-    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.08}" class="creator">${xml(creator)}</text>
+    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.20}" class="creator">${xml(creator)}</text>
   </svg>`;
 }
 
