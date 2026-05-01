@@ -98,36 +98,36 @@ function makeOverlay(build, width, height) {
   const creator = fit(build.creatorName || build.creator || build.firma || 'Creator RØDA', 24);
   const rows = getRows(build);
 
-  const weaponFont = Math.round(width * (weapon.length > 12 ? 0.072 : 0.082));
-  const creatorFont = Math.round(width * (creator.length > 15 ? 0.056 : 0.066));
-  const labelFont = Math.round(width * 0.034);
-  const valueFont = Math.round(width * 0.039);
+  const weaponFont = Math.round(width * (weapon.length > 12 ? 0.070 : 0.080));
+  const creatorFont = Math.round(width * (creator.length > 15 ? 0.052 : 0.062));
+  const labelFont = Math.round(width * 0.033);
+  const valueFont = Math.round(width * 0.038);
 
-  // Spostati visibilmente più in basso rispetto al logo RØDA.
+  // Layout compatto: tutto vicino, ma separato, come post grafico unico.
   const weaponX = width * 0.102;
-  const weaponY = height * 0.247;
+  const weaponY = height * 0.225;
   const weaponW = width * 0.796;
-  const weaponH = height * 0.075;
+  const weaponH = height * 0.070;
 
   const rowX = width * 0.097;
-  const rowY = height * 0.374;
+  const rowY = height * 0.318;
   const rowW = width * 0.806;
-  const rowH = height * 0.070;
-  const rowGap = height * 0.026;
+  const rowH = height * 0.066;
+  const rowGap = height * 0.019;
 
   const creatorX = width * 0.201;
-  const creatorY = height * 0.827;
+  const creatorY = height * 0.756;
   const creatorW = width * 0.598;
-  const creatorH = height * 0.070;
+  const creatorH = height * 0.066;
 
-  const panelRadius = width * 0.030;
-  const creatorRadius = width * 0.026;
+  const panelRadius = width * 0.026;
+  const creatorRadius = width * 0.024;
 
   const rowSvg = rows.map((row, index) => {
     const y = rowY + index * (rowH + rowGap);
     const cy = y + rowH / 2;
     return `<g>
-      <rect x="${rowX}" y="${y}" width="${rowW}" height="${rowH}" rx="${width * 0.026}" fill="#fbf8ff" opacity="0.94" stroke="#ccb0ff" stroke-width="${Math.max(2, width * 0.002)}"/>
+      <rect x="${rowX}" y="${y}" width="${rowW}" height="${rowH}" rx="${width * 0.024}" fill="#fbf8ff" opacity="0.95" stroke="#cdb0ff" stroke-width="${Math.max(2, width * 0.0018)}"/>
       <text x="${rowX + rowW * 0.06}" y="${cy}" class="label">${xml(row.label)}</text>
       <text x="${rowX + rowW * 0.56}" y="${cy}" class="value">${xml(row.value)}</text>
     </g>`;
@@ -136,53 +136,43 @@ function makeOverlay(build, width, height) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <defs>
       <linearGradient id="purplePanel" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#3a0f89"/>
-        <stop offset="0.48" stop-color="#7b32ff"/>
-        <stop offset="1" stop-color="#3b0b88"/>
+        <stop offset="0" stop-color="#1f0048"/>
+        <stop offset="0.50" stop-color="#3d0a91"/>
+        <stop offset="1" stop-color="#24004f"/>
       </linearGradient>
       <linearGradient id="panelShine" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
-        <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.06"/>
-        <stop offset="1" stop-color="#ffffff" stop-opacity="0.0"/>
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+        <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.05"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
       </linearGradient>
-      <filter id="auraGlow" x="-80%" y="-80%" width="260%" height="260%">
-        <feGaussianBlur stdDeviation="${width * 0.018}" result="blur"/>
-        <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.47  0 1 0 0 0.20  0 0 1 0 1  0 0 0 0.95 0" result="purpleBlur"/>
-        <feMerge>
-          <feMergeNode in="purpleBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
+      <filter id="panelGlow" x="-55%" y="-55%" width="210%" height="210%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.010}" flood-color="#6f2cff" flood-opacity="0.62"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.004}" flood-color="#d8c3ff" flood-opacity="0.20"/>
+        <feDropShadow dx="0" dy="${width * 0.004}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.45"/>
       </filter>
-      <filter id="panelGlow" x="-70%" y="-70%" width="240%" height="240%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.020}" flood-color="#9b6cff" flood-opacity="0.95"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.008}" flood-color="#ffffff" flood-opacity="0.34"/>
-        <feDropShadow dx="0" dy="${width * 0.004}" stdDeviation="${width * 0.004}" flood-color="#000000" flood-opacity="0.42"/>
-      </filter>
-      <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.005}" flood-color="#ffffff" flood-opacity="0.95"/>
-        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.009}" flood-color="#b995ff" flood-opacity="0.8"/>
+      <filter id="textGlow" x="-45%" y="-45%" width="190%" height="190%">
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.004}" flood-color="#ffffff" flood-opacity="0.82"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="${width * 0.006}" flood-color="#9c70ff" flood-opacity="0.56"/>
       </filter>
       <style>
         text{dominant-baseline:middle}
         .weapon,.creator{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-weight:900;fill:#fff;text-anchor:middle;filter:url(#textGlow)}
-        .weapon{font-size:${weaponFont}px;letter-spacing:${width * 0.0005}px}
-        .creator{font-size:${creatorFont}px;letter-spacing:${width * 0.0004}px}
+        .weapon{font-size:${weaponFont}px;letter-spacing:${width * 0.00045}px}
+        .creator{font-size:${creatorFont}px;letter-spacing:${width * 0.00035}px}
         .label{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${labelFont}px;font-weight:900;fill:#351071;text-anchor:start}
         .value{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;font-size:${valueFont}px;font-weight:800;fill:#4b22a3;text-anchor:start}
       </style>
     </defs>
 
-    <rect x="${weaponX - width * 0.012}" y="${weaponY - height * 0.009}" width="${weaponW + width * 0.024}" height="${weaponH + height * 0.018}" rx="${panelRadius * 1.2}" fill="#8f5cff" opacity="0.42" filter="url(#auraGlow)"/>
-    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${panelRadius}" fill="url(#purplePanel)" stroke="#b995ff" stroke-width="${Math.max(3, width * 0.003)}" filter="url(#panelGlow)"/>
-    <rect x="${weaponX + width * 0.02}" y="${weaponY + height * 0.006}" width="${weaponW - width * 0.04}" height="${weaponH * 0.36}" rx="${panelRadius * 0.7}" fill="url(#panelShine)" opacity="0.45"/>
-    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.16}" class="weapon">${xml(weapon)}</text>
+    <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${panelRadius}" fill="url(#purplePanel)" stroke="#8450ff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
+    <rect x="${weaponX + width * 0.018}" y="${weaponY + height * 0.005}" width="${weaponW - width * 0.036}" height="${weaponH * 0.34}" rx="${panelRadius * 0.72}" fill="url(#panelShine)" opacity="0.40"/>
+    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.08}" class="weapon">${xml(weapon)}</text>
 
     ${rowSvg}
 
-    <rect x="${creatorX - width * 0.012}" y="${creatorY - height * 0.009}" width="${creatorW + width * 0.024}" height="${creatorH + height * 0.018}" rx="${creatorRadius * 1.2}" fill="#8f5cff" opacity="0.42" filter="url(#auraGlow)"/>
-    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${creatorRadius}" fill="url(#purplePanel)" stroke="#b995ff" stroke-width="${Math.max(3, width * 0.003)}" filter="url(#panelGlow)"/>
-    <rect x="${creatorX + width * 0.02}" y="${creatorY + height * 0.006}" width="${creatorW - width * 0.04}" height="${creatorH * 0.36}" rx="${creatorRadius * 0.7}" fill="url(#panelShine)" opacity="0.45"/>
-    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.16}" class="creator">${xml(creator)}</text>
+    <rect x="${creatorX}" y="${creatorY}" width="${creatorW}" height="${creatorH}" rx="${creatorRadius}" fill="url(#purplePanel)" stroke="#8450ff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
+    <rect x="${creatorX + width * 0.018}" y="${creatorY + height * 0.005}" width="${creatorW - width * 0.036}" height="${creatorH * 0.34}" rx="${creatorRadius * 0.72}" fill="url(#panelShine)" opacity="0.40"/>
+    <text x="${creatorX + creatorW / 2}" y="${creatorY + creatorH / 2 + creatorFont * 0.08}" class="creator">${xml(creator)}</text>
   </svg>`;
 }
 
