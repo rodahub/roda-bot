@@ -166,7 +166,7 @@ function makeOverlay(build, width, height) {
 
     <rect x="${weaponX}" y="${weaponY}" width="${weaponW}" height="${weaponH}" rx="${panelRadius}" fill="url(#purplePanel)" stroke="#8450ff" stroke-width="${Math.max(2, width * 0.002)}" filter="url(#panelGlow)"/>
     <rect x="${weaponX + width * 0.018}" y="${weaponY + height * 0.005}" width="${weaponW - width * 0.036}" height="${weaponH * 0.34}" rx="${panelRadius * 0.72}" fill="url(#panelShine)" opacity="0.40"/>
-    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.08}" class="weapon">${xml(weapon)}</text>
+    <text x="${weaponX + weaponW / 2}" y="${weaponY + weaponH / 2 + weaponFont * 0.23}" class="weapon">${xml(weapon)}</text>
 
     ${rowSvg}
 
