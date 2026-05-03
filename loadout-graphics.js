@@ -6,9 +6,11 @@ const sharp = require('sharp');
 
 const ROOT_DIR = __dirname;
 const DATA_DIR = path.join(ROOT_DIR, 'data');
+const STORAGE_DIR = process.env.STORAGE_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT_DIR, 'storage-data');
 const ASSETS_DIR = path.join(ROOT_DIR, 'public', 'assets');
 const BUILDS_FILE = path.join(DATA_DIR, 'loadout-builds.json');
 const OUT_DIR = path.join(DATA_DIR, 'loadout-graphics');
+const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
 const PUBLIC_URL_PREFIX = '/loadout-graphics';
 
 function clean(value) {
@@ -42,21 +44,125 @@ function fit(value, max) {
   return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trim()}…`;
 }
 
-function readBuilds() {
+function readJsonFile(filePath, fallback) {
   try {
-    if (!fs.existsSync(BUILDS_FILE)) return [];
-    const raw = fs.readFileSync(BUILDS_FILE, 'utf8');
-    return raw.trim() ? JSON.parse(raw) : [];
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return raw.trim() ? JSON.parse(raw) : fallback;
   } catch (error) {
-    console.error('[loadout-graphics] Errore lettura builds:', error.message);
-    return [];
+    console.error(`[loadout-graphics] Errore lettura ${filePath}:`, error.message);
+    return fallback;
   }
 }
 
-function writeBuilds(builds) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(BUILDS_FILE, JSON.stringify(builds, null, 2), 'utf8');
+function writeJsonFile(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
 }
+
+function readBuilds() {
+  return readJsonFile(BUILDS_FILE, []);
+}
+
+function writeBuilds(builds) {
+  writeJsonFile(BUILDS_FILE, builds);
+}
+
+function readTeams() {
+  return readJsonFile(TEAMS_FILE, {});
+}
+
+function writeTeams(teams) {
+  writeJsonFile(TEAMS_FILE, teams || {});
+}
+
+function teamEntriesSorted(teams) {
+  return Object.entries(teams || {}).sort((a, b) => {
+    const sa = Number(a[1] && a[1].slot) || 999999;
+    const sb = Number(b[1] && b[1].slot) || 999999;
+    if (sa !== sb) return sa - sb;
+    return String(a[0]).localeCompare(String(b[0]), 'it');
+  });
+}
+
+function recalibrateTeamSlots() {
+  const teams = readTeams();
+  const next = {};
+  teamEntriesSorted(teams).forEach(([name, team], index) => {
+    next[name] = { ...(team || {}), slot: index + 1, updatedAt: new Date().toISOString() };
+  });
+  writeTeams(next);
+  return next;
+}
+
+function updateTeamSlot(teamName, slot) {
+  const cleanName = clean(teamName);
+  const slotNumber = Number(slot);
+  if (!cleanName) throw new Error('Nome team mancante.');
+  if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 16) {
+    throw new Error('Slot non valido. Usa un numero da 1 a 16.');
+  }
+
+  const teams = readTeams();
+  const key = Object.keys(teams).find((name) => name.toLowerCase() === cleanName.toLowerCase()) || cleanName;
+  if (!teams[key]) throw new Error('Team non trovato.');
+
+  const usedBy = Object.entries(teams).find(([name, team]) => name !== key && Number(team && team.slot) === slotNumber);
+  if (usedBy) throw new Error(`Lo slot ${slotNumber} è già occupato da ${usedBy[0]}.`);
+
+  teams[key] = { ...(teams[key] || {}), slot: slotNumber, updatedAt: new Date().toISOString() };
+  writeTeams(teams);
+  return { team: key, slot: slotNumber };
+}
+
+function installTeamSlotRoutes(app) {
+  if (!app || app.__rodaTeamSlotRoutesInstalled) return;
+  Object.defineProperty(app, '__rodaTeamSlotRoutesInstalled', { value: true, enumerable: false });
+
+  app.post('/api/dashboard/team-slots/recalibrate', (req, res) => {
+    try {
+      const teams = recalibrateTeamSlots();
+      res.json({ ok: true, count: Object.keys(teams || {}).length, teams });
+    } catch (error) {
+      res.status(500).json({ ok: false, message: error.message || 'Errore ricalibrazione slot.' });
+    }
+  });
+
+  app.post('/api/dashboard/team-slot', (req, res) => {
+    try {
+      const result = updateTeamSlot(req.body && (req.body.team || req.body.teamName || req.body.nome), req.body && req.body.slot);
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      const message = error.message || 'Errore aggiornamento slot.';
+      const status = /occupato/i.test(message) ? 409 : /non trovato/i.test(message) ? 404 : 400;
+      res.status(status).json({ ok: false, message });
+    }
+  });
+
+  console.log('✅ Rotte ricalibrazione slot team registrate.');
+}
+
+function installPreloadRoutes() {
+  try {
+    const expressPkg = require('express');
+    const proto = expressPkg && expressPkg.application;
+    if (!proto || proto.__rodaTeamSlotPreloadPatched || typeof proto.listen !== 'function') return;
+    const originalListen = proto.listen;
+    Object.defineProperty(proto, '__rodaTeamSlotPreloadPatched', { value: true, enumerable: false });
+    proto.listen = function patchedTeamSlotListen(...args) {
+      try {
+        installTeamSlotRoutes(this);
+      } catch (error) {
+        console.error('[team-slot-preload]', error.message);
+      }
+      return originalListen.apply(this, args);
+    };
+  } catch (error) {
+    console.error('[team-slot-preload] hook non installato:', error.message);
+  }
+}
+
+installPreloadRoutes();
 
 function findTemplatePath() {
   const names = [
@@ -103,7 +209,6 @@ function makeOverlay(build, width, height) {
   const labelFont = Math.round(width * 0.033);
   const valueFont = Math.round(width * 0.038);
 
-  // Layout compatto: tutto vicino, ma separato, come post grafico unico.
   const weaponX = width * 0.102;
   const weaponY = height * 0.235;
   const weaponW = width * 0.796;
@@ -215,4 +320,4 @@ async function processBuildGraphics() {
   if (changed) writeBuilds(builds);
 }
 
-module.exports = { generateLoadoutGraphic, processBuildGraphics };
+module.exports = { generateLoadoutGraphic, processBuildGraphics, recalibrateTeamSlots };
