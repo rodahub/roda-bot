@@ -65,8 +65,6 @@ function patchExpressFactory() {
           const result = originalUse.apply(this, useArgs);
           try {
             const names = useArgs.map((x) => (typeof x === 'function' ? x.name : '')).join(' ');
-            // server.js registra prima json/urlencoded, poi csrfLiteProtection e solo dopo le API.
-            // Installiamo qui, quindi prima dei 404/fallback e senza rompere body parser.
             if (/csrfLiteProtection/.test(names) || /urlencodedParser/.test(names)) installTeamSlotRoutes(this);
           } catch (error) { console.error('[team-slot-use-patch]', error.message); }
           return result;
@@ -87,6 +85,73 @@ function patchExpressFactory() {
 }
 
 patchExpressFactory();
+
+function installMissingPendingApprovalRecovery() {
+  try {
+    const discord = require('discord.js');
+    const Client = discord && discord.Client;
+    if (!Client || !Client.prototype || Client.prototype.__rodaRecoverPendingPatched) return;
+    const originalEmit = Client.prototype.emit;
+    Object.defineProperty(Client.prototype, '__rodaRecoverPendingPatched', { value: true, enumerable: false });
+
+    function parseNumberAfter(text, label) {
+      const re = new RegExp(label + '\\s*[:：]\\s*([0-9]+)', 'i');
+      const m = String(text || '').match(re);
+      return m ? Number(m[1]) : 0;
+    }
+
+    function parseEmbedEntry(interaction, pendingId) {
+      const embed = interaction && interaction.message && interaction.message.embeds && interaction.message.embeds[0];
+      const description = embed && String(embed.description || '');
+      if (!description) return null;
+      const teamMatch = description.match(/Team:\*\*\s*([^\n]+)/i) || description.match(/Team:\s*([^\n]+)/i);
+      const submittedMatch = description.match(/Inviato da:\*\*\s*([^\n]+)/i) || description.match(/Inviato da:\s*([^\n]+)/i);
+      const team = clean(teamMatch && teamMatch[1]);
+      if (!team) return null;
+      const matchNumber = parseNumberAfter(description, 'Match') || 1;
+      const slot = parseNumberAfter(description, 'Slot') || null;
+      const total = parseNumberAfter(description, 'Totale kill') || 0;
+      const pos = parseNumberAfter(description, 'Posizione') || 0;
+      const killMatches = [...description.matchAll(/:\*\*\s*([0-9]+)\s*kill/gi)].map(m => Number(m[1]));
+      const kills = [Number(killMatches[0] || 0), Number(killMatches[1] || 0), Number(killMatches[2] || 0)];
+      return { team, slot, kills, total: total || kills.reduce((a, b) => a + b, 0), pos, matchNumber, image: '', source: 'discord_recuperato', submittedBy: clean(submittedMatch && submittedMatch[1]) || 'Recuperato da messaggio staff', staffMessageId: interaction.message.id, recoveredPendingId: pendingId };
+    }
+
+    Client.prototype.emit = function patchedEmit(eventName, ...args) {
+      try {
+        if (eventName === 'interactionCreate') {
+          const interaction = args[0];
+          if (interaction && typeof interaction.isButton === 'function' && interaction.isButton()) {
+            const customId = String(interaction.customId || '');
+            const m = customId.match(/^(ok|no)_(.+)$/);
+            if (m) {
+              const id = m[2];
+              const state = require('./bot/state');
+              const { ensureDataStructures, saveState } = require('./bot/lifecycle');
+              ensureDataStructures();
+              if (!state.data.pending[id]) {
+                const entry = parseEmbedEntry(interaction, id);
+                if (entry) {
+                  state.data.pending[id] = entry;
+                  saveState();
+                  console.log('[recover-pending] risultato staff recuperato:', id, entry.team);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[recover-pending] errore:', error.message);
+      }
+      return originalEmit.call(this, eventName, ...args);
+    };
+    console.log('✅ Recupero pending risultati staff attivo.');
+  } catch (error) {
+    console.error('[recover-pending] hook non installato:', error.message);
+  }
+}
+
+installMissingPendingApprovalRecovery();
 
 function findTemplatePath() { const names = ['loadout-template-base.png','loadout-template.png','roda-loadout-template.png','loadout-template-base.jpg','loadout-template-base.jpeg','loadout-template-base.webp','loadout-template.webp']; for (const name of names) { const filePath = path.join(ASSETS_DIR, name); if (fs.existsSync(filePath)) return filePath; } throw new Error('Template PNG non trovato: public/assets/loadout-template-base.png'); }
 function getRows(build) { const items = Array.isArray(build.accessori) ? build.accessori : []; const rows = items.map((item) => { const label = clean(item.slot || item.tipo || item.label || '').toUpperCase(); const value = clean(item.nome || item.name || item.accessorioNome || item.accessorioId || item.attachmentId || ''); if (!label && !value) return null; return { label: fit(label, 18), value: fit(value, 28) }; }).filter(Boolean).slice(0, 5); while (rows.length < 5) rows.push({ label: '', value: '' }); return rows; }
