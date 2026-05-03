@@ -44,6 +44,42 @@ const {
 const { startAutomaticReminderScheduler } = require('./reminders');
 const { updateReportProofUrl } = require('../storage');
 
+function makeSkipScreenshotButton(userId) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`result_without_photo_${userId}`)
+      .setLabel('Invia senza foto')
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
+async function submitTempResultWithoutPhoto(user, source = 'discord_senza_foto') {
+  refreshStateFromDisk();
+  const temp = state.data.tempSubmit[user.id];
+  if (!temp) throw new Error('Nessun risultato in attesa trovato. Compila di nuovo il modulo risultato.');
+  const check = canSubmitResult(temp.team, Number(temp.matchNumber || state.data.currentMatch || 1));
+  if (!check.allowed) {
+    delete state.data.tempSubmit[user.id];
+    saveState();
+    throw new Error(check.message.replace(/\*\*/g, ''));
+  }
+  delete state.data.tempSubmit[user.id];
+  saveState();
+  await createPendingSubmission({
+    ...temp,
+    image: '',
+    source,
+    submittedBy: `${user.tag || user.username || 'Utente Discord'} · senza foto`
+  });
+  logAudit(user.tag || user.username || user.id, 'discord', 'risultato_inviato_senza_foto', {
+    team: temp.team,
+    slot: temp.slot,
+    total: Number(temp.total || 0),
+    pos: Number(temp.pos || 0),
+    matchNumber: Number(temp.matchNumber || 0)
+  });
+}
+
 function registerEvents() {
   client.once('ready', async () => {
     console.log('ONLINE');
@@ -59,6 +95,16 @@ function registerEvents() {
 
   client.on('interactionCreate', async interaction => {
     try {
+      if (interaction.isButton() && interaction.customId.startsWith('result_without_photo_')) {
+        const ownerId = interaction.customId.replace('result_without_photo_', '');
+        if (ownerId && ownerId !== interaction.user.id) {
+          return interaction.reply({ content: '❌ Questo pulsante appartiene a un altro invio.', ephemeral: true });
+        }
+        await interaction.deferReply({ ephemeral: true });
+        await submitTempResultWithoutPhoto(interaction.user);
+        return interaction.editReply({ content: '✅ Risultato inviato allo staff **senza foto**. Lo staff potrà approvarlo manualmente dal pannello o da Discord.' });
+      }
+
       if (interaction.isButton() && interaction.customId === 'register_btn') {
         refreshStateFromDisk();
         const project = getProjectSettings();
@@ -155,7 +201,11 @@ function registerEvents() {
         state.data.tempSubmit[interaction.user.id] = { team: teamName, slot, kills, total, pos, matchNumber, teamResultChannelId: interaction.channelId || null };
         saveState();
         logAudit(interaction.user.tag, 'discord', 'modulo_risultato_compilato', { team: teamName, slot, total, pos, matchNumber, channelId: interaction.channelId || null });
-        return interaction.reply({ content: '📸 Ora invia qui sotto lo screenshot della partita. È obbligatorio per la verifica dello staff.', ephemeral: true });
+        return interaction.reply({
+          content: '📸 Ora invia qui sotto lo screenshot della partita. Se Discord o il bot non riescono a leggere la foto, puoi usare **Invia senza foto**: lo staff controllerà manualmente dal pannello.',
+          components: [makeSkipScreenshotButton(interaction.user.id)],
+          ephemeral: true
+        });
       }
 
       if (interaction.isButton() && interaction.customId.startsWith('report_slot_')) {
@@ -273,15 +323,16 @@ function registerEvents() {
         return;
       }
       const attachment = message.attachments.first();
-      let image;
-      try { image = await saveDiscordAttachmentLocally(attachment); } catch (saveErr) {
-        console.error('[messageCreate] errore salvataggio screenshot:', saveErr);
-        await message.reply({ content: `❌ ${saveErr.message || 'Non sono riuscito a salvare lo screenshot.'} Il tuo invio NON è stato registrato: prova ad inviare di nuovo lo screenshot.` }).catch(() => {});
-        return;
+      let image = '';
+      try {
+        image = await saveDiscordAttachmentLocally(attachment);
+      } catch (saveErr) {
+        console.error('[messageCreate] errore salvataggio screenshot, registro senza foto:', saveErr);
+        await message.reply({ content: '⚠️ Non sono riuscito a leggere/salvare la foto, però ho registrato il risultato **senza immagine**. Lo staff potrà approvarlo manualmente dal pannello.' }).catch(() => {});
       }
       delete state.data.tempSubmit[message.author.id];
       saveState();
-      await createPendingSubmission({ ...temp, image, source: 'discord', submittedBy: message.author.tag });
+      await createPendingSubmission({ ...temp, image, source: image ? 'discord' : 'discord_senza_foto', submittedBy: image ? message.author.tag : `${message.author.tag} · senza foto` });
       await message.delete().catch(() => {});
     } catch (err) {
       console.error('[messageCreate] errore inatteso:', err);
