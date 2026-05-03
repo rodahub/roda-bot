@@ -5,11 +5,21 @@
  *
  * This file is loaded before legacy preload files. It blocks unsafe route
  * registration patterns, keeps Discord leaderboards synced with the same
- * persisted data used by the website dashboard, and hardens the Discord
- * result-panel flow used during live tournaments.
+ * persisted data used by the website dashboard, hardens the Discord
+ * result-panel flow used during live tournaments, and guarantees that result
+ * screenshots saved from Discord are served back to the website from /uploads.
  */
 
+const fs = require('fs');
+const path = require('path');
 const Module = require('module');
+
+const STORAGE_DIR =
+  process.env.STORAGE_DIR ||
+  process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+  path.join(__dirname, 'storage-data');
+
+const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
 
 const BLOCKED_LEGACY_ROUTES = new Set([
   '/api/dashboard/team-slot',
@@ -101,6 +111,51 @@ function getAttachmentFallbackUrl(attachment) {
   return '';
 }
 
+function normalizeUploadUrlForWebsite(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (raw.startsWith('/uploads/')) return raw;
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.pathname.startsWith('/uploads/')) {
+      return parsed.pathname;
+    }
+  } catch {}
+
+  return raw;
+}
+
+function installUploadsStaticRoute(app, expressModule) {
+  if (!app || app.__rodaUploadsStaticInstalled || !expressModule || typeof expressModule.static !== 'function') {
+    return;
+  }
+
+  try {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+    app.use('/uploads', expressModule.static(UPLOADS_DIR, {
+      fallthrough: false,
+      maxAge: '1h',
+      setHeaders(res) {
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      }
+    }));
+
+    Object.defineProperty(app, '__rodaUploadsStaticInstalled', {
+      value: true,
+      enumerable: false
+    });
+
+    console.log(`[startup-guard] Upload risultati serviti da /uploads -> ${UPLOADS_DIR}`);
+  } catch (error) {
+    console.error('[startup-guard] Impossibile servire /uploads:', error.message);
+  }
+}
+
 function installExpressRouteGuard(expressModule) {
   if (!expressModule || expressModule.__rodaStartupGuardPatched) {
     return expressModule;
@@ -112,6 +167,8 @@ function installExpressRouteGuard(expressModule) {
     if (!app || app.__rodaRouteGuardInstalled) {
       return app;
     }
+
+    installUploadsStaticRoute(app, originalExpress);
 
     Object.defineProperty(app, '__rodaRouteGuardInstalled', {
       value: true,
@@ -262,7 +319,8 @@ function installSubmissionGuard(submissionsModule) {
 
       try {
         const savedUrl = await originalSaveDiscordAttachmentLocally.call(this, attachment, ...args);
-        if (String(savedUrl || '').trim()) return savedUrl;
+        const normalized = normalizeUploadUrlForWebsite(savedUrl);
+        if (String(normalized || '').trim()) return normalized;
       } catch (error) {
         console.error('[startup-guard] Salvataggio locale foto fallito, uso URL Discord:', error.message);
       }
@@ -278,6 +336,7 @@ function installSubmissionGuard(submissionsModule) {
 
     submissionsModule.createPendingSubmission = async function guardedCreatePendingSubmission(entry, ...args) {
       const safeEntry = normalizeResultEntry(entry);
+      safeEntry.image = normalizeUploadUrlForWebsite(safeEntry.image);
       return originalCreatePendingSubmission.call(this, safeEntry, ...args);
     };
   }
@@ -308,6 +367,7 @@ function installSubmissionGuard(submissionsModule) {
         const entry = state.data?.pending?.[id];
         if (entry) {
           state.data.pending[id] = normalizeResultEntry(entry);
+          state.data.pending[id].image = normalizeUploadUrlForWebsite(state.data.pending[id].image);
           if (typeof lifecycle.saveState === 'function') lifecycle.saveState();
         }
       } catch (error) {
