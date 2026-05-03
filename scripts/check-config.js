@@ -1,11 +1,13 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const isProduction = process.env.NODE_ENV === 'production';
 
 const required = [
   'TOKEN',
   'GUILD_ID',
-  'ADMIN_PASSWORD',
   'SESSION_SECRET'
 ];
 
@@ -36,7 +38,29 @@ function fail(message) {
   process.exit(1);
 }
 
+function getStorageDir() {
+  return clean('STORAGE_DIR') || clean('RAILWAY_VOLUME_MOUNT_PATH') || path.join(__dirname, '..', 'storage-data');
+}
+
+function hasExistingAdminUsers() {
+  try {
+    const adminUsersFile = path.join(getStorageDir(), 'admin-users.json');
+    if (!fs.existsSync(adminUsersFile)) return false;
+    const raw = fs.readFileSync(adminUsersFile, 'utf8');
+    const users = JSON.parse(raw);
+    return Array.isArray(users) && users.some(user => user && user.active !== false && user.password && user.password.hash);
+  } catch {
+    return false;
+  }
+}
+
+const adminPassword = clean('ADMIN_PASSWORD');
+const sessionSecret = clean('SESSION_SECRET');
+const existingAdminUsers = hasExistingAdminUsers();
+
 const missingRequired = required.filter(name => !clean(name));
+if (!adminPassword && !existingAdminUsers) missingRequired.push('ADMIN_PASSWORD');
+
 const missingRecommended = recommended.filter(name => !clean(name));
 
 if (missingRequired.length) {
@@ -47,19 +71,20 @@ if (missingRequired.length) {
   process.exit(1);
 }
 
-const adminPassword = clean('ADMIN_PASSWORD');
-const sessionSecret = clean('SESSION_SECRET');
+if (adminPassword) {
+  if (adminPassword.length < 10) {
+    fail('ADMIN_PASSWORD troppo corta. Su Railway impostala ad almeno 10 caratteri, oppure rimuovila se l’account RooS esiste già nel volume persistente.');
+  }
 
-if (adminPassword.length < 10) {
-  fail('ADMIN_PASSWORD troppo corta. Usa una password forte.');
+  if (forbiddenValues.has(adminPassword.toLowerCase())) {
+    fail('ADMIN_PASSWORD usa un valore vietato o troppo prevedibile. Cambiala.');
+  }
+} else if (existingAdminUsers) {
+  console.warn('ADMIN_PASSWORD non impostata: uso gli account admin già salvati nel volume persistente.');
 }
 
 if (sessionSecret.length < 32) {
   fail('SESSION_SECRET troppo corto. Usa una stringa casuale lunga almeno 32 caratteri.');
-}
-
-if (forbiddenValues.has(adminPassword.toLowerCase())) {
-  fail('ADMIN_PASSWORD usa un valore vietato o troppo prevedibile. Cambiala.');
 }
 
 if (forbiddenValues.has(sessionSecret.toLowerCase())) {
