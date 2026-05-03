@@ -8,6 +8,26 @@ const graphics = require('./loadout-graphics');
 let storage = null;
 try { storage = require('./storage'); } catch { storage = null; }
 
+const ROOT_DIR = __dirname;
+const STORAGE_DIR = process.env.STORAGE_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT_DIR, 'storage-data');
+const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
+
+function readTeamsDirect() {
+  try {
+    if (!fs.existsSync(TEAMS_FILE)) return {};
+    const raw = fs.readFileSync(TEAMS_FILE, 'utf8');
+    return raw.trim() ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.error('[team-slots] lettura teams.json:', error.message);
+    return {};
+  }
+}
+
+function writeTeamsDirect(teams) {
+  fs.mkdirSync(path.dirname(TEAMS_FILE), { recursive: true });
+  fs.writeFileSync(TEAMS_FILE, JSON.stringify(teams || {}, null, 2), 'utf8');
+}
+
 function stripHtmlTagContainingAll(html, tagName, needles) {
   let out = String(html || '');
   const lowerTag = String(tagName || '').toLowerCase();
@@ -51,7 +71,7 @@ function patchBackButtonStyle(html) {
 function patchAdminHtml(html) {
   const style = `
 <style id="roda-team-slot-editor-style">
-.roda-slot-pencil{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid rgba(170,120,255,.34);background:rgba(123,44,255,.18);color:#f7f1ff;font-weight:950;margin-left:7px;box-shadow:0 0 18px rgba(123,44,255,.22);vertical-align:middle;cursor:pointer!important}.roda-slot-pencil:hover{background:rgba(123,44,255,.32);transform:translateY(-1px)}
+.roda-slot-pencil{width:30px;height:30px;min-width:30px;min-height:30px;display:inline-flex!important;align-items:center;justify-content:center;border-radius:999px;border:1px solid rgba(170,120,255,.34);background:rgba(123,44,255,.18);color:#f7f1ff;font-weight:950;margin-left:7px;box-shadow:0 0 18px rgba(123,44,255,.22);vertical-align:middle;cursor:pointer!important;opacity:1!important;visibility:visible!important;z-index:5}.roda-slot-pencil:hover{background:rgba(123,44,255,.32);transform:translateY(-1px)}
 .roda-recalibrate-btn{margin-top:10px;min-height:42px;border:1px solid rgba(170,120,255,.34);border-radius:14px;background:linear-gradient(135deg,rgba(123,44,255,.22),rgba(169,99,255,.12));color:#f7f1ff;font-weight:950;padding:10px 14px;box-shadow:0 0 18px rgba(123,44,255,.18);cursor:pointer!important}
 </style>`;
   const script = `
@@ -83,32 +103,20 @@ function patchAdminHtml(html) {
     slotRows().forEach(function(row,idx){
       var slotEl=row.querySelector('.slot');
       if(!slotEl) return;
-      slotEl.textContent='#'+(idx+1);
-      var edit=slotEl.nextElementSibling;
-      if(edit && edit.classList && edit.classList.contains('roda-slot-pencil')) edit.dataset.currentSlot=String(idx+1);
+      var next=idx+1;
+      slotEl.textContent='#'+next;
+      slotEl.dataset.slot=String(next);
+      var edit=row.querySelector('.roda-slot-pencil');
+      if(edit) edit.dataset.currentSlot=String(next);
     });
-  }
-  function applyServerTeams(teams){
-    if(!teams || typeof teams!=='object') return false;
-    var applied=false;
-    document.querySelectorAll('.slot').forEach(function(slotEl){
-      var row=slotEl.closest('tr,.item,.mini-row,.slot-card');
-      var team=cleanTeamFromRow(row);
-      if(!team) return;
-      var key=Object.keys(teams).find(function(k){return k.toLowerCase()===team.toLowerCase();});
-      if(key && teams[key] && teams[key].slot){
-        slotEl.textContent='#'+teams[key].slot;
-        applied=true;
-      }
-    });
-    return applied;
   }
   async function normalizeSlots(silent){
     try{
       var res=await fetch('/api/dashboard/team-slots/recalibrate?ts='+Date.now(),{method:'POST',headers:{'Content-Type':'application/json','Cache-Control':'no-store'},body:JSON.stringify({})});
       var data=await res.json().catch(function(){return {};});
       if(!res.ok||data.ok===false) throw new Error(data.message||data.error||'Errore ricalibrazione slot');
-      if(!applyServerTeams(data.teams)) normalizeVisibleSlots();
+      normalizeVisibleSlots();
+      enhance();
       if(!silent) alert('Slot ricalibrati: ora sono consecutivi.');
       return true;
     }catch(err){ if(!silent) alert(err.message||'Errore ricalibrazione slot'); return false; }
@@ -140,11 +148,13 @@ function patchAdminHtml(html) {
   }
   function enhance(){
     document.querySelectorAll('.slot').forEach(function(slotEl){
-      if(slotEl.dataset.rodaSlotEditor==='1') return;
       var value=text(slotEl.textContent).replace(/[^0-9]/g,'');
       if(!value) return;
       var scope=slotEl.closest('tr,.item,.mini-row,.slot-card,.card')||slotEl.parentElement;
+      if(!scope) return;
+      var existing=scope.querySelector('.roda-slot-pencil');
       var team=cleanTeamFromRow(scope);
+      if(existing){ existing.dataset.currentSlot=value; return; }
       var btn=document.createElement('button');
       btn.type='button'; btn.className='roda-slot-pencil'; btn.title='Modifica slot team'; btn.textContent='✏️'; btn.dataset.currentSlot=value;
       btn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();saveSlot(team,btn.dataset.currentSlot||value);});
@@ -152,6 +162,8 @@ function patchAdminHtml(html) {
     });
     addRecalibrateButton();
   }
+  var scheduled=false;
+  function scheduleEnhance(){ if(scheduled) return; scheduled=true; requestAnimationFrame(function(){scheduled=false; enhance();}); }
   var originalFetch=window.fetch;
   if(originalFetch&&!window.__rodaSlotFetchPatched){
     window.__rodaSlotFetchPatched=true;
@@ -160,11 +172,13 @@ function patchAdminHtml(html) {
       var url=String(typeof input==='string'?input:(input&&input.url)||'');
       var res=await originalFetch.apply(this,arguments);
       try{ if(method==='DELETE' && /team/i.test(url) && res.ok){ await normalizeSlots(true); } }catch(e){}
+      setTimeout(scheduleEnhance,50);
       return res;
     };
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',enhance); else enhance();
-  setInterval(enhance,1500);
+  try{ new MutationObserver(scheduleEnhance).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){}
+  setInterval(enhance,600);
 })();
 </script>`;
   let out = String(html || '');
@@ -189,14 +203,38 @@ function patchPublicHtml(html, filePath) {
   return out;
 }
 
-function sortTeamEntries(teams) { return Object.entries(teams || {}).sort((a, b) => { const sa = Number(a[1] && a[1].slot) || 999999; const sb = Number(b[1] && b[1].slot) || 999999; if (sa !== sb) return sa - sb; return String(a[0]).localeCompare(String(b[0]), 'it'); }); }
+function sortTeamEntries(teams) {
+  return Object.entries(teams || {}).sort((a, b) => {
+    const sa = Number(a[1] && a[1].slot) || 999999;
+    const sb = Number(b[1] && b[1].slot) || 999999;
+    if (sa !== sb) return sa - sb;
+    return String(a[0]).localeCompare(String(b[0]), 'it');
+  });
+}
+
 function recalibrateTeamSlots() {
-  if (!storage || typeof storage.loadTeams !== 'function' || typeof storage.saveTeams !== 'function') throw new Error('Storage team non disponibile.');
-  const teams = storage.loadTeams() || {};
+  const teams = readTeamsDirect();
   const next = {};
-  sortTeamEntries(teams).forEach(([name, team], index) => { next[name] = { ...team, slot: index + 1, updatedAt: new Date().toISOString() }; });
-  storage.saveTeams(next);
+  sortTeamEntries(teams).forEach(([name, team], index) => {
+    next[name] = { ...(team || {}), slot: index + 1, updatedAt: new Date().toISOString() };
+  });
+  writeTeamsDirect(next);
   return next;
+}
+
+function updateTeamSlotDirect(teamName, slot) {
+  const cleanName = String(teamName || '').trim();
+  const slotNumber = Number(slot);
+  if (!cleanName) throw new Error('Nome team mancante.');
+  if (!Number.isInteger(slotNumber) || slotNumber < 1 || slotNumber > 16) throw new Error('Slot non valido. Usa un numero da 1 a 16.');
+  const teams = readTeamsDirect();
+  const key = Object.keys(teams).find(k => k.toLowerCase() === cleanName.toLowerCase()) || cleanName;
+  if (!teams[key]) throw new Error('Team non trovato.');
+  const usedBy = Object.entries(teams).find(([name, team]) => name !== key && Number(team && team.slot) === slotNumber);
+  if (usedBy) throw new Error(`Lo slot ${slotNumber} è già occupato da ${usedBy[0]}.`);
+  teams[key] = { ...(teams[key] || {}), slot: slotNumber, updatedAt: new Date().toISOString() };
+  writeTeamsDirect(teams);
+  return { team: key, slot: slotNumber };
 }
 
 function installTeamSlotRoute(app) {
@@ -204,20 +242,13 @@ function installTeamSlotRoute(app) {
   Object.defineProperty(app, '__rodaTeamSlotRouteInstalled', { value: true, enumerable: false });
   app.post('/api/dashboard/team-slot', (req, res) => {
     try {
-      if (!storage || typeof storage.loadTeams !== 'function' || typeof storage.saveTeams !== 'function') return res.status(500).json({ ok: false, message: 'Storage team non disponibile.' });
-      const teamName = String((req.body && (req.body.team || req.body.teamName || req.body.nome)) || '').trim();
-      const slot = Number(req.body && req.body.slot);
-      if (!teamName) return res.status(400).json({ ok: false, message: 'Nome team mancante.' });
-      if (!Number.isInteger(slot) || slot < 1 || slot > 16) return res.status(400).json({ ok: false, message: 'Slot non valido. Usa un numero da 1 a 16.' });
-      const teams = storage.loadTeams() || {};
-      const key = Object.keys(teams).find(k => k.toLowerCase() === teamName.toLowerCase()) || teamName;
-      if (!teams[key]) return res.status(404).json({ ok: false, message: 'Team non trovato.' });
-      const usedBy = Object.entries(teams).find(([name, team]) => name !== key && Number(team && team.slot) === slot);
-      if (usedBy) return res.status(409).json({ ok: false, message: `Lo slot ${slot} è già occupato da ${usedBy[0]}.` });
-      teams[key] = { ...teams[key], slot, updatedAt: new Date().toISOString() };
-      storage.saveTeams(teams);
-      return res.json({ ok: true, team: key, slot });
-    } catch (error) { return res.status(500).json({ ok: false, message: error.message || 'Errore aggiornamento slot.' }); }
+      const result = updateTeamSlotDirect(req.body && (req.body.team || req.body.teamName || req.body.nome), req.body && req.body.slot);
+      return res.json({ ok: true, ...result });
+    } catch (error) {
+      const message = error.message || 'Errore aggiornamento slot.';
+      const status = /occupato/i.test(message) ? 409 : /non trovato/i.test(message) ? 404 : 400;
+      return res.status(status).json({ ok: false, message });
+    }
   });
   app.post('/api/dashboard/team-slots/recalibrate', (req, res) => { try { const teams = recalibrateTeamSlots(); return res.json({ ok: true, teams, count: Object.keys(teams || {}).length }); } catch (error) { return res.status(500).json({ ok: false, message: error.message || 'Errore ricalibrazione slot.' }); } });
   app.get('/api/dashboard/team-slots/recalibrate', (req, res) => { try { const teams = recalibrateTeamSlots(); return res.json({ ok: true, teams, count: Object.keys(teams || {}).length }); } catch (error) { return res.status(500).json({ ok: false, message: error.message || 'Errore ricalibrazione slot.' }); } });
