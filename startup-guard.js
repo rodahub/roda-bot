@@ -4,8 +4,9 @@
  * RODA CUP startup guard.
  *
  * This file is loaded before legacy preload files. It blocks unsafe route
- * registration patterns and keeps Discord leaderboards synced with the same
- * persisted data used by the website dashboard.
+ * registration patterns, keeps Discord leaderboards synced with the same
+ * persisted data used by the website dashboard, and hardens the Discord
+ * result-panel flow used during live tournaments.
  */
 
 const Module = require('module');
@@ -15,12 +16,73 @@ const BLOCKED_LEGACY_ROUTES = new Set([
   '/api/dashboard/team-slots/recalibrate'
 ]);
 
+const FIXED_POINTS = Object.freeze({
+  kill: 1,
+  placement: Object.freeze({
+    1: 10,
+    2: 6,
+    3: 5,
+    4: 4,
+    5: 3,
+    6: 2,
+    7: 1,
+    8: 1
+  })
+});
+
 function shouldBlockLegacyRoute(pathValue) {
   if (process.env.ENABLE_LEGACY_TEAM_SLOT_ROUTES === 'true') {
     return false;
   }
 
   return typeof pathValue === 'string' && BLOCKED_LEGACY_ROUTES.has(pathValue);
+}
+
+function toStrictInteger(value, label, { min = 0, max = 999 } = {}) {
+  const raw = String(value ?? '').trim();
+
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${label} deve essere un numero intero valido.`);
+  }
+
+  const num = Number(raw);
+
+  if (!Number.isSafeInteger(num) || num < min || num > max) {
+    throw new Error(`${label} deve essere compreso tra ${min} e ${max}.`);
+  }
+
+  return num;
+}
+
+function normalizeKills(kills) {
+  const list = Array.isArray(kills) ? kills : [];
+  return [0, 1, 2].map(index => toStrictInteger(list[index] ?? 0, `Kill giocatore ${index + 1}`, { min: 0, max: 80 }));
+}
+
+function normalizePlacement(value) {
+  return toStrictInteger(value, 'Posizione finale', { min: 1, max: 150 });
+}
+
+function calcFixedPoints(pos, kills) {
+  const placement = Number(pos || 0);
+  const totalKills = Number(kills || 0);
+  const bonus = Number(FIXED_POINTS.placement[placement] || 0);
+  return Math.max(0, totalKills) * FIXED_POINTS.kill + bonus;
+}
+
+function normalizeResultEntry(entry) {
+  const safe = entry && typeof entry === 'object' ? { ...entry } : {};
+  const kills = normalizeKills(safe.kills);
+  const total = kills.reduce((sum, value) => sum + value, 0);
+  const pos = normalizePlacement(safe.pos);
+
+  return {
+    ...safe,
+    kills,
+    total,
+    pos,
+    points: calcFixedPoints(pos, total)
+  };
 }
 
 function installExpressRouteGuard(expressModule) {
@@ -119,6 +181,118 @@ function installLeaderboardSyncGuard(panelsModule) {
   return panelsModule;
 }
 
+function isHelpersModuleRequest(request) {
+  return typeof request === 'string' && (
+    request === './bot/helpers' ||
+    request === './helpers' ||
+    request.endsWith('/bot/helpers') ||
+    request.endsWith('bot/helpers.js')
+  );
+}
+
+function installFixedPointsGuard(helpersModule) {
+  if (!helpersModule || helpersModule.__rodaFixedPointsPatched) {
+    return helpersModule;
+  }
+
+  helpersModule.loadPointsConfig = function loadFixedPointsConfig() {
+    return {
+      kill: FIXED_POINTS.kill,
+      placement: { ...FIXED_POINTS.placement }
+    };
+  };
+
+  helpersModule.calcPoints = function guardedCalcPoints(pos, kills) {
+    const placement = Number(pos || 0);
+    const totalKills = Number(kills || 0);
+
+    if (!Number.isFinite(placement) || placement < 1) return Math.max(0, totalKills || 0);
+    if (!Number.isFinite(totalKills) || totalKills < 0) return 0;
+
+    return calcFixedPoints(placement, totalKills);
+  };
+
+  Object.defineProperty(helpersModule, '__rodaFixedPointsPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  console.log('✅ Punteggio RODA CUP fisso attivo.');
+  return helpersModule;
+}
+
+function isSubmissionsModuleRequest(request) {
+  return typeof request === 'string' && (
+    request === './bot/submissions' ||
+    request === './submissions' ||
+    request.endsWith('/bot/submissions') ||
+    request.endsWith('bot/submissions.js')
+  );
+}
+
+function installSubmissionGuard(submissionsModule) {
+  if (!submissionsModule || submissionsModule.__rodaSubmissionGuardPatched) {
+    return submissionsModule;
+  }
+
+  const lifecycle = require('./bot/lifecycle');
+  const state = require('./bot/state');
+
+  if (typeof submissionsModule.createPendingSubmission === 'function') {
+    const originalCreatePendingSubmission = submissionsModule.createPendingSubmission;
+
+    submissionsModule.createPendingSubmission = async function guardedCreatePendingSubmission(entry, ...args) {
+      const safeEntry = normalizeResultEntry(entry);
+      return originalCreatePendingSubmission.call(this, safeEntry, ...args);
+    };
+  }
+
+  if (typeof submissionsModule.submitWebResult === 'function') {
+    const originalSubmitWebResult = submissionsModule.submitWebResult;
+
+    submissionsModule.submitWebResult = async function guardedSubmitWebResult(payload, ...args) {
+      const k1 = toStrictInteger(payload?.k1 ?? 0, 'Kill giocatore 1', { min: 0, max: 80 });
+      const k2 = toStrictInteger(payload?.k2 ?? 0, 'Kill giocatore 2', { min: 0, max: 80 });
+      const k3 = toStrictInteger(payload?.k3 ?? 0, 'Kill giocatore 3', { min: 0, max: 80 });
+      const pos = normalizePlacement(payload?.pos);
+      return originalSubmitWebResult.call(this, { ...payload, k1, k2, k3, pos }, ...args);
+    };
+  }
+
+  for (const functionName of ['approvePending', 'rejectPending']) {
+    if (typeof submissionsModule[functionName] !== 'function') continue;
+
+    const original = submissionsModule[functionName];
+
+    submissionsModule[functionName] = async function guardedStaffDecision(id, ...args) {
+      try {
+        if (typeof lifecycle.refreshStateFromDisk === 'function') {
+          lifecycle.refreshStateFromDisk();
+        }
+
+        const entry = state.data?.pending?.[id];
+        if (entry) {
+          state.data.pending[id] = normalizeResultEntry(entry);
+          if (typeof lifecycle.saveState === 'function') lifecycle.saveState();
+        }
+      } catch (error) {
+        console.error(`[startup-guard] Errore normalizzazione ${functionName}:`, error.message);
+        throw error;
+      }
+
+      return original.call(this, id, ...args);
+    };
+  }
+
+  Object.defineProperty(submissionsModule, '__rodaSubmissionGuardPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  console.log('✅ Guard risultati Discord attivo.');
+  return submissionsModule;
+}
+
 function isStorageModuleRequest(request) {
   return typeof request === 'string' && (
     request === './storage' ||
@@ -157,6 +331,78 @@ function installStorageWriteMarker(storageModule) {
   return storageModule;
 }
 
+function isDiscordModuleRequest(request) {
+  return request === 'discord.js';
+}
+
+function installDiscordInteractionGuard(discordModule) {
+  if (!discordModule || discordModule.__rodaInteractionGuardPatched) {
+    return discordModule;
+  }
+
+  const Client = discordModule.Client;
+  if (!Client || !Client.prototype || Client.prototype.__rodaInteractionGuardPatched) {
+    return discordModule;
+  }
+
+  const originalEmit = Client.prototype.emit;
+
+  Client.prototype.emit = function guardedDiscordEmit(eventName, ...args) {
+    if (eventName === 'interactionCreate') {
+      const interaction = args[0];
+
+      try {
+        if (
+          interaction &&
+          typeof interaction.isButton === 'function' &&
+          interaction.isButton() &&
+          /^(ok|no)_/.test(String(interaction.customId || ''))
+        ) {
+          const lifecycle = require('./bot/lifecycle');
+          if (typeof lifecycle.refreshStateFromDisk === 'function') lifecycle.refreshStateFromDisk();
+
+          const originalUpdate = interaction.update?.bind(interaction);
+          const originalEditReply = interaction.editReply?.bind(interaction);
+
+          if (!interaction.deferred && !interaction.replied && typeof interaction.deferUpdate === 'function') {
+            interaction.deferUpdate().catch(error => {
+              console.error('[startup-guard] defer bottone staff fallito:', error.message);
+            });
+          }
+
+          if (typeof originalEditReply === 'function') {
+            interaction.update = function safeUpdateAfterDefer(payload) {
+              if (interaction.deferred || interaction.replied) {
+                return originalEditReply(payload);
+              }
+
+              if (typeof originalUpdate === 'function') return originalUpdate(payload);
+              return Promise.resolve(null);
+            };
+          }
+        }
+      } catch (error) {
+        console.error('[startup-guard] Errore guard interazione staff:', error.message);
+      }
+    }
+
+    return originalEmit.call(this, eventName, ...args);
+  };
+
+  Object.defineProperty(Client.prototype, '__rodaInteractionGuardPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  Object.defineProperty(discordModule, '__rodaInteractionGuardPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  console.log('✅ Guard bottoni staff Discord attivo.');
+  return discordModule;
+}
+
 try {
   const expressPath = require.resolve('express');
   const originalLoad = Module._load;
@@ -168,8 +414,20 @@ try {
       return installExpressRouteGuard(loaded);
     }
 
+    if (isDiscordModuleRequest(request)) {
+      return installDiscordInteractionGuard(loaded);
+    }
+
+    if (isHelpersModuleRequest(request)) {
+      return installFixedPointsGuard(loaded);
+    }
+
     if (isPanelsModuleRequest(request)) {
       return installLeaderboardSyncGuard(loaded);
+    }
+
+    if (isSubmissionsModuleRequest(request)) {
+      return installSubmissionGuard(loaded);
     }
 
     if (isStorageModuleRequest(request)) {
