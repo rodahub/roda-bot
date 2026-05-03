@@ -1,11 +1,12 @@
 {
   "name": "roda-cup-bot",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Bot e dashboard ufficiale RODA CUP per tornei Warzone su Discord",
   "main": "server.js",
   "packageManager": "npm@10.8.2",
   "scripts": {
-    "start": "node -r ./loadout-graphics.js server.js",
+    "start": "npm run check:config && node -r ./startup-guard.js -r ./loadout-graphics.js server.js",
+    "start:dev": "node -r ./startup-guard.js -r ./loadout-graphics.js server.js",
     "check:config": "node scripts/check-config.js",
     "build:loadout-db": "node scripts/sync-loadout-from-codmunity-weapon-pages.js",
     "discover:codmunity-weapons": "node scripts/discover-codmunity-weapons.js",
