@@ -4,7 +4,8 @@
  * RODA CUP startup guard.
  *
  * This file is loaded before legacy preload files. It blocks unsafe route
- * registration patterns and keeps production startup strict.
+ * registration patterns and keeps Discord leaderboards synced with the same
+ * persisted data used by the website dashboard.
  */
 
 const Module = require('module');
@@ -72,6 +73,90 @@ function installExpressRouteGuard(expressModule) {
   return guardedExpress;
 }
 
+function isPanelsModuleRequest(request) {
+  return typeof request === 'string' && (
+    request === './bot/panels' ||
+    request === './panels' ||
+    request.endsWith('/bot/panels') ||
+    request.endsWith('bot/panels.js')
+  );
+}
+
+function installLeaderboardSyncGuard(panelsModule) {
+  if (!panelsModule || panelsModule.__rodaLeaderboardSyncGuardPatched) {
+    return panelsModule;
+  }
+
+  const lifecycle = require('./bot/lifecycle');
+
+  function refreshBeforeDiscordLeaderboardUpdate() {
+    try {
+      if (typeof lifecycle.refreshStateFromDisk === 'function') {
+        lifecycle.refreshStateFromDisk();
+      }
+    } catch (error) {
+      console.error('[startup-guard] Errore refresh dati prima classifica Discord:', error.message);
+    }
+  }
+
+  for (const functionName of ['updateLeaderboard', 'updateLeaderboardGraphics', 'updateLeaderboardGraphicsImmediate']) {
+    if (typeof panelsModule[functionName] !== 'function') continue;
+
+    const original = panelsModule[functionName];
+
+    panelsModule[functionName] = async function syncedLeaderboardUpdate(...args) {
+      refreshBeforeDiscordLeaderboardUpdate();
+      return original.apply(this, args);
+    };
+  }
+
+  Object.defineProperty(panelsModule, '__rodaLeaderboardSyncGuardPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  console.log('✅ Sync classifiche sito ↔ Discord attivo.');
+  return panelsModule;
+}
+
+function isStorageModuleRequest(request) {
+  return typeof request === 'string' && (
+    request === './storage' ||
+    request === '../storage' ||
+    request.endsWith('/storage') ||
+    request.endsWith('storage.js')
+  );
+}
+
+function installStorageWriteMarker(storageModule) {
+  if (!storageModule || storageModule.__rodaStorageWriteMarkerPatched) {
+    return storageModule;
+  }
+
+  const touch = () => {
+    global.__rodaLastStorageWriteAt = Date.now();
+  };
+
+  for (const functionName of ['saveData', 'saveTeams', 'saveAll', 'appendAuditLog', 'createTournamentArchive']) {
+    if (typeof storageModule[functionName] !== 'function') continue;
+
+    const original = storageModule[functionName];
+
+    storageModule[functionName] = function markedStorageWrite(...args) {
+      const result = original.apply(this, args);
+      touch();
+      return result;
+    };
+  }
+
+  Object.defineProperty(storageModule, '__rodaStorageWriteMarkerPatched', {
+    value: true,
+    enumerable: false
+  });
+
+  return storageModule;
+}
+
 try {
   const expressPath = require.resolve('express');
   const originalLoad = Module._load;
@@ -83,6 +168,14 @@ try {
       return installExpressRouteGuard(loaded);
     }
 
+    if (isPanelsModuleRequest(request)) {
+      return installLeaderboardSyncGuard(loaded);
+    }
+
+    if (isStorageModuleRequest(request)) {
+      return installStorageWriteMarker(loaded);
+    }
+
     return loaded;
   };
 
@@ -90,5 +183,5 @@ try {
     require.cache[expressPath].exports = installExpressRouteGuard(require.cache[expressPath].exports);
   }
 } catch (error) {
-  console.error('[startup-guard] Impossibile installare guard Express:', error.message);
+  console.error('[startup-guard] Impossibile installare guard Express/sync:', error.message);
 }
