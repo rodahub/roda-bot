@@ -32,7 +32,8 @@ const {
   updateSavedRegisterPanelIfExists,
   maybeAnnounceTournamentFull,
   handleRegistrationStateChange,
-  updateLeaderboard
+  updateLeaderboard,
+  refreshTeamResultPanels
 } = require('./panels');
 const {
   createPendingSubmission,
@@ -44,40 +45,77 @@ const {
 const { startAutomaticReminderScheduler } = require('./reminders');
 const { updateReportProofUrl } = require('../storage');
 
-function makeSkipScreenshotButton(userId) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`result_without_photo_${userId}`)
-      .setLabel('Invia senza foto')
-      .setStyle(ButtonStyle.Secondary)
-  );
+function getAttachmentFallbackUrl(attachment) {
+  const candidates = [attachment?.url, attachment?.proxyURL, attachment?.attachment, attachment?.href];
+  for (const value of candidates) {
+    const clean = String(value || '').trim();
+    if (/^https?:\/\//i.test(clean)) return clean;
+  }
+  return '';
 }
 
-async function submitTempResultWithoutPhoto(user, source = 'discord_senza_foto') {
-  refreshStateFromDisk();
-  const temp = state.data.tempSubmit[user.id];
-  if (!temp) throw new Error('Nessun risultato in attesa trovato. Compila di nuovo il modulo risultato.');
-  const check = canSubmitResult(temp.team, Number(temp.matchNumber || state.data.currentMatch || 1));
-  if (!check.allowed) {
-    delete state.data.tempSubmit[user.id];
-    saveState();
-    throw new Error(check.message.replace(/\*\*/g, ''));
+function parseStrictInteger(value, label, min = 0, max = 999) {
+  const raw = String(value || '').trim();
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${label} deve essere un numero intero valido. Non usare lettere, simboli o spazi.`);
   }
-  delete state.data.tempSubmit[user.id];
-  saveState();
-  await createPendingSubmission({
-    ...temp,
-    image: '',
-    source,
-    submittedBy: `${user.tag || user.username || 'Utente Discord'} · senza foto`
-  });
-  logAudit(user.tag || user.username || user.id, 'discord', 'risultato_inviato_senza_foto', {
-    team: temp.team,
-    slot: temp.slot,
-    total: Number(temp.total || 0),
-    pos: Number(temp.pos || 0),
-    matchNumber: Number(temp.matchNumber || 0)
-  });
+  const num = Number(raw);
+  if (!Number.isSafeInteger(num) || num < min || num > max) {
+    throw new Error(`${label} deve essere compreso tra ${min} e ${max}.`);
+  }
+  return num;
+}
+
+function parseResultButtonCustomId(customId) {
+  const match = String(customId || '').match(/^result_submit_slot_(\d+)(?:_match_(\d+))?$/);
+  if (!match) return null;
+  return {
+    slot: Number(match[1]),
+    matchNumber: match[2] ? Number(match[2]) : null
+  };
+}
+
+function parseResultModalCustomId(customId) {
+  const match = String(customId || '').match(/^modal_slot_(\d+)(?:_match_(\d+))?$/);
+  if (!match) return null;
+  return {
+    slot: Number(match[1]),
+    matchNumber: match[2] ? Number(match[2]) : null
+  };
+}
+
+function getPanelMatchNumberFromMessage(message) {
+  const embed = message?.embeds?.[0];
+  const text = [embed?.title, embed?.description, embed?.footer?.text].filter(Boolean).join('\n');
+  const match = String(text || '').match(/Match\s+(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
+async function saveResultAttachmentWithFallback(attachment) {
+  const fallbackUrl = getAttachmentFallbackUrl(attachment);
+  try {
+    const savedUrl = await saveDiscordAttachmentLocally(attachment);
+    if (String(savedUrl || '').trim()) return savedUrl;
+  } catch (error) {
+    console.error('[result-photo] salvataggio locale fallito, uso URL Discord:', error.message || error);
+  }
+  if (fallbackUrl) return fallbackUrl;
+  throw new Error('Foto non valida. Invia lo screenshot come allegato Discord, non come link o immagine incollata male.');
+}
+
+function ensureResultPhotoAttachment(message) {
+  const attachment = message.attachments.first();
+  if (!attachment) throw new Error('Devi allegare lo screenshot del risultato.');
+  const contentType = String(attachment.contentType || '').toLowerCase();
+  const name = String(attachment.name || attachment.filename || '').toLowerCase();
+  const isImageOrVideo =
+    contentType.startsWith('image/') ||
+    contentType.startsWith('video/') ||
+    /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm)$/i.test(name);
+  if (!isImageOrVideo) {
+    throw new Error('Il file allegato non sembra una foto/video valido. Invia screenshot PNG/JPG/WEBP o video MP4/MOV/WEBM.');
+  }
+  return attachment;
 }
 
 function registerEvents() {
@@ -96,13 +134,10 @@ function registerEvents() {
   client.on('interactionCreate', async interaction => {
     try {
       if (interaction.isButton() && interaction.customId.startsWith('result_without_photo_')) {
-        const ownerId = interaction.customId.replace('result_without_photo_', '');
-        if (ownerId && ownerId !== interaction.user.id) {
-          return interaction.reply({ content: '❌ Questo pulsante appartiene a un altro invio.', ephemeral: true });
-        }
-        await interaction.deferReply({ ephemeral: true });
-        await submitTempResultWithoutPhoto(interaction.user);
-        return interaction.editReply({ content: '✅ Risultato inviato allo staff **senza foto**. Lo staff potrà approvarlo manualmente dal pannello o da Discord.' });
+        return interaction.reply({
+          content: '❌ Invio senza foto disattivato. Per validare il risultato devi allegare lo screenshot nella stanza del team.',
+          ephemeral: true
+        });
       }
 
       if (interaction.isButton() && interaction.customId === 'register_btn') {
@@ -129,20 +164,27 @@ function registerEvents() {
 
       if (interaction.isButton() && interaction.customId.startsWith('result_submit_slot_')) {
         refreshStateFromDisk();
-        const slot = Number(interaction.customId.replace('result_submit_slot_', ''));
+        const parsed = parseResultButtonCustomId(interaction.customId);
+        if (!parsed) return interaction.reply({ content: '❌ Pannello risultato non valido. Chiedi allo staff di rigenerare i pannelli.', ephemeral: true });
+        const slot = parsed.slot;
+        const currentMatch = Number(state.data.currentMatch || 1);
+        const panelMatch = parsed.matchNumber || getPanelMatchNumberFromMessage(interaction.message);
+        if (panelMatch && panelMatch !== currentMatch) {
+          await refreshTeamResultPanels().catch(() => {});
+          return interaction.reply({ content: `❌ Questo pannello è del Match ${panelMatch}, ma il match corrente è il Match ${currentMatch}. Ho provato ad aggiornare i pannelli: usa quello nuovo.`, ephemeral: true });
+        }
         const teamInfo = getTeamBySlot(slot);
         if (!teamInfo) return interaction.reply({ content: '❌ Team non trovato per questo pannello.', ephemeral: true });
         const { teamName, teamData } = teamInfo;
-        const matchNumber = Number(state.data.currentMatch || 1);
-        const check = canSubmitResult(teamName, matchNumber);
+        const check = canSubmitResult(teamName, currentMatch);
         if (!check.allowed) return interaction.reply({ content: check.message, ephemeral: true });
         const players = Array.isArray(teamData?.players) ? teamData.players : ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'];
         const project = getProjectSettings();
-        const modal = new ModalBuilder().setCustomId(`modal_slot_${slot}`).setTitle(`${project.tournamentName} • ${teamName}`.slice(0, 45));
+        const modal = new ModalBuilder().setCustomId(`modal_slot_${slot}_match_${currentMatch}`).setTitle(`${project.tournamentName} • ${teamName}`.slice(0, 45));
         for (let i = 0; i < PLAYERS_PER_TEAM; i++) {
-          modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId(`k${i}`).setLabel(`Kill ${players[i] || `Giocatore ${i + 1}`}`.slice(0, 45)).setStyle(TextInputStyle.Short).setRequired(true)));
+          modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId(`k${i}`).setLabel(`Kill ${players[i] || `Giocatore ${i + 1}`}`.slice(0, 45)).setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Solo numeri, esempio: 7')));
         }
-        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pos').setLabel('Posizione finale').setStyle(TextInputStyle.Short).setRequired(true)));
+        modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pos').setLabel('Posizione finale').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Solo numero, esempio: 3')));
         return interaction.showModal(modal);
       }
 
@@ -181,29 +223,32 @@ function registerEvents() {
 
       if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_slot_')) {
         refreshStateFromDisk();
-        const slot = Number(interaction.customId.replace('modal_slot_', ''));
+        const parsed = parseResultModalCustomId(interaction.customId);
+        if (!parsed) return interaction.reply({ content: '❌ Modulo risultato non valido. Apri di nuovo il pannello del team.', ephemeral: true });
+        const slot = parsed.slot;
+        const currentMatch = Number(state.data.currentMatch || 1);
+        const matchNumber = parsed.matchNumber || currentMatch;
+        if (matchNumber !== currentMatch) {
+          return interaction.reply({ content: `❌ Questo modulo era per il Match ${matchNumber}, ma ora il match corrente è il Match ${currentMatch}. Apri il pannello aggiornato.`, ephemeral: true });
+        }
         const teamInfo = getTeamBySlot(slot);
         if (!teamInfo) return interaction.reply({ content: '❌ Team non trovato.', ephemeral: true });
         const { teamName } = teamInfo;
-        const matchNumber = Number(state.data.currentMatch || 1);
         const check = canSubmitResult(teamName, matchNumber);
         if (!check.allowed) return interaction.reply({ content: check.message, ephemeral: true });
         const kills = [];
         let total = 0;
         for (let i = 0; i < PLAYERS_PER_TEAM; i++) {
-          const k = parseInt(interaction.fields.getTextInputValue(`k${i}`), 10);
-          if (!Number.isFinite(k) || k < 0) return interaction.reply({ content: '❌ Le kill devono essere numeri validi.', ephemeral: true });
+          const k = parseStrictInteger(interaction.fields.getTextInputValue(`k${i}`), `Kill giocatore ${i + 1}`, 0, 80);
           kills.push(k);
           total += k;
         }
-        const pos = parseInt(interaction.fields.getTextInputValue('pos'), 10);
-        if (!Number.isFinite(pos) || pos <= 0) return interaction.reply({ content: '❌ La posizione finale non è valida.', ephemeral: true });
-        state.data.tempSubmit[interaction.user.id] = { team: teamName, slot, kills, total, pos, matchNumber, teamResultChannelId: interaction.channelId || null };
+        const pos = parseStrictInteger(interaction.fields.getTextInputValue('pos'), 'Posizione finale', 1, 150);
+        state.data.tempSubmit[interaction.user.id] = { team: teamName, slot, kills, total, pos, matchNumber, teamResultChannelId: interaction.channelId || null, createdAt: Date.now() };
         saveState();
         logAudit(interaction.user.tag, 'discord', 'modulo_risultato_compilato', { team: teamName, slot, total, pos, matchNumber, channelId: interaction.channelId || null });
         return interaction.reply({
-          content: '📸 Ora invia qui sotto lo screenshot della partita. Se Discord o il bot non riescono a leggere la foto, puoi usare **Invia senza foto**: lo staff controllerà manualmente dal pannello.',
-          components: [makeSkipScreenshotButton(interaction.user.id)],
+          content: '📸 Ora invia **qui nella stanza del team** lo screenshot/foto del risultato come allegato Discord. Il risultato verrà mandato allo staff solo dopo la foto. L’invio senza foto è disattivato.',
           ephemeral: true
         });
       }
@@ -243,18 +288,22 @@ function registerEvents() {
         const [action, id] = interaction.customId.split('_');
         if (!id) return;
         if (action === 'ok') {
+          refreshStateFromDisk();
           const entry = state.data.pending[id];
-          if (!entry) return interaction.reply({ content: '❌ Risultato non trovato.', ephemeral: true });
+          if (!entry) return interaction.reply({ content: '❌ Risultato non trovato. Aggiorna il pannello staff o controlla dal sito admin.', ephemeral: true });
+          await interaction.deferUpdate().catch(() => {});
           await approvePending(id, interaction.user.tag, 'discord');
           const embed = createResultEmbed(entry, '✅ APPROVATO');
-          return interaction.update({ embeds: [embed], components: [] });
+          return interaction.editReply({ embeds: [embed], components: [] }).catch(() => null);
         }
         if (action === 'no') {
+          refreshStateFromDisk();
           const entry = state.data.pending[id];
-          if (!entry) return interaction.reply({ content: '❌ Risultato non trovato.', ephemeral: true });
+          if (!entry) return interaction.reply({ content: '❌ Risultato non trovato. Aggiorna il pannello staff o controlla dal sito admin.', ephemeral: true });
+          await interaction.deferUpdate().catch(() => {});
           await rejectPending(id, interaction.user.tag, 'discord');
           const embed = createResultEmbed(entry, '❌ RIFIUTATO');
-          return interaction.update({ embeds: [embed], components: [] });
+          return interaction.editReply({ embeds: [embed], components: [] }).catch(() => null);
         }
       }
     } catch (err) {
@@ -315,6 +364,20 @@ function registerEvents() {
       }
       const temp = state.data.tempSubmit[message.author.id];
       if (!temp) return;
+      const tempAge = Date.now() - Number(temp.createdAt || Date.now());
+      if (tempAge > 10 * 60 * 1000) {
+        delete state.data.tempSubmit[message.author.id];
+        saveState();
+        await message.reply({ content: '⏰ Il modulo risultato è scaduto. Premi di nuovo il bottone del pannello team e reinvia i dati.' }).catch(() => {});
+        return;
+      }
+      const currentMatch = Number(state.data.currentMatch || 1);
+      if (Number(temp.matchNumber || 1) !== currentMatch) {
+        delete state.data.tempSubmit[message.author.id];
+        saveState();
+        await message.reply({ content: `❌ Questo invio era del Match ${Number(temp.matchNumber || 1)}, ma ora il match corrente è il Match ${currentMatch}. Apri il pannello aggiornato.` }).catch(() => {});
+        return;
+      }
       const check = canSubmitResult(temp.team, Number(temp.matchNumber || state.data.currentMatch || 1));
       if (!check.allowed) {
         delete state.data.tempSubmit[message.author.id];
@@ -322,21 +385,17 @@ function registerEvents() {
         await message.reply({ content: check.message }).catch(() => {});
         return;
       }
-      const attachment = message.attachments.first();
-      let image = '';
-      try {
-        image = await saveDiscordAttachmentLocally(attachment);
-      } catch (saveErr) {
-        console.error('[messageCreate] errore salvataggio screenshot, registro senza foto:', saveErr);
-        await message.reply({ content: '⚠️ Non sono riuscito a leggere/salvare la foto, però ho registrato il risultato **senza immagine**. Lo staff potrà approvarlo manualmente dal pannello.' }).catch(() => {});
-      }
+      const attachment = ensureResultPhotoAttachment(message);
+      const image = await saveResultAttachmentWithFallback(attachment);
       delete state.data.tempSubmit[message.author.id];
       saveState();
-      await createPendingSubmission({ ...temp, image, source: image ? 'discord' : 'discord_senza_foto', submittedBy: image ? message.author.tag : `${message.author.tag} · senza foto` });
+      await createPendingSubmission({ ...temp, image, source: 'discord', submittedBy: message.author.tag });
       await message.delete().catch(() => {});
+      const confirmMsg = await message.channel.send({ content: `✅ Risultato del **${temp.team}** inviato allo staff con foto. Attendi approvazione.` }).catch(() => null);
+      if (confirmMsg) setTimeout(() => confirmMsg.delete().catch(() => {}), 7000);
     } catch (err) {
       console.error('[messageCreate] errore inatteso:', err);
-      try { await message.reply({ content: '❌ Errore inatteso nel registrare il tuo invio. Riprova fra qualche secondo.' }); } catch {}
+      try { await message.reply({ content: `❌ ${err.message || 'Errore inatteso nel registrare il tuo invio. Riprova fra qualche secondo.'}` }); } catch {}
     }
   });
 }
