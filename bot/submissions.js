@@ -17,6 +17,60 @@ const { STAFF_CHANNEL, STORICO_CHANNEL } = require('./config');
 const { UPLOADS_DIR } = require('../storage');
 const { refreshTeamResultPanels, updateLeaderboard } = require('./panels');
 
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
+const VIDEO_EXTENSIONS = new Set(['mp4', 'mov', 'webm', 'mkv']);
+
+function safeExt(value, fallback = 'jpg') {
+  const ext = String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
+  return ext || fallback;
+}
+
+function getExtFromName(name, fallback = 'jpg') {
+  const clean = String(name || '');
+  if (!clean.includes('.')) return fallback;
+  return safeExt(clean.split('.').pop(), fallback);
+}
+
+function getExtFromContentType(contentType, fallback = 'jpg') {
+  const type = String(contentType || '').toLowerCase();
+  if (type.includes('png')) return 'png';
+  if (type.includes('webp')) return 'webp';
+  if (type.includes('gif')) return 'gif';
+  if (type.includes('jpeg') || type.includes('jpg')) return 'jpg';
+  if (type.includes('heic')) return 'heic';
+  if (type.includes('heif')) return 'heif';
+  if (type.includes('mp4')) return 'mp4';
+  if (type.includes('quicktime')) return 'mov';
+  if (type.includes('webm')) return 'webm';
+  return fallback;
+}
+
+function uploadUrlToLocalPath(imageUrl) {
+  const value = String(imageUrl || '').trim();
+  if (!value) return null;
+  let pathname = value;
+  try {
+    pathname = new URL(value).pathname;
+  } catch {}
+  if (!pathname.startsWith('/uploads/')) return null;
+  const fileName = path.basename(pathname);
+  if (!fileName) return null;
+  const filePath = path.join(UPLOADS_DIR, fileName);
+  return fs.existsSync(filePath) ? filePath : null;
+}
+
+function getFileNameFromImageUrl(imageUrl) {
+  const local = uploadUrlToLocalPath(imageUrl);
+  if (local) return path.basename(local);
+  try { return path.basename(new URL(String(imageUrl || '')).pathname); } catch {}
+  return path.basename(String(imageUrl || ''));
+}
+
+function isEmbedDisplayableImage(imageUrl) {
+  const ext = getExtFromName(getFileNameFromImageUrl(imageUrl), '').toLowerCase();
+  return IMAGE_EXTENSIONS.has(ext);
+}
+
 function createResultEmbed(entry, footerText) {
   const project = getProjectSettings();
   const players = state.teams[entry.team]?.players || ['Giocatore 1', 'Giocatore 2', 'Giocatore 3'];
@@ -32,7 +86,7 @@ function createResultEmbed(entry, footerText) {
       `🔥 **Totale kill:** ${Number(entry.total || 0)}\n🏆 **Posizione:** ${Number(entry.pos || 0)}\n📊 **Punti calcolati:** ${points}\n🧾 **Inviato da:** ${entry.submittedBy || 'Sconosciuto'}`
     )
     .setFooter({ text: footerText || '⏳ In attesa approvazione staff' });
-  if (entry.image) embed.setImage(entry.image);
+  if (entry.image && isEmbedDisplayableImage(entry.image)) embed.setImage(entry.image);
   return embed;
 }
 
@@ -43,7 +97,24 @@ function createStaffActionRow(id) {
   );
 }
 
+function buildAttachmentPayloadForStaff(entry, embed) {
+  const image = String(entry && entry.image || '').trim();
+  const filePath = uploadUrlToLocalPath(image);
+  if (!filePath) return { embeds: [embed], files: [] };
+
+  const fileName = path.basename(filePath);
+  const ext = getExtFromName(fileName, '').toLowerCase();
+  const files = [{ attachment: filePath, name: fileName }];
+
+  if (IMAGE_EXTENSIONS.has(ext)) {
+    embed.setImage(`attachment://${fileName}`);
+  }
+
+  return { embeds: [embed], files };
+}
+
 async function saveDiscordAttachmentLocally(attachment) {
+  if (!attachment) throw new Error('Nessun file ricevuto. Invia una foto o un video come allegato.');
   const tryUrls = [attachment.url, attachment.proxyURL].filter(Boolean);
   const errors = [];
   for (const target of tryUrls) {
@@ -51,14 +122,11 @@ async function saveDiscordAttachmentLocally(attachment) {
       const response = await fetch(target);
       if (!response.ok) { errors.push(`HTTP ${response.status} su ${target}`); continue; }
       const contentType = response.headers.get('content-type') || '';
-      let ext = 'jpg';
-      if (contentType.includes('png')) ext = 'png';
-      else if (contentType.includes('webp')) ext = 'webp';
-      else if (contentType.includes('gif')) ext = 'gif';
-      else if (contentType.includes('jpeg') || contentType.includes('jpg')) ext = 'jpg';
-      else if (attachment.name && attachment.name.includes('.')) ext = attachment.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const nameExt = getExtFromName(attachment.name || attachment.filename || '', '');
+      const ext = safeExt(nameExt || getExtFromContentType(contentType, 'jpg'), 'jpg');
       const fileName = `discord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
       const filePath = path.join(UPLOADS_DIR, fileName);
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
       const arrayBuffer = await response.arrayBuffer();
       fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
       return buildPublicUploadUrl(fileName);
@@ -68,10 +136,29 @@ async function saveDiscordAttachmentLocally(attachment) {
   throw new Error('Non sono riuscito a salvare il tuo screenshot. Riprova fra qualche secondo o invia un altro file.');
 }
 
-async function sendResultToStorico(embed) {
+function saveDataUrlLocally(dataUrl) {
+  const raw = String(dataUrl || '').trim();
+  const match = raw.match(/^data:([^;]+);base64,(.+)$/i);
+  if (!match) return raw;
+  const mime = match[1] || 'image/jpeg';
+  const base64 = match[2] || '';
+  const ext = safeExt(getExtFromContentType(mime, 'jpg'), 'jpg');
+  const fileName = `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const filePath = path.join(UPLOADS_DIR, fileName);
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+  return buildPublicUploadUrl(fileName);
+}
+
+async function sendResultToStorico(embed, entry = null) {
   try {
     const storico = await client.channels.fetch(STORICO_CHANNEL);
-    await storico.send({ embeds: [embed] });
+    if (entry) {
+      const payload = buildAttachmentPayloadForStaff(entry, embed);
+      await storico.send(payload);
+    } else {
+      await storico.send({ embeds: [embed] });
+    }
   } catch (err) { console.error('Errore invio storico:', err); }
 }
 
@@ -125,7 +212,7 @@ async function approvePending(id, actor = 'system', source = 'system') {
   saveState();
   let storicoEmbed = await editStaffMessage(entry, true);
   if (!storicoEmbed) storicoEmbed = createResultEmbed(entry, '✅ APPROVATO');
-  await sendResultToStorico(storicoEmbed);
+  await sendResultToStorico(storicoEmbed, entry);
   await sendTeamResultStatus(entry, true);
   await updateLeaderboard({ allowCreate: true });
   await refreshTeamResultPanels().catch(() => {});
@@ -161,11 +248,13 @@ async function createPendingSubmission(entry) {
   const staff = await client.channels.fetch(STAFF_CHANNEL);
   const embed = createResultEmbed(state.data.pending[id], '⏳ In attesa approvazione staff');
   const row = createStaffActionRow(id);
-  const msg = await staff.send({ embeds: [embed], components: [row] });
+  const payload = buildAttachmentPayloadForStaff(state.data.pending[id], embed);
+  payload.components = [row];
+  const msg = await staff.send(payload);
   state.data.pending[id].staffMessageId = msg.id;
   markSubmission(teamName, matchNumber, 'in_attesa', { pendingId: id, updatedBy: entry.submittedBy || 'unknown', source: entry.source || 'system' });
   saveState();
-  logAudit(entry.submittedBy || 'unknown', entry.source || 'system', 'risultato_in_attesa_creato', { pendingId: id, team: teamName, total: Number(entry.total || 0), pos: Number(entry.pos || 0), matchNumber });
+  logAudit(entry.submittedBy || 'unknown', entry.source || 'system', 'risultato_in_attesa_creato', { pendingId: id, team: teamName, total: Number(entry.total || 0), pos: Number(entry.pos || 0), matchNumber, image: state.data.pending[id].image || '' });
   await refreshTeamResultPanels().catch(() => {});
   return { id };
 }
@@ -178,7 +267,7 @@ async function submitWebResult(payload) {
     kills: [Number(payload.k1 || 0), Number(payload.k2 || 0), Number(payload.k3 || 0)],
     total: Number(payload.k1 || 0) + Number(payload.k2 || 0) + Number(payload.k3 || 0),
     pos: Number(payload.pos || 0),
-    image: payload.image || '',
+    image: saveDataUrlLocally(payload.image || ''),
     source: 'web',
     submittedBy: sanitizeText(payload.submittedBy || 'Dashboard'),
     matchNumber: Number(state.data.currentMatch || 1),
