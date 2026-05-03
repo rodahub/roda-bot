@@ -85,6 +85,22 @@ function normalizeResultEntry(entry) {
   };
 }
 
+function getAttachmentFallbackUrl(attachment) {
+  const urls = [
+    attachment?.url,
+    attachment?.proxyURL,
+    attachment?.attachment,
+    attachment?.href
+  ];
+
+  for (const url of urls) {
+    const clean = String(url || '').trim();
+    if (/^https?:\/\//i.test(clean)) return clean;
+  }
+
+  return '';
+}
+
 function installExpressRouteGuard(expressModule) {
   if (!expressModule || expressModule.__rodaStartupGuardPatched) {
     return expressModule;
@@ -237,6 +253,25 @@ function installSubmissionGuard(submissionsModule) {
 
   const lifecycle = require('./bot/lifecycle');
   const state = require('./bot/state');
+
+  if (typeof submissionsModule.saveDiscordAttachmentLocally === 'function') {
+    const originalSaveDiscordAttachmentLocally = submissionsModule.saveDiscordAttachmentLocally;
+
+    submissionsModule.saveDiscordAttachmentLocally = async function noLostPhotoSave(attachment, ...args) {
+      const fallbackUrl = getAttachmentFallbackUrl(attachment);
+
+      try {
+        const savedUrl = await originalSaveDiscordAttachmentLocally.call(this, attachment, ...args);
+        if (String(savedUrl || '').trim()) return savedUrl;
+      } catch (error) {
+        console.error('[startup-guard] Salvataggio locale foto fallito, uso URL Discord:', error.message);
+      }
+
+      if (fallbackUrl) return fallbackUrl;
+
+      throw new Error('Nessuna immagine valida ricevuta. Invia lo screenshot come allegato Discord, non come link testuale.');
+    };
+  }
 
   if (typeof submissionsModule.createPendingSubmission === 'function') {
     const originalCreatePendingSubmission = submissionsModule.createPendingSubmission;
