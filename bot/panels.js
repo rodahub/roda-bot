@@ -230,8 +230,6 @@ function queueRegistrationStatusUpdate(options = {}) {
       if (!targetChannelId) return { skipped: true, reason: 'no_channel' };
       const channel = await client.channels.fetch(targetChannelId).catch(() => null);
       if (!channel) return { skipped: true, reason: 'channel_not_found' };
-      // Se il canale è cambiato dall'ultima volta, azzeriamo i riferimenti ai messaggi
-      // per evitare di cercarli nel canale sbagliato e creare duplicati.
       if (state.data.registrationStatusChannelId && state.data.registrationStatusChannelId !== targetChannelId) {
         state.data.registrationStatusMessageId = null;
         state.data.registrationGraphicMessageId = null;
@@ -334,11 +332,12 @@ async function updateSavedResultsPanelIfExists() {
 
 async function refreshSavedPanels() {
   const settings = getBotSettings();
-  const results = { registerPanel: null, resultsPanel: null };
+  const results = { registerPanel: null, resultsPanel: null, leaderboardGraphics: null };
   if (settings.registerPanelChannelId) {
     try { results.registerPanel = await spawnRegisterPanel(settings.registerPanelChannelId); } catch (err) { console.error('Errore refresh pannello registrazione:', err); }
   }
   try { results.resultsPanel = await spawnResultsPanel(settings.resultsPanelChannelId); } catch (err) { console.error('Errore refresh pannelli risultati team:', err); }
+  try { results.leaderboardGraphics = await updateLeaderboard({ allowCreate: true }); } catch (err) { console.error('Errore refresh classifiche grafiche:', err); }
   return results;
 }
 
@@ -369,10 +368,17 @@ async function deleteOldTextLeaderboardMessage(channel) {
 }
 
 async function updateLeaderboardGraphicsImmediate(options = {}) {
+  await waitReady();
+  refreshStateFromDisk();
+  ensureDataStructures();
   const allowCreate = options.allowCreate !== false;
-  const targetChannelId = sanitizeText(state.data?.botSettings?.leaderboardChannelId) || CLASSIFICA_CHANNEL;
-  if (!targetChannelId) { console.warn('[classifica] Canale classifica non configurato.'); return { skipped: true, reason: 'no_channel' }; }
-  const channel = await client.channels.fetch(targetChannelId);
+  const targetChannelId = sanitizeText(options.channelId) || sanitizeText(state.data?.botSettings?.leaderboardChannelId) || CLASSIFICA_CHANNEL;
+  if (!targetChannelId) { console.warn('[classifica] Canale classifica non configurato.'); return { ok: false, skipped: true, reason: 'no_channel' }; }
+  const channel = await client.channels.fetch(targetChannelId).catch(() => null);
+  if (!channel) { console.warn('[classifica] Canale classifica non trovato:', targetChannelId); return { ok: false, skipped: true, reason: 'channel_not_found', channelId: targetChannelId }; }
+  if (sanitizeText(options.channelId)) {
+    state.data.botSettings.leaderboardChannelId = sanitizeText(options.channelId);
+  }
   const matchNumber = Number(state.data.currentMatch || 1);
   const stamp = Date.now();
   await deleteOldTextLeaderboardMessage(channel).catch(err => console.error('Errore eliminazione vecchia classifica testuale:', err));
@@ -386,7 +392,7 @@ async function updateLeaderboardGraphicsImmediate(options = {}) {
   if (topFraggerGraphicResult.messageId) state.data.topFraggerGraphicMessageId = topFraggerGraphicResult.messageId;
   state.data.leaderboardMessageId = null;
   saveState();
-  return { ok: true, allowCreate, leaderboardGraphicResult, topFraggerGraphicResult, textLeaderboardDisabled: true };
+  return { ok: true, channelId: targetChannelId, allowCreate, leaderboardGraphicResult, topFraggerGraphicResult, textLeaderboardDisabled: true, leaderboardRows: leaderboardRows.length, topFraggerRows: topFraggerRows.length };
 }
 
 async function updateLeaderboardGraphics(options = {}) {
@@ -402,7 +408,7 @@ async function updateLeaderboard(options = {}) {
   const allowCreate = options.allowCreate !== false;
   const updateGraphics = options.updateGraphics !== false;
   let graphicsResult = null;
-  if (updateGraphics) graphicsResult = await updateLeaderboardGraphics({ allowCreate });
+  if (updateGraphics) graphicsResult = await updateLeaderboardGraphics({ allowCreate, channelId: options.channelId });
   logAudit('bot', 'discord', 'classifiche_grafiche_aggiornate', { currentMatch: state.data.currentMatch, allowCreate, leaderboardGraphicMessageId: state.data.leaderboardGraphicMessageId || null, topFraggerGraphicMessageId: state.data.topFraggerGraphicMessageId || null, textLeaderboardDisabled: true });
   return { ok: true, allowCreate, updated: Boolean(graphicsResult?.leaderboardGraphicResult?.updated || graphicsResult?.topFraggerGraphicResult?.updated), created: Boolean(graphicsResult?.leaderboardGraphicResult?.created || graphicsResult?.topFraggerGraphicResult?.created), skipped: Boolean(graphicsResult?.leaderboardGraphicResult?.skipped && graphicsResult?.topFraggerGraphicResult?.skipped), textLeaderboardDisabled: true, graphicsResult };
 }
@@ -425,6 +431,7 @@ async function ensureTournamentDiscordStructure(customCategoryId = '') {
   saveState();
   let registerPanel = null;
   try { registerPanel = await spawnRegisterPanel(registrationResult.channel.id); } catch (err) { registerPanel = { ok: false, error: true, message: err.message || 'Errore creazione pannello iscrizioni' }; console.error('Errore pannello iscrizioni RØDA CUP:', err); }
+  await updateLeaderboard({ allowCreate: true }).catch(err => console.error('Errore creazione classifiche struttura Discord:', err));
   logAudit('bot', 'discord', 'struttura_discord_torneo_preparata', { categoryId: category.id, categoryCreated: Boolean(categoryResult.created), generalChannelId: generalResult.channel.id, generalCreated: Boolean(generalResult.created), rulesChannelId: rulesResult.channel.id, rulesCreated: Boolean(rulesResult.created), registrationChannelId: registrationResult.channel.id, registrationCreated: Boolean(registrationResult.created) });
   return { ok: true, categoryId: category.id, categoryCreated: Boolean(categoryResult.created), generalChannelId: generalResult.channel.id, generalCreated: Boolean(generalResult.created), rulesChannelId: rulesResult.channel.id, rulesCreated: Boolean(rulesResult.created), registrationChannelId: registrationResult.channel.id, registrationCreated: Boolean(registrationResult.created), registerPanel };
 }
