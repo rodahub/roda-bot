@@ -6,9 +6,16 @@
  * Runtime hardening layer loaded before the app. It keeps old unsafe routes
  * blocked, serves uploaded result proofs, forces fixed RODA CUP scoring,
  * normalizes match/pending data used by the admin dashboard, stabilizes
- * Discord result interactions, and loads the official leaderboard auto-spawn
- * even when Railway still uses an old start command.
+ * Discord result interactions, loads the official leaderboard auto-spawn,
+ * and reconciles corrupted scoreboards from real approved match results.
  */
+
+try {
+  require('./scoreboard-reconcile.js');
+  console.log('✅ Scoreboard reconcile caricato da startup-guard.');
+} catch (error) {
+  console.error('[startup-guard] Impossibile caricare scoreboard-reconcile:', error.message);
+}
 
 try {
   require('./leaderboard-autospawn.js');
