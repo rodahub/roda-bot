@@ -7,6 +7,29 @@ function clean(value) {
   return String(value || '').trim();
 }
 
+function now() {
+  return Date.now();
+}
+
+function markSpawnStarted(reason) {
+  const current = now();
+  if (global.__rodaLeaderboardSpawnRunning) {
+    console.log(`[classifica] spawn saltato (${reason}): uno spawn è già in corso`);
+    return false;
+  }
+  if (global.__rodaLeaderboardLastSpawnAt && current - global.__rodaLeaderboardLastSpawnAt < 30000) {
+    console.log(`[classifica] spawn saltato (${reason}): già eseguito da meno di 30s`);
+    return false;
+  }
+  global.__rodaLeaderboardSpawnRunning = true;
+  global.__rodaLeaderboardLastSpawnAt = current;
+  return true;
+}
+
+function markSpawnFinished() {
+  global.__rodaLeaderboardSpawnRunning = false;
+}
+
 function isClientModuleRequest(request) {
   return typeof request === 'string' && (
     request === './bot/client' ||
@@ -42,7 +65,6 @@ async function findWritableLeaderboardChannel(client) {
 
   const guildId = clean(config.GUILD_ID || process.env.GUILD_ID);
   const guild = guildId ? await client.guilds.fetch(guildId).catch(() => null) : client.guilds.cache.first();
-
   if (!guild) throw new Error('Guild Discord non trovata per cercare il canale classifica.');
 
   const channels = await guild.channels.fetch();
@@ -78,7 +100,7 @@ async function sendOrEdit(channel, messageId, content, fileName, buffer) {
       console.log(`[classifica] messaggio aggiornato: ${content} (${existing.id})`);
       return existing.id;
     } catch (error) {
-      console.warn(`[classifica] non riesco ad aggiornare messaggio ${messageId}, ne creo uno nuovo: ${error.message}`);
+      console.warn(`[classifica] messaggio salvato non valido (${messageId}), ne creo uno nuovo: ${error.message}`);
     }
   }
 
@@ -88,59 +110,65 @@ async function sendOrEdit(channel, messageId, content, fileName, buffer) {
 }
 
 async function directSpawnOfficialGraphics(client, reason = 'manual') {
-  const state = require('./bot/state');
-  const lifecycle = require('./bot/lifecycle');
-  const renderer = require('./renderer');
+  if (!markSpawnStarted(reason)) return { ok: true, skipped: true, reason: 'spawn_already_running_or_recent' };
 
-  if (!client) throw new Error('Client Discord mancante.');
-  if (typeof client.isReady === 'function' && !client.isReady()) throw new Error('Client Discord non pronto per spawnare le grafiche.');
+  try {
+    const state = require('./bot/state');
+    const lifecycle = require('./bot/lifecycle');
+    const renderer = require('./renderer');
 
-  if (typeof lifecycle.refreshStateFromDisk === 'function') lifecycle.refreshStateFromDisk();
-  if (typeof lifecycle.ensureDataStructures === 'function') lifecycle.ensureDataStructures();
+    if (!client) throw new Error('Client Discord mancante.');
+    if (typeof client.isReady === 'function' && !client.isReady()) throw new Error('Client Discord non pronto per spawnare le grafiche.');
 
-  console.log(`[classifica] direct spawn avviato: ${reason}`);
+    if (typeof lifecycle.refreshStateFromDisk === 'function') lifecycle.refreshStateFromDisk();
+    if (typeof lifecycle.ensureDataStructures === 'function') lifecycle.ensureDataStructures();
 
-  const channel = await findWritableLeaderboardChannel(client);
-  const matchNumber = Number(state?.data?.currentMatch || 1);
-  const stamp = Date.now();
+    console.log(`[classifica] direct spawn avviato: ${reason}`);
 
-  console.log('[classifica] genero immagine classifica ufficiale...');
-  const leaderboardBuffer = await renderer.generateLeaderboardGraphicBuffer();
-  console.log(`[classifica] classifica generata: ${leaderboardBuffer?.length || 0} bytes`);
+    const channel = await findWritableLeaderboardChannel(client);
+    const matchNumber = Number(state?.data?.currentMatch || 1);
+    const stamp = Date.now();
 
-  console.log('[classifica] genero immagine top fragger ufficiale...');
-  const fraggerBuffer = await renderer.generateTopFraggerGraphicBuffer();
-  console.log(`[classifica] top fragger generata: ${fraggerBuffer?.length || 0} bytes`);
+    console.log('[classifica] genero immagine classifica ufficiale...');
+    const leaderboardBuffer = await renderer.generateLeaderboardGraphicBuffer();
+    console.log(`[classifica] classifica generata: ${leaderboardBuffer?.length || 0} bytes`);
 
-  if (!leaderboardBuffer || !leaderboardBuffer.length) throw new Error('Buffer classifica vuoto.');
-  if (!fraggerBuffer || !fraggerBuffer.length) throw new Error('Buffer top fragger vuoto.');
+    console.log('[classifica] genero immagine top fragger ufficiale...');
+    const fraggerBuffer = await renderer.generateTopFraggerGraphicBuffer();
+    console.log(`[classifica] top fragger generata: ${fraggerBuffer?.length || 0} bytes`);
 
-  state.data.leaderboardGraphicMessageId = await sendOrEdit(
-    channel,
-    state.data.leaderboardGraphicMessageId,
-    `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`,
-    `classifica-live-output-match-${matchNumber}-${stamp}.png`,
-    leaderboardBuffer
-  );
+    if (!leaderboardBuffer || !leaderboardBuffer.length) throw new Error('Buffer classifica vuoto.');
+    if (!fraggerBuffer || !fraggerBuffer.length) throw new Error('Buffer top fragger vuoto.');
 
-  state.data.topFraggerGraphicMessageId = await sendOrEdit(
-    channel,
-    state.data.topFraggerGraphicMessageId,
-    `🔥 **TOP FRAGGER** • Match ${matchNumber}`,
-    `top-fragger-output-match-${matchNumber}-${stamp}.png`,
-    fraggerBuffer
-  );
+    state.data.leaderboardGraphicMessageId = await sendOrEdit(
+      channel,
+      state.data.leaderboardGraphicMessageId,
+      `🏆 **CLASSIFICA LIVE** • Match ${matchNumber}`,
+      `classifica-live-output-match-${matchNumber}-${stamp}.png`,
+      leaderboardBuffer
+    );
 
-  state.data.leaderboardMessageId = null;
-  if (typeof lifecycle.saveState === 'function') lifecycle.saveState();
+    state.data.topFraggerGraphicMessageId = await sendOrEdit(
+      channel,
+      state.data.topFraggerGraphicMessageId,
+      `🔥 **TOP FRAGGER** • Match ${matchNumber}`,
+      `top-fragger-output-match-${matchNumber}-${stamp}.png`,
+      fraggerBuffer
+    );
 
-  console.log('[classifica] direct spawn completato con successo');
-  return {
-    ok: true,
-    channelId: channel.id,
-    leaderboardGraphicMessageId: state.data.leaderboardGraphicMessageId,
-    topFraggerGraphicMessageId: state.data.topFraggerGraphicMessageId
-  };
+    state.data.leaderboardMessageId = null;
+    if (typeof lifecycle.saveState === 'function') lifecycle.saveState();
+
+    console.log('[classifica] direct spawn completato con successo');
+    return {
+      ok: true,
+      channelId: channel.id,
+      leaderboardGraphicMessageId: state.data.leaderboardGraphicMessageId,
+      topFraggerGraphicMessageId: state.data.topFraggerGraphicMessageId
+    };
+  } finally {
+    markSpawnFinished();
+  }
 }
 
 function attachReadySpawn(client, source) {
@@ -161,9 +189,7 @@ function attachReadySpawn(client, source) {
     return;
   }
 
-  if (typeof client.once === 'function') {
-    client.once('ready', () => run(`${source}_ready`));
-  }
+  if (typeof client.once === 'function') client.once('ready', () => run(`${source}_ready`));
 }
 
 function installClientModuleHook() {
