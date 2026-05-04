@@ -5,6 +5,13 @@
  * match results. This fixes corrupted totals caused by old scoring bugs.
  */
 
+try {
+  require('./admin-production-upgrade.js');
+  console.log('✅ Admin production UI caricata da scoreboard-reconcile.');
+} catch (error) {
+  console.error('[ricalcolo] Impossibile caricare admin production UI:', error.message);
+}
+
 const Module = require('module');
 
 const FINAL_STATUSES = new Set(['approvato', 'inserito_manualmente']);
@@ -54,8 +61,7 @@ function rebuildScoreboardFromMatches(data, teams = {}) {
   let approvedRows = 0;
   let fraggerRows = 0;
 
-  const matchEntries = Object.entries(data.matches)
-    .sort((a, b) => Number(a[0]) - Number(b[0]));
+  const matchEntries = Object.entries(data.matches).sort((a, b) => Number(a[0]) - Number(b[0]));
 
   for (const [matchKey, match] of matchEntries) {
     if (!match || typeof match !== 'object' || !match.teams || typeof match.teams !== 'object') continue;
@@ -99,9 +105,7 @@ function rebuildScoreboardFromMatches(data, teams = {}) {
     }
   }
 
-  if (!approvedRows) {
-    return { changed: false, reason: 'no_approved_results' };
-  }
+  if (!approvedRows) return { changed: false, reason: 'no_approved_results' };
 
   const oldScores = JSON.stringify(data.scores || {});
   const oldFragger = JSON.stringify(data.fragger || {});
@@ -130,11 +134,8 @@ function installStorageReconcile(storageModule) {
   if (!storageModule || storageModule.__rodaScoreboardReconcilePatched) return storageModule;
 
   const getTeams = () => {
-    try {
-      return typeof storageModule.loadTeams === 'function' ? storageModule.loadTeams() : {};
-    } catch {
-      return {};
-    }
+    try { return typeof storageModule.loadTeams === 'function' ? storageModule.loadTeams() : {}; }
+    catch { return {}; }
   };
 
   if (typeof storageModule.loadData === 'function') {
@@ -145,7 +146,8 @@ function installStorageReconcile(storageModule) {
       if (result.changed) {
         console.log(`[ricalcolo] classifica ricostruita da ${result.approvedRows} risultati approvati/manuali.`);
         if (typeof storageModule.saveData === 'function') {
-          try { storageModule.saveData(data); } catch (error) { console.error('[ricalcolo] salvataggio dati ricalcolati fallito:', error.message); }
+          try { storageModule.saveData(data); }
+          catch (error) { console.error('[ricalcolo] salvataggio dati ricalcolati fallito:', error.message); }
         }
       }
       return data;
@@ -171,20 +173,15 @@ function installStorageReconcile(storageModule) {
 function install() {
   if (global.__rodaScoreboardReconcileInstalled) return;
   global.__rodaScoreboardReconcileInstalled = true;
-
   const originalLoad = Module._load;
   Module._load = function scoreboardReconcileLoad(request, parent, isMain) {
     const loaded = originalLoad.apply(this, arguments);
     if (isStorageModuleRequest(request)) return installStorageReconcile(loaded);
     return loaded;
   };
-
   console.log('✅ Hook ricalcolo classifica/fragger installato.');
 }
 
 install();
 
-module.exports = {
-  rebuildScoreboardFromMatches,
-  install
-};
+module.exports = { rebuildScoreboardFromMatches, install };
