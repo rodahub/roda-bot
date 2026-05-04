@@ -6,6 +6,13 @@
  */
 
 try {
+  require('./panel-stability-guard.js');
+  console.log('✅ Guard stabilità pannelli caricato da admin-production-upgrade.');
+} catch (error) {
+  console.error('[admin-ui] Impossibile caricare guard stabilità pannelli:', error.message);
+}
+
+try {
   require('./registration-panel-sync.js');
   console.log('✅ Sync pannello iscrizioni caricato da admin-production-upgrade.');
 } catch (error) {
