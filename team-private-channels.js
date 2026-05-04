@@ -18,6 +18,7 @@ const {
 
 function clean(value) { return String(value || '').trim(); }
 function safeChannelPart(value) { return clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 42) || 'team'; }
+function teamDisplayChannelName(teamName) { return `💬・${safeChannelPart(teamName).toUpperCase()}`.slice(0, 95); }
 function isClientModuleRequest(request) { return typeof request === 'string' && (request === './bot/client' || request === './client' || request.endsWith('/bot/client') || request.endsWith('bot/client.js')); }
 function isPanelsModuleRequest(request) { return typeof request === 'string' && (request === './bot/panels' || request === './panels' || request.endsWith('/bot/panels') || request.endsWith('bot/panels.js')); }
 function getTeamEntries() { const state = require('./bot/state'); return Object.entries(state.teams || {}).sort((a, b) => Number(a[1]?.slot || 9999) - Number(b[1]?.slot || 9999)); }
@@ -76,11 +77,13 @@ function createResultPanelPayload(teamName, teamData) {
 async function findExistingPrivateChannel(guild, categoryId, teamName, slot, registrantId) {
   await guild.channels.fetch();
   const safeTeam = safeChannelPart(teamName);
-  const markers = [`team-${Number(slot || 0)}-`, `risultati-${Number(slot || 0)}-`, `team-${safeTeam}`, `risultati-${safeTeam}`];
+  const newName = teamDisplayChannelName(teamName);
+  const markers = [newName, `team-${Number(slot || 0)}-`, `risultati-${Number(slot || 0)}-`, `team-${safeTeam}`, `risultati-${safeTeam}`, safeTeam.toUpperCase()];
   const channels = [...guild.channels.cache.values()].filter(ch => ch && ch.type === ChannelType.GuildText && (!categoryId || ch.parentId === categoryId));
   return channels.find(ch => {
     const name = String(ch.name || '');
-    return markers.some(marker => name.includes(marker)) || (registrantId && name.endsWith(registrantId.slice(-4)));
+    const upper = name.toUpperCase();
+    return markers.some(marker => name.includes(marker) || upper.includes(String(marker).toUpperCase())) || (registrantId && name.endsWith(registrantId.slice(-4)));
   }) || null;
 }
 
@@ -134,7 +137,7 @@ async function ensurePrivateTeamChannel(client, teamName, teamData, options = {}
     console.warn(`[team-private] utente registrante non trovato per ${teamName}: ${registrantId}`);
     return { ok: false, skipped: true, reason: 'member_not_found' };
   }
-  const channelName = `team-${slot || 'x'}-${safeChannelPart(teamName)}-${registrantId.slice(-4)}`.slice(0, 95);
+  const channelName = teamDisplayChannelName(teamName);
   const overwrites = [
     { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
     { id: registrantId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory] }
