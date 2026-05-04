@@ -30,9 +30,7 @@ async function sendMessageToChannel(channelId, message) {
   return { ok: true, messageId: sent.id, channelId: cleanChannelId };
 }
 
-async function sendGeneralAnnouncement(channelId, message) {
-  return sendMessageToChannel(channelId, message);
-}
+async function sendGeneralAnnouncement(channelId, message) { return sendMessageToChannel(channelId, message); }
 
 async function listDiscordChannels() {
   await waitReady();
@@ -49,28 +47,14 @@ async function listDiscordChannels() {
     if (posA !== posB) return posA - posB;
     return String(a.name || '').localeCompare(String(b.name || ''), 'it');
   });
-  const categories = allChannels
-    .filter(ch => ch.type === ChannelType.GuildCategory)
-    .map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      type: 'category',
-      rawPosition: Number(cat.rawPosition ?? cat.position ?? 0),
-      channels: allChannels.filter(ch => ch.parentId === cat.id).map(ch => ({
-        id: ch.id, name: ch.name, type: getDiscordChannelTypeLabel(ch.type),
-        rawType: ch.type, parentId: ch.parentId || null,
-        rawPosition: Number(ch.rawPosition ?? ch.position ?? 0),
-        sendable: typeof ch.send === 'function'
-      }))
-    }));
-  const withoutCategory = allChannels
-    .filter(ch => ch.type !== ChannelType.GuildCategory && !ch.parentId)
-    .map(ch => ({
-      id: ch.id, name: ch.name, type: getDiscordChannelTypeLabel(ch.type),
-      rawType: ch.type, parentId: null,
-      rawPosition: Number(ch.rawPosition ?? ch.position ?? 0),
-      sendable: typeof ch.send === 'function'
-    }));
+  const categories = allChannels.filter(ch => ch.type === ChannelType.GuildCategory).map(cat => ({
+    id: cat.id,
+    name: cat.name,
+    type: 'category',
+    rawPosition: Number(cat.rawPosition ?? cat.position ?? 0),
+    channels: allChannels.filter(ch => ch.parentId === cat.id).map(ch => ({ id: ch.id, name: ch.name, type: getDiscordChannelTypeLabel(ch.type), rawType: ch.type, parentId: ch.parentId || null, rawPosition: Number(ch.rawPosition ?? ch.position ?? 0), sendable: typeof ch.send === 'function' }))
+  }));
+  const withoutCategory = allChannels.filter(ch => ch.type !== ChannelType.GuildCategory && !ch.parentId).map(ch => ({ id: ch.id, name: ch.name, type: getDiscordChannelTypeLabel(ch.type), rawType: ch.type, parentId: null, rawPosition: Number(ch.rawPosition ?? ch.position ?? 0), sendable: typeof ch.send === 'function' }));
   return { ok: true, guild: { id: guild.id, name: guild.name }, categories, withoutCategory };
 }
 
@@ -129,17 +113,10 @@ async function ensureRulesMessage(rulesChannel) {
   const regulationText = messages.regulationText || '';
   if (!regulationText) return { skipped: true };
   const recentMessages = await rulesChannel.messages.fetch({ limit: 20 }).catch(() => null);
-  const embed = new EmbedBuilder()
-    .setColor(0x7b2cff)
-    .setTitle('📜 REGOLAMENTO UFFICIALE RØDA CUP')
-    .setDescription(regulationText.slice(0, 4000))
-    .setFooter({ text: 'Regolamento bloccato • Decisioni staff definitive' });
+  const embed = new EmbedBuilder().setColor(0x7b2cff).setTitle('📜 REGOLAMENTO UFFICIALE RØDA CUP').setDescription(regulationText.slice(0, 4000)).setFooter({ text: 'Regolamento bloccato • Decisioni staff definitive' });
   if (recentMessages) {
     const existing = recentMessages.find(m => m.author?.id === client.user?.id && m.embeds?.[0]?.title === '📜 REGOLAMENTO UFFICIALE RØDA CUP');
-    if (existing) {
-      await existing.edit({ embeds: [embed], content: '' }).catch(() => {});
-      return { updated: true };
-    }
+    if (existing) { await existing.edit({ embeds: [embed], content: '' }).catch(() => {}); return { updated: true }; }
   }
   await rulesChannel.send({ embeds: [embed] }).catch(() => {});
   return { created: true };
@@ -152,10 +129,7 @@ async function ensureGeneralMessage(generalChannel) {
   const recentMessages = await generalChannel.messages.fetch({ limit: 20 }).catch(() => null);
   if (recentMessages) {
     const existing = recentMessages.find(m => m.author?.id === client.user?.id && m.content.includes('BENVENUTI ALLA RØDA CUP'));
-    if (existing) {
-      await existing.edit({ content: announcement }).catch(() => {});
-      return { updated: true };
-    }
+    if (existing) { await existing.edit({ content: announcement }).catch(() => {}); return { updated: true }; }
   }
   await generalChannel.send({ content: announcement }).catch(() => {});
   return { created: true };
@@ -205,15 +179,9 @@ async function findPanelMessageByButtonCustomId(channel, customId) {
     const messages = await channel.messages.fetch({ limit: 30 });
     for (const message of messages.values()) {
       if (message.author?.id !== client.user?.id) continue;
-      for (const row of (message.components || [])) {
-        for (const component of (row.components || [])) {
-          if (component.customId === customId) return message;
-        }
-      }
+      for (const row of (message.components || [])) for (const component of (row.components || [])) if (component.customId === customId) return message;
     }
-  } catch (err) {
-    console.error(`Errore ricerca pannello in ${channel?.name || 'canale sconosciuto'}:`, err.message);
-  }
+  } catch (err) { console.error(`Errore ricerca pannello in ${channel?.name || 'canale sconosciuto'}:`, err.message); }
   return null;
 }
 
@@ -232,11 +200,7 @@ async function createTeamRooms(customCategoryId) {
   for (const [teamName, teamData] of sortedTeams) {
     const slot = Number(teamData?.slot || 0);
     const channelName = buildTeamVoiceChannelName(slot, teamName);
-    if (existingNames.has(channelName)) {
-      skipped++;
-      details.push({ team: teamName, slot, channelName, status: 'skipped' });
-      continue;
-    }
+    if (existingNames.has(channelName)) { skipped++; details.push({ team: teamName, slot, channelName, status: 'skipped' }); continue; }
     try {
       const channel = await guild.channels.create({ name: channelName, type: ChannelType.GuildVoice, parent: categoryIdToUse, reason: `Creazione stanza vocale team RØDA CUP: ${teamName}` });
       existingNames.add(channelName);
@@ -251,6 +215,12 @@ async function createTeamRooms(customCategoryId) {
   state.data.botSettings.roomsCategoryId = categoryIdToUse;
   saveState();
   logAudit('dashboard', 'web', 'stanze_team_create', { categoryId: categoryIdToUse, categoryCreated: Boolean(resolved.created), created, skipped, failed });
+
+  try {
+    const teamPrivate = require('../team-private-channels');
+    if (typeof teamPrivate.ensureAllPrivateTeamChannels === 'function') await teamPrivate.ensureAllPrivateTeamChannels(client);
+  } catch (error) { console.error('[stanze-private] creazione durante genera stanze fallita:', error.message); }
+
   return { ok: true, categoryId: categoryIdToUse, categoryCreated: Boolean(resolved.created), created, skipped, failed, details };
 }
 
@@ -270,27 +240,57 @@ async function deleteTeamRooms(customCategoryId) {
   return { ok: true, deleted };
 }
 
+async function getPrivateTextChannelsForTeams(guild, sortedTeams) {
+  const result = [];
+  const missing = [];
+  for (const [teamName, teamData] of sortedTeams) {
+    let channel = null;
+    const channelId = sanitizeText(teamData?.privateTextChannelId);
+    if (channelId) channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || typeof channel.send !== 'function') {
+      try {
+        const teamPrivate = require('../team-private-channels');
+        if (typeof teamPrivate.ensurePrivateTeamChannel === 'function') {
+          const ensured = await teamPrivate.ensurePrivateTeamChannel(client, teamName, teamData);
+          channel = ensured?.channel || null;
+        }
+      } catch (error) { console.error(`[lobby-private] ensure stanza privata ${teamName} fallito:`, error.message); }
+    }
+    if (channel && typeof channel.send === 'function') result.push({ teamName, channel });
+    else missing.push(teamName);
+  }
+  return { channels: result, missing };
+}
+
 async function sendLobbyCodeToTeamRooms(lobbyCode, customCategoryId, customMessage = '') {
   await waitReady();
+  refreshStateFromDisk();
   const cleanCode = sanitizeText(lobbyCode);
   if (!cleanCode) throw new Error('Codice lobby non valido');
   const guild = await client.guilds.fetch(GUILD_ID);
-  const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
-  if (!categoryIdToUse) throw new Error('Categoria non valida');
-  const categoryChannel = await guild.channels.fetch(categoryIdToUse).catch(() => null);
-  if (!categoryChannel) throw new Error('Categoria non trovata');
-  if (categoryChannel.type !== ChannelType.GuildCategory) throw new Error('Il canale selezionato non è una categoria');
   await guild.channels.fetch();
-  const channels = guild.channels.cache.filter(ch => ch.parentId === categoryIdToUse && ch.type === ChannelType.GuildVoice && ch.name.startsWith('🏆・#')).sort((a, b) => a.rawPosition - b.rawPosition);
-  if (!channels.size) throw new Error('Nessuna stanza team trovata nella categoria selezionata');
-  const content = sanitizeText(customMessage) || `🎮 **CODICE LOBBY**\n\nCodice: **${cleanCode}**\n\nIl codice viene inviato nelle stanze ufficiali dei team.\nBuon game 🔥`;
+  const sortedTeams = getSortedTeamEntries();
+  if (!sortedTeams.length) throw new Error('Nessun team registrato');
+
+  const content = sanitizeText(customMessage) || `🎮 **CODICE LOBBY**\n\nCodice: **${cleanCode}**\n\nQuesto codice viene inviato nella stanza testuale privata del team.\nBuon game 🔥`;
+  const { channels, missing } = await getPrivateTextChannelsForTeams(guild, sortedTeams);
+  if (!channels.length) throw new Error('Nessuna stanza testuale privata team disponibile. Rigenera/assicura le stanze private team.');
+
   let sent = 0, failed = 0;
   const failedChannels = [];
-  for (const ch of channels.values()) {
-    try { await ch.send({ content }); sent++; } catch (err) { failed++; failedChannels.push(ch.name); console.error(`Errore invio codice lobby in ${ch.name}:`, err); }
+  for (const item of channels) {
+    try {
+      await item.channel.send({ content });
+      sent++;
+    } catch (err) {
+      failed++;
+      failedChannels.push(`${item.teamName} (${item.channel.name})`);
+      console.error(`Errore invio codice lobby in stanza privata ${item.teamName}:`, err);
+    }
   }
-  logAudit('dashboard', 'web', 'codice_lobby_inviato_alle_stanze_team', { categoryId: categoryIdToUse, lobbyCode: cleanCode, sent, failed, failedChannels });
-  return { ok: true, sent, failed, total: channels.size, failedChannels };
+
+  logAudit('dashboard', 'web', 'codice_lobby_inviato_alle_stanze_private_team', { lobbyCode: cleanCode, sent, failed, total: channels.length, missingTeams: missing, failedChannels });
+  return { ok: true, sent, failed, total: channels.length, missingTeams: missing, failedChannels, mode: 'private_text_channels' };
 }
 
 async function diagnosePanels(customCategoryId) {
@@ -298,9 +298,7 @@ async function diagnosePanels(customCategoryId) {
   refreshStateFromDisk();
   const categoryIdToUse = sanitizeText(customCategoryId) || getSavedRoomsCategoryId();
   const sortedTeams = getSortedTeamEntries();
-  if (!categoryIdToUse) {
-    return { error: 'Categoria non configurata — imposta una categoria nelle impostazioni Discord.', categoryId: '', sortedTeams: sortedTeams.map(([n, t]) => ({ name: n, slot: t?.slot })), allVoiceInCategory: [], filteredChannels: [] };
-  }
+  if (!categoryIdToUse) return { error: 'Categoria non configurata — imposta una categoria nelle impostazioni Discord.', categoryId: '', sortedTeams: sortedTeams.map(([n, t]) => ({ name: n, slot: t?.slot })), allVoiceInCategory: [], filteredChannels: [] };
   const guild = await client.guilds.fetch(GUILD_ID);
   await guild.channels.fetch();
   const allVoiceInCategory = guild.channels.cache.filter(ch => ch.parentId === categoryIdToUse && ch.type === ChannelType.GuildVoice).map(ch => ({ id: ch.id, name: ch.name, nameHex: Buffer.from(ch.name).toString('hex') }));
@@ -310,7 +308,7 @@ async function diagnosePanels(customCategoryId) {
     const slot = Number(teamData?.slot || 0);
     const slotPrefix = `🏆・#${slot}`.normalize('NFKC');
     const match = allVoiceInCategory.find(ch => { const n = String(ch.name || '').normalize('NFKC'); return n.startsWith(slotPrefix + ' ') || n.startsWith(slotPrefix + '　') || n === slotPrefix || n.includes(`#${slot} `) || n.includes(`#${slot}　`); });
-    return { team: teamName, slot, matchedChannel: match ? match.name : null, matchedChannelId: match ? match.id : null, status: slot === 0 ? 'slot_zero' : match ? 'ok' : 'no_match' };
+    return { team: teamName, slot, privateTextChannelId: teamData?.privateTextChannelId || null, matchedChannel: match ? match.name : null, matchedChannelId: match ? match.id : null, status: teamData?.privateTextChannelId ? 'private_ok' : (slot === 0 ? 'slot_zero' : match ? 'voice_ok_private_missing' : 'no_match') };
   });
   return { categoryId: categoryIdToUse, totalVoiceInCategory: allVoiceInCategory.length, allVoiceInCategory, filteredChannels, teamMatchInfo, totalTeams: sortedTeams.length };
 }
