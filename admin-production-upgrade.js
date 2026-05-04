@@ -5,6 +5,13 @@
  * without rewriting the large dashboard file.
  */
 
+try {
+  require('./registration-panel-sync.js');
+  console.log('✅ Sync pannello iscrizioni caricato da admin-production-upgrade.');
+} catch (error) {
+  console.error('[admin-ui] Impossibile caricare sync pannello iscrizioni:', error.message);
+}
+
 const fs = require('fs');
 const path = require('path');
 
