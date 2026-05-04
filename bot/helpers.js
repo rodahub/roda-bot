@@ -3,6 +3,20 @@ const path = require('path');
 const { ChannelType } = require('discord.js');
 const { FIXED_TOURNAMENT_NAME, MAX_TEAMS, PLAYERS_PER_TEAM } = require('../storage');
 
+const FIXED_POINTS_CONFIG = Object.freeze({
+  kill: 1,
+  placement: Object.freeze({
+    1: 10,
+    2: 6,
+    3: 5,
+    4: 4,
+    5: 3,
+    6: 2,
+    7: 1,
+    8: 1
+  })
+});
+
 function sanitizeText(value) {
   return String(value || '').trim();
 }
@@ -92,37 +106,23 @@ function getLogoUrl() {
 }
 
 function loadPointsConfig() {
-  const fallback = {
-    kill: 1,
-    placement: { 1: 10, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1, 8: 1 }
+  return {
+    kill: FIXED_POINTS_CONFIG.kill,
+    placement: { ...FIXED_POINTS_CONFIG.placement }
   };
-  const possibleFiles = [
-    path.join(__dirname, '..', 'points.json'),
-    path.join(__dirname, '..', 'points.js')
-  ];
-  for (const filePath of possibleFiles) {
-    try {
-      if (!fs.existsSync(filePath)) continue;
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const parsed = JSON.parse(raw);
-      return {
-        kill: Number(parsed.kill || fallback.kill),
-        placement: parsed.placement && typeof parsed.placement === 'object'
-          ? parsed.placement
-          : fallback.placement
-      };
-    } catch (err) {
-      console.error(`Errore lettura punteggio ${filePath}:`, err.message);
-    }
-  }
-  return fallback;
 }
 
 function calcPoints(pos, kills) {
-  const config = loadPointsConfig();
-  const killPoints = Number(config.kill || 1);
-  const placementBonus = Number(config.placement?.[String(Number(pos))] || 0);
-  return Number(kills || 0) * killPoints + placementBonus;
+  const placement = Number(pos || 0);
+  const totalKills = Number(kills || 0);
+
+  if (!Number.isFinite(totalKills) || totalKills < 0) return 0;
+
+  const safeKills = Math.max(0, Math.floor(totalKills));
+  const safePlacement = Number.isFinite(placement) ? Math.floor(placement) : 0;
+  const placementBonus = Number(FIXED_POINTS_CONFIG.placement[safePlacement] || 0);
+
+  return safeKills * FIXED_POINTS_CONFIG.kill + placementBonus;
 }
 
 function buildLobbyCodeMessage(lobbyCode) {
@@ -149,5 +149,6 @@ module.exports = {
   buildLobbyCodeMessage,
   FIXED_TOURNAMENT_NAME,
   MAX_TEAMS,
-  PLAYERS_PER_TEAM
+  PLAYERS_PER_TEAM,
+  FIXED_POINTS_CONFIG
 };
