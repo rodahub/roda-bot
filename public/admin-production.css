@@ -1,0 +1,300 @@
+/* RØDA CUP Admin Production Layer */
+:root{
+  --prod-bg:#050507;
+  --prod-card:rgba(15,15,27,.92);
+  --prod-card-2:rgba(22,22,39,.92);
+  --prod-border:rgba(190,145,255,.22);
+  --prod-border-strong:rgba(190,145,255,.46);
+  --prod-purple:#7b2cff;
+  --prod-blue:#57b7ff;
+  --prod-green:#18c964;
+  --prod-red:#ff4d6d;
+  --prod-yellow:#ffd166;
+}
+
+body.roda-admin-production{
+  background:
+    radial-gradient(circle at 12% 8%,rgba(123,44,255,.18),transparent 28%),
+    radial-gradient(circle at 88% 0%,rgba(87,183,255,.10),transparent 30%),
+    linear-gradient(180deg,#050507 0%,#080811 100%)!important;
+}
+
+body.roda-admin-production .brand h1::after{
+  content:'REGIA TORNEO';
+  display:block;
+  margin-top:7px;
+  width:max-content;
+  padding:5px 9px;
+  border-radius:999px;
+  background:rgba(123,44,255,.16);
+  border:1px solid rgba(190,145,255,.28);
+  color:#d8ccff;
+  font-size:10px;
+  letter-spacing:1px;
+  line-height:1;
+}
+
+body.roda-admin-production .sidebar{
+  background:linear-gradient(180deg,rgba(9,9,18,.98),rgba(4,4,8,.98))!important;
+}
+
+body.roda-admin-production .nav{
+  gap:7px!important;
+}
+
+body.roda-admin-production .nav button,
+body.roda-admin-production .nav a.nav-ext{
+  min-height:48px!important;
+  border-radius:15px!important;
+  font-size:13px!important;
+}
+
+body.roda-admin-production .nav button.active{
+  border-color:var(--prod-border-strong)!important;
+  background:linear-gradient(135deg,rgba(123,44,255,.34),rgba(87,183,255,.10))!important;
+}
+
+body.roda-admin-production .topbar{
+  box-shadow:0 12px 42px rgba(0,0,0,.28);
+}
+
+.roda-command-center{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:16px;
+  margin:0 0 18px;
+}
+
+.roda-command-card{
+  border:1px solid var(--prod-border);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at top left,rgba(123,44,255,.22),transparent 36%),
+    linear-gradient(180deg,rgba(20,20,35,.96),rgba(8,8,16,.98));
+  box-shadow:0 20px 60px rgba(0,0,0,.38),0 0 34px rgba(123,44,255,.12);
+  padding:20px;
+  min-width:0;
+}
+
+.roda-command-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.roda-command-title h2{
+  margin:0;
+  font-size:24px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.4px;
+}
+
+.roda-command-title p{
+  margin:6px 0 0;
+  color:var(--muted,#aaa6c5);
+  font-size:13px;
+  line-height:1.35;
+}
+
+.roda-live-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(24,201,100,.28);
+  background:rgba(24,201,100,.12);
+  color:#bcffd7;
+  font-size:12px;
+  font-weight:950;
+  white-space:nowrap;
+}
+
+.roda-live-badge::before{
+  content:'';
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--prod-green);
+  box-shadow:0 0 16px rgba(24,201,100,.8);
+}
+
+.roda-quick-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+.roda-quick-action{
+  min-height:100px;
+  border:1px solid rgba(190,145,255,.18);
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  color:#fff;
+  padding:14px;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  transition:.16s ease;
+}
+
+.roda-quick-action:hover{
+  transform:translateY(-2px);
+  border-color:rgba(190,145,255,.45);
+  box-shadow:0 12px 32px rgba(123,44,255,.18);
+}
+
+.roda-quick-action b{
+  display:block;
+  font-size:14px;
+  line-height:1.18;
+}
+
+.roda-quick-action span{
+  color:var(--muted,#aaa6c5);
+  font-size:11px;
+  line-height:1.25;
+  font-weight:800;
+}
+
+.roda-status-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.roda-status-tile{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  padding:14px;
+}
+
+.roda-status-tile span{
+  display:block;
+  color:var(--muted,#aaa6c5);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  font-weight:950;
+  margin-bottom:8px;
+}
+
+.roda-status-tile strong{
+  display:block;
+  font-size:22px;
+  line-height:1;
+  font-weight:950;
+}
+
+.roda-workflow{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 18px;
+}
+
+.roda-step{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:rgba(255,255,255,.035);
+  padding:14px;
+  min-height:96px;
+  position:relative;
+  overflow:hidden;
+}
+
+.roda-step::before{
+  content:attr(data-step);
+  position:absolute;
+  top:10px;
+  right:12px;
+  color:rgba(216,204,255,.18);
+  font-size:32px;
+  font-weight:950;
+  line-height:1;
+}
+
+.roda-step b{
+  display:block;
+  font-size:13px;
+  line-height:1.2;
+  margin-bottom:8px;
+}
+
+.roda-step span{
+  display:block;
+  color:var(--muted,#aaa6c5);
+  font-size:11px;
+  line-height:1.3;
+  font-weight:750;
+  max-width:160px;
+}
+
+body.roda-admin-production .hero,
+body.roda-admin-production .card,
+body.roda-admin-production .stat,
+body.roda-admin-production .next-action,
+body.roda-admin-production .flow-btn{
+  border-color:rgba(190,145,255,.20)!important;
+  box-shadow:0 16px 44px rgba(0,0,0,.34),0 0 28px rgba(123,44,255,.08)!important;
+}
+
+body.roda-admin-production .hero h2,
+body.roda-admin-production .page-title{
+  letter-spacing:-.7px!important;
+}
+
+body.roda-admin-production .btn-danger-confirm,
+body.roda-admin-production [data-danger-confirm="true"]{
+  outline:1px solid rgba(255,77,109,.38)!important;
+}
+
+.roda-admin-toast{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:999999;
+  max-width:420px;
+  border:1px solid rgba(190,145,255,.30);
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(19,19,34,.98),rgba(8,8,15,.98));
+  box-shadow:0 20px 60px rgba(0,0,0,.46),0 0 28px rgba(123,44,255,.20);
+  color:#fff;
+  padding:14px 16px;
+  transform:translateY(18px);
+  opacity:0;
+  pointer-events:none;
+  transition:.2s ease;
+}
+
+.roda-admin-toast.show{
+  transform:none;
+  opacity:1;
+}
+
+.roda-admin-toast b{
+  display:block;
+  margin-bottom:4px;
+}
+
+.roda-admin-toast span{
+  color:var(--muted,#aaa6c5);
+  font-size:13px;
+  line-height:1.35;
+}
+
+@media(max-width:1180px){
+  .roda-command-center{grid-template-columns:1fr;}
+  .roda-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .roda-workflow{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+@media(max-width:720px){
+  .roda-command-center{gap:12px;}
+  .roda-quick-grid,.roda-status-grid,.roda-workflow{grid-template-columns:1fr;}
+}
