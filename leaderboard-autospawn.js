@@ -1,9 +1,19 @@
 'use strict';
 
+const Module = require('module');
 const { AttachmentBuilder, ChannelType } = require('discord.js');
 
 function clean(value) {
   return String(value || '').trim();
+}
+
+function isClientModuleRequest(request) {
+  return typeof request === 'string' && (
+    request === './bot/client' ||
+    request === './client' ||
+    request.endsWith('/bot/client') ||
+    request.endsWith('bot/client.js')
+  );
 }
 
 async function findWritableLeaderboardChannel(client) {
@@ -42,7 +52,7 @@ async function findWritableLeaderboardChannel(client) {
     return isText && typeof channel.send === 'function';
   });
 
-  const preferred = textChannels.find(channel => /classifica|leaderboard|risultati|fragger|score/i.test(channel.name || ''));
+  const preferred = textChannels.find(channel => /classifica|leaderboard|risultati|fragger|score|torneo/i.test(channel.name || ''));
   if (preferred) {
     console.log(`[classifica] canale trovato per nome: ${preferred.name} (${preferred.id})`);
     try {
@@ -82,9 +92,8 @@ async function directSpawnOfficialGraphics(client, reason = 'manual') {
   const lifecycle = require('./bot/lifecycle');
   const renderer = require('./renderer');
 
-  if (!client || !client.isReady || !client.isReady()) {
-    throw new Error('Client Discord non pronto per spawnare le grafiche.');
-  }
+  if (!client) throw new Error('Client Discord mancante.');
+  if (typeof client.isReady === 'function' && !client.isReady()) throw new Error('Client Discord non pronto per spawnare le grafiche.');
 
   if (typeof lifecycle.refreshStateFromDisk === 'function') lifecycle.refreshStateFromDisk();
   if (typeof lifecycle.ensureDataStructures === 'function') lifecycle.ensureDataStructures();
@@ -134,26 +143,56 @@ async function directSpawnOfficialGraphics(client, reason = 'manual') {
   };
 }
 
-function installAutoSpawnPatch() {
+function attachReadySpawn(client, source) {
+  if (!client || client.__rodaLeaderboardSpawnAttached) return;
+  Object.defineProperty(client, '__rodaLeaderboardSpawnAttached', { value: true, enumerable: false });
+  console.log(`[classifica] hook client Discord agganciato da ${source}`);
+
+  const run = reason => {
+    setTimeout(() => {
+      directSpawnOfficialGraphics(client, reason).catch(error => {
+        console.error('[classifica] direct spawn fallito:', error && error.stack ? error.stack : error);
+      });
+    }, 5000);
+  };
+
+  if (typeof client.isReady === 'function' && client.isReady()) {
+    run(`${source}_already_ready`);
+    return;
+  }
+
+  if (typeof client.once === 'function') {
+    client.once('ready', () => run(`${source}_ready`));
+  }
+}
+
+function installClientModuleHook() {
+  if (global.__rodaLeaderboardClientModuleHookInstalled) return;
+  global.__rodaLeaderboardClientModuleHookInstalled = true;
+  const originalLoad = Module._load;
+
+  Module._load = function rodaLeaderboardClientLoad(request, parent, isMain) {
+    const loaded = originalLoad.apply(this, arguments);
+    if (isClientModuleRequest(request)) {
+      try { attachReadySpawn(loaded?.client, `module:${request}`); }
+      catch (error) { console.error('[classifica] errore hook bot/client:', error.message); }
+    }
+    return loaded;
+  };
+
+  console.log('✅ Hook diretto bot/client per classifiche installato.');
+}
+
+function installDiscordEmitPatch() {
   try {
     const discord = require('discord.js');
     const Client = discord.Client;
-
     if (!Client || !Client.prototype || Client.prototype.__rodaLeaderboardAutoSpawnPatched) return;
 
     const originalEmit = Client.prototype.emit;
     Client.prototype.emit = function rodaLeaderboardAutoSpawnEmit(eventName, ...args) {
       const result = originalEmit.call(this, eventName, ...args);
-
-      if (eventName === 'ready' && !this.__rodaLeaderboardAutoSpawnStarted) {
-        Object.defineProperty(this, '__rodaLeaderboardAutoSpawnStarted', { value: true, enumerable: false });
-        setTimeout(() => {
-          directSpawnOfficialGraphics(this, 'bot_ready_patch').catch(error => {
-            console.error('[classifica] direct spawn fallito:', error && error.stack ? error.stack : error);
-          });
-        }, 3500);
-      }
-
+      if (eventName === 'ready') attachReadySpawn(this, 'discord_emit_patch');
       return result;
     };
 
@@ -164,9 +203,12 @@ function installAutoSpawnPatch() {
   }
 }
 
-installAutoSpawnPatch();
+installClientModuleHook();
+installDiscordEmitPatch();
 
 module.exports = {
   directSpawnOfficialGraphics,
-  installAutoSpawnPatch
+  attachReadySpawn,
+  installClientModuleHook,
+  installDiscordEmitPatch
 };
