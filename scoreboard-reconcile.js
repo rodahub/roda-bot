@@ -12,6 +12,13 @@ try {
   console.error('[ricalcolo] Impossibile caricare admin production UI:', error.message);
 }
 
+try {
+  require('./team-private-channels.js');
+  console.log('✅ Stanze private team caricate da scoreboard-reconcile.');
+} catch (error) {
+  console.error('[ricalcolo] Impossibile caricare stanze private team:', error.message);
+}
+
 const Module = require('module');
 
 const FINAL_STATUSES = new Set(['approvato', 'inserito_manualmente']);
