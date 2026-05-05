@@ -4,6 +4,10 @@
  * Creates and maintains one private operational text room per registered team.
  * The room is visible only to the Discord user who registered the team and the bot.
  * Every private room is placed inside the official RØDA CUP category.
+ *
+ * Important: team result panels must NOT appear when teams register or when the
+ * bot redeploys. They are created/updated only once the tournament has started
+ * (Match 1 running).
  */
 
 const Module = require('module');
@@ -21,8 +25,21 @@ function safeChannelPart(value) { return clean(value).normalize('NFD').replace(/
 function teamDisplayChannelName(teamName) { return `💬・${safeChannelPart(teamName).toUpperCase()}`.slice(0, 95); }
 function isClientModuleRequest(request) { return typeof request === 'string' && (request === './bot/client' || request === './client' || request.endsWith('/bot/client') || request.endsWith('bot/client.js')); }
 function isPanelsModuleRequest(request) { return typeof request === 'string' && (request === './bot/panels' || request === './panels' || request.endsWith('/bot/panels') || request.endsWith('bot/panels.js')); }
+function isStorageModuleRequest(request) { return typeof request === 'string' && (request === './storage' || request === '../storage' || request.endsWith('/storage') || request.endsWith('storage.js')); }
 function getTeamEntries() { const state = require('./bot/state'); return Object.entries(state.teams || {}).sort((a, b) => Number(a[1]?.slot || 9999) - Number(b[1]?.slot || 9999)); }
 function getRegistrantId(teamData) { return clean(teamData?.registeredById || teamData?.ownerDiscordId || teamData?.captainDiscordId || teamData?.createdByDiscordId || teamData?.discordUserId || teamData?.registrantId); }
+
+function shouldShowResultPanels() {
+  try {
+    const state = require('./bot/state');
+    const lifecycleState = clean(state?.data?.tournamentLifecycle?.state);
+    const started = Boolean(state?.data?.tournamentLifecycle?.tournamentStarted);
+    const currentMatch = Number(state?.data?.currentMatch || 0);
+    return lifecycleState === 'torneo_in_corso' && started && currentMatch >= 1;
+  } catch {
+    return false;
+  }
+}
 
 function createWelcomePayload(teamName, teamData) {
   const { sanitizeText, getLogoUrl } = require('./bot/helpers');
@@ -31,6 +48,9 @@ function createWelcomePayload(teamName, teamData) {
   const logoUrl = getLogoUrl();
   const slot = Number(teamData?.slot || 0);
   const players = Array.isArray(teamData?.players) ? teamData.players : [];
+  const resultInfo = shouldShowResultPanels()
+    ? '• pannello invio risultato'
+    : '• pannello invio risultato quando inizierà il Match 1';
   const embed = new EmbedBuilder()
     .setColor(0x7b2cff)
     .setTitle('🔒 Stanza operativa privata team')
@@ -42,7 +62,7 @@ function createWelcomePayload(teamName, teamData) {
       `**Cosa arriverà qui:**\n` +
       `• comunicazioni staff\n` +
       `• codice lobby\n` +
-      `• pannello invio risultato\n` +
+      `${resultInfo}\n` +
       `• conferme e problemi del team\n\n` +
       `**Giocatori:**\n• ${sanitizeText(players[0]) || 'Giocatore 1'}\n• ${sanitizeText(players[1]) || 'Giocatore 2'}\n• ${sanitizeText(players[2]) || 'Giocatore 3'}`
     )
@@ -155,9 +175,13 @@ async function ensurePrivateTeamChannel(client, teamName, teamData, options = {}
   state.teams[teamName].privateTextChannelId = channel.id;
   lifecycle.saveEverything ? lifecycle.saveEverything() : lifecycle.saveState();
   await upsertPrivateWelcome(channel, teamName, state.teams[teamName]);
-  await upsertPrivateResultPanel(channel, teamName, state.teams[teamName]);
-  lifecycle.logAudit(clean(options.registrantTag) || 'bot', 'discord', 'stanza_operativa_team_assicurata', { team: teamName, slot, channelId: channel.id, categoryId: category.id, registrantId });
-  return { ok: true, channel, category, created: !existing };
+  if (shouldShowResultPanels()) {
+    await upsertPrivateResultPanel(channel, teamName, state.teams[teamName]);
+  } else if (options.removePrematureResultPanel) {
+    await deletePrivateResultPanel(channel, state.teams[teamName]);
+  }
+  lifecycle.logAudit(clean(options.registrantTag) || 'bot', 'discord', 'stanza_operativa_team_assicurata', { team: teamName, slot, channelId: channel.id, categoryId: category.id, registrantId, resultPanelSpawned: shouldShowResultPanels() });
+  return { ok: true, channel, category, created: !existing, resultPanelSpawned: shouldShowResultPanels() };
 }
 
 async function upsertPrivateWelcome(channel, teamName, teamData) {
@@ -172,29 +196,57 @@ async function upsertPrivateWelcome(channel, teamName, teamData) {
   return { created: true, messageId: sent.id };
 }
 
-async function upsertPrivateResultPanel(channel, teamName, teamData) {
+async function findPrivateResultPanel(channel, teamData) {
   const { buildResultButtonCustomId } = require('./bot/helpers');
   const slot = Number(teamData?.slot || 0);
   const customId = buildResultButtonCustomId(slot);
-  let existing = null;
   try {
-    const messages = await channel.messages.fetch({ limit: 30 });
+    const messages = await channel.messages.fetch({ limit: 50 });
     for (const message of messages.values()) {
       if (!message.author?.bot) continue;
-      for (const row of message.components || []) for (const component of row.components || []) if (component.customId === customId) existing = message;
+      const embedTitle = String(message.embeds?.[0]?.title || '');
+      const content = String(message.content || '');
+      if (embedTitle.includes('Pannello risultato') || content.includes('Pannello risultato team')) return message;
+      for (const row of message.components || []) {
+        for (const component of row.components || []) {
+          if (component.customId === customId || String(component.customId || '').startsWith('result_submit_slot_')) return message;
+        }
+      }
     }
   } catch {}
+  return null;
+}
+
+async function upsertPrivateResultPanel(channel, teamName, teamData) {
+  const existing = await findPrivateResultPanel(channel, teamData);
   const payload = createResultPanelPayload(teamName, teamData);
   if (existing) { await existing.edit({ content: '', ...payload }); return { updated: true, messageId: existing.id }; }
   const sent = await channel.send({ content: '📸 **Pannello risultato team**', ...payload });
   return { created: true, messageId: sent.id };
 }
 
-async function ensureAllPrivateTeamChannels(client) {
+async function deletePrivateResultPanel(channel, teamData) {
+  const existing = await findPrivateResultPanel(channel, teamData);
+  if (!existing) return { skipped: true };
+  await existing.delete().catch(() => null);
+  return { deleted: true, messageId: existing.id };
+}
+
+async function ensureAllPrivateTeamChannels(client, options = {}) {
   for (const [teamName, teamData] of getTeamEntries()) {
-    try { await ensurePrivateTeamChannel(client, teamName, teamData); }
+    try { await ensurePrivateTeamChannel(client, teamName, teamData, options); }
     catch (error) { console.error(`[team-private] errore ensure ${teamName}:`, error.message); }
   }
+}
+
+async function spawnResultPanelsForStartedMatch(client, reason = 'match-start') {
+  if (!shouldShowResultPanels()) {
+    console.log(`[team-private] pannelli risultato non spawnati (${reason}): torneo non in corso`);
+    return { skipped: true, reason: 'tournament_not_running' };
+  }
+  await ensureAllPrivateTeamChannels(client, { removePrematureResultPanel: false });
+  console.log(`[team-private] pannelli risultato team assicurati (${reason})`);
+  return { ok: true };
 }
 
 function installClientHook() {
@@ -205,7 +257,7 @@ function installClientHook() {
     const loaded = originalLoad.apply(this, arguments);
     if (isClientModuleRequest(request) && loaded?.client && !loaded.client.__rodaTeamPrivateReadyHooked) {
       Object.defineProperty(loaded.client, '__rodaTeamPrivateReadyHooked', { value: true, enumerable: false });
-      loaded.client.once('ready', () => setTimeout(() => ensureAllPrivateTeamChannels(loaded.client).catch(err => console.error('[team-private] ensure all failed:', err.message)), 9000));
+      loaded.client.once('ready', () => setTimeout(() => ensureAllPrivateTeamChannels(loaded.client, { removePrematureResultPanel: true }).catch(err => console.error('[team-private] ensure all failed:', err.message)), 9000));
       console.log('✅ Hook stanze operative team installato.');
     }
     return loaded;
@@ -222,14 +274,20 @@ function installPanelsHook() {
       const originalRefresh = loaded.refreshTeamResultPanels;
       if (typeof originalRefresh === 'function') {
         loaded.refreshTeamResultPanels = async function patchedRefreshTeamResultPanels(...args) {
+          if (!shouldShowResultPanels()) {
+            try { const { client } = require('./bot/client'); if (client?.isReady?.()) await ensureAllPrivateTeamChannels(client, { removePrematureResultPanel: true }); }
+            catch (error) { console.error('[team-private] pulizia pannelli prematuri fallita:', error.message); }
+            console.log('[team-private] refresh pannelli risultato saltato: Match 1 non ancora iniziato');
+            return { ok: true, skipped: true, reason: 'match_not_started' };
+          }
           const result = await originalRefresh.apply(this, args).catch(err => ({ ok: false, error: err.message }));
-          try { const { client } = require('./bot/client'); if (client?.isReady?.()) await ensureAllPrivateTeamChannels(client); }
+          try { const { client } = require('./bot/client'); if (client?.isReady?.()) await spawnResultPanelsForStartedMatch(client, 'refreshTeamResultPanels'); }
           catch (error) { console.error('[team-private] refresh operativo fallito:', error.message); }
           return result;
         };
       }
       Object.defineProperty(loaded, '__rodaTeamPrivatePanelsPatched', { value: true, enumerable: false });
-      console.log('✅ Refresh pannelli operativi team collegato.');
+      console.log('✅ Refresh pannelli operativi team collegato solo a match iniziato.');
     }
     return loaded;
   };
@@ -254,17 +312,43 @@ function installRegistrationHook() {
           const teamName = clean(interaction.fields.getTextInputValue('team'));
           const teamData = state.teams?.[teamName];
           if (!teamData) return;
-          await ensurePrivateTeamChannel(client, teamName, teamData, { registrantId: interaction.user.id, registrantTag: interaction.user.tag });
+          await ensurePrivateTeamChannel(client, teamName, teamData, { registrantId: interaction.user.id, registrantTag: interaction.user.tag, removePrematureResultPanel: true });
         } catch (error) { console.error('[team-private] creazione operativa post-registrazione fallita:', error.message); }
       }, 2500);
     }
     return result;
   };
   Object.defineProperty(Client.prototype, '__rodaTeamPrivateRegistrationPatched', { value: true, enumerable: false });
-  console.log('✅ Creazione stanze operative alla registrazione attiva.');
+  console.log('✅ Creazione stanze operative alla registrazione attiva senza pannelli risultato prematuri.');
 }
 
-function installTeamPrivateChannels() { installClientHook(); installPanelsHook(); installRegistrationHook(); }
+function installStorageLifecycleHook() {
+  if (global.__rodaTeamPrivateStorageHookInstalled) return;
+  global.__rodaTeamPrivateStorageHookInstalled = true;
+  const originalLoad = Module._load;
+  Module._load = function teamPrivateStorageLoad(request, parent, isMain) {
+    const loaded = originalLoad.apply(this, arguments);
+    if (isStorageModuleRequest(request) && loaded && !loaded.__rodaTeamPrivateStoragePatched) {
+      for (const fnName of ['startTournament', 'forceNextMatch', 'advanceToNextMatch']) {
+        if (typeof loaded[fnName] !== 'function') continue;
+        const original = loaded[fnName];
+        loaded[fnName] = function patchedStartOrNextMatch(...args) {
+          const result = original.apply(this, args);
+          setTimeout(async () => {
+            try { const { client } = require('./bot/client'); if (client?.isReady?.()) await spawnResultPanelsForStartedMatch(client, fnName); }
+            catch (error) { console.error(`[team-private] spawn pannelli risultato dopo ${fnName} fallito:`, error.message); }
+          }, 2500);
+          return result;
+        };
+      }
+      Object.defineProperty(loaded, '__rodaTeamPrivateStoragePatched', { value: true, enumerable: false });
+      console.log('✅ Hook avvio match per pannelli risultato team installato.');
+    }
+    return loaded;
+  };
+}
+
+function installTeamPrivateChannels() { installClientHook(); installPanelsHook(); installRegistrationHook(); installStorageLifecycleHook(); }
 installTeamPrivateChannels();
 
-module.exports = { installTeamPrivateChannels, ensurePrivateTeamChannel, ensureAllPrivateTeamChannels };
+module.exports = { installTeamPrivateChannels, ensurePrivateTeamChannel, ensureAllPrivateTeamChannels, spawnResultPanelsForStartedMatch, shouldShowResultPanels };
