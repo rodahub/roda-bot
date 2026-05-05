@@ -2,21 +2,36 @@
 
 /**
  * Stabilizes Discord panels so they are edited instead of reposted.
- * Emergency fix:
- * - forces the registration panel to the real iscrizioni channel when provided
- * - scans older messages, not only the last 50, so the old 28/04 panel can be found
+ * The registration panel must live ONLY in the official iscrizioni channel,
+ * never inside team/private channels.
  */
 
 const Module = require('module');
 const { AttachmentBuilder } = require('discord.js');
 
-const FORCED_REGISTRATION_CHANNEL_ID =
-  process.env.REGISTER_PANEL_CHANNEL_ID ||
-  process.env.REGISTRATION_PANEL_CHANNEL_ID ||
-  process.env.ISCRIZIONI_CHANNEL_ID ||
-  '1482050564375318579';
+const WRONG_REGISTRATION_PANEL_CHANNEL_ID = '1482050564375318579';
 
 function clean(value) { return String(value || '').trim(); }
+
+function getOfficialRegistrationChannelId() {
+  try {
+    const config = require('./bot/config');
+    return clean(
+      process.env.REGISTER_PANEL_CHANNEL_ID ||
+      process.env.REGISTRATION_PANEL_CHANNEL_ID ||
+      process.env.ISCRIZIONI_CHANNEL_ID ||
+      config.REGISTRATION_STATUS_CHANNEL ||
+      '1478304760816996423'
+    );
+  } catch {
+    return clean(
+      process.env.REGISTER_PANEL_CHANNEL_ID ||
+      process.env.REGISTRATION_PANEL_CHANNEL_ID ||
+      process.env.ISCRIZIONI_CHANNEL_ID ||
+      '1478304760816996423'
+    );
+  }
+}
 
 function isPanelsModuleRequest(request) {
   return typeof request === 'string' && (
@@ -45,6 +60,17 @@ function isStorageModuleRequest(request) {
   );
 }
 
+function isForbiddenRegistrationChannel(channel) {
+  if (!channel) return true;
+  const id = clean(channel.id);
+  const name = clean(channel.name).toLowerCase();
+  const officialId = getOfficialRegistrationChannelId();
+  if (officialId && id === officialId) return false;
+  if (id === WRONG_REGISTRATION_PANEL_CHANNEL_ID) return true;
+  if (name.includes('team') || name.includes('privat') || name.includes('operativ') || name.includes('risultat')) return true;
+  return !name.includes('iscrizion');
+}
+
 async function fetchMessagesDeep(channel, maxMessages = 800) {
   const collected = [];
   let before;
@@ -60,16 +86,55 @@ async function fetchMessagesDeep(channel, maxMessages = 800) {
   return collected;
 }
 
+function messageHasComponent(message, customId) {
+  for (const row of message.components || []) {
+    for (const component of row.components || []) {
+      if (component.customId === customId) return true;
+    }
+  }
+  return false;
+}
+
+function messageLooksLikeRegistrationPanel(message) {
+  if (!message?.author?.bot) return false;
+  if (messageHasComponent(message, 'register_btn')) return true;
+  const content = clean(message.content).toLowerCase();
+  const embedText = (message.embeds || []).map(embed => [embed.title, embed.description, embed.footer?.text].filter(Boolean).join(' ')).join(' ').toLowerCase();
+  return (content + ' ' + embedText).includes('pannello iscrizioni') || ((content + ' ' + embedText).includes('røda cup') && (content + ' ' + embedText).includes('iscrizioni'));
+}
+
+async function deleteRegistrationPanelsFromChannel(channel, reason) {
+  if (!channel || typeof channel.messages?.fetch !== 'function') return 0;
+  let deleted = 0;
+  const messages = await fetchMessagesDeep(channel, 800);
+  for (const message of messages) {
+    if (!messageLooksLikeRegistrationPanel(message)) continue;
+    try {
+      await message.delete();
+      deleted++;
+      console.log(`[panel-guard] pannello iscrizioni rimosso da canale sbagliato ${channel.name || channel.id}: ${message.id} (${reason})`);
+    } catch (error) {
+      console.warn(`[panel-guard] non posso rimuovere pannello iscrizioni sbagliato ${message.id}: ${error.message}`);
+    }
+  }
+  return deleted;
+}
+
+async function cleanupWrongRegistrationPanels(client, targetChannelId) {
+  const wrongIds = [WRONG_REGISTRATION_PANEL_CHANNEL_ID, process.env.WRONG_REGISTRATION_PANEL_CHANNEL_ID].map(clean).filter(Boolean);
+  for (const id of [...new Set(wrongIds)]) {
+    if (!id || id === targetChannelId) continue;
+    const channel = await client.channels.fetch(id).catch(() => null);
+    if (channel) await deleteRegistrationPanelsFromChannel(channel, 'cleanup-wrong-channel');
+  }
+}
+
 async function findMessageByComponent(channel, customId) {
   try {
     const messages = await fetchMessagesDeep(channel, 800);
     for (const message of messages) {
       if (!message.author?.bot) continue;
-      for (const row of message.components || []) {
-        for (const component of row.components || []) {
-          if (component.customId === customId) return message;
-        }
-      }
+      if (messageHasComponent(message, customId)) return message;
     }
   } catch (error) {
     console.error('[panel-guard] ricerca messaggio component fallita:', error.message);
@@ -82,20 +147,13 @@ function messageLooksLikeRegisteredTeams(message) {
   const content = clean(message.content).toLowerCase();
   const embedText = (message.embeds || []).map(embed => [embed.title, embed.description, embed.footer?.text].filter(Boolean).join(' ')).join(' ').toLowerCase();
   const files = [...(message.attachments?.values?.() || [])].map(att => clean(att.name || att.url).toLowerCase()).join(' ');
-  return (
-    content.includes('team registrati') ||
-    embedText.includes('team registrati') ||
-    embedText.includes('slot team') ||
-    files.includes('team-registrati')
-  );
+  return content.includes('team registrati') || embedText.includes('team registrati') || embedText.includes('slot team') || files.includes('team-registrati');
 }
 
 async function findRegisteredTeamsMessage(channel) {
   try {
     const messages = await fetchMessagesDeep(channel, 800);
-    for (const message of messages) {
-      if (messageLooksLikeRegisteredTeams(message)) return message;
-    }
+    for (const message of messages) if (messageLooksLikeRegisteredTeams(message)) return message;
   } catch (error) {
     console.error('[panel-guard] ricerca Team Registrati fallita:', error.message);
   }
@@ -114,8 +172,8 @@ function getSignature(lifecycle) {
   return `${teams.length}:${lifecycle.areRegistrationsOpen ? lifecycle.areRegistrationsOpen() : false}:${teams.map(t => `${t.slot}-${t.teamName}`).join('|')}`;
 }
 
-function resolveRegisterPanelChannelId(channelId, settings = {}) {
-  return clean(FORCED_REGISTRATION_CHANNEL_ID) || clean(channelId) || clean(settings.registerPanelChannelId);
+function resolveRegisterPanelChannelId() {
+  return getOfficialRegistrationChannelId();
 }
 
 async function stableSpawnRegisterPanel(panelsModule, channelId) {
@@ -125,35 +183,34 @@ async function stableSpawnRegisterPanel(panelsModule, channelId) {
 
   await waitReady();
   lifecycle.refreshStateFromDisk();
-  const settings = lifecycle.getBotSettings();
-  const targetChannelId = resolveRegisterPanelChannelId(channelId, settings);
-  if (!targetChannelId) throw new Error('ID canale pannello registrazione non valido');
+
+  const targetChannelId = resolveRegisterPanelChannelId();
+  if (!targetChannelId) throw new Error('ID canale iscrizioni non configurato');
 
   const channel = await client.channels.fetch(targetChannelId);
-  const payload = panelsModule.createRegisterPanelPayload();
+  if (isForbiddenRegistrationChannel(channel)) throw new Error(`Canale iscrizioni non valido: ${channel?.name || targetChannelId}`);
 
-  let message = null;
-  if (settings.registerPanelChannelId === targetChannelId) {
-    message = await fetchSavedMessage(channel, settings.registerPanelMessageId);
-  }
+  await cleanupWrongRegistrationPanels(client, targetChannelId).catch(() => {});
+
+  const payload = panelsModule.createRegisterPanelPayload();
+  let message = await fetchSavedMessage(channel, state.data?.botSettings?.registerPanelMessageId);
   if (!message) message = await findMessageByComponent(channel, 'register_btn');
 
   let created = false;
   let updated = false;
-
   if (message) {
     await message.edit(payload);
     updated = true;
-    state.data.botSettings.registerPanelMessageId = message.id;
   } else {
     message = await channel.send(payload);
     created = true;
-    state.data.botSettings.registerPanelMessageId = message.id;
   }
 
+  state.data.botSettings = state.data.botSettings || {};
   state.data.botSettings.registerPanelChannelId = targetChannelId;
+  state.data.botSettings.registerPanelMessageId = message.id;
   lifecycle.saveState();
-  lifecycle.logAudit('dashboard', 'web', 'pannello_registrazione_stabile', { channelId: targetChannelId, messageId: message.id, created, updated, registrationsOpen: lifecycle.areRegistrationsOpen() });
+  lifecycle.logAudit('dashboard', 'web', 'pannello_registrazione_stabile', { requestedChannelId: channelId || '', channelId: targetChannelId, messageId: message.id, created, updated, registrationsOpen: lifecycle.areRegistrationsOpen() });
   return { ok: true, created, updated, messageId: message.id, registrationsOpen: lifecycle.areRegistrationsOpen(), channelId: targetChannelId };
 }
 
@@ -161,26 +218,25 @@ async function stableUpdateRegistrationStatusMessage(panelsModule, options = {})
   const { client, waitReady } = require('./bot/client');
   const state = require('./bot/state');
   const lifecycle = require('./bot/lifecycle');
-  const config = require('./bot/config');
   const renderer = require('./renderer');
 
   await waitReady();
   lifecycle.refreshStateFromDisk();
   lifecycle.ensureDataStructures();
 
-  const settings = lifecycle.getBotSettings();
-  const targetChannelId = clean(config.REGISTRATION_STATUS_CHANNEL) || resolveRegisterPanelChannelId('', settings);
+  const targetChannelId = getOfficialRegistrationChannelId();
   if (!targetChannelId) return { skipped: true, reason: 'no_channel' };
-
   const channel = await client.channels.fetch(targetChannelId).catch(() => null);
   if (!channel) return { skipped: true, reason: 'channel_not_found', channelId: targetChannelId };
+  if (isForbiddenRegistrationChannel(channel)) return { skipped: true, reason: 'forbidden_channel', channelId: targetChannelId, channelName: channel.name };
+
+  await cleanupWrongRegistrationPanels(client, targetChannelId).catch(() => {});
 
   if (state.data.registrationStatusChannelId && state.data.registrationStatusChannelId !== targetChannelId) {
     state.data.registrationStatusMessageId = null;
     state.data.registrationGraphicMessageId = null;
     state.data.lastRegistrationGraphicSignature = null;
   }
-
   state.data.registrationStatusChannelId = targetChannelId;
 
   let message = await fetchSavedMessage(channel, state.data.registrationStatusMessageId);
@@ -202,56 +258,31 @@ async function stableUpdateRegistrationStatusMessage(panelsModule, options = {})
 
   let created = false;
   let updated = false;
-
   if (buffer && buffer.length) {
     const attachment = new AttachmentBuilder(buffer, { name: `team-registrati.png` });
     const payload = { content: '', embeds: [], components: [], files: [attachment] };
-    if (message) {
-      await message.edit(payload);
-      updated = true;
-    } else {
-      message = await channel.send(payload);
-      created = true;
-    }
+    if (message) { await message.edit(payload); updated = true; }
+    else { message = await channel.send(payload); created = true; }
   } else {
     const embeds = panelsModule.buildRegistrationEmbeds();
     const payload = { content: '', embeds, components: [] };
-    if (message) {
-      await message.edit(payload);
-      updated = true;
-    } else {
-      message = await channel.send(payload);
-      created = true;
-    }
+    if (message) { await message.edit(payload); updated = true; }
+    else { message = await channel.send(payload); created = true; }
   }
 
   state.data.registrationStatusMessageId = message.id;
   state.data.registrationGraphicMessageId = message.id;
   state.data.lastRegistrationGraphicSignature = signature;
   lifecycle.saveState();
-
   return { ok: true, updated, created, graphic: Boolean(buffer && buffer.length), fallback: !(buffer && buffer.length), error: graphicError?.message || null, messageId: message.id, channelId: targetChannelId };
 }
 
 function patchPanelsModule(panelsModule) {
   if (!panelsModule || panelsModule.__rodaPanelStabilityGuardPatched) return panelsModule;
 
-  panelsModule.spawnRegisterPanel = function guardedSpawnRegisterPanel(channelId) {
-    return stableSpawnRegisterPanel(panelsModule, channelId);
-  };
-
-  panelsModule.updateRegistrationStatusMessage = function guardedUpdateRegistrationStatusMessage(options = {}) {
-    return stableUpdateRegistrationStatusMessage(panelsModule, options);
-  };
-
-  panelsModule.updateSavedRegisterPanelIfExists = async function guardedUpdateSavedRegisterPanelIfExists() {
-    const lifecycle = require('./bot/lifecycle');
-    const settings = lifecycle.getBotSettings();
-    const targetChannelId = resolveRegisterPanelChannelId('', settings);
-    if (!targetChannelId) return { skipped: true };
-    return panelsModule.spawnRegisterPanel(targetChannelId);
-  };
-
+  panelsModule.spawnRegisterPanel = function guardedSpawnRegisterPanel(channelId) { return stableSpawnRegisterPanel(panelsModule, channelId); };
+  panelsModule.updateRegistrationStatusMessage = function guardedUpdateRegistrationStatusMessage(options = {}) { return stableUpdateRegistrationStatusMessage(panelsModule, options); };
+  panelsModule.updateSavedRegisterPanelIfExists = async function guardedUpdateSavedRegisterPanelIfExists() { return panelsModule.spawnRegisterPanel(getOfficialRegistrationChannelId()); };
   panelsModule.handleRegistrationStateChange = async function guardedHandleRegistrationStateChange() {
     const lifecycle = require('./bot/lifecycle');
     lifecycle.refreshStateFromDisk();
@@ -262,7 +293,7 @@ function patchPanelsModule(panelsModule) {
   };
 
   Object.defineProperty(panelsModule, '__rodaPanelStabilityGuardPatched', { value: true, enumerable: false });
-  console.log(`✅ Guard stabilità pannelli Discord attivo. Canale iscrizioni forzato: ${clean(FORCED_REGISTRATION_CHANNEL_ID) || 'non impostato'}`);
+  console.log(`✅ Guard stabilità pannelli Discord attivo. Canale iscrizioni ufficiale: ${getOfficialRegistrationChannelId()}`);
   return panelsModule;
 }
 
@@ -271,9 +302,7 @@ function patchBotIndex(botModule) {
   try {
     const panels = require('./bot/panels');
     patchPanelsModule(panels);
-    for (const key of ['spawnRegisterPanel', 'updateRegistrationStatusMessage', 'updateSavedRegisterPanelIfExists', 'handleRegistrationStateChange']) {
-      if (typeof panels[key] === 'function') botModule[key] = panels[key];
-    }
+    for (const key of ['spawnRegisterPanel', 'updateRegistrationStatusMessage', 'updateSavedRegisterPanelIfExists', 'handleRegistrationStateChange']) if (typeof panels[key] === 'function') botModule[key] = panels[key];
     Object.defineProperty(botModule, '__rodaPanelStabilityIndexPatched', { value: true, enumerable: false });
   } catch (error) {
     console.error('[panel-guard] patch index fallita:', error.message);
@@ -314,7 +343,6 @@ function patchStorageModule(storageModule) {
 function install() {
   if (global.__rodaPanelStabilityGuardInstalled) return;
   global.__rodaPanelStabilityGuardInstalled = true;
-
   const originalLoad = Module._load;
   Module._load = function panelStabilityGuardLoad(request, parent, isMain) {
     const loaded = originalLoad.apply(this, arguments);
@@ -323,7 +351,6 @@ function install() {
     if (isStorageModuleRequest(request)) return patchStorageModule(loaded);
     return loaded;
   };
-
   console.log('✅ Hook stabilità pannelli Discord installato.');
 }
 
