@@ -2,13 +2,19 @@
 
 /**
  * Stabilizes Discord panels so they are edited instead of reposted.
- * - Registration panel: finds the existing register_btn message if saved ID is stale.
- * - Registered teams graphic: finds the existing teams message if saved ID is stale.
- * - Lifecycle changes: force refreshes saved panels after open/close/new tournament actions.
+ * Emergency fix:
+ * - forces the registration panel to the real iscrizioni channel when provided
+ * - scans older messages, not only the last 50, so the old 28/04 panel can be found
  */
 
 const Module = require('module');
 const { AttachmentBuilder } = require('discord.js');
+
+const FORCED_REGISTRATION_CHANNEL_ID =
+  process.env.REGISTER_PANEL_CHANNEL_ID ||
+  process.env.REGISTRATION_PANEL_CHANNEL_ID ||
+  process.env.ISCRIZIONI_CHANNEL_ID ||
+  '1482050564375318579';
 
 function clean(value) { return String(value || '').trim(); }
 
@@ -39,10 +45,25 @@ function isStorageModuleRequest(request) {
   );
 }
 
+async function fetchMessagesDeep(channel, maxMessages = 800) {
+  const collected = [];
+  let before;
+  while (collected.length < maxMessages) {
+    const limit = Math.min(100, maxMessages - collected.length);
+    const batch = await channel.messages.fetch(before ? { limit, before } : { limit }).catch(() => null);
+    if (!batch || batch.size === 0) break;
+    const values = [...batch.values()];
+    collected.push(...values);
+    before = values[values.length - 1]?.id;
+    if (!before || batch.size < limit) break;
+  }
+  return collected;
+}
+
 async function findMessageByComponent(channel, customId) {
   try {
-    const messages = await channel.messages.fetch({ limit: 50 });
-    for (const message of messages.values()) {
+    const messages = await fetchMessagesDeep(channel, 800);
+    for (const message of messages) {
       if (!message.author?.bot) continue;
       for (const row of message.components || []) {
         for (const component of row.components || []) {
@@ -71,8 +92,8 @@ function messageLooksLikeRegisteredTeams(message) {
 
 async function findRegisteredTeamsMessage(channel) {
   try {
-    const messages = await channel.messages.fetch({ limit: 80 });
-    for (const message of messages.values()) {
+    const messages = await fetchMessagesDeep(channel, 800);
+    for (const message of messages) {
       if (messageLooksLikeRegisteredTeams(message)) return message;
     }
   } catch (error) {
@@ -93,6 +114,10 @@ function getSignature(lifecycle) {
   return `${teams.length}:${lifecycle.areRegistrationsOpen ? lifecycle.areRegistrationsOpen() : false}:${teams.map(t => `${t.slot}-${t.teamName}`).join('|')}`;
 }
 
+function resolveRegisterPanelChannelId(channelId, settings = {}) {
+  return clean(FORCED_REGISTRATION_CHANNEL_ID) || clean(channelId) || clean(settings.registerPanelChannelId);
+}
+
 async function stableSpawnRegisterPanel(panelsModule, channelId) {
   const { client, waitReady } = require('./bot/client');
   const state = require('./bot/state');
@@ -101,7 +126,7 @@ async function stableSpawnRegisterPanel(panelsModule, channelId) {
   await waitReady();
   lifecycle.refreshStateFromDisk();
   const settings = lifecycle.getBotSettings();
-  const targetChannelId = clean(channelId) || settings.registerPanelChannelId;
+  const targetChannelId = resolveRegisterPanelChannelId(channelId, settings);
   if (!targetChannelId) throw new Error('ID canale pannello registrazione non valido');
 
   const channel = await client.channels.fetch(targetChannelId);
@@ -129,7 +154,7 @@ async function stableSpawnRegisterPanel(panelsModule, channelId) {
   state.data.botSettings.registerPanelChannelId = targetChannelId;
   lifecycle.saveState();
   lifecycle.logAudit('dashboard', 'web', 'pannello_registrazione_stabile', { channelId: targetChannelId, messageId: message.id, created, updated, registrationsOpen: lifecycle.areRegistrationsOpen() });
-  return { ok: true, created, updated, messageId: message.id, registrationsOpen: lifecycle.areRegistrationsOpen() };
+  return { ok: true, created, updated, messageId: message.id, registrationsOpen: lifecycle.areRegistrationsOpen(), channelId: targetChannelId };
 }
 
 async function stableUpdateRegistrationStatusMessage(panelsModule, options = {}) {
@@ -144,7 +169,7 @@ async function stableUpdateRegistrationStatusMessage(panelsModule, options = {})
   lifecycle.ensureDataStructures();
 
   const settings = lifecycle.getBotSettings();
-  const targetChannelId = clean(config.REGISTRATION_STATUS_CHANNEL) || clean(settings.registerPanelChannelId);
+  const targetChannelId = clean(config.REGISTRATION_STATUS_CHANNEL) || resolveRegisterPanelChannelId('', settings);
   if (!targetChannelId) return { skipped: true, reason: 'no_channel' };
 
   const channel = await client.channels.fetch(targetChannelId).catch(() => null);
@@ -205,7 +230,7 @@ async function stableUpdateRegistrationStatusMessage(panelsModule, options = {})
   state.data.lastRegistrationGraphicSignature = signature;
   lifecycle.saveState();
 
-  return { ok: true, updated, created, graphic: Boolean(buffer && buffer.length), fallback: !(buffer && buffer.length), error: graphicError?.message || null, messageId: message.id };
+  return { ok: true, updated, created, graphic: Boolean(buffer && buffer.length), fallback: !(buffer && buffer.length), error: graphicError?.message || null, messageId: message.id, channelId: targetChannelId };
 }
 
 function patchPanelsModule(panelsModule) {
@@ -222,8 +247,9 @@ function patchPanelsModule(panelsModule) {
   panelsModule.updateSavedRegisterPanelIfExists = async function guardedUpdateSavedRegisterPanelIfExists() {
     const lifecycle = require('./bot/lifecycle');
     const settings = lifecycle.getBotSettings();
-    if (!settings.registerPanelChannelId) return { skipped: true };
-    return panelsModule.spawnRegisterPanel(settings.registerPanelChannelId);
+    const targetChannelId = resolveRegisterPanelChannelId('', settings);
+    if (!targetChannelId) return { skipped: true };
+    return panelsModule.spawnRegisterPanel(targetChannelId);
   };
 
   panelsModule.handleRegistrationStateChange = async function guardedHandleRegistrationStateChange() {
@@ -236,7 +262,7 @@ function patchPanelsModule(panelsModule) {
   };
 
   Object.defineProperty(panelsModule, '__rodaPanelStabilityGuardPatched', { value: true, enumerable: false });
-  console.log('✅ Guard stabilità pannelli Discord attivo.');
+  console.log(`✅ Guard stabilità pannelli Discord attivo. Canale iscrizioni forzato: ${clean(FORCED_REGISTRATION_CHANNEL_ID) || 'non impostato'}`);
   return panelsModule;
 }
 
