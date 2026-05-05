@@ -1,11 +1,5 @@
 'use strict';
 
-/**
- * Public website registration guard.
- * Website registrations must include a Discord captain/reference so staff can
- * create/contact the correct ticket. The value is saved on the team object.
- */
-
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -14,124 +8,50 @@ const ROOT_DIR = __dirname;
 const STORAGE_DIR = process.env.STORAGE_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT_DIR, 'storage-data');
 const TEAMS_FILE = path.join(STORAGE_DIR, 'teams.json');
 
-function clean(value) { return String(value || '').trim(); }
-function lower(value) { return clean(value).toLowerCase(); }
-function readJson(filePath, fallback) {
-  try { if (!fs.existsSync(filePath)) return fallback; const raw = fs.readFileSync(filePath, 'utf8'); return raw.trim() ? JSON.parse(raw) : fallback; }
-  catch (error) { console.error('[site-registration-discord] read json failed:', error.message); return fallback; }
-}
-function writeJson(filePath, value) { fs.mkdirSync(path.dirname(filePath), { recursive: true }); fs.writeFileSync(filePath, JSON.stringify(value || {}, null, 2), 'utf8'); }
-function getTeamNameFromBody(body) { return clean(body?.team || body?.teamName || body?.nomeTeam || body?.nome || body?.name); }
-function getDiscordReference(body) {
-  return clean(body?.captainDiscord || body?.discordCaptain || body?.discordReference || body?.discordRef || body?.discord || body?.discordName || body?.discordTag || body?.capitanoDiscord || body?.contattoDiscord || body?.ticketDiscord || body?.registeredByTag);
-}
-function extractDiscordId(reference) { const value = clean(reference); const mention = value.match(/^<@!?([0-9]{15,25})>$/); if (mention) return mention[1]; const raw = value.match(/^[0-9]{15,25}$/); return raw ? raw[0] : ''; }
-function looksLikePublicRegistration(req) {
-  const method = String(req.method || '').toUpperCase(); if (method !== 'POST') return false;
-  const url = lower(req.originalUrl || req.url || ''); const body = req.body || {}; const team = getTeamNameFromBody(body);
-  const playersArray = Array.isArray(body.players) ? body.players.filter(Boolean) : [];
-  const hasPlayers = playersArray.length >= 3 || (body.p1 && body.p2 && body.p3) || (body.player1 && body.player2 && body.player3) || (body.g1 && body.g2 && body.g3);
-  const routeLooksPublic = /register|registr|iscrizion|team/.test(url) && !/admin|dashboard|login|auth|result|loadout|slot|settings/.test(url);
-  return Boolean(team && hasPlayers && routeLooksPublic);
-}
-function attachDiscordFields(req, reference) {
-  req.body = req.body || {}; req.body.captainDiscord = reference; req.body.discordReference = reference; req.body.discordRef = reference; req.body.registeredByTag = reference;
-  const discordId = extractDiscordId(reference); if (discordId) { req.body.registeredById = discordId; req.body.ownerDiscordId = discordId; req.body.captainDiscordId = discordId; req.body.discordUserId = discordId; }
-}
-function saveDiscordReferenceOnTeam(teamName, reference) {
-  const cleanTeam = clean(teamName); const cleanRef = clean(reference); if (!cleanTeam || !cleanRef) return false;
-  const teams = readJson(TEAMS_FILE, {}); const key = Object.keys(teams || {}).find(name => name.toLowerCase() === cleanTeam.toLowerCase()) || cleanTeam; if (!teams[key]) return false;
-  const discordId = extractDiscordId(cleanRef);
-  teams[key] = { ...(teams[key] || {}), captainDiscord: cleanRef, discordReference: cleanRef, registeredByTag: teams[key].registeredByTag || cleanRef, updatedAt: new Date().toISOString() };
-  if (discordId) { teams[key].registeredById = discordId; teams[key].ownerDiscordId = discordId; teams[key].captainDiscordId = discordId; teams[key].discordUserId = discordId; }
-  writeJson(TEAMS_FILE, teams); console.log(`[site-registration-discord] riferimento Discord salvato per ${key}: ${cleanRef}`); return true;
-}
-function requireDiscordReference(req, res, next) {
-  if (!looksLikePublicRegistration(req)) return next();
-  const reference = getDiscordReference(req.body);
-  if (!reference || reference.length < 2) return res.status(400).json({ ok: false, error: 'DISCORD_REFERENCE_REQUIRED', message: 'Inserisci il nome Discord del capitano o un Discord di riferimento per il ticket.' });
-  attachDiscordFields(req, reference);
-  const teamName = getTeamNameFromBody(req.body); const originalJson = res.json;
-  res.json = function patchedJson(payload) { try { const ok = !(payload && payload.ok === false) && res.statusCode < 400; if (ok) setTimeout(() => saveDiscordReferenceOnTeam(teamName, reference), 80); } catch (error) { console.error('[site-registration-discord] post-save json failed:', error.message); } return originalJson.call(this, payload); };
-  next();
-}
-function injectBeforeBodyEnd(html, snippet, marker) { const source = String(html || ''); if (marker && source.includes(marker)) return source; const idx = source.toLowerCase().lastIndexOf('</body>'); if (idx === -1) return source + snippet; return source.slice(0, idx) + snippet + source.slice(idx); }
-function patchIndexHtml(html) {
-  const snippet = `
+function clean(v){return String(v||'').trim();}
+function lower(v){return clean(v).toLowerCase();}
+function readJson(filePath,fallback){try{if(!fs.existsSync(filePath))return fallback;const raw=fs.readFileSync(filePath,'utf8');return raw.trim()?JSON.parse(raw):fallback;}catch(e){console.error('[site-registration-discord] read json failed:',e.message);return fallback;}}
+function writeJson(filePath,value){fs.mkdirSync(path.dirname(filePath),{recursive:true});fs.writeFileSync(filePath,JSON.stringify(value||{},null,2),'utf8');}
+function getTeamNameFromBody(body){return clean(body?.team||body?.teamName||body?.nomeTeam||body?.nome||body?.name);}
+function getDiscordReference(body){return clean(body?.captainDiscord||body?.discordCaptain||body?.discordReference||body?.discordRef||body?.discord||body?.discordName||body?.discordTag||body?.capitanoDiscord||body?.contattoDiscord||body?.ticketDiscord||body?.registeredByTag);}
+function extractDiscordId(ref){const v=clean(ref);const mention=v.match(/^<@!?([0-9]{15,25})>$/);if(mention)return mention[1];const raw=v.match(/^[0-9]{15,25}$/);return raw?raw[0]:'';}
+function looksLikePublicRegistration(req){const method=String(req.method||'').toUpperCase();if(method!=='POST')return false;const url=lower(req.originalUrl||req.url||'');const body=req.body||{};const team=getTeamNameFromBody(body);const players=Array.isArray(body.players)?body.players.filter(Boolean):[];const hasPlayers=players.length>=3||(body.p1&&body.p2&&body.p3)||(body.player1&&body.player2&&body.player3)||(body.g1&&body.g2&&body.g3);const route=/register|registr|iscrizion|team/.test(url)&&!/admin|dashboard|login|auth|result|loadout|slot|settings/.test(url);return Boolean(team&&hasPlayers&&route);}
+function attachDiscordFields(req,reference){req.body=req.body||{};req.body.captainDiscord=reference;req.body.discordReference=reference;req.body.discordRef=reference;req.body.registeredByTag=reference;const id=extractDiscordId(reference);if(id){req.body.registeredById=id;req.body.ownerDiscordId=id;req.body.captainDiscordId=id;req.body.discordUserId=id;}}
+function saveDiscordReferenceOnTeam(teamName,reference){const team=clean(teamName),ref=clean(reference);if(!team||!ref)return false;const teams=readJson(TEAMS_FILE,{});const key=Object.keys(teams||{}).find(n=>n.toLowerCase()===team.toLowerCase())||team;if(!teams[key])return false;const id=extractDiscordId(ref);teams[key]={...(teams[key]||{}),captainDiscord:ref,discordReference:ref,registeredByTag:teams[key].registeredByTag||ref,updatedAt:new Date().toISOString()};if(id){teams[key].registeredById=id;teams[key].ownerDiscordId=id;teams[key].captainDiscordId=id;teams[key].discordUserId=id;}writeJson(TEAMS_FILE,teams);console.log(`[site-registration-discord] riferimento Discord salvato per ${key}: ${ref}`);return true;}
+function requireDiscordReference(req,res,next){if(!looksLikePublicRegistration(req))return next();const ref=getDiscordReference(req.body);if(!ref||ref.length<2)return res.status(400).json({ok:false,error:'DISCORD_REFERENCE_REQUIRED',message:'Inserisci il nome Discord del capitano o un Discord di riferimento per il ticket.'});attachDiscordFields(req,ref);const team=getTeamNameFromBody(req.body);const originalJson=res.json;res.json=function patchedJson(payload){try{const ok=!(payload&&payload.ok===false)&&res.statusCode<400;if(ok)setTimeout(()=>saveDiscordReferenceOnTeam(team,ref),80);}catch(e){console.error('[site-registration-discord] post-save json failed:',e.message);}return originalJson.call(this,payload);};next();}
+function injectBeforeBodyEnd(html,snippet,marker){const source=String(html||'');if(marker&&source.includes(marker))return source;const idx=source.toLowerCase().lastIndexOf('</body>');if(idx===-1)return source+snippet;return source.slice(0,idx)+snippet+source.slice(idx);}
+function patchIndexHtml(html){const snippet=`
 <style id="rodaDiscordReferenceStyle">
 .discord-reference-field{display:grid!important;gap:8px!important;margin-bottom:12px!important}.discord-reference-field label{font-size:13px!important;color:#ddd7f2!important;font-weight:800!important}.discord-reference-field input{width:100%!important;border-radius:14px!important;border:1px solid rgba(160,110,255,.30)!important;background:rgba(255,255,255,.04)!important;color:#fff!important;padding:12px 14px!important;outline:none!important;font-size:14px!important;min-height:46px!important}.discord-reference-field small{color:var(--muted,#aaa6c5)!important;line-height:1.35!important;display:block!important}
 </style>
 <script id="rodaDiscordReferenceGuard">
 (function(){
-  function clean(v){return String(v||'').trim();}
-  function looksLikeRegisterUrl(url){url=String(url||'').toLowerCase();return /(register|registr|iscrizion|team)/.test(url)&&!/(admin|dashboard|login|auth|result|loadout|slot|settings)/.test(url);}
-  function getField(){return document.querySelector('#captainDiscord,#discordReference,[name="captainDiscord"],[name="discordReference"],[name="discord"],[data-roda-discord-reference="1"]');}
-  function getValue(){var f=getField();return f?clean(f.value):'';}
-  function getInputName(input){return clean((input.getAttribute('name')||input.id||input.placeholder||'')).toLowerCase();}
-  function findTeamInput(){
-    var inputs=[].slice.call(document.querySelectorAll('input'));
-    return inputs.find(function(i){var n=getInputName(i);return /team|squadra|nome/.test(n)&&!/giocatore|player|discord|password|email|kill|search/.test(n);})||null;
-  }
-  function findRegistrationContainer(){
-    var field=getField(); if(field) return field.closest('form,.card,.glow-card,.quick-card,.section,.page,main,body')||document.body;
-    var teamInput=findTeamInput();
-    if(teamInput) return teamInput.closest('form,.card,.glow-card,.quick-card,.section,.page,main')||teamInput.parentElement||document.body;
-    var buttons=[].slice.call(document.querySelectorAll('button,.btn,[role="button"]'));
-    var b=buttons.find(function(x){return /registr|iscriv|aggiungi team|team/.test(clean(x.textContent).toLowerCase());});
-    return (b&&b.closest('form,.card,.glow-card,.quick-card,.section,.page,main'))||document.body;
-  }
-  function ensureField(){
-    if(getField()) return;
-    var container=findRegistrationContainer(); if(!container) return;
-    var wrap=document.createElement('div'); wrap.className='field discord-reference-field'; wrap.setAttribute('data-roda-discord-reference-wrap','1');
-    wrap.innerHTML='<label for="captainDiscord">Discord capitano / riferimento ticket *</label><input id="captainDiscord" name="captainDiscord" data-roda-discord-reference="1" type="text" autocomplete="off" required placeholder="Es. RooS oppure @RooS oppure ID Discord" /><small>Obbligatorio: serve allo staff per aprire o gestire il ticket del team.</small>';
-    var teamInput=findTeamInput(); var target=(teamInput&&teamInput.closest('.field'))||teamInput;
-    if(target&&target.parentNode) target.parentNode.insertBefore(wrap,target.nextSibling); else container.insertBefore(wrap,container.firstChild);
-  }
-  function validateAndGet(){ensureField();var value=getValue();if(!value){alert('Inserisci il nome Discord del capitano o un Discord di riferimento per il ticket.');var f=getField();if(f)f.focus();throw new Error('Discord riferimento mancante');}return value;}
-  var originalFetch=window.fetch;
-  if(originalFetch&&!window.__rodaDiscordReferenceFetchPatched){window.__rodaDiscordReferenceFetchPatched=true;window.fetch=function(input,init){var url=typeof input==='string'?input:(input&&input.url)||'';var method=String((init&&init.method)||'GET').toUpperCase();if(method==='POST'&&looksLikeRegisterUrl(url)&&init&&init.body){var ref=validateAndGet();if(typeof init.body==='string'){try{var data=JSON.parse(init.body);data.captainDiscord=ref;data.discordReference=ref;data.discordRef=ref;data.registeredByTag=ref;init=Object.assign({},init,{body:JSON.stringify(data)});}catch(e){}}else if(window.FormData&&init.body instanceof FormData){init.body.set('captainDiscord',ref);init.body.set('discordReference',ref);init.body.set('discordRef',ref);init.body.set('registeredByTag',ref);}}return originalFetch.call(this,input,init);};}
-  document.addEventListener('submit',function(ev){var c=(ev.target&&ev.target.textContent||'').toLowerCase();if(c.includes('team')&&(c.includes('giocatore')||c.includes('player')||c.includes('registr'))){validateAndGet();}},true);
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest&&ev.target.closest('button,.btn,[role="button"]');if(!b)return;var t=clean(b.textContent).toLowerCase();if(/registr|iscriv|aggiungi team/.test(t)){setTimeout(ensureField,30);}},true);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureField);else ensureField();
-  try{new MutationObserver(function(){ensureField();}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}
-  setInterval(ensureField,800);
+function clean(v){return String(v||'').trim();}
+function looksLikeRegisterUrl(url){url=String(url||'').toLowerCase();return /(register|registr|iscrizion|team)/.test(url)&&!/(admin|dashboard|login|auth|result|loadout|slot|settings)/.test(url);}
+function getField(){return document.querySelector('#captainDiscord,#discordReference,[name="captainDiscord"],[name="discordReference"],[name="discord"],[data-roda-discord-reference="1"]');}
+function getValue(){var f=getField();return f?clean(f.value):'';}
+function inputName(i){return clean((i.getAttribute('name')||i.id||i.placeholder||'')).toLowerCase();}
+function findTeamInput(){var inputs=[].slice.call(document.querySelectorAll('input'));return inputs.find(function(i){var n=inputName(i);return /team|squadra/.test(n)&&!/giocatore|player|discord|password|email|kill|search/.test(n);})||inputs.find(function(i){return /nome del team|nome team/.test(inputName(i));})||null;}
+function findContainer(){var ti=findTeamInput();if(ti)return ti.closest('.card,.glow-card,form,.section,.page,main')||ti.parentElement||document.body;var h=[].slice.call(document.querySelectorAll('h1,h2,h3')).find(function(x){return /iscrivi il tuo team|iscrivi|registr/.test(clean(x.textContent).toLowerCase());});return (h&&h.closest('.card,.glow-card,.section,.page,main'))||document.body;}
+function ensureField(){if(getField())return;var c=findContainer();if(!c)return;var wrap=document.createElement('div');wrap.className='field discord-reference-field';wrap.setAttribute('data-roda-discord-reference-wrap','1');wrap.innerHTML='<label for="captainDiscord">Discord capitano / riferimento ticket *</label><input id="captainDiscord" name="captainDiscord" data-roda-discord-reference="1" type="text" autocomplete="off" required placeholder="Es. RooS oppure @RooS oppure ID Discord" /><small>Obbligatorio: serve allo staff per aprire o gestire il ticket del team.</small>';var ti=findTeamInput();var target=(ti&&ti.closest('.field'))||ti;if(target&&target.parentNode)target.parentNode.insertBefore(wrap,target.nextSibling);else{var btn=[].slice.call(c.querySelectorAll('button,.btn')).find(function(b){return /registra|iscrivi/.test(clean(b.textContent).toLowerCase());});if(btn&&btn.parentNode)btn.parentNode.insertBefore(wrap,btn);else c.appendChild(wrap);}}
+function validateAndGet(){ensureField();var v=getValue();if(!v){alert('Inserisci il nome Discord del capitano o un Discord di riferimento per il ticket.');var f=getField();if(f)f.focus();throw new Error('Discord riferimento mancante');}return v;}
+var originalFetch=window.fetch;if(originalFetch&&!window.__rodaDiscordReferenceFetchPatched){window.__rodaDiscordReferenceFetchPatched=true;window.fetch=function(input,init){var url=typeof input==='string'?input:(input&&input.url)||'';var method=String((init&&init.method)||'GET').toUpperCase();if(method==='POST'&&looksLikeRegisterUrl(url)&&init&&init.body){var ref=validateAndGet();if(typeof init.body==='string'){try{var data=JSON.parse(init.body);data.captainDiscord=ref;data.discordReference=ref;data.discordRef=ref;data.registeredByTag=ref;init=Object.assign({},init,{body:JSON.stringify(data)});}catch(e){}}else if(window.FormData&&init.body instanceof FormData){init.body.set('captainDiscord',ref);init.body.set('discordReference',ref);init.body.set('discordRef',ref);init.body.set('registeredByTag',ref);}}return originalFetch.call(this,input,init);};}
+document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest&&ev.target.closest('button,.btn,[role="button"]');if(!b)return;var t=clean(b.textContent).toLowerCase();if(/registra|iscrivi|aggiungi team/.test(t)){validateAndGet();}},true);
+document.addEventListener('submit',function(ev){var c=(ev.target&&ev.target.textContent||'').toLowerCase();if(c.includes('team')&&(c.includes('giocatore')||c.includes('player')||c.includes('registr'))){validateAndGet();}},true);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureField);else ensureField();try{new MutationObserver(function(){ensureField();}).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}setInterval(ensureField,800);
 })();
-</script>`;
-  return injectBeforeBodyEnd(html, snippet, 'rodaDiscordReferenceGuard');
-}
-function sendPatchedIndex(res, fileName) {
-  const filePath = path.join(ROOT_DIR, 'public', fileName || 'index.html');
-  const html = fs.readFileSync(filePath, 'utf8');
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); res.setHeader('Pragma', 'no-cache'); res.setHeader('Expires', '0'); res.type('html'); return res.send(patchIndexHtml(html));
-}
-function installEarlyHtmlMiddleware(app) {
-  if (!app || app.__rodaDiscordRegistrationEarlyInstalled || typeof app.use !== 'function') return;
-  Object.defineProperty(app, '__rodaDiscordRegistrationEarlyInstalled', { value: true, enumerable: false });
-  app.use((req, res, next) => {
-    const url = String(req.path || req.url || '').split('?')[0].toLowerCase();
-    if (req.method === 'GET' && (url === '/' || url === '/index.html')) { try { return sendPatchedIndex(res, 'index.html'); } catch (error) { console.error('[site-registration-discord] early index patch failed:', error.message); } }
-    if (req.method === 'GET' && url === '/home.html') { try { return sendPatchedIndex(res, 'home.html'); } catch (error) { console.error('[site-registration-discord] early home patch failed:', error.message); } }
-    next();
-  });
-}
-function patchExpress() {
-  const originalExpress = express;
-  const appProto = express && express.application;
-  if (appProto && !appProto.__rodaDiscordRegistrationPostPatched && typeof appProto.post === 'function') {
-    const originalPost = appProto.post; Object.defineProperty(appProto, '__rodaDiscordRegistrationPostPatched', { value: true, enumerable: false });
-    appProto.post = function patchedPost(pathOrFn, ...handlers) { const route = String(pathOrFn || '').toLowerCase(); if (/(register|registr|iscrizion|team)/.test(route) && !/(admin|dashboard|login|auth|result|loadout|slot|settings)/.test(route)) return originalPost.call(this, pathOrFn, requireDiscordReference, ...handlers); return originalPost.call(this, pathOrFn, ...handlers); };
-  }
-  if (appProto && !appProto.__rodaDiscordRegistrationListenPatched && typeof appProto.listen === 'function') {
-    const originalListen = appProto.listen; Object.defineProperty(appProto, '__rodaDiscordRegistrationListenPatched', { value: true, enumerable: false });
-    appProto.listen = function patchedListen(...args) { installEarlyHtmlMiddleware(this); return originalListen.apply(this, args); };
-  }
-  const response = express && express.response;
-  if (response && !response.__rodaDiscordRegistrationHtmlPatched && typeof response.sendFile === 'function') {
-    const originalSendFile = response.sendFile; Object.defineProperty(response, '__rodaDiscordRegistrationHtmlPatched', { value: true, enumerable: false });
-    response.sendFile = function patchedSendFile(filePath, options, callback) { const name = path.basename(String(filePath || '')).toLowerCase(); if (name !== 'index.html' && name !== 'home.html') return originalSendFile.apply(this, arguments); try { this.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'); this.type('html'); return this.send(patchIndexHtml(fs.readFileSync(filePath, 'utf8'))); } catch (error) { console.error('[site-registration-discord] html patch failed:', error.message); return originalSendFile.apply(this, arguments); } };
-  }
+</script>`;return injectBeforeBodyEnd(html,snippet,'rodaDiscordReferenceGuard');}
+function sendPatchedIndex(res,fileName){const filePath=path.join(ROOT_DIR,'public',fileName||'index.html');const html=fs.readFileSync(filePath,'utf8');res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0');res.type('html');return res.send(patchIndexHtml(html));}
+function installEarlyHtmlMiddleware(app){if(!app||app.__rodaDiscordRegistrationEarlyInstalled||typeof app.use!=='function')return;Object.defineProperty(app,'__rodaDiscordRegistrationEarlyInstalled',{value:true,enumerable:false});app.use((req,res,next)=>{const url=String(req.path||req.url||'').split('?')[0].toLowerCase();if(req.method==='GET'&&(url==='/'||url==='/index.html')){try{return sendPatchedIndex(res,'index.html');}catch(e){console.error('[site-registration-discord] early index patch failed:',e.message);}}if(req.method==='GET'&&url==='/home.html'){try{return sendPatchedIndex(res,'home.html');}catch(e){console.error('[site-registration-discord] early home patch failed:',e.message);}}next();});}
+function patchExpress(){
+  const appProto=express&&express.application;
+  if(appProto&&!appProto.__rodaDiscordRegistrationPostPatched&&typeof appProto.post==='function'){const originalPost=appProto.post;Object.defineProperty(appProto,'__rodaDiscordRegistrationPostPatched',{value:true,enumerable:false});appProto.post=function patchedPost(pathOrFn,...handlers){const route=String(pathOrFn||'').toLowerCase();if(/(register|registr|iscrizion|team)/.test(route)&&!/(admin|dashboard|login|auth|result|loadout|slot|settings)/.test(route))return originalPost.call(this,pathOrFn,requireDiscordReference,...handlers);return originalPost.call(this,pathOrFn,...handlers);};}
+  if(appProto&&!appProto.__rodaDiscordRegistrationListenPatched&&typeof appProto.listen==='function'){const originalListen=appProto.listen;Object.defineProperty(appProto,'__rodaDiscordRegistrationListenPatched',{value:true,enumerable:false});appProto.listen=function patchedListen(...args){installEarlyHtmlMiddleware(this);return originalListen.apply(this,args);};}
+  const originalStatic=express.static;
+  if(originalStatic&&!express.__rodaDiscordRegistrationStaticPatched){express.static=function patchedStatic(root,options){const staticMw=originalStatic.call(this,root,options);return function(req,res,next){const url=String(req.path||req.url||'').split('?')[0].toLowerCase();if(req.method==='GET'&&(url==='/'||url==='/index.html'||url==='/home.html')){try{const file=url==='/home.html'?'home.html':'index.html';const filePath=path.join(root,file);if(fs.existsSync(filePath)){res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.type('html');return res.send(patchIndexHtml(fs.readFileSync(filePath,'utf8')));}}catch(e){console.error('[site-registration-discord] static patch failed:',e.message);}}return staticMw(req,res,next);};};express.__rodaDiscordRegistrationStaticPatched=true;}
+  const response=express&&express.response;
+  if(response&&!response.__rodaDiscordRegistrationHtmlPatched&&typeof response.sendFile==='function'){const originalSendFile=response.sendFile;Object.defineProperty(response,'__rodaDiscordRegistrationHtmlPatched',{value:true,enumerable:false});response.sendFile=function patchedSendFile(filePath,options,callback){const name=path.basename(String(filePath||'')).toLowerCase();if(name!=='index.html'&&name!=='home.html')return originalSendFile.apply(this,arguments);try{this.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');this.type('html');return this.send(patchIndexHtml(fs.readFileSync(filePath,'utf8')));}catch(e){console.error('[site-registration-discord] html patch failed:',e.message);return originalSendFile.apply(this,arguments);}};}
 }
 patchExpress();
-console.log('✅ Registrazioni sito: riferimento Discord obbligatorio attivo e campo visibile sul sito.');
-module.exports = { patchExpress, requireDiscordReference, saveDiscordReferenceOnTeam, patchIndexHtml };
+console.log('✅ Registrazioni sito: riferimento Discord obbligatorio attivo e campo visibile anche su pagina statica.');
+module.exports={patchExpress,requireDiscordReference,saveDiscordReferenceOnTeam,patchIndexHtml};
